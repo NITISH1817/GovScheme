@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Building2, ShieldCheck, ExternalLink, Phone, Info, Globe2, FileText } from 'lucide-react';
 import { LanguageCode } from '../types';
 import { translations } from '../data/translations';
@@ -9,7 +10,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
-  const t = translations[currentLang] || translations['en'];
+  const { t } = useTranslation();
 
   return (
     <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 transition-colors">
@@ -21,10 +22,10 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
               <div className="w-9 h-9 rounded-lg bg-blue-700 text-amber-400 flex items-center justify-center font-bold">
                 <Building2 className="w-5 h-5" />
               </div>
-              <span className="text-xl font-extrabold text-white font-heading">{t.appName}</span>
+              <span className="text-xl font-extrabold text-white font-heading">{t('appName')}</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              {t.heroSubtitle}
+              {t('heroSubtitle')}
             </p>
             <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold bg-emerald-950/40 p-2 rounded-lg border border-emerald-800/40">
               <ShieldCheck className="w-4 h-4" />
@@ -122,7 +123,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
 
             <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700 text-[11px] text-slate-400 leading-normal mt-4">
               <span className="text-amber-400 font-bold block mb-1">TRANSPARENCY DISCLAIMER</span>
-              {t.guaranteedDisclaimer}
+              {t('guaranteedDisclaimer')}
             </div>
           </div>
         </div>

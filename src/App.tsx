@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile, Scheme, CombinedSchemeAnalysis, DocumentRecord, ApplicationTrackerRecord, NotificationItem } from './types';
 import { schemesData } from './data/schemes';
 import { initialUserProfile, initialApplications, initialNotifications } from './data/initialUserData';
@@ -21,9 +22,13 @@ import { NotificationsModal } from './components/NotificationsModal';
 import { startVoiceListening } from './services/voiceService';
 
 export const App: React.FC = () => {
-  // App Settings State
-  const [currentLang, setCurrentLang] = useState<LanguageCode>('en');
-  const [theme, setTheme] = useState<'light' | 'dark' | 'high-contrast'>('light');
+  const { i18n } = useTranslation();
+  const [currentLang, setCurrentLang] = useState<LanguageCode>(
+    (i18n.language as LanguageCode) || 'en'
+  );
+  const [theme, setTheme] = useState<'light' | 'dark' | 'high-contrast'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark' | 'high-contrast') || 'light';
+  });
   const [textSize, setTextSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
   const [activeTab, setActiveTab] = useState<string>('home');
 
@@ -57,12 +62,20 @@ export const App: React.FC = () => {
       root.classList.add('high-contrast');
     }
 
+    localStorage.setItem('theme', theme);
+
     if (textSize === 'large') {
       root.classList.add('text-size-large');
     } else if (textSize === 'xlarge') {
       root.classList.add('text-size-xlarge');
     }
   }, [theme, textSize]);
+
+  // Sync language with i18n and HTML element
+  useEffect(() => {
+    i18n.changeLanguage(currentLang);
+    document.documentElement.lang = currentLang;
+  }, [currentLang, i18n]);
 
   // Save user to localStorage whenever it changes
   useEffect(() => {
@@ -194,7 +207,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen w-full overflow-x-hidden flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Global Voice Listening Banner */}
       {isListeningGlobalVoice && (
         <div className="bg-red-600 text-white py-2 px-4 text-center text-xs font-bold animate-pulse flex items-center justify-center gap-2 z-50">
@@ -205,7 +218,10 @@ export const App: React.FC = () => {
       {/* Main Header Navbar */}
       <Navbar
         currentLang={currentLang}
-        onLanguageChange={setCurrentLang}
+        onLanguageChange={(lang) => {
+          i18n.changeLanguage(lang);
+          setCurrentLang(lang);
+        }}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         theme={theme}
@@ -229,8 +245,18 @@ export const App: React.FC = () => {
               if (!user) setIsAuthOpen(true);
               else setActiveTab('profile');
             }}
-            onTalkToAI={() => setActiveTab('assistant')}
-            onNavigateTab={setActiveTab}
+            onTalkToAI={() => {
+              if (!user) setIsAuthOpen(true);
+              else setActiveTab('assistant');
+            }}
+            onNavigateTab={(tab) => {
+              const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'tracker'];
+              if (protectedTabs.includes(tab) && !user) {
+                setIsAuthOpen(true);
+              } else {
+                setActiveTab(tab);
+              }
+            }}
             topSchemes={schemes}
             user={user}
           />

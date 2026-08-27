@@ -18,7 +18,7 @@ import {
 import { Scheme, UserProfile, RuleEvaluationResult, MLRecommendationResult, CombinedSchemeAnalysis, LanguageCode } from '../types';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
-import { translations } from '../data/translations';
+import { useTranslation } from 'react-i18next';
 
 interface SchemeDiscoveryProps {
   schemes: Scheme[];
@@ -37,7 +37,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   onToggleBookmark,
   isBookmarked
 }) => {
-  const t = translations[currentLang] || translations['en'];
+  const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryTab, setActiveCategoryTab] = useState<'Recommended' | 'All' | 'Central' | 'State' | 'Trending' | 'Saved'>('Recommended');
@@ -130,23 +130,23 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
             <Building2 className="w-4 h-4 text-amber-500" />
             <span>NATIONAL WELFARE SCHEME DISCOVERY PORTAL</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white font-heading">
-            {t.allSchemes}
+          <h1 className="text-2xl sm:text-3xl font-black text-uswds-primary font-sans flex items-center gap-2 tracking-tight">
+            <Sparkles className="w-8 h-8 text-uswds-secondary" />
+            {t('discoverSchemes', 'Discover Schemes')}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Real-time hybrid Rule + ML eligibility evaluation tailored for {user.fullName} ({user.occupation}, {user.state}).
+          <p className="text-sm text-uswds-textMuted mt-1 font-medium">
+            {t('discoverSchemesDesc', 'AI-powered scheme recommendations based on your verified profile data.')}
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-uswds-textMuted" />
           <input
             type="text"
+            placeholder={t('searchSchemes', 'Search for schemes, e.g. "Agriculture", "Housing"')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.searchPlaceholder}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-blue-600 outline-none shadow-sm"
+            className="w-full pl-10 pr-10 py-2.5 rounded border border-uswds-border bg-white text-uswds-text font-medium text-sm focus:ring-2 focus:ring-uswds-primary shadow-sm outline-none"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600">
@@ -157,25 +157,25 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       </div>
 
       {/* Main Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-uswds-border pb-3">
         {[
-          { id: 'Recommended', label: `✨ ${t.recommendedSchemes}`, count: analyzedSchemes.filter(a => a.ruleResult.status !== 'Not Eligible').length },
-          { id: 'All', label: t.allSchemes, count: schemes.length },
-          { id: 'Central', label: t.centralSchemes, count: schemes.filter(s => s.state === 'Central').length },
-          { id: 'State', label: t.stateSchemes, count: schemes.filter(s => s.state !== 'Central').length },
-          { id: 'Trending', label: `🔥 ${t.trending}`, count: schemes.filter(s => s.popularityScore >= 90).length },
-          { id: 'Saved', label: `🔖 Saved`, count: user.savedSchemeIds.length },
+          { id: 'Recommended', label: `✨ ${t('recommendedSchemes', 'Recommended')}`, count: analyzedSchemes.filter(a => a.ruleResult.status !== 'Not Eligible').length },
+          { id: 'All', label: t('allSchemes', 'All Schemes'), count: schemes.length },
+          { id: 'Central', label: t('centralSchemes', 'Central Schemes'), count: schemes.filter(s => s.state === 'Central').length },
+          { id: 'State', label: t('stateSchemes', 'State Schemes'), count: schemes.filter(s => s.state !== 'Central').length },
+          { id: 'Trending', label: `🔥 ${t('trending', 'Trending')}`, count: schemes.filter(s => s.popularityScore >= 90).length },
+          { id: 'Saved', label: `🔖 ${t('saved', 'Saved')}`, count: user.savedSchemeIds.length },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveCategoryTab(tab.id as any)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${activeCategoryTab === tab.id
-              ? 'bg-blue-700 text-white shadow-md'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            className={`px-4 py-2 rounded text-sm font-bold transition flex items-center gap-1.5 ${activeCategoryTab === tab.id
+              ? 'bg-uswds-primary text-white shadow-sm'
+              : 'bg-white border border-uswds-border text-uswds-text hover:bg-slate-50'
               }`}
           >
             <span>{tab.label}</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeCategoryTab === tab.id ? 'bg-blue-900 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+            <span className={`px-1.5 py-0.5 rounded text-[10px] ${activeCategoryTab === tab.id ? 'bg-uswds-secondary text-white' : 'bg-uswds-background border border-uswds-border text-uswds-textMuted'
               }`}>
               {tab.count}
             </span>
@@ -184,16 +184,16 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       </div>
 
       {/* Dropdown Filters */}
-      <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex flex-wrap items-center gap-4 text-xs">
-        <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-          <SlidersHorizontal className="w-4 h-4 text-blue-600" /> Filters:
+      <div className="bg-uswds-background border border-uswds-border rounded-md p-4 flex flex-wrap items-center gap-4 text-xs shadow-sm">
+        <span className="font-bold text-uswds-primary flex items-center gap-1">
+          <SlidersHorizontal className="w-4 h-4" /> {t('filters', 'Filters')}:
         </span>
 
         {/* State Filter */}
         <select
           value={selectedStateFilter}
           onChange={(e) => setSelectedStateFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-blue-600 outline-none"
+          className="px-3 py-1.5 rounded border border-uswds-border bg-white text-uswds-text font-medium focus:ring-2 focus:ring-uswds-primary outline-none"
         >
           <option value="All">State: All</option>
           {statesList.filter(s => s !== 'All').map(st => (
@@ -205,9 +205,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
         <select
           value={selectedCategoryFilter}
           onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-blue-600 outline-none"
+          className="px-3 py-1.5 rounded border border-uswds-border bg-white text-uswds-text font-medium focus:ring-2 focus:ring-uswds-primary outline-none"
         >
-          <option value="All">Category: All</option>
+          <option value="All">{t('category', 'Category')}: {t('all', 'All')}</option>
           {categoriesList.filter(c => c !== 'All').map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
@@ -217,9 +217,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
         <select
           value={selectedIncomeFilter}
           onChange={(e) => setSelectedIncomeFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-blue-600 outline-none"
+          className="px-3 py-1.5 rounded border border-uswds-border bg-white text-uswds-text font-medium focus:ring-2 focus:ring-uswds-primary outline-none"
         >
-          <option value="All">Income: Any</option>
+          <option value="All">{t('income', 'Income')}: {t('all', 'Any')}</option>
           <option value="bpl">BPL (below ₹1.2L)</option>
           <option value="2.5l">Below ₹2.5 Lakh</option>
           <option value="5l">Below ₹5 Lakh</option>
@@ -234,7 +234,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               setSelectedIncomeFilter('All');
               setSearchQuery('');
             }}
-            className="text-red-600 dark:text-red-400 font-bold hover:underline ml-auto flex items-center gap-1"
+            className="text-uswds-danger font-bold hover:underline ml-auto flex items-center gap-1"
           >
             <RefreshCw className="w-3 h-3" /> Reset Filters
           </button>
@@ -243,13 +243,13 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
       {/* Scheme Cards Grid */}
       {filteredSchemes.length === 0 ? (
-        <div className="gov-card p-12 text-center space-y-4">
-          <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto" />
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white font-heading">
+        <div className="bg-white border border-uswds-border shadow-sm rounded-md p-12 text-center space-y-4">
+          <ShieldAlert className="w-12 h-12 text-uswds-warning mx-auto" />
+          <h3 className="text-lg font-bold text-uswds-primary font-sans">
             No Government Schemes Found
           </h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Complete your profile or adjust your filters to view personalized welfare recommendations.
+          <p className="text-sm text-uswds-textMuted max-w-md mx-auto">
+            {t('noSchemesFoundDesc', 'Complete your profile or adjust your filters to view personalized welfare recommendations.')}
           </p>
           <button
             onClick={() => {
@@ -258,9 +258,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               setActiveCategoryTab('All');
               setSearchQuery('');
             }}
-            className="px-4 py-2 rounded-xl bg-blue-700 text-white font-bold text-xs shadow"
+            className="px-4 py-2 rounded bg-uswds-primary text-white font-bold text-sm shadow-sm"
           >
-            Browse All Schemes
+            {t('browseAllSchemes', 'Browse All Schemes')}
           </button>
         </div>
       ) : (
@@ -272,30 +272,30 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
             return (
               <div
                 key={scheme.id}
-                className="gov-card p-6 flex flex-col justify-between space-y-4 hover:border-blue-500 transition duration-200 relative group"
+                className="bg-white border border-uswds-border rounded-md shadow-sm p-6 flex flex-col justify-between space-y-4 hover:shadow-md transition relative group"
               >
                 <div className="space-y-3">
                   {/* Top Badges */}
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                      <span className="bg-uswds-background text-uswds-primary border border-uswds-border text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                         {scheme.state === 'Central' ? 'Central' : scheme.state}
                       </span>
 
                       {/* Rule Engine Status Badge */}
                       {ruleResult.status === 'Eligible' && (
-                        <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> {t.eligibleStatus}
+                        <span className="bg-green-50 text-uswds-success border border-uswds-success text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 shrink-0" /> {t('eligibleStatus', 'Eligible')}
                         </span>
                       )}
                       {ruleResult.status === 'Conditionally Eligible' && (
-                        <span className="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 text-amber-600" /> {t.conditionalStatus}
+                        <span className="bg-yellow-50 text-uswds-warning border border-uswds-warning text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" /> {t('conditionalStatus', 'Conditionally Eligible')}
                         </span>
                       )}
                       {ruleResult.status === 'Not Eligible' && (
-                        <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <XCircle className="w-3 h-3 text-slate-400" /> {t.notEligibleStatus}
+                        <span className="bg-slate-50 text-slate-500 border border-slate-300 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                          <XCircle className="w-3 h-3 shrink-0" /> {t('notEligibleStatus', 'Not Eligible')}
                         </span>
                       )}
                     </div>
@@ -306,26 +306,26 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                         e.stopPropagation();
                         onToggleBookmark(scheme.id);
                       }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-amber-500 transition"
-                      title={bookmarked ? 'Remove Bookmark' : 'Save Scheme'}
+                      className="p-1 rounded text-uswds-textMuted hover:text-uswds-primary transition"
+                      title={bookmarked ? t('removeBookmark', 'Remove Bookmark') : t('saveScheme', 'Save Scheme')}
                     >
-                      <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-amber-500 text-amber-500' : ''}`} />
+                      <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-uswds-primary text-uswds-primary' : ''}`} />
                     </button>
                   </div>
 
                   {/* ML Match Confidence Score - Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 dark:text-slate-400 font-medium">AI Match Confidence</span>
-                      <span className={`font-extrabold text-sm font-heading ${mlResult.confidenceScore >= 75 ? 'text-emerald-600 dark:text-emerald-400' :
-                          mlResult.confidenceScore >= 50 ? 'text-amber-600 dark:text-amber-400' :
-                            'text-slate-500 dark:text-slate-400'
+                      <span className="text-uswds-textMuted font-medium">{t('aiMatchConfidence', 'AI Match Confidence')}</span>
+                      <span className={`font-bold text-sm font-sans ${mlResult.confidenceScore >= 75 ? 'text-uswds-success' :
+                          mlResult.confidenceScore >= 50 ? 'text-uswds-warning' :
+                            'text-slate-500'
                         }`}>{mlResult.confidenceScore}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-uswds-background border border-uswds-border rounded overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-700 ${mlResult.confidenceScore >= 75 ? 'bg-emerald-500' :
-                            mlResult.confidenceScore >= 50 ? 'bg-amber-500' :
+                        className={`h-full transition-all duration-700 ${mlResult.confidenceScore >= 75 ? 'bg-uswds-success' :
+                            mlResult.confidenceScore >= 50 ? 'bg-uswds-warning' :
                               'bg-slate-400'
                           }`}
                         style={{ width: `${mlResult.confidenceScore}%` }}
@@ -334,39 +334,39 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   </div>
 
                   {/* Scheme Name */}
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 font-heading group-hover:text-blue-600 transition">
+                  <h3 className="text-base font-bold text-uswds-primary line-clamp-2 font-sans group-hover:underline transition">
                     {scheme.name}
                   </h3>
 
                   {/* Financial Benefit Amount */}
                   {scheme.financialBenefitAmount && (
-                    <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      Benefit: Up to ₹{scheme.financialBenefitAmount.toLocaleString('en-IN')}/year
+                    <div className="text-xs font-bold text-uswds-success">
+                      {t('benefitUpTo', 'Benefit: Up to')} ₹{scheme.financialBenefitAmount.toLocaleString('en-IN')}/{t('year', 'year')}
                     </div>
                   )}
 
                   {/* Short Description */}
-                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  <p className="text-sm text-uswds-textMuted line-clamp-2 leading-relaxed">
                     {scheme.shortDescription}
                   </p>
 
                   {/* Why Eligible / Explanation Preview */}
-                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block mb-0.5">
-                      {t.whyEligible}:
+                  <div className="p-2.5 rounded bg-uswds-background border border-uswds-border text-xs text-uswds-text leading-snug">
+                    <span className="font-bold text-uswds-primary block mb-1">
+                      {t('whyEligible', 'Why am I eligible?')}:
                     </span>
                     <p className="line-clamp-2">{mlResult.matchReason}</p>
                   </div>
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                <div className="pt-4 border-t border-uswds-border flex items-center justify-between gap-2">
                   <button
                     onClick={() => onSelectScheme(analysis)}
-                    className="w-full py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5"
+                    className="w-full py-2 rounded bg-uswds-primary hover:bg-uswds-secondary text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-1.5 whitespace-nowrap"
                   >
-                    <span>View Scheme Details</span>
-                    <ChevronRight className="w-4 h-4" />
+                    <span>{t('viewSchemeDetails', 'View Scheme Details')}</span>
+                    <ChevronRight className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
               </div>

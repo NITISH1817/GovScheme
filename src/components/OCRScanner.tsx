@@ -70,7 +70,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
       status: scanResult.isValidDocType ? 'Verified' : 'Pending',
       ocrExtracted: {
         ...scanResult.extractedFields,
-        name: editableName || scanResult.extractedFields.fullName,
+        fullName: editableName || scanResult.extractedFields.fullName,
         annualIncome: editableIncome !== undefined ? editableIncome : scanResult.extractedFields.annualIncome
       },
       uploadedAt: new Date().toISOString().split('T')[0]

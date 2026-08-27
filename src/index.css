@@ -3,12 +3,80 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: 210 33% 98%;
+    --foreground: 0 0% 10%;
+
+    --primary: 205 100% 32%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 215 66% 30%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 211 27% 88%;
+    --muted-foreground: 0 0% 36%;
+
+    --accent: 215 66% 30%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 2 68% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 211 27% 88%;
+    --input: 211 27% 88%;
+    --ring: 205 100% 32%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+  
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #F9FAFB;
+    color: #1B1B1B;
+    font-family: 'Inter', 'Public Sans', system-ui, -apple-system, sans-serif;
   }
   
   h1, h2, h3, .font-heading {
-    font-family: 'Outfit', 'Inter', sans-serif;
+    font-family: 'Inter', 'Public Sans', sans-serif;
+  }
+
+  /* Language Specific Typography */
+  html[lang="ta"] body, html[lang="ta"] .font-heading {
+    font-family: 'Noto Sans Tamil', sans-serif;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+  }
+
+  html[lang="hi"] body, html[lang="hi"] .font-heading, html[lang="mr"] body, html[lang="mr"] .font-heading {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    line-height: 1.5;
   }
 }
 

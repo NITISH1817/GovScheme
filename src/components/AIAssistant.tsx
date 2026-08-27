@@ -235,21 +235,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
-      <div className="gov-card flex flex-col h-[75vh] overflow-hidden shadow-2xl rounded-3xl border border-slate-200 dark:border-slate-800">
+      <div className="gov-card flex flex-col h-[75vh] overflow-hidden shadow-sm rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         {/* Chat Header */}
-        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white p-4 sm:p-6 flex items-center justify-between">
+        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-4 sm:p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md">
+            <div className="w-10 h-10 rounded-md bg-gov-navy text-white flex items-center justify-center font-bold shadow-sm">
               <Bot className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold font-heading">GovScheme AI Assistant</h2>
-                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <h2 className="text-lg font-bold font-heading text-slate-900 dark:text-white">GovScheme AI Assistant</h2>
+                <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
                   <span className="pulse-dot"></span> Online
                 </span>
               </div>
-              <p className="text-xs text-blue-200">Multilingual Voice & Chat Assistance for Rural Citizens</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Multilingual Voice & Chat Assistance for Rural Citizens</p>
             </div>
           </div>
 

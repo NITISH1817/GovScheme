@@ -24,20 +24,20 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-white dark:bg-slate-800 border-l-4 border-gov-navy shadow-sm rounded-md p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-200 dark:border-slate-700">
         <div className="space-y-2 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-800 border border-blue-600 text-amber-400 text-xs font-bold">
-            <Clock className="w-4 h-4" /> Live Government DBT Tracking
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-600">
+            <Clock className="w-4 h-4 text-gov-navy dark:text-blue-400" /> Live Government DBT Tracking
           </div>
-          <h1 className="text-3xl font-black font-heading tracking-tight">Citizen Application Tracker</h1>
-          <p className="text-xs text-blue-200">
+          <h1 className="text-3xl font-bold font-heading tracking-tight text-slate-900 dark:text-white">Citizen Application Tracker</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Real-time status updates on submitted welfare applications across official government portals.
           </p>
         </div>
 
         <button
           onClick={() => onNavigateTab('schemes')}
-          className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg transition flex items-center gap-2"
+          className="px-6 py-3 rounded-md bg-gov-navy hover:bg-gov-blue text-white font-bold text-sm shadow-sm transition flex items-center gap-2"
         >
           <FileText className="w-4 h-4" />
           <span>Apply For New Scheme</span>
@@ -71,7 +71,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                 href={app.officialPortalLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow transition flex items-center gap-1.5 self-start sm:self-auto"
+                className="px-4 py-2 rounded-md bg-gov-navy hover:bg-gov-blue text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 self-start sm:self-auto"
               >
                 <span>Track on Official Portal</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -88,9 +88,9 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                 {app.statusTimeline.map((stageItem, idx) => (
                   <div
                     key={idx}
-                    className={`p-3 rounded-xl border text-xs flex flex-col justify-between space-y-2 ${
+                    className={`p-3 rounded-md border text-xs flex flex-col justify-between space-y-2 ${
                       stageItem.completed
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300'
+                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300'
                         : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400'
                     }`}
                   >

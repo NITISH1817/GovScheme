@@ -39,20 +39,20 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-white dark:bg-slate-800 border-l-4 border-gov-navy shadow-sm rounded-md p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-200 dark:border-slate-700">
         <div className="space-y-2 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-800 border border-blue-600 text-amber-400 text-xs font-bold">
-            <ShieldCheck className="w-4 h-4" /> Official DigiLocker-Style Vault
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-600">
+            <ShieldCheck className="w-4 h-4 text-gov-navy dark:text-blue-400" /> Official DigiLocker-Style Vault
           </div>
-          <h1 className="text-3xl font-black font-heading tracking-tight">Verified Citizen Document Vault</h1>
-          <p className="text-xs text-blue-200">
+          <h1 className="text-3xl font-bold font-heading tracking-tight text-slate-900 dark:text-white">Verified Citizen Document Vault</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Securely store official welfare documents. The Rule Engine automatically uses these to verify scheme eligibility.
           </p>
         </div>
 
         <button
           onClick={() => onOpenOCR('Aadhaar')}
-          className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg transition flex items-center gap-2"
+          className="px-6 py-3 rounded-md bg-gov-navy hover:bg-gov-blue text-white font-bold text-sm shadow-sm transition flex items-center gap-2"
         >
           <ScanLine className="w-4 h-4" />
           <span>Launch AI OCR Scanner</span>
@@ -96,7 +96,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                     {existingDoc.ocrExtracted && (
                       <div className="p-2.5 rounded-lg bg-blue-50/50 dark:bg-slate-900/80 border border-blue-100 dark:border-slate-800 text-[11px] space-y-1">
                         <span className="font-bold text-blue-900 dark:text-blue-300 block">OCR Extracted Metadata</span>
-                        {existingDoc.ocrExtracted.name && <p>Name: <strong>{existingDoc.ocrExtracted.name}</strong></p>}
+                        {existingDoc.ocrExtracted.fullName && <p>Name: <strong>{existingDoc.ocrExtracted.fullName}</strong></p>}
                         {existingDoc.ocrExtracted.annualIncome && <p>Income: <strong>₹{existingDoc.ocrExtracted.annualIncome.toLocaleString('en-IN')}</strong></p>}
                         <p className="text-[10px] text-slate-500">Confidence: {existingDoc.ocrExtracted.confidenceScore}%</p>
                       </div>

@@ -29,7 +29,7 @@ export const initialUserProfile: UserProfile = {
       docNumber: "5489 3201 9845",
       status: "Verified",
       ocrExtracted: {
-        name: "Ramesh Kumar",
+        fullName: "Ramesh Kumar",
         dob: "1984-05-12",
         state: "Tamil Nadu",
         gender: "Male",
@@ -43,7 +43,7 @@ export const initialUserProfile: UserProfile = {
       docNumber: "ABCDE1234F",
       status: "Verified",
       ocrExtracted: {
-        name: "RAMESH KUMAR",
+        fullName: "RAMESH KUMAR",
         dob: "1984-05-12",
         confidenceScore: 95,
       },
@@ -55,7 +55,7 @@ export const initialUserProfile: UserProfile = {
       docNumber: "TN-INC-2026-98124",
       status: "Verified",
       ocrExtracted: {
-        name: "Ramesh Kumar",
+        fullName: "Ramesh Kumar",
         annualIncome: 95000,
         state: "Tamil Nadu",
         confidenceScore: 92,

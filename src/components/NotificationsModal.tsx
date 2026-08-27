@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Bell, CheckCircle2, FileText, ExternalLink, ShieldCheck, Sparkles } from 'lucide-react';
 import { NotificationItem } from '../types';
 

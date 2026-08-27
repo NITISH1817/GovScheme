@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Smartphone, Mail, UserCheck, ShieldCheck, ArrowRight, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
-import { translations } from '../data/translations';
 
 const STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat',
@@ -64,7 +64,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onContinueGuest,
   currentLang,
 }) => {
-  const t = translations[currentLang] || translations['en'];
+  const { t } = useTranslation();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [authMethod, setAuthMethod] = useState<'mobile' | 'email'>('mobile');
@@ -163,20 +163,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5 text-amber-400" />
-            <span className="text-xs font-semibold text-blue-200 uppercase tracking-wider">Government Portal Auth</span>
+            <span className="text-[10px] font-semibold text-blue-200 uppercase tracking-wider">{t('authPortal', 'Government Portal Auth')}</span>
           </div>
-          <h2 className="text-2xl font-bold font-heading">GovScheme AI</h2>
-          <p className="text-xs text-blue-100 mt-1">Access personalized scheme eligibility and document vault.</p>
+          <h2 className="text-xl sm:text-2xl font-bold font-heading">{t('appName', 'GovScheme AI')}</h2>
+          <p className="text-[10px] sm:text-xs text-blue-100 mt-1">{t('authSubtitle', 'Access personalized scheme eligibility and document vault.')}</p>
         </div>
 
         <div className="p-6 space-y-5">
           {/* Login / Register Tab Switch */}
           <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-            <button onClick={() => setMode('login')} className={`py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${mode === 'login' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow' : 'text-slate-600 dark:text-slate-400'}`}>
-              <UserCheck className="w-3.5 h-3.5" /> {t.login}
+            <button onClick={() => setMode('login')} className={`py-2 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center justify-center gap-1.5 ${mode === 'login' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow' : 'text-slate-600 dark:text-slate-400'}`}>
+              <UserCheck className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{t('login', 'Login')}</span>
             </button>
-            <button onClick={() => setMode('register')} className={`py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${mode === 'register' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow' : 'text-slate-600 dark:text-slate-400'}`}>
-              <UserPlus className="w-3.5 h-3.5" /> {t.register}
+            <button onClick={() => setMode('register')} className={`py-2 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center justify-center gap-1.5 ${mode === 'register' ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow' : 'text-slate-600 dark:text-slate-400'}`}>
+              <UserPlus className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{t('register', 'Register')}</span>
             </button>
           </div>
 
@@ -184,11 +184,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'login' && (
             <>
               <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                <button onClick={() => { setAuthMethod('mobile'); setOtpSent(false); }} className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${authMethod === 'mobile' ? 'bg-white dark:bg-slate-700 text-blue-700 shadow' : 'text-slate-600'}`}>
-                  <Smartphone className="w-3.5 h-3.5" /> Mobile OTP
+                <button onClick={() => { setAuthMethod('mobile'); setOtpSent(false); }} className={`py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center justify-center gap-1 ${authMethod === 'mobile' ? 'bg-white dark:bg-slate-700 text-blue-700 shadow' : 'text-slate-600'}`}>
+                  <Smartphone className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{t('mobileOTP', 'Mobile OTP')}</span>
                 </button>
-                <button onClick={() => setAuthMethod('email')} className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${authMethod === 'email' ? 'bg-white dark:bg-slate-700 text-blue-700 shadow' : 'text-slate-600'}`}>
-                  <Mail className="w-3.5 h-3.5" /> Email
+                <button onClick={() => setAuthMethod('email')} className={`py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center justify-center gap-1 ${authMethod === 'email' ? 'bg-white dark:bg-slate-700 text-blue-700 shadow' : 'text-slate-600'}`}>
+                  <Mail className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{t('email', 'Email')}</span>
                 </button>
               </div>
 
@@ -197,7 +197,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {!otpSent ? (
                     <form onSubmit={handleSendOTP} className="space-y-4">
                       <div>
-                        <label className={labelCls}>{t.mobileNumber}</label>
+                        <label className={labelCls}>{t('mobileNumber', 'Mobile Number')}</label>
                         <div className="flex gap-2">
                           <span className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center">+91</span>
                           <input type="tel" required value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} placeholder="10-digit mobile number" className={`flex-1 ${inputCls}`} />
@@ -210,14 +210,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   ) : (
                     <form onSubmit={handleVerifyOTP} className="space-y-4">
                       <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs text-emerald-800 dark:text-emerald-300">
-                        OTP sent to +91 {mobileNumber}. Enter <strong>1234</strong> to proceed.
+                        {t('otpSentMessage', 'OTP sent to +91')} {mobileNumber}. {t('otpInstruction', 'Enter 1234 to proceed.')}
                       </div>
                       <div>
-                        <label className={labelCls}>Enter OTP</label>
+                        <label className={labelCls}>{t('enterOTP', 'Enter OTP')}</label>
                         <input type="text" maxLength={4} required value={otpCode} onChange={e => setOtpCode(e.target.value)} placeholder="1234" className={`${inputCls} tracking-widest text-center text-base font-bold`} />
                       </div>
                       <button type="submit" disabled={loading} className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition">
-                        {loading ? 'Verifying...' : `Verify & ${t.login}`}
+                        {loading ? t('verifying', 'Verifying...') : `${t('verifyAndLogin', 'Verify & Login')}`}
                       </button>
                     </form>
                   )}
@@ -227,15 +227,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {authMethod === 'email' && (
                 <form onSubmit={handleEmailLogin} className="space-y-4">
                   <div>
-                    <label className={labelCls}>Email Address</label>
+                    <label className={labelCls}>{t('emailAddress', 'Email Address')}</label>
                     <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls}>Password</label>
+                    <label className={labelCls}>{t('password', 'Password')}</label>
                     <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={inputCls} />
                   </div>
                   <button type="submit" disabled={loading} className="w-full py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow transition">
-                    {loading ? 'Logging in...' : t.login}
+                    {loading ? t('loggingIn', 'Logging in...') : t('login', 'Login')}
                   </button>
                 </form>
               )}
@@ -247,51 +247,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <label className={labelCls}>{t.yourName} *</label>
-                  <input type="text" required value={regName} onChange={e => setRegName(e.target.value)} placeholder="Full Name" className={inputCls} />
+                  <label className={labelCls}>{t('yourName', 'Full Name')} *</label>
+                  <input type="text" required value={regName} onChange={e => setRegName(e.target.value)} placeholder={t('yourName', 'Full Name')} className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>{t.mobileNumber}</label>
-                  <input type="tel" value={regMobile} onChange={e => setRegMobile(e.target.value)} placeholder="Mobile No." className={inputCls} />
+                  <label className={labelCls}>{t('mobileNumber', 'Mobile Number')}</label>
+                  <input type="tel" value={regMobile} onChange={e => setRegMobile(e.target.value)} placeholder={t('mobileNumber', 'Mobile Number')} className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>{t.yourAge} *</label>
-                  <input type="number" min={18} max={99} required value={regAge} onChange={e => setRegAge(e.target.value)} placeholder="Age" className={inputCls} />
+                  <label className={labelCls}>{t('yourAge', 'Age')} *</label>
+                  <input type="number" min={18} max={99} required value={regAge} onChange={e => setRegAge(e.target.value)} placeholder={t('yourAge', 'Age')} className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>Gender *</label>
+                  <label className={labelCls}>{t('gender', 'Gender')} *</label>
                   <select value={regGender} onChange={e => setRegGender(e.target.value as TargetGender)} className={inputCls}>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Transgender">Transgender</option>
+                    <option value="Male">{t('male', 'Male')}</option>
+                    <option value="Female">{t('female', 'Female')}</option>
+                    <option value="Transgender">{t('transgender', 'Transgender')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>{t.yourState} *</label>
+                  <label className={labelCls}>{t('yourState', 'Your State')} *</label>
                   <select required value={regState} onChange={e => setRegState(e.target.value)} className={inputCls}>
-                    <option value="">Select State</option>
+                    <option value="">{t('selectState', 'Select State')}</option>
                     {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>{t.yourOccupation} *</label>
+                  <label className={labelCls}>{t('yourOccupation', 'Occupation')} *</label>
                   <select value={regOccupation} onChange={e => setRegOccupation(e.target.value)} className={inputCls}>
                     {OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>{t.annualIncomeLabel}</label>
+                  <label className={labelCls}>{t('annualIncomeLabel', 'Annual Income')}</label>
                   <input type="number" min={0} value={regIncome} onChange={e => setRegIncome(e.target.value)} placeholder="e.g. 95000" className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>Email (optional)</label>
+                  <label className={labelCls}>{t('emailOptional', 'Email (optional)')}</label>
                   <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="email@example.com" className={inputCls} />
                 </div>
               </div>
               <button type="submit" disabled={loading} className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition flex items-center justify-center gap-2">
-                {loading ? 'Creating profile...' : `✓ ${t.register} & Login`}
+                {loading ? t('creatingProfile', 'Creating profile...') : `✓ ${t('register', 'Register')} & ${t('login', 'Login')}`}
               </button>
-              <p className="text-[10px] text-slate-400 text-center">Your profile is saved locally. No data is sent to any external server.</p>
+              <p className="text-[10px] text-slate-400 text-center">{t('localDataPrivacy', 'Your profile is saved locally. No data is sent to any external server.')}</p>
             </form>
           )}
 
@@ -301,11 +301,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               onClick={() => { onContinueGuest(); onClose(); }}
               className="w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition flex items-center justify-center gap-1.5"
             >
-              <span>{t.guestMode}</span>
+              <span>{t('guestMode', 'Continue as Guest')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
             <p className="text-[10px] text-slate-400 mt-2">
-              Guest users can search schemes, test eligibility, and talk to AI without logging in.
+              {t('guestDisclaimer', 'Guest users can search schemes, test eligibility, and talk to AI without logging in.')}
             </p>
           </div>
         </div>

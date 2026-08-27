@@ -21,7 +21,7 @@ export interface DocumentRecord {
   docNumber: string;
   status: 'Verified' | 'Pending' | 'Expired';
   ocrExtracted: {
-    name?: string;
+    fullName?: string;
     dob?: string;
     annualIncome?: number;
     state?: string;

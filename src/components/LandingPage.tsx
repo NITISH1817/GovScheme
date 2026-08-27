@@ -16,8 +16,9 @@ import {
   Award,
   ChevronRight
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { LanguageCode, UserProfile, Scheme } from '../types';
-import { translations } from '../data/translations';
 
 interface LandingPageProps {
   currentLang: LanguageCode;
@@ -36,108 +37,86 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   topSchemes,
   user
 }) => {
-  const t = translations[currentLang] || translations['en'];
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-16 py-6 pb-16">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-blue-900 via-blue-950 to-slate-900 text-white rounded-3xl p-8 sm:p-14 shadow-2xl mx-4 sm:mx-8 border border-blue-800/50">
-        {/* Subtle Background Pattern */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+      {/* Hero Section (USAJOBS Style) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative bg-uswds-primary text-white rounded-lg p-8 sm:p-14 shadow-sm border border-uswds-secondary"
+        >
+          <div className="relative max-w-4xl mx-auto flex flex-col items-start text-left space-y-6">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight font-sans">
+              {t('heroTitle', "Find Government Schemes You're Eligible For")}
+            </h1>
 
-        <div className="relative max-w-4xl mx-auto text-center space-y-6">
-          {/* Govt Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-800/70 border border-blue-400/30 text-blue-200 text-xs font-semibold backdrop-blur-sm shadow-inner">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>National Government Scheme Eligibility Recommender</span>
+            <p className="text-blue-100 text-base sm:text-lg max-w-2xl leading-relaxed">
+              {t('heroSubtitle', 'Helping citizens discover government benefits quickly using AI-powered eligibility recommendations.')}
+            </p>
+
+            {/* Primary Action Buttons */}
+            <div className="pt-4 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+              <button
+                onClick={onGetStarted}
+                className="w-full sm:w-auto min-w-[160px] px-6 py-3.5 rounded-md bg-white text-uswds-primary font-bold text-sm sm:text-base shadow-sm transition hover:bg-slate-50 flex items-center justify-center gap-2"
+              >
+                <span className="whitespace-nowrap">{t('getStarted', 'Get Started')}</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateTab('schemes')}
+                className="w-full sm:w-auto min-w-[160px] px-6 py-3.5 rounded-md bg-uswds-secondary hover:bg-blue-900 text-white font-bold text-sm sm:text-base transition flex items-center justify-center gap-2 border border-blue-800"
+              >
+                <span className="whitespace-nowrap">{t('exploreSchemes', 'Explore Schemes')}</span>
+              </button>
+            </div>
           </div>
-
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight font-heading">
-            {t.appName}
-          </h1>
-
-          <p className="text-2xl sm:text-3xl font-bold text-amber-400 font-heading">
-            "{t.tagline}"
-          </p>
-
-          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            {t.heroSubtitle}
-          </p>
-
-          {/* Primary Action Buttons */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={onGetStarted}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base shadow-lg shadow-amber-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            >
-              <span>{t.getStarted}</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={onTalkToAI}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-blue-800/80 hover:bg-blue-700 text-white font-bold text-base border border-blue-400/40 backdrop-blur-sm transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            >
-              <Bot className="w-5 h-5 text-amber-400" />
-              <span>{t.talkToAI}</span>
-            </button>
-          </div>
-
-          {/* Quick Input Methods shortcuts */}
-          <div className="pt-6 border-t border-blue-800/60 flex flex-wrap justify-center items-center gap-6 text-xs text-slate-300">
-            <span className="font-semibold text-slate-400">Choose Input Method:</span>
-            <button onClick={() => onNavigateTab('profile')} className="hover:text-amber-400 flex items-center gap-1 font-medium transition">
-              <FileText className="w-3.5 h-3.5 text-blue-400" /> Manual Form
-            </button>
-            <button onClick={onTalkToAI} className="hover:text-amber-400 flex items-center gap-1 font-medium transition">
-              <Mic className="w-3.5 h-3.5 text-emerald-400" /> Voice Input
-            </button>
-            <button onClick={() => onNavigateTab('vault')} className="hover:text-amber-400 flex items-center gap-1 font-medium transition">
-              <ScanLine className="w-3.5 h-3.5 text-purple-400" /> OCR Document Scan
-            </button>
-          </div>
-        </div>
-      </section>
+        </motion.section>
+      </div>
 
       {/* Three Core Cards */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: AI Powered */}
-          <div className="gov-card p-6 relative overflow-hidden group hover:border-blue-500 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Sparkles className="w-6 h-6 text-amber-500" />
+          <div className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
+            <div className="w-12 h-12 rounded bg-uswds-background text-uswds-primary flex items-center justify-center mb-4 border border-uswds-border">
+              <Sparkles className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading mb-2">
-              {t.aiPoweredTitle}
+            <h3 className="text-xl font-bold text-uswds-primary font-sans mb-2">
+              {t('aiPoweredTitle', 'AI Powered Match')}
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              {t.aiPoweredDesc}
+            <p className="text-sm text-uswds-textMuted leading-relaxed flex-grow">
+              {t('aiPoweredDesc', 'Our advanced engine matches your profile...')}
             </p>
           </div>
 
           {/* Card 2: Multilingual */}
-          <div className="gov-card p-6 relative overflow-hidden group hover:border-emerald-500 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Globe2 className="w-6 h-6 text-emerald-600" />
+          <div className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
+            <div className="w-12 h-12 rounded bg-uswds-background text-uswds-primary flex items-center justify-center mb-4 border border-uswds-border">
+              <Globe2 className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading mb-2">
-              {t.multilingualTitle}
+            <h3 className="text-xl font-bold text-uswds-primary font-sans mb-2">
+              {t('multilingualTitle', '10+ Languages')}
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              {t.multilingualDesc}
+            <p className="text-sm text-uswds-textMuted leading-relaxed flex-grow">
+              {t('multilingualDesc', 'Experience the platform in your native language...')}
             </p>
           </div>
 
           {/* Card 3: Government Verified */}
-          <div className="gov-card p-6 relative overflow-hidden group hover:border-amber-500 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <ShieldCheck className="w-6 h-6 text-amber-600" />
+          <div className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
+            <div className="w-12 h-12 rounded bg-uswds-background text-uswds-primary flex items-center justify-center mb-4 border border-uswds-border">
+              <ShieldCheck className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading mb-2">
-              {t.govtVerifiedTitle}
+            <h3 className="text-xl font-bold text-uswds-primary font-sans mb-2">
+              {t('govtVerifiedTitle', 'Govt. Verified')}
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              {t.govtVerifiedDesc}
+            <p className="text-sm text-uswds-textMuted leading-relaxed flex-grow">
+              {t('govtVerifiedDesc', 'Only 100% authentic schemes from official portals.')}
             </p>
           </div>
         </div>
@@ -145,22 +124,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* National Impact Stats Banner */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-950 rounded-2xl px-6 py-8 border border-blue-800/50 shadow-xl">
-          <p className="text-center text-[10px] font-extrabold uppercase tracking-widest text-blue-400 mb-6">
-            National Impact in Numbers
+        <div className="bg-white rounded-md px-6 py-8 border-y-4 border-y-uswds-primary shadow-sm border-x border-x-uswds-border">
+          <p className="text-center text-xs font-bold uppercase tracking-widest text-uswds-textMuted mb-6">
+            {t('nationalImpact', 'National Impact in Numbers')}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { value: '15 Cr+', label: 'Beneficiaries Reached', color: 'text-amber-400' },
-              { value: '₹2.5L Cr', label: 'Benefits Disbursed', color: 'text-emerald-400' },
-              { value: '500+', label: 'Active Schemes', color: 'text-blue-300' },
-              { value: '28', label: 'States Covered', color: 'text-purple-400' },
+              { value: '15 Cr+', label: t('beneficiariesStat', 'Beneficiaries Reached') },
+              { value: '₹2.5L Cr', label: t('disbursedStat', 'Benefits Disbursed') },
+              { value: '500+', label: t('activeSchemesStat', 'Active Schemes') },
+              { value: '28', label: t('statesCoveredStat', 'States Covered') },
             ].map((stat, i) => (
               <div key={i} className="space-y-1">
-                <div className={`text-3xl sm:text-4xl font-black font-heading ${stat.color} tabular-nums`}>
+                <div className="text-3xl sm:text-4xl font-black font-sans text-uswds-primary tabular-nums">
                   {stat.value}
                 </div>
-                <div className="text-[11px] font-semibold text-blue-300/80 uppercase tracking-wide">
+                <div className="text-xs font-semibold text-uswds-textMuted uppercase tracking-wide">
                   {stat.label}
                 </div>
               </div>
@@ -172,50 +151,43 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Simple 4-Step Interactive Workflow */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-6">
         <div className="text-center space-y-3 mb-10">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-800">
-            Simplified User Journey
-          </span>
-          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white font-heading">
-            {t.howItWorks}
+          <h2 className="text-3xl font-extrabold text-uswds-primary font-sans">
+            {t('howItWorks', 'How it Works')}
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
           {[
             {
-              title: t.step1Title,
-              desc: t.step1Desc,
-              icon: FileText,
-              color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800'
+              title: t('step1Title', 'Profile & Scan'),
+              desc: t('step1Desc', 'Enter details or scan documents'),
+              icon: FileText
             },
             {
-              title: t.step2Title,
-              desc: t.step2Desc,
-              icon: Zap,
-              color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
+              title: t('step2Title', 'AI Match'),
+              desc: t('step2Desc', 'Engine finds eligible schemes'),
+              icon: Zap
             },
             {
-              title: t.step3Title,
-              desc: t.step3Desc,
-              icon: Award,
-              color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800'
+              title: t('step3Title', 'Review'),
+              desc: t('step3Desc', 'Check eligibility rules'),
+              icon: Award
             },
             {
-              title: t.step4Title,
-              desc: t.step4Desc,
-              icon: ExternalLink,
-              color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800'
+              title: t('step4Title', 'Apply'),
+              desc: t('step4Desc', 'Apply via official portal'),
+              icon: ExternalLink
             }
           ].map((step, idx) => (
-            <div key={idx} className="gov-card p-6 flex flex-col justify-between space-y-4">
+            <div key={idx} className="bg-white border border-uswds-border p-6 rounded-md flex flex-col justify-between space-y-4 h-full shadow-sm">
               <div className="space-y-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold border ${step.color}`}>
+                <div className="w-10 h-10 rounded flex items-center justify-center font-bold bg-uswds-background text-uswds-primary border border-uswds-border">
                   <step.icon className="w-5 h-5" />
                 </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-white font-heading">
+                <h4 className="text-base font-bold text-uswds-primary font-sans">
                   {step.title}
                 </h4>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                <p className="text-sm text-uswds-textMuted leading-relaxed">
                   {step.desc}
                 </p>
               </div>
@@ -228,52 +200,52 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white font-heading">
-              Featured National Welfare Schemes
+            <h2 className="text-2xl font-bold text-uswds-primary font-sans">
+              {t('featuredSchemes', 'Featured National Welfare Schemes')}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Discover verified welfare initiatives across Central and State Governments.
+            <p className="text-sm text-uswds-textMuted">
+              {t('featuredSchemesDesc', 'Discover verified welfare initiatives across Central and State Governments.')}
             </p>
           </div>
           <button
             onClick={() => onNavigateTab('schemes')}
-            className="text-xs font-bold text-blue-700 dark:text-blue-400 hover:text-blue-800 flex items-center gap-1"
+            className="text-sm font-bold text-uswds-primary hover:underline flex items-center gap-1 whitespace-nowrap"
           >
-            <span>View All Schemes ({topSchemes.length}+)</span>
+            <span>{t('viewAllSchemes', 'View All Schemes')} ({topSchemes.length}+)</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {topSchemes.slice(0, 3).map(scheme => (
-            <div key={scheme.id} className="gov-card p-6 flex flex-col justify-between space-y-4">
+            <div key={scheme.id} className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow flex flex-col space-y-4 h-full">
               <div className="space-y-2">
                 <div className="flex justify-between items-start gap-2">
-                  <span className="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
-                    {scheme.state === 'Central' ? 'Central Govt' : scheme.state}
+                  <span className="bg-uswds-background text-uswds-primary border border-uswds-border text-[10px] font-bold px-2.5 py-0.5 rounded whitespace-nowrap uppercase tracking-wider">
+                    {scheme.state === 'Central' ? t('centralGovt', 'Central Govt') : scheme.state}
                   </span>
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    {scheme.financialBenefitAmount ? `Up to ₹${scheme.financialBenefitAmount.toLocaleString('en-IN')}` : 'Welfare Benefit'}
+                  <span className="text-[10px] sm:text-xs font-bold text-uswds-success text-right">
+                    {scheme.financialBenefitAmount ? `${t('upTo', 'Up to')} ₹${scheme.financialBenefitAmount.toLocaleString('en-IN')}` : t('welfareBenefit', 'Welfare Benefit')}
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-1 font-heading">
+                <h3 className="text-base font-bold text-uswds-primary line-clamp-1 font-sans">
                   {scheme.name}
                 </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                <p className="text-sm text-uswds-textMuted line-clamp-2 leading-relaxed">
                   {scheme.shortDescription}
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-xs">
-                <span className="text-slate-500 dark:text-slate-400 font-medium">
+              <div className="pt-4 border-t border-uswds-border flex flex-wrap justify-between items-center gap-2 text-xs">
+                <span className="text-uswds-textMuted font-medium bg-uswds-background px-2 py-1 border border-uswds-border rounded">
                   {scheme.category}
                 </span>
                 <button
                   onClick={() => onNavigateTab('schemes')}
-                  className="text-blue-700 dark:text-blue-400 font-bold hover:underline"
+                  className="px-4 py-2 bg-uswds-primary hover:bg-uswds-secondary text-white font-bold rounded-md transition shadow-sm"
                 >
-                  Check Eligibility →
+                  {t('checkEligibility', 'Check Eligibility')}
                 </button>
               </div>
             </div>
@@ -285,26 +257,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section className="max-w-7xl mx-auto px-4 sm:px-8">
         <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 rounded-2xl p-8 sm:p-10 text-slate-950 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="space-y-2 max-w-xl">
-            <h3 className="text-2xl font-black font-heading tracking-tight">
-              Ready to Discover Your Eligible Government Schemes?
+            <h3 className="text-xl sm:text-2xl font-black font-heading tracking-tight">
+              {t('readyToDiscover', 'Ready to Discover Your Eligible Government Schemes?')}
             </h3>
-            <p className="text-xs font-semibold opacity-90 leading-relaxed">
-              Complete your profile in 2 minutes or speak to our AI Assistant to find all welfare programs for your household.
+            <p className="text-[10px] sm:text-xs font-semibold opacity-90 leading-relaxed">
+              {t('readyToDiscoverDesc', 'Complete your profile in 2 minutes or speak to our AI Assistant to find all welfare programs for your household.')}
             </p>
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
             <button
               onClick={onGetStarted}
-              className="px-6 py-3 rounded-xl bg-slate-950 text-white font-bold text-xs hover:bg-slate-900 transition shadow"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-950 text-white font-bold text-[10px] sm:text-xs hover:bg-slate-900 transition shadow whitespace-nowrap"
             >
-              Build Profile
+              {t('buildProfile', 'Build Profile')}
             </button>
             <button
               onClick={onTalkToAI}
-              className="px-6 py-3 rounded-xl bg-white text-slate-950 font-bold text-xs hover:bg-slate-100 transition shadow flex items-center gap-1.5"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-slate-950 font-bold text-[10px] sm:text-xs hover:bg-slate-100 transition shadow flex items-center justify-center gap-1.5 whitespace-nowrap"
             >
-              <Bot className="w-4 h-4 text-blue-700" />
-              <span>Talk to AI</span>
+              <Bot className="w-4 h-4 text-blue-700 shrink-0" />
+              <span>{t('talkToAI', 'Talk to AI')}</span>
             </button>
           </div>
         </div>
