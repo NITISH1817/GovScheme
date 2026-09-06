@@ -1,5 +1,6 @@
 {
   "name": "govscheme-ai",
+  "description": "Enterprise AI-Powered Government Scheme Eligibility & Administration Platform",
   "private": true,
   "version": "1.0.0",
   "type": "module",
