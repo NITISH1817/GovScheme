@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { socketService } from './api/socketClient';
 import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile, Scheme, CombinedSchemeAnalysis, DocumentRecord, ApplicationTrackerRecord, NotificationItem } from './types';
 import { schemesData } from './data/schemes';
@@ -15,7 +16,6 @@ import { AIAssistant } from './components/AIAssistant';
 import { DocumentVault } from './components/DocumentVault';
 import { OCRScanner } from './components/OCRScanner';
 import { ApplicationTracker } from './components/ApplicationTracker';
-import { AdminPanel } from './components/AdminPanel';
 import { KioskMode } from './components/KioskMode';
 import { AuthModal } from './components/AuthModal';
 import { NotificationsModal } from './components/NotificationsModal';
@@ -83,6 +83,54 @@ export const App: React.FC = () => {
       localStorage.setItem('govscheme_user', JSON.stringify(user));
     }
   }, [user]);
+
+  // Real-time synchronization
+  useEffect(() => {
+    socketService.connect();
+
+    const handleSchemePublished = (data: { scheme: Scheme }) => {
+      setSchemes(prev => {
+        const exists = prev.find(s => s.id === data.scheme.id);
+        if (exists) {
+          return prev.map(s => s.id === data.scheme.id ? data.scheme : s);
+        }
+        return [data.scheme, ...prev];
+      });
+      // Optionally notify citizen of a new scheme
+      setNotifications(prev => [
+        {
+          id: `notif-${Date.now()}`,
+          title: `New Scheme: ${data.scheme.name}`,
+          description: data.scheme.shortDescription,
+          category: 'SchemeAlert',
+          timestamp: 'Just now',
+          read: false
+        },
+        ...prev
+      ]);
+    };
+
+    const handleSchemeUpdated = (data: { scheme: Scheme }) => {
+      setSchemes(prev => prev.map(s => s.id === data.scheme.id ? data.scheme : s));
+    };
+
+    const handleSchemeDeleted = (data: { schemeId: string }) => {
+      setSchemes(prev => prev.filter(s => s.id !== data.schemeId));
+    };
+
+    socketService.on('SCHEME_PUBLISHED', handleSchemePublished);
+    socketService.on('SCHEME_UPDATED', handleSchemeUpdated);
+    socketService.on('SCHEME_DELETED', handleSchemeDeleted);
+    socketService.on('SCHEME_CREATED', handleSchemePublished); // Treat created as published for now in the demo
+
+    return () => {
+      socketService.off('SCHEME_PUBLISHED', handleSchemePublished);
+      socketService.off('SCHEME_UPDATED', handleSchemeUpdated);
+      socketService.off('SCHEME_DELETED', handleSchemeDeleted);
+      socketService.off('SCHEME_CREATED', handleSchemePublished);
+      socketService.disconnect();
+    };
+  }, []);
 
   // Logout handler
   const handleLogout = () => {
@@ -303,14 +351,6 @@ export const App: React.FC = () => {
             onUpdateProfile={(updated) => setUser(updated)}
             onNavigateTab={setActiveTab}
             eligibleSchemesCount={eligibleSchemesCount}
-          />
-        )}
-
-        {activeTab === 'admin' && (
-          <AdminPanel
-            schemes={schemes}
-            onAddScheme={(newSch) => setSchemes(prev => [newSch, ...prev])}
-            onDeleteScheme={(id) => setSchemes(prev => prev.filter(s => s.id !== id))}
           />
         )}
       </main>

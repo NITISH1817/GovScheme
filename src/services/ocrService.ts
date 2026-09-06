@@ -1,5 +1,6 @@
 import { createWorker } from 'tesseract.js';
 import { DocumentRecord } from '../types';
+import { convertPDFToImageURLs } from './pdfHelper';
 
 export interface OCRScanResult {
   docType: DocumentRecord['type'];
@@ -27,51 +28,76 @@ const INDIAN_STATES = [
 ];
 
 function parseAadhaar(text: string): string {
-  // Match 12-digit Aadhaar: XXXX XXXX XXXX or XXXXXXXXXXXX
-  const match = text.match(/\b(\d{4}\s\d{4}\s\d{4}|\d{12})\b/);
+  // Extract all digits and look for a sequence of 12 digits
+  const digits = text.replace(/[^\d]/g, '');
+  const match = digits.match(/(\d{12})/);
   if (match) {
-    const digits = match[0].replace(/\s/g, '');
-    return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)}`;
+    const d = match[1];
+    return `${d.slice(0, 4)} ${d.slice(4, 8)} ${d.slice(8, 12)}`;
   }
   return '';
 }
 
 function parsePAN(text: string): string {
-  const match = text.match(/\b([A-Z]{5}[0-9]{4}[A-Z])\b/);
-  return match ? match[1] : '';
+  // PAN format: 5 letters, 4 numbers, 1 letter. We allow spaces/dashes that OCR might insert.
+  const cleaned = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const match = cleaned.match(/([A-Z]{5}[0-9]{4}[A-Z])/);
+  if (match) return match[1];
+  
+  // If OCR failed slightly (e.g. read O as 0), we can be very loose
+  const looseMatch = text.match(/\b([A-Z0-9]{10})\b/i);
+  return looseMatch ? looseMatch[1].toUpperCase() : '';
 }
 
 function parseName(text: string): string {
-  // Try "Name: XYZ" or "नाम: XYZ"
+  // Try "Name: XYZ" or "नाम: XYZ", forgiving on punctuation
   const patterns = [
-    /(?:Name|NAME)\s*[:\-]\s*([A-Z][A-Z\s]{3,40})/i,
-    /(?:नाम|ਨਾਮ)\s*[:\-]\s*(\S.{3,30})/,
+    /(?:Name|NAME|name)\s*[:\-]?\s*([A-Za-z\s]{3,40})/i,
+    /(?:नाम|ਨਾਮ)\s*[:\-]?\s*(\S.{3,30})/,
   ];
   for (const p of patterns) {
     const m = text.match(p);
-    if (m) return m[1].trim();
+    if (m && !m[1].toLowerCase().includes('father')) return m[1].trim();
+  }
+  
+  // For PAN, it's usually below "INCOME TAX DEPARTMENT" or "GOVT"
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].toUpperCase();
+    if (line.includes('INCOME TAX') || line.includes('GOVT') || line.includes('GOVERNMENT')) {
+      if (i + 1 < lines.length && !lines[i + 1].match(/\d/)) {
+        return lines[i + 1].replace(/[^A-Za-z\s]/g, '').trim();
+      }
+    }
   }
   return '';
 }
 
 function parseDOB(text: string): string {
-  const match = text.match(/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/);
+  // match DD/MM/YYYY or YYYY/MM/DD with spaces, dashes, slashes, or dots
+  const match = text.match(/\b(\d{2}[\/\-\.\s]\d{2}[\/\-\.\s]\d{4}|\d{4}[\/\-\.\s]\d{2}[\/\-\.\s]\d{2})\b/);
   if (match) {
-    const d = match[1];
-    // Convert DD/MM/YYYY → YYYY-MM-DD
-    if (d.length === 10 && (d[2] === '/' || d[2] === '-')) {
-      const [dd, mm, yyyy] = d.split(/[\/\-]/);
+    let d = match[1].replace(/[\.\s]/g, '-').replace(/\//g, '-');
+    if (d.length === 10 && d[2] === '-') {
+      const [dd, mm, yyyy] = d.split('-');
       return `${yyyy}-${mm}-${dd}`;
     }
     return d;
+  }
+  
+  // Try to find just YYYY (Year of Birth is common on Aadhaar)
+  const yobMatch = text.match(/(?:Year of Birth|YOB|DOB|Birth).*?(19\d{2}|20\d{2})/i);
+  if (yobMatch) {
+    return `${yobMatch[1]}-01-01`; // fallback to 1st Jan
   }
   return '';
 }
 
 function parseGender(text: string): string {
-  if (/\b(Male|MALE|M)\b/.test(text)) return 'Male';
-  if (/\b(Female|FEMALE|F)\b/.test(text)) return 'Female';
-  if (/\b(Transgender|TRANSGENDER)\b/.test(text)) return 'Transgender';
+  const lower = text.toLowerCase();
+  if (lower.includes('female') || lower.includes('mahila') || lower.includes('महिला')) return 'Female';
+  if (lower.match(/\b(male|purush|पुरुष|m)\b/)) return 'Male';
+  if (lower.includes('transgender')) return 'Transgender';
   return '';
 }
 
@@ -137,12 +163,28 @@ export async function performOCRScan(
   let confidence = 0;
 
   try {
-    const worker = await createWorker(['eng', 'hin'], 1, {
+    let imageSources: (File | string)[] = [file];
+    if (file.type === 'application/pdf') {
+      imageSources = await convertPDFToImageURLs(file);
+    }
+
+    const worker = await createWorker('eng', 1, {
       logger: () => { } // suppress logs
     });
-    const { data } = await worker.recognize(file);
-    rawText = data.text || '';
-    confidence = Math.round(data.confidence || 0);
+    
+    let combinedText = '';
+    let maxConfidence = 0;
+
+    for (const source of imageSources) {
+      const { data } = await worker.recognize(source);
+      combinedText += (data.text || '') + '\n\n';
+      if (data.confidence && data.confidence > maxConfidence) {
+        maxConfidence = data.confidence;
+      }
+    }
+    
+    rawText = combinedText;
+    confidence = Math.round(maxConfidence);
     await worker.terminate();
   } catch (err) {
     console.error('Tesseract OCR error:', err);

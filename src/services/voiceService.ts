@@ -105,3 +105,16 @@ export function stopSpeaking() {
     window.speechSynthesis.cancel();
   }
 }
+
+export function checkVoiceNavigationCommand(transcript: string): string | null {
+  const t = transcript.toLowerCase();
+  
+  if (t.match(/go to dashboard/i) || t.match(/show dashboard/i) || t.match(/open dashboard/i)) return 'dashboard';
+  if (t.match(/go to scheme/i) || t.match(/show scheme/i) || t.match(/explore scheme/i)) return 'explore';
+  if (t.match(/go to application/i) || t.match(/my application/i) || t.match(/track application/i)) return 'applications';
+  if (t.match(/go to document/i) || t.match(/my document/i) || t.match(/show document/i) || t.match(/vault/i)) return 'documents';
+  if (t.match(/go to profile/i) || t.match(/show profile/i) || t.match(/my profile/i)) return 'profile';
+  if (t.match(/talk to ai/i) || t.match(/open ai/i) || t.match(/voice assistant/i)) return 'assistant';
+
+  return null;
+}

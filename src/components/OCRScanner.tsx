@@ -109,8 +109,8 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
             <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center space-y-4 hover:border-blue-500 transition">
               <UploadCloud className="w-12 h-12 text-blue-600 mx-auto" />
               <div>
-                <span className="font-bold text-slate-900 dark:text-white text-sm block">Upload {expectedType} Image or PDF</span>
-                <span className="text-slate-500 text-xs">Supports JPG, PNG, WEBP, PDF up to 10MB</span>
+                <span className="font-bold text-slate-900 dark:text-white text-sm block">Upload {expectedType} Document (PDF/Image)</span>
+                <span className="text-slate-500 text-xs">Supports PDF, JPG, PNG up to 10MB</span>
               </div>
               <input
                 type="file"

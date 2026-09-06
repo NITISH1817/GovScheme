@@ -150,7 +150,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     logout: "Logout",
     register: "Register",
     guestMode: "Continue as Guest",
-    loginOrGuest: "Login / Guest",
+    loginOrGuest: "Login / Register",
     yourName: "Your Full Name",
     mobileNumber: "Mobile Number",
     yourState: "Your State",
