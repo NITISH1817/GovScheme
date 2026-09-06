@@ -18,6 +18,39 @@ GovScheme AI is a modern, AI-powered Government Administration and Citizen Welfa
 - **Application Tracking:** Apply for schemes and track real-time status changes.
 - **Dynamic Rule Engine:** Automatically matches user demographic data (age, income, occupation) against complex eligibility rules.
 
+## 📂 Project Architecture
+
+```
+GovScheme AI/
+├── server/                        # Express Backend
+│   ├── controllers/               # Route logic (Auth, Schemes, AI, OCR)
+│   ├── middleware/                # JWT Auth, Role Checking, Audit Logs
+│   ├── models/                    # MongoDB Schemas (User, Scheme, Logs)
+│   ├── routes/                    # API Endpoints
+│   ├── services/                  # Eligibility Engine, External Integrations
+│   ├── db.js                      # MongoDB connection & GridFS
+│   └── server.js                  # Express App Entry Point
+│
+├── src/                           # React Frontend
+│   ├── admin/                     # Admin Portal Components
+│   │   ├── components/            # Reusable Admin UI (Tables, Modals)
+│   │   ├── views/                 # Dashboard, Scheme Management, Logs
+│   │   └── AdminLayout.tsx        # Sidebar & Header Layout
+│   │
+│   ├── components/                # Citizen Portal Components
+│   │   ├── AIAssistant.tsx        # Generative AI Chat Interface
+│   │   ├── OCRScanner.tsx         # Tesseract Document Scanner
+│   │   ├── ProfileView.tsx        # Citizen Details & Document Vault
+│   │   └── SchemeExplorer.tsx     # Personalized Recommendations
+│   │
+│   ├── api/                       # API Client (Axios) & Socket.IO Listener
+│   ├── services/                  # Voice AI, Web Speech API Wrapper
+│   └── main.tsx                   # React Entry Point
+│
+├── public/locales/                # i18next Translation Files (10+ Languages)
+└── vite.config.ts                 # Production Bundle & Chunk Optimizer
+```
+
 ## Tech Stack
 - **Frontend:** React 18, TypeScript, Tailwind CSS, Framer Motion, Recharts, Vite
 - **Backend:** Node.js, Express, Socket.IO, Multer
