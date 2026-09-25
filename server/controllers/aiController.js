@@ -1,6 +1,7 @@
 import ChatHistory from '../models/ChatHistory.js';
 import Scheme from '../models/Scheme.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { schemesData } from '../../src/data/schemes.js';
 
 export const chatWithAI = async (req, res) => {
   try {
@@ -14,7 +15,7 @@ export const chatWithAI = async (req, res) => {
 export const streamChatWithAI = async (req, res) => {
   try {
     const { message } = req.body;
-    const userId = req.user._id;
+    const userId = req.user ? req.user._id : 'guest';
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -28,7 +29,7 @@ export const streamChatWithAI = async (req, res) => {
       return res.end();
     }
 
-    const schemes = await Scheme.find({ status: 'Published' }).select('name shortDescription department eligibilityRules');
+    const schemes = schemesData;
     
     // Create prompt context
     const context = `You are the GovScheme AI Assistant. You help Indian citizens discover government welfare schemes. 
@@ -38,7 +39,7 @@ ${schemes.map(s => `- ${s.name} (${s.department}): ${s.shortDescription}`).join(
 Answer the user's question accurately based on this data. Be concise, polite, and helpful.`;
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
     // Stream the response
     const result = await model.generateContentStream([context, "User Question: " + message]);
@@ -56,12 +57,14 @@ Answer the user's question accurately based on this data. Be concise, polite, an
     res.end();
     
     // Save history in the background
-    ChatHistory.findOne({ userId }).then(chatRecord => {
-      if (!chatRecord) chatRecord = new ChatHistory({ userId, messages: [] });
-      chatRecord.messages.push({ role: 'user', content: message });
-      chatRecord.messages.push({ role: 'assistant', content: fullResponse });
-      chatRecord.save();
-    });
+    if (userId !== 'guest') {
+      ChatHistory.findOne({ userId }).then(chatRecord => {
+        if (!chatRecord) chatRecord = new ChatHistory({ userId, messages: [] });
+        chatRecord.messages.push({ role: 'user', content: message });
+        chatRecord.messages.push({ role: 'assistant', content: fullResponse });
+        chatRecord.save();
+      });
+    }
 
   } catch (error) {
     console.error("AI Error:", error);
