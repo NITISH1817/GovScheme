@@ -1,44 +1,11 @@
 import ChatHistory from '../models/ChatHistory.js';
 import Scheme from '../models/Scheme.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const chatWithAI = async (req, res) => {
   try {
-    const { message, history } = req.body;
-    const userId = req.user._id;
-
-    // Fetch schemes to provide context to the AI
-    const schemes = await Scheme.find({ status: 'Published' }).select('name shortDescription department eligibilityRules');
-
-    // Simulate AI processing using a mocked service (Gemini/OpenAI would go here)
-    // We will just return a mock response that references the schemes
-    
-    let aiResponse = "I'm sorry, I couldn't process your request.";
-    const lowerMsg = message.toLowerCase();
-
-    if (lowerMsg.includes('farmer') || lowerMsg.includes('agriculture')) {
-      const farmerSchemes = schemes.filter(s => s.name.toLowerCase().includes('kisan') || s.department.toLowerCase().includes('agriculture'));
-      if (farmerSchemes.length > 0) {
-        aiResponse = `Based on our current database, here are some farmer schemes: ${farmerSchemes.map(s => s.name).join(', ')}.`;
-      } else {
-        aiResponse = "I couldn't find any farmer schemes at the moment.";
-      }
-    } else if (lowerMsg.includes('student') || lowerMsg.includes('scholarship')) {
-        aiResponse = "We have several scholarships available for students. Please check the 'Education' category in the Schemes list.";
-    } else {
-        aiResponse = `I understand you are asking about: "${message}". I can help you find schemes, explain eligibility, or guide you through the application process.`;
-    }
-
-    // Save to ChatHistory
-    let chatRecord = await ChatHistory.findOne({ userId });
-    if (!chatRecord) {
-      chatRecord = new ChatHistory({ userId, messages: [] });
-    }
-    
-    chatRecord.messages.push({ role: 'user', content: message });
-    chatRecord.messages.push({ role: 'assistant', content: aiResponse });
-    await chatRecord.save();
-
-    res.json({ success: true, reply: aiResponse });
+    const { message } = req.body;
+    res.json({ success: true, reply: "Please use the streaming endpoint." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -52,49 +19,53 @@ export const streamChatWithAI = async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders(); // flush the headers to establish SSE
+    res.flushHeaders(); 
 
-    const schemes = await Scheme.find({ status: 'Published' }).select('name shortDescription department');
-    
-    let aiResponse = "I'm sorry, I couldn't process your request.";
-    const lowerMsg = message.toLowerCase();
-
-    if (lowerMsg.includes('farmer') || lowerMsg.includes('agriculture')) {
-      const farmerSchemes = schemes.filter(s => s.name.toLowerCase().includes('kisan') || s.department.toLowerCase().includes('agriculture'));
-      if (farmerSchemes.length > 0) {
-        aiResponse = `Based on our database, here are some farmer schemes: ${farmerSchemes.map(s => s.name).join(', ')}.`;
-      }
-    } else if (lowerMsg.includes('student') || lowerMsg.includes('scholarship')) {
-        aiResponse = "We have several scholarships available for students. Please check the 'Education' category.";
-    } else {
-        aiResponse = `I understand you are asking about: "${message}". Let me search our live database for relevant schemes and eligibility rules.`;
+    if (!process.env.GEMINI_API_KEY) {
+      const errorMsg = "GEMINI_API_KEY is not set. Please add it to your .env file and restart the server to enable real AI responses.";
+      res.write(`data: ${JSON.stringify({ text: errorMsg })}\n\n`);
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      return res.end();
     }
 
-    // Simulate streaming the response word by word
-    const words = aiResponse.split(' ');
-    let currentIndex = 0;
+    const schemes = await Scheme.find({ status: 'Published' }).select('name shortDescription department eligibilityRules');
+    
+    // Create prompt context
+    const context = `You are the GovScheme AI Assistant. You help Indian citizens discover government welfare schemes. 
+Here is a summary of the currently published schemes in our database:
+${schemes.map(s => `- ${s.name} (${s.department}): ${s.shortDescription}`).join('\n')}
 
-    const interval = setInterval(() => {
-      if (currentIndex < words.length) {
-        res.write(`data: ${JSON.stringify({ text: words[currentIndex] + ' ' })}\n\n`);
-        currentIndex++;
-      } else {
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-        clearInterval(interval);
-        res.end();
-        
-        // Save history in the background
-        ChatHistory.findOne({ userId }).then(chatRecord => {
-          if (!chatRecord) chatRecord = new ChatHistory({ userId, messages: [] });
-          chatRecord.messages.push({ role: 'user', content: message });
-          chatRecord.messages.push({ role: 'assistant', content: aiResponse });
-          chatRecord.save();
-        });
-      }
-    }, 50);
+Answer the user's question accurately based on this data. Be concise, polite, and helpful.`;
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // Stream the response
+    const result = await model.generateContentStream([context, "User Question: " + message]);
+
+    let fullResponse = "";
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullResponse += chunkText;
+      // Send chunk to client
+      res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+    }
+
+    // Finish stream
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+    
+    // Save history in the background
+    ChatHistory.findOne({ userId }).then(chatRecord => {
+      if (!chatRecord) chatRecord = new ChatHistory({ userId, messages: [] });
+      chatRecord.messages.push({ role: 'user', content: message });
+      chatRecord.messages.push({ role: 'assistant', content: fullResponse });
+      chatRecord.save();
+    });
 
   } catch (error) {
-    res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+    console.error("AI Error:", error);
+    res.write(`data: ${JSON.stringify({ error: "Failed to communicate with AI model. Ensure API key is valid." })}\n\n`);
     res.end();
   }
 };
