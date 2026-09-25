@@ -1,89 +1,77 @@
 import { UserProfile, Scheme, RuleEvaluationResult } from '../types';
+import i18n from '../i18n';
 
-/**
- * Deterministic Rule-Based Eligibility Engine
- * CRITICAL RULE: Legal eligibility is strictly computed using deterministic rules.
- * Never substitute ML for legal eligibility verification.
- */
 export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): RuleEvaluationResult {
   const rules = scheme.eligibilityRules;
   const matchedCriteria: string[] = [];
   const failedCriteria: string[] = [];
   const missingDocuments: string[] = [];
 
-  // 1. Age Verification
   if (rules.minAge !== undefined || rules.maxAge !== undefined) {
     const minAge = rules.minAge ?? 0;
     const maxAge = rules.maxAge ?? 120;
     if (user.age >= minAge && user.age <= maxAge) {
-      matchedCriteria.push(`Age Requirement Met (${user.age} yrs within ${minAge}-${maxAge} range)`);
+      matchedCriteria.push(`${i18n.t('Age Requirement Met', 'Age Requirement Met')} (${user.age} yrs within ${minAge}-${maxAge} range)`);
     } else {
-      failedCriteria.push(`Age ${user.age} yrs does not satisfy required range (${minAge}-${maxAge} yrs)`);
+      failedCriteria.push(i18n.t('ruleAgeFailed', { userAge: user.age, minAge, maxAge, defaultValue: `Age ${user.age} yrs does not satisfy required range (${minAge}-${maxAge} yrs)` }));
     }
   }
 
-  // 2. Gender Verification
   if (rules.allowedGenders && rules.allowedGenders.length > 0 && !rules.allowedGenders.includes('All')) {
     if (rules.allowedGenders.includes(user.gender)) {
-      matchedCriteria.push(`Gender requirement met (${user.gender})`);
+      matchedCriteria.push(`${i18n.t('Gender requirement met', 'Gender requirement met')} (${i18n.t(user.gender, user.gender)})`);
     } else {
-      failedCriteria.push(`Targeted for ${rules.allowedGenders.join(', ')} (User is ${user.gender})`);
+      failedCriteria.push(`Targeted for ${rules.allowedGenders.map(g => i18n.t(g, g)).join(', ')} (User is ${i18n.t(user.gender, user.gender)})`);
     }
   }
 
-  // 3. State / Jurisdiction Verification
   if (scheme.state !== 'Central' && rules.allowedStates && rules.allowedStates.length > 0) {
     const stateMatched = rules.allowedStates.some(s => s.toLowerCase() === user.state.toLowerCase());
     if (stateMatched) {
-      matchedCriteria.push(`Resident of ${user.state}`);
+      matchedCriteria.push(`${i18n.t('Resident of', 'Resident of')} ${i18n.t(user.state, user.state)}`);
     } else {
-      failedCriteria.push(`Scheme restricted to ${rules.allowedStates.join(', ')} (User in ${user.state})`);
+      failedCriteria.push(`Scheme restricted to ${rules.allowedStates.map(s => i18n.t(s, s)).join(', ')} (User in ${i18n.t(user.state, user.state)})`);
     }
   } else if (scheme.state === 'Central') {
-    matchedCriteria.push(`Central Scheme open across India`);
+    matchedCriteria.push(i18n.t('Central Scheme open across India', 'Central Scheme open across India'));
   }
 
-  // 4. Annual Income Verification
   if (rules.maxAnnualIncome !== undefined) {
     if (user.annualIncome <= rules.maxAnnualIncome) {
-      matchedCriteria.push(`Income ₹${user.annualIncome.toLocaleString('en-IN')}/yr below limit of ₹${rules.maxAnnualIncome.toLocaleString('en-IN')}/yr`);
+      matchedCriteria.push(`${i18n.t('Income', 'Income')} ₹${user.annualIncome.toLocaleString('en-IN')}/yr below limit of ₹${rules.maxAnnualIncome.toLocaleString('en-IN')}/yr`);
     } else {
-      failedCriteria.push(`Income ₹${user.annualIncome.toLocaleString('en-IN')}/yr exceeds upper threshold of ₹${rules.maxAnnualIncome.toLocaleString('en-IN')}/yr`);
+      failedCriteria.push(`${i18n.t('Income', 'Income')} ₹${user.annualIncome.toLocaleString('en-IN')}/yr exceeds upper threshold of ₹${rules.maxAnnualIncome.toLocaleString('en-IN')}/yr`);
     }
   }
 
-  // 5. Occupation Verification
   if (rules.allowedOccupations && rules.allowedOccupations.length > 0) {
     const occupationMatched = rules.allowedOccupations.some(occ => 
       occ.toLowerCase().includes(user.occupation.toLowerCase()) || 
       user.occupation.toLowerCase().includes(occ.toLowerCase())
     );
     if (occupationMatched) {
-      matchedCriteria.push(`Occupation matches (${user.occupation})`);
+      matchedCriteria.push(`${i18n.t('Occupation matches', 'Occupation matches')} (${i18n.t(user.occupation, user.occupation)})`);
     } else {
-      failedCriteria.push(`Requires occupation like ${rules.allowedOccupations.join(', ')} (User is ${user.occupation})`);
+      failedCriteria.push(`Requires occupation like ${rules.allowedOccupations.map(o => i18n.t(o, o)).join(', ')} (User is ${i18n.t(user.occupation, user.occupation)})`);
     }
   }
 
-  // 6. Land Holding Verification
   if (rules.maxLandHoldingAcres !== undefined) {
     if (user.landHoldingAcres <= rules.maxLandHoldingAcres) {
-      matchedCriteria.push(`Land holding ${user.landHoldingAcres} acres within ceiling of ${rules.maxLandHoldingAcres} acres`);
+      matchedCriteria.push(i18n.t('ruleLandMet', { userLand: user.landHoldingAcres, maxLand: rules.maxLandHoldingAcres, defaultValue: `Land holding ${user.landHoldingAcres} acres within ceiling of ${rules.maxLandHoldingAcres} acres` }));
     } else {
-      failedCriteria.push(`Land holding ${user.landHoldingAcres} acres exceeds limit of ${rules.maxLandHoldingAcres} acres`);
+      failedCriteria.push(i18n.t('ruleLandFailed', { userLand: user.landHoldingAcres, maxLand: rules.maxLandHoldingAcres, defaultValue: `Land holding ${user.landHoldingAcres} acres exceeds limit of ${rules.maxLandHoldingAcres} acres` }));
     }
   }
 
-  // 7. Social Category Verification
   if (rules.allowedCategories && rules.allowedCategories.length > 0 && !rules.allowedCategories.includes('All')) {
     if (rules.allowedCategories.includes(user.category)) {
-      matchedCriteria.push(`Social Category requirement met (${user.category})`);
+      matchedCriteria.push(`${i18n.t('Social Category requirement met', 'Social Category requirement met')} (${i18n.t(user.category, user.category)})`);
     } else {
-      failedCriteria.push(`Restricted to ${rules.allowedCategories.join(', ')} (User category: ${user.category})`);
+      failedCriteria.push(`Restricted to ${rules.allowedCategories.map(c => i18n.t(c, c)).join(', ')} (User category: ${i18n.t(user.category, user.category)})`);
     }
   }
 
-  // 8. Disability Verification
   if (rules.requiresDisability) {
     if (user.hasDisability) {
       const minPerc = rules.minDisabilityPercentage ?? 40;
@@ -94,11 +82,10 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
         failedCriteria.push(`Requires at least ${minPerc}% disability (User certified at ${userPerc}%)`);
       }
     } else {
-      failedCriteria.push(`Requires disability certificate`);
+      failedCriteria.push(i18n.t('ruleDisabilityFailedCert', 'Requires disability certificate'));
     }
   }
 
-  // 9. Document Vault Verification
   const uploadedDocTypes = user.documents.map(d => d.type);
   scheme.requiredDocuments.forEach(reqDoc => {
     const isDocPresent = uploadedDocTypes.some(docType => 
@@ -109,19 +96,20 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     }
   });
 
-  // Calculate Status
   let status: 'Eligible' | 'Conditionally Eligible' | 'Not Eligible';
   let overallReason = '';
 
   if (failedCriteria.length === 0 && missingDocuments.length === 0) {
     status = 'Eligible';
-    overallReason = `Full eligibility verified! All ${matchedCriteria.length} criteria met and all required documents present in Document Vault.`;
+    overallReason = i18n.t('ruleEligible', { count: matchedCriteria.length, defaultValue: `Full eligibility verified! All ${matchedCriteria.length} criteria met and all required documents present in Document Vault.` });
   } else if (failedCriteria.length === 0 && missingDocuments.length > 0) {
     status = 'Conditionally Eligible';
-    overallReason = `Eligible based on profile criteria, but missing ${missingDocuments.length} document(s) in Document Vault (${missingDocuments.join(', ')}). Upload before applying on official portal.`;
+    const docsStr = missingDocuments.map(d => i18n.t(d, d)).join(', ');
+    overallReason = i18n.t('ruleConditional', { count: missingDocuments.length, docs: docsStr, defaultValue: `Eligible based on profile criteria, but missing ${missingDocuments.length} document(s) in Document Vault (${docsStr}). Upload before applying on official portal.` });
   } else {
     status = 'Not Eligible';
-    overallReason = `Does not meet core requirements: ${failedCriteria.join('; ')}`;
+    const critStr = failedCriteria.map(c => i18n.t(c, c)).join('; ');
+    overallReason = i18n.t('ruleNotEligible', { criteria: critStr, defaultValue: `Does not meet core requirements: ${critStr}` });
   }
 
   return {

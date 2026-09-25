@@ -10,7 +10,7 @@ i18n
   .init({
     fallbackLng: 'en',
     backend: {
-      loadPath: '/locales/{{lng}}/translation.json',
+      loadPath: '/locales/{{lng}}/translation.json?v=2',
     },
     interpolation: {
       escapeValue: false, // React already safe from xss

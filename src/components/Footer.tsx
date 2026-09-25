@@ -93,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
                     rel="noopener noreferrer"
                     className="hover:text-amber-400 transition flex items-center justify-between text-slate-400 hover:text-white"
                   >
-                    <span>{link.name}</span>
+                    <span>{t(link.name, link.name)}</span>
                     <ExternalLink className="w-3 h-3 text-slate-500" />
                   </a>
                 </li>
@@ -109,15 +109,15 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
             <div className="space-y-2 text-xs">
               <div className="flex items-center gap-2 text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-amber-400" />
-                <span>PM-KISAN Helpline: <strong>155261 / 011-24300606</strong></span>
+                <span>{t("PM-KISAN Helpline", "PM-KISAN Helpline")}: <strong>155261 / 011-24300606</strong></span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Ayushman Bharat: <strong>14555</strong></span>
+                <span>{t("Ayushman Bharat", "Ayushman Bharat")}: <strong>14555</strong></span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-blue-400" />
-                <span>National Pension Portal: <strong>1800-11-0001</strong></span>
+                <span>{t("National Pension Portal", "National Pension Portal")}: <strong>1800-11-0001</strong></span>
               </div>
             </div>
 

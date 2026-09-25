@@ -197,5 +197,13 @@
   "nationalHelplines": "National Helplines",
   "transparencyTitle": "TRANSPARENCY DISCLAIMER",
   "footerRights": "© 2026 GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.",
-  "nationalPortal": "National Portal of India"
+  "nationalPortal": "National Portal of India",
+  "pmay-g_name": "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
+  "pmay-g_desc": "Financial assistance to construct pucca houses with basic amenities for homeless and kutcha house dwellers.",
+  "pmjay-ayushman_name": "Ayushman Bharat - PM Jan Arogya Yojana (PM-JAY)",
+  "pmjay-ayushman_desc": "World's largest health insurance scheme providing ₹5 Lakh per family per year for secondary and tertiary hospitalization.",
+  "pm-fasal-bima_name": "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+  "pm-fasal-bima_desc": "Comprehensive crop insurance scheme providing financial support to farmers suffering crop loss from natural calamities, pests, and diseases.",
+  "pm-kisan_name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+  "pm-kisan_desc": "Income support of ₹6,000 per year in three equal installments to all landholding farmer families across India."
 }

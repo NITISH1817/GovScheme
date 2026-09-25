@@ -57,7 +57,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
         mlResult
       };
     });
-  }, [schemes, user]);
+  }, [schemes, user, t]);
 
   // Unique Filter Options
   const statesList = useMemo(() => {
@@ -128,7 +128,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">
             <Building2 className="w-4 h-4 text-amber-500" />
-            <span>NATIONAL WELFARE SCHEME DISCOVERY PORTAL</span>
+            <span>{t("portalTagline", "NATIONAL WELFARE SCHEME DISCOVERY PORTAL")}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-uswds-primary font-sans flex items-center gap-2 tracking-tight">
             <Sparkles className="w-8 h-8 text-uswds-secondary" />
@@ -143,7 +143,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-uswds-textMuted" />
           <input
             type="text"
-            placeholder={t('searchSchemes', 'Search for schemes, e.g. "Agriculture", "Housing"')}
+            placeholder={t('searchPlaceholder', 'Search for schemes, e.g. "Agriculture", "Housing"')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-10 py-2.5 rounded border border-uswds-border bg-white text-uswds-text font-medium text-sm focus:ring-2 focus:ring-uswds-primary shadow-sm outline-none"
@@ -195,9 +195,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
           onChange={(e) => setSelectedStateFilter(e.target.value)}
           className="px-3 py-1.5 rounded border border-uswds-border bg-white text-uswds-text font-medium focus:ring-2 focus:ring-uswds-primary outline-none"
         >
-          <option value="All">State: All</option>
+          <option value="All">{t('stateAll', 'State: All')}</option>
           {statesList.filter(s => s !== 'All').map(st => (
-            <option key={st} value={st}>{st}</option>
+            <option key={st} value={st}>{t(st, st)}</option>
           ))}
         </select>
 
@@ -279,7 +279,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="bg-uswds-background text-uswds-primary border border-uswds-border text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                        {scheme.state === 'Central' ? 'Central' : scheme.state}
+                        {scheme.state === 'Central' ? t('Central', 'Central') : t(scheme.state, scheme.state)}
                       </span>
 
                       {/* Rule Engine Status Badge */}

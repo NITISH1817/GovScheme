@@ -74,7 +74,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               {scheme.state === 'Central' ? t('centralGovtScheme', 'Central Govt Scheme') : scheme.state}
             </span>
             <span className="bg-blue-950/80 border border-blue-700 text-blue-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-              {scheme.category}
+              {t(scheme.category, scheme.category)}
             </span>
             <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
               {t('matchScore', 'Match Score')}: {mlResult.confidenceScore}%
@@ -85,7 +85,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
             {t(`${scheme.id}_name`, scheme.name)}
           </h2>
           <p className="text-xs text-blue-200 mt-2">
-            {scheme.ministry} • {scheme.department}
+            {t(scheme.ministry, scheme.ministry)} • {scheme.department ? t(scheme.department, scheme.department) : ''}
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   {ruleResult.matchedCriteria.map((c, i) => (
                     <div key={i} className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium">
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span>{c}</span>
+                      <span>{t(c, c)}</span>
                     </div>
                   ))}
                 </div>
@@ -134,7 +134,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <span className="font-bold text-amber-800 dark:text-amber-300 block">{t('missingRequirements', 'Missing Requirements / Documents')}:</span>
                 <ul className="list-disc pl-5 space-y-1 text-amber-700 dark:text-amber-400 font-medium">
                   {ruleResult.missingDocuments.map((doc, i) => (
-                    <li key={i}>{t('missingInVault', 'Missing in Vault')}: <strong>{doc}</strong></li>
+                    <li key={i}>{t('missingInVault', 'Missing in Vault')}: <strong>{t(doc, doc)}</strong></li>
                   ))}
                 </ul>
                 <p className="text-[11px] text-slate-500 mt-2">
@@ -155,7 +155,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               </p>
               <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
                 <span className="font-bold text-blue-900 dark:text-blue-300 block mb-1">{t('financialBenefitSummary', 'Financial Benefit Summary')}</span>
-                <p className="text-xs text-blue-800 dark:text-blue-200">{scheme.benefitsSummary}</p>
+                <p className="text-xs text-blue-800 dark:text-blue-200">{t(`${scheme.id}_benefits`, scheme.benefitsSummary)}</p>
               </div>
             </div>
 
@@ -165,7 +165,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                   <Calendar className="w-4 h-4 text-amber-500" />
-                  <span>{t('deadline', 'Deadline')}: <strong>{scheme.deadline}</strong></span>
+                  <span>{t('deadline', 'Deadline')}: <strong>{t(scheme.deadline, scheme.deadline)}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                   <Phone className="w-4 h-4 text-emerald-500" />
@@ -179,7 +179,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 </div>
                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                   <Building2 className="w-4 h-4 text-blue-500" />
-                  <span>{t('state', 'State')}: <strong>{scheme.state}</strong></span>
+                  <span>{t('state', 'State')}: <strong>{t(scheme.state, scheme.state)}</strong></span>
                 </div>
               </div>
             </div>
@@ -193,7 +193,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {scheme.requiredDocuments.map((doc, idx) => (
                 <div key={idx} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                  <span className="font-medium text-slate-800 dark:text-slate-200">{doc}</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{t(doc, doc)}</span>
                   <FileText className="w-4 h-4 text-slate-400" />
                 </div>
               ))}
@@ -207,7 +207,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
             </h3>
             <ol className="space-y-2 list-decimal pl-5 text-slate-600 dark:text-slate-300">
               {scheme.applicationSteps.map((step, idx) => (
-                <li key={idx} className="leading-relaxed">{step}</li>
+                <li key={idx} className="leading-relaxed">{t(step, step)}</li>
               ))}
             </ol>
           </div>
@@ -221,8 +221,8 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               <div className="space-y-3">
                 {scheme.faqs.map((faq, idx) => (
                   <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                    <span className="font-bold text-slate-900 dark:text-white block mb-1">{t('q_question', 'Q')}: {faq.question}</span>
-                    <p className="text-slate-600 dark:text-slate-400">{faq.answer}</p>
+                    <span className="font-bold text-slate-900 dark:text-white block mb-1">{t('q_question', 'Q')}: {t(faq.question, faq.question)}</span>
+                    <p className="text-slate-600 dark:text-slate-400">{t(faq.answer, faq.answer)}</p>
                   </div>
                 ))}
               </div>

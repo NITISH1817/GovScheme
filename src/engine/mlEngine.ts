@@ -1,4 +1,5 @@
 import { UserProfile, Scheme, RuleEvaluationResult, MLRecommendationResult } from '../types';
+import i18n from '../i18n';
 
 /**
  * Machine Learning Recommendation Scoring & Personalization Engine
@@ -84,11 +85,27 @@ function generateExplainabilityText(
   score: number
 ): string {
   if (ruleResult.status === 'Eligible') {
-    return `Highly recommended (${score}% match score). You satisfy all legal criteria as a ${user.occupation} residing in ${user.state}. Financial benefit of ₹${(scheme.financialBenefitAmount || 0).toLocaleString('en-IN')} available upon application.`;
+    return i18n.t('reasonEligible', {
+      defaultValue: `Highly recommended ({{score}}% match score). You satisfy all legal criteria as a {{occupation}} residing in {{state}}. Financial benefit of ₹{{benefit}} available upon application.`,
+      score,
+      occupation: i18n.t(user.occupation, user.occupation),
+      state: i18n.t(user.state, user.state),
+      benefit: (scheme.financialBenefitAmount || 0).toLocaleString('en-IN')
+    });
   } else if (ruleResult.status === 'Conditionally Eligible') {
-    return `Strong recommendation (${score}% match score). Your profile meets criteria, but you need to upload ${ruleResult.missingDocuments.join(', ')} to complete verification before submitting on the official portal.`;
+    const docs = ruleResult.missingDocuments.map(d => i18n.t(d, d)).join(', ');
+    return i18n.t('reasonConditional', {
+      defaultValue: `Strong recommendation ({{score}}% match score). Your profile meets criteria, but you need to upload {{docs}} to complete verification before submitting on the official portal.`,
+      score,
+      docs
+    });
   } else {
-    return `Low match score (${score}%). Does not satisfy core requirements: ${ruleResult.failedCriteria.slice(0, 2).join(', ')}.`;
+    const criteria = ruleResult.failedCriteria.slice(0, 2).map(c => i18n.t(c, c)).join(', ');
+    return i18n.t('reasonNotEligible', {
+      defaultValue: `Low match score ({{score}}%). Does not satisfy core requirements: {{criteria}}.`,
+      score,
+      criteria
+    });
   }
 }
 

@@ -54,7 +54,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-lg text-slate-900 dark:text-white font-heading">
-                    {app.schemeName}
+                    {t(`${app.schemeId}_name`, app.schemeName)}
                   </span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                     app.status === 'Approved' || app.status === 'Benefit Released'

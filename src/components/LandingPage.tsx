@@ -239,7 +239,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <div className="pt-4 border-t border-uswds-border flex flex-wrap justify-between items-center gap-2 text-xs">
                 <span className="text-uswds-textMuted font-medium bg-uswds-background px-2 py-1 border border-uswds-border rounded">
-                  {scheme.category}
+                  {t(scheme.category, scheme.category)}
                 </span>
                 <button
                   onClick={() => onNavigateTab('schemes')}
