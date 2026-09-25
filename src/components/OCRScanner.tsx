@@ -33,6 +33,12 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   const [editableDocNumber, setEditableDocNumber] = useState('');
   const [editableName, setEditableName] = useState('');
   const [editableIncome, setEditableIncome] = useState<number | undefined>(undefined);
+  const [selectedRawText, setSelectedRawText] = useState('');
+
+  const handleRawTextSelection = () => {
+    const text = window.getSelection()?.toString().trim() || '';
+    setSelectedRawText(text);
+  };
 
   if (!isOpen) return null;
 
@@ -207,10 +213,48 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
 
                 {/* Raw OCR Text Preview Box */}
                 <div className="pt-2">
-                  <span className="text-[10px] font-bold text-slate-500 block mb-1">Raw OCR Extracted Preview:</span>
-                  <pre className="p-2.5 rounded-lg bg-slate-900 text-slate-300 text-[10px] font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-bold text-slate-500 block">Raw OCR Extracted Preview (Highlight text to auto-fill):</span>
+                  </div>
+                  <pre 
+                    className="p-2.5 rounded-lg bg-slate-900 text-slate-300 text-[10px] font-mono whitespace-pre-wrap max-h-24 overflow-y-auto cursor-text selection:bg-blue-500/50"
+                    onMouseUp={handleRawTextSelection}
+                  >
                     {scanResult.rawTextPreview}
                   </pre>
+
+                  {selectedRawText && (
+                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 rounded-lg animate-in fade-in slide-in-from-top-2">
+                      <span className="text-[10px] font-bold text-blue-800 dark:text-blue-300 block mb-1.5">
+                        Use "{selectedRawText.length > 30 ? selectedRawText.substring(0, 30) + '...' : selectedRawText}" for:
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <button 
+                          onClick={() => setEditableDocNumber(selectedRawText)}
+                          className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-md text-[10px] font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-100 transition shadow-sm"
+                        >
+                          Document Number
+                        </button>
+                        <button 
+                          onClick={() => setEditableName(selectedRawText)}
+                          className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-md text-[10px] font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-100 transition shadow-sm"
+                        >
+                          Name on Document
+                        </button>
+                        {expectedType === 'Income Certificate' && (
+                          <button 
+                            onClick={() => {
+                              const num = Number(selectedRawText.replace(/\D/g, ''));
+                              if (!isNaN(num) && num > 0) setEditableIncome(num);
+                            }}
+                            className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-md text-[10px] font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-100 transition shadow-sm"
+                          >
+                            Annual Income (₹)
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
