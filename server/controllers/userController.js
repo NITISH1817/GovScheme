@@ -54,7 +54,7 @@ export const updateUserStatus = async (req, res) => {
     }
     
     // Prevent suspending another SuperAdmin or yourself
-    if (user.role === 'SuperAdmin' || req.user._id.toString() === user._id.toString()) {
+    if (user.role === 'Super Admin' || req.user._id.toString() === user._id.toString()) {
       return res.status(400).json({ success: false, message: 'Cannot suspend this admin account' });
     }
     

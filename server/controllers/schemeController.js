@@ -9,7 +9,7 @@ export const getSchemes = async (req, res) => {
     
     let filter = {};
     
-    if (req.user && (req.user.role === 'SuperAdmin' || req.user.role === 'NodalOfficer')) {
+    if (req.user && (req.user.role === 'Super Admin' || req.user.role === 'NodalOfficer')) {
       if (status && status !== 'All') filter.status = status;
     } else {
       filter.status = 'Published';

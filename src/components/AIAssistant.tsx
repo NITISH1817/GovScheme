@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Bot,
   Send,
@@ -31,6 +32,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   currentLang,
   onNavigateTab
 }) => {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-init',
@@ -206,12 +208,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold font-heading text-slate-900 dark:text-white">GovScheme AI Assistant</h2>
+                <h2 className="text-lg font-bold font-heading text-slate-900 dark:text-white">{t('aiAssistantTitle', 'GovScheme AI Assistant')}</h2>
                 <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
                   <span className="pulse-dot"></span> Online
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Multilingual Voice & Chat Assistance for Rural Citizens</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('aiAssistantDesc', 'Multilingual Voice & Chat Assistance for Rural Citizens')}</p>
             </div>
           </div>
 
@@ -334,7 +336,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={isListening ? "Listening... Speak your question now" : "Ask about schemes, eligibility, required documents..."}
+              placeholder={isListening ? "Listening... Speak your question now" : t('askAboutSchemes', 'Ask about schemes, eligibility, required documents...')}
               className="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-blue-600 outline-none"
             />
 
@@ -344,7 +346,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               disabled={!inputText.trim()}
               className="px-5 py-3 rounded-xl bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
             >
-              <span>Send</span>
+              <span>{t('send', 'Send')}</span>
               <Send className="w-4 h-4" />
             </button>
           </form>

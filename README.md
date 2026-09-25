@@ -1,94 +1,85 @@
-# GovScheme AI - Enterprise Platform
+# GovScheme AI - National Government Scheme Eligibility Recommender
 
-GovScheme AI is a modern, AI-powered Government Administration and Citizen Welfare Portal. It provides an enterprise-grade ecosystem for administrators to manage schemes, while offering rural households and citizens an accessible, multilingual, AI-driven interface to discover and apply for benefits.
+GovScheme AI is a centralized, AI-powered administration platform designed to manage government welfare schemes, streamline citizen applications, and leverage artificial intelligence for eligibility verification and multilingual support. It acts as a bridge between the Government of India and the citizens, empowering users to discover, apply for, and track welfare schemes effortlessly.
 
-## Features
+## 🚀 Key Features
 
-### 🏢 Enterprise Admin Portal
-- **Role-Based Access Control (RBAC):** Super Admin, Ministry Admin, State Admin, Nodal Officer, etc.
-- **Advanced Dashboard Analytics:** Powered by Recharts. View users, applications, OCR usage, and dynamic charts with time-range filtering.
-- **Complete Scheme Management:** Add, edit, archive, publish, duplicate, and bulk-import schemes via CSV.
-- **Real-Time Synchronization:** Powered by Socket.IO. Admin updates reflect instantly on the Citizen portal without refreshing.
-- **Audit Trails & Notifications:** Track all administrative actions and broadcast system-wide alerts.
+### For Citizens
+*   **Multilingual Support**: Fully accessible in 5 major languages: English, Hindi (हिन्दी), Tamil (தமிழ்), Telugu (తెలుగు), and Malayalam (മലയാളം).
+*   **AI-Powered Scheme Discovery**: A conversational AI assistant that understands natural language to recommend relevant government schemes based on the user's demographic and financial profile.
+*   **Rule-Based Eligibility Engine**: Automatically filters schemes that users are eligible for based on their customized profiles (Income, Category, Land Holding, etc.).
+*   **Document Vault & OCR Scanner**: Securely upload and store necessary documents (Aadhaar, PAN, Income Certificates). Built-in OCR extraction assists in auto-filling verification forms.
+*   **Application Status Tracker**: Real-time tracking of scheme applications (Pending, Approved, Rejected) directly from the dashboard.
+*   **CSC Gram Panchayat Kiosk Mode**: A dedicated mode designed for Common Service Centers (CSCs) to assist multiple rural citizens from a single shared terminal.
 
-### 👥 Citizen Portal
-- **AI Scheme Assistant:** Streaming ChatGPT-style bot to answer queries and recommend personalized schemes based on user profiles.
-- **Voice Navigation:** Multilingual Speech-to-Text (STT) and Text-to-Speech (TTS) for accessibility.
-- **OCR Document Scanner:** Automatically extract details from Aadhaar, Income Certificates, and Passbooks.
-- **Application Tracking:** Apply for schemes and track real-time status changes.
-- **Dynamic Rule Engine:** Automatically matches user demographic data (age, income, occupation) against complex eligibility rules.
+### For Administrators & Nodal Officers
+*   **System Dashboard**: Real-time analytics on user registrations, OCR processing rates, API health, and application statuses visualized via comprehensive charts.
+*   **Scheme Management**: Create, edit, publish, or archive welfare schemes. Set detailed eligibility criteria and financial benefit amounts.
+*   **Data Ingestion**: Directly import raw JSON scheme feeds from official government APIs (`data.gov.in`, `myscheme.gov.in`).
+*   **Push Broadcasts**: Send urgent notifications and deadline reminders instantly to all registered citizen profiles.
+*   **Auditing & Logs**: End-to-end AI log monitoring and administrative audit trails for transparency.
 
-## 📂 Project Architecture
+## 🛠️ Technology Stack
 
-```
-GovScheme AI/
-├── server/                        # Express Backend
-│   ├── controllers/               # Route logic (Auth, Schemes, AI, OCR)
-│   ├── middleware/                # JWT Auth, Role Checking, Audit Logs
-│   ├── models/                    # MongoDB Schemas (User, Scheme, Logs)
-│   ├── routes/                    # API Endpoints
-│   ├── services/                  # Eligibility Engine, External Integrations
-│   ├── db.js                      # MongoDB connection & GridFS
-│   └── server.js                  # Express App Entry Point
-│
-├── src/                           # React Frontend
-│   ├── admin/                     # Admin Portal Components
-│   │   ├── components/            # Reusable Admin UI (Tables, Modals)
-│   │   ├── views/                 # Dashboard, Scheme Management, Logs
-│   │   └── AdminLayout.tsx        # Sidebar & Header Layout
-│   │
-│   ├── components/                # Citizen Portal Components
-│   │   ├── AIAssistant.tsx        # Generative AI Chat Interface
-│   │   ├── OCRScanner.tsx         # Tesseract Document Scanner
-│   │   ├── ProfileView.tsx        # Citizen Details & Document Vault
-│   │   └── SchemeExplorer.tsx     # Personalized Recommendations
-│   │
-│   ├── api/                       # API Client (Axios) & Socket.IO Listener
-│   ├── services/                  # Voice AI, Web Speech API Wrapper
-│   └── main.tsx                   # React Entry Point
-│
-├── public/locales/                # i18next Translation Files (10+ Languages)
-└── vite.config.ts                 # Production Bundle & Chunk Optimizer
-```
+*   **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, Framer Motion (Animations), Recharts (Analytics Data Visualization), React-i18next (Internationalization).
+*   **Backend**: Node.js, Express.js, Socket.IO (for real-time updates).
+*   **Database**: In-Memory MongoDB (mocked for development).
+*   **Security**: Helmet, Express Rate Limiter, JWT Authentication.
 
-## Tech Stack
-- **Frontend:** React 18, TypeScript, Tailwind CSS, Framer Motion, Recharts, Vite
-- **Backend:** Node.js, Express, Socket.IO, Multer
-- **Database:** MongoDB, Mongoose
-- **AI & Services:** Google Gemini (Simulated Stream), Web Speech API, Tesseract.js
+## ⚙️ Getting Started
 
-## Getting Started
+### Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 
-### 1. Install Dependencies
-```bash
-npm install
-```
+### Installation
 
-### 2. Environment Setup
-Create a `.env` file in the root directory:
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/govscheme
-JWT_SECRET=your_jwt_secret
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/subukavya/GovScheme.git
+   cd GovScheme
+   ```
 
-### 3. Run Locally (Development)
-Open two terminal windows:
-```bash
-# Start the Vite React Frontend (Port 3003)
-npm run dev
+2. **Install Dependencies**
+   Install the root/frontend dependencies:
+   ```bash
+   npm install
+   ```
 
-# Start the Express Backend (Port 5000)
-npm run server
-```
+   Install the backend dependencies:
+   ```bash
+   cd server
+   npm install
+   cd ..
+   ```
 
-### 4. Build for Production
-```bash
-npm run build
-```
+3. **Run the Application Locally**
 
-## Contributing
-Push changes and submit PRs to the main repository. Ensure all code passes `npm run build` with zero chunk size warnings.
+   You will need two terminal windows to run both the frontend and backend concurrently.
 
----
-*Built for the citizens, by GovScheme AI.*
+   **Terminal 1 (Backend Server):**
+   ```bash
+   npm run server
+   ```
+   *(Server runs on http://localhost:5000)*
+
+   **Terminal 2 (Frontend Client):**
+   ```bash
+   npm run dev
+   ```
+   *(Vite runs on http://localhost:3003)*
+
+### Default Credentials (Demo)
+To access the Admin Portal, use the following credentials:
+*   **Email**: `admin@govscheme.in`
+*   **Password**: `password123`
+
+## 🌍 Supported Languages
+The UI and application content are fully localized using `react-i18next`. Currently supported languages include:
+*   English (`en`)
+*   Hindi (`hi`)
+*   Tamil (`ta`)
+*   Telugu (`te`)
+*   Malayalam (`ml`)
+
+## 📝 License
+© 2026 GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.

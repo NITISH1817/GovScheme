@@ -15,7 +15,7 @@ const seedAdmin = async () => {
         fullName: 'Super Admin',
         email: 'admin@govscheme.in',
         password: 'password123', // hooks handle hashing
-        role: 'SuperAdmin',
+        role: 'Super Admin',
         isActive: true
       });
       console.log('Default Admin seeded: admin@govscheme.in / password123');
@@ -52,9 +52,9 @@ const seedMockData = async () => {
       const schemes = await Scheme.find().limit(3);
       
       await Application.create([
-        { userId: mockCitizen._id, schemeId: schemes[0]?._id?.toString() || '1', status: 'Pending' },
+        { userId: mockCitizen._id, schemeId: schemes[0]?._id?.toString() || '1', status: 'Submitted' },
         { userId: mockCitizen._id, schemeId: schemes[1]?._id?.toString() || '2', status: 'Approved' },
-        { userId: mockCitizen2._id, schemeId: schemes[2]?._id?.toString() || '3', status: 'Pending' }
+        { userId: mockCitizen2._id, schemeId: schemes[2]?._id?.toString() || '3', status: 'Submitted' }
       ]);
       console.log('Mock citizens and applications seeded');
     }
@@ -68,6 +68,8 @@ import rateLimit from 'express-rate-limit';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.use(cors());
 
 // Connect to MongoDB and seed
 connectDB().then(() => {
@@ -88,7 +90,6 @@ const apiLimiter = rateLimit({
 });
 app.use('/api', apiLimiter);
 
-app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 import schemeRoutes from './routes/schemeRoutes.js';

@@ -177,7 +177,7 @@ export const AnalyticsView: React.FC = () => {
               <Pie data={schemesByCategory} cx="50%" cy="50%" outerRadius={90} dataKey="value" paddingAngle={3} nameKey="name">
                 {schemesByCategory.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v: number) => [v, 'Schemes']} />
+              <Tooltip formatter={(v: any) => [v, 'Schemes']} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>
@@ -218,10 +218,10 @@ export const AnalyticsView: React.FC = () => {
         <ChartCard title="Application Funnel" subtitle="Citizen journey from visit to approval" delay={0.25}>
           <ResponsiveContainer width="100%" height={230}>
             <FunnelChart>
-              <Tooltip formatter={(v: number) => [v.toLocaleString(), '']} />
+              <Tooltip formatter={(v: any) => [v.toLocaleString(), '']} />
               <Funnel dataKey="value" data={funnelData} isAnimationActive>
                 <LabelList position="insideLeft" fill="#fff" stroke="none" dataKey="name" style={{ fontSize: 11, fontWeight: 600 }} />
-                <LabelList position="right" fill="#64748b" stroke="none" dataKey="value" formatter={(v: number) => v.toLocaleString()} style={{ fontSize: 11 }} />
+                <LabelList position="right" fill="#64748b" stroke="none" dataKey="value" formatter={(v: any) => v.toLocaleString()} style={{ fontSize: 11 }} />
               </Funnel>
             </FunnelChart>
           </ResponsiveContainer>

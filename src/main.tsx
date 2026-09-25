@@ -10,6 +10,8 @@ const isAdminRoute = path.startsWith('/admin');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {isAdminRoute ? <AdminApp /> : <App />}
+    <React.Suspense fallback={<div>Loading...</div>}>
+      {isAdminRoute ? <AdminApp /> : <App />}
+    </React.Suspense>
   </React.StrictMode>
 );

@@ -1,6 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Use local worker file via Vite's url import to avoid CORS issues
+// @ts-ignore
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
@@ -46,9 +46,10 @@ export async function convertPDFToImageURLs(file: File): Promise<string[]> {
     canvas.width = viewport.width;
 
     // Render PDF page into canvas context
-    const renderContext = {
+    const renderContext: any = {
       canvasContext: context,
       viewport: viewport,
+      canvas: canvas,
     };
     
     await page.render(renderContext).promise;

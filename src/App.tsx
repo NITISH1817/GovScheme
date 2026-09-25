@@ -102,7 +102,7 @@ export const App: React.FC = () => {
           id: `notif-${Date.now()}`,
           title: `New Scheme: ${data.scheme.name}`,
           description: data.scheme.shortDescription,
-          category: 'SchemeAlert',
+          category: 'Scheme',
           timestamp: 'Just now',
           read: false
         },

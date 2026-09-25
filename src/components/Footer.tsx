@@ -29,44 +29,44 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
             </p>
             <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold bg-emerald-950/40 p-2 rounded-lg border border-emerald-800/40">
               <ShieldCheck className="w-4 h-4" />
-              <span>Verified Government Portal Dataset</span>
+              <span>{t('verifiedGovDataset', 'Verified Government Portal Dataset')}</span>
             </div>
           </div>
 
           {/* Core Services */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
-              Core Platform Features
+              {t('coreFeatures', 'Core Platform Features')}
             </h3>
             <ul className="space-y-2 text-xs">
               <li>
                 <button onClick={() => onNavigate('schemes')} className="hover:text-amber-400 transition flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Rule-Based Eligibility Engine</span>
+                  <span>{t('ruleEngine', 'Rule-Based Eligibility Engine')}</span>
                 </button>
               </li>
               <li>
                 <button onClick={() => onNavigate('assistant')} className="hover:text-amber-400 transition flex items-center gap-1.5">
                   <Globe2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Multilingual AI Assistant</span>
+                  <span>{t('multiAiAssistance', 'Multilingual AI Assistant')}</span>
                 </button>
               </li>
               <li>
                 <button onClick={() => onNavigate('vault')} className="hover:text-amber-400 transition flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Document Vault & OCR Scanner</span>
+                  <span>{t('docVaultOcr', 'Document Vault & OCR Scanner')}</span>
                 </button>
               </li>
               <li>
                 <button onClick={() => onNavigate('tracker')} className="hover:text-amber-400 transition flex items-center gap-1.5">
                   <Info className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Application Status Tracker</span>
+                  <span>{t('appTracker', 'Application Status Tracker')}</span>
                 </button>
               </li>
               <li>
                 <button onClick={() => onNavigate('kiosk')} className="hover:text-amber-400 transition flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>CSC Gram Panchayat Kiosk Mode</span>
+                  <span>{t('cscKioskMode', 'CSC Gram Panchayat Kiosk Mode')}</span>
                 </button>
               </li>
             </ul>
@@ -75,7 +75,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
           {/* Official Portals Direct Links */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
-              National Portals Redirects
+              {t('nationalRedirects', 'National Portals Redirects')}
             </h3>
             <ul className="space-y-2 text-xs">
               {[
@@ -104,7 +104,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
           {/* Helplines & Transparency Notice */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2 border-b border-slate-800 pb-2">
-              National Helplines
+              {t('nationalHelplines', 'National Helplines')}
             </h3>
             <div className="space-y-2 text-xs">
               <div className="flex items-center gap-2 text-slate-300">
@@ -122,20 +122,20 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
             </div>
 
             <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700 text-[11px] text-slate-400 leading-normal mt-4">
-              <span className="text-amber-400 font-bold block mb-1">TRANSPARENCY DISCLAIMER</span>
+              <span className="text-amber-400 font-bold block mb-1">{t('transparencyTitle', 'TRANSPARENCY DISCLAIMER')}</span>
               {t('guaranteedDisclaimer')}
             </div>
           </div>
         </div>
 
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
-          <p>© 2026 GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.</p>
+          <p>{t('footerRights', '© 2026 GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.')}</p>
           <div className="flex space-x-4">
-            <a href="https://india.gov.in" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300">National Portal of India</a>
+            <a href="https://india.gov.in" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300">{t('nationalPortal', 'National Portal of India')}</a>
             <span>•</span>
-            <button onClick={() => onNavigate('kiosk')} className="hover:text-slate-300">CSC Kiosk</button>
+            <button onClick={() => onNavigate('kiosk')} className="hover:text-slate-300">{t('navKiosk', 'CSC Kiosk Mode')}</button>
             <span>•</span>
-            <button onClick={() => onNavigate('admin')} className="hover:text-slate-300">Admin Portal</button>
+            <button onClick={() => onNavigate('admin')} className="hover:text-slate-300">{t('navAdmin', 'Admin Portal')}</button>
           </div>
         </div>
       </div>

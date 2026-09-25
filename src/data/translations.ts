@@ -79,6 +79,7 @@ export interface TranslationDict {
   incomeFilterBPL: string;
   incomeFilter2L: string;
   incomeFilter5L: string;
+  [key: string]: string;
 }
 
 export const languages: { code: LanguageCode; name: string; nativeName: string }[] = [
@@ -86,12 +87,7 @@ export const languages: { code: LanguageCode; name: string; nativeName: string }
   { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
   { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
   { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
-  { code: 'kn', name: 'Kannada', nativeName: 'கன்னட / ಕನ್ನಡ' },
-  { code: 'ml', name: 'Malayalam', nativeName: 'மலையாளம் / മലയാളം' },
-  { code: 'mr', name: 'Marathi', nativeName: 'மராத்தி / मराठी' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'குஜராத்தி / ગુજરાતી' },
-  { code: 'pa', name: 'Punjabi', nativeName: 'பஞ்சாபி / ਪੰਜਾਬੀ' },
-  { code: 'bn', name: 'Bengali', nativeName: 'பெங்காலி / বাংলা' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
 ];
 
 export const translations: Record<LanguageCode, TranslationDict> = {
@@ -170,6 +166,12 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     incomeFilterBPL: "BPL (below ₹1.2L)",
     incomeFilter2L: "Below ₹2.5 Lakh",
     incomeFilter5L: "Below ₹5 Lakh",
+    "pm-kisan_name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+    "pm-kisan_desc": "Income support of ₹6,000 per year in three equal installments to all landholding farmer families across India.",
+    "pm-awas-yojana_name": "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
+    "pm-awas-yojana_desc": "Financial assistance to construct pucca houses with basic amenities for homeless and kutcha house dwellers.",
+    "ayushman-bharat_name": "Ayushman Bharat - PM Jan Arogya Yojana (PM-JAY)",
+    "ayushman-bharat_desc": "World's largest health insurance scheme providing ₹5 Lakh per family per year for secondary and tertiary hospitalization.",
   },
   hi: {
     appName: "GovScheme AI",
@@ -246,6 +248,12 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     incomeFilterBPL: "BPL (₹1.2L से कम)",
     incomeFilter2L: "₹2.5 लाख से कम",
     incomeFilter5L: "₹5 लाख से कम",
+    "pm-kisan_name": "प्रधानमंत्री किसान सम्मान निधि (PM-KISAN)",
+    "pm-kisan_desc": "भारत भर के सभी किसान परिवारों को तीन समान किश्तों में प्रति वर्ष ₹6,000 की आय सहायता।",
+    "pm-awas-yojana_name": "प्रधानमंत्री आवास योजना - ग्रामीण (PMAY-G)",
+    "pm-awas-yojana_desc": "बेघर और कच्चे घरों में रहने वालों के लिए बुनियादी सुविधाओं के साथ पक्के घर बनाने के लिए वित्तीय सहायता।",
+    "ayushman-bharat_name": "आयुष्मान भारत - पीएम जन आरोग्य योजना (PM-JAY)",
+    "ayushman-bharat_desc": "माध्यमिक और तृतीयक अस्पताल में भर्ती के लिए प्रति परिवार प्रति वर्ष ₹5 लाख प्रदान करने वाली दुनिया की सबसे बड़ी स्वास्थ्य बीमा योजना।",
   },
   ta: {
     appName: "GovScheme AI",
@@ -481,6 +489,12 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     voiceAssistant: "വോയ്സ് അസിസ്റ്റന്റ്",
     listenVoice: "തിരയാൻ സംസാരിക്കുക...",
     login: "ലോഗിൻ", logout: "ലോഗൗട്ട്", register: "രജിസ്റ്റർ", guestMode: "അതിഥിയായി തുടരുക", loginOrGuest: "ലോഗിൻ / അതിഥി", yourName: "നിങ്ങളുടെ പൂർണ്ണ നാമം", mobileNumber: "മൊബൈൽ നമ്പർ", yourState: "നിങ്ങളുടെ സംസ്ഥാനം", yourOccupation: "നിങ്ങളുടെ തൊഴിൽ", annualIncomeLabel: "വാർഷിക വരുമാനം (₹)", yourAge: "നിങ്ങളുടെ പ്രായം", scanDocument: "രേഖ സ്കാൻ ചെയ്യുക", extractingOCR: "AI ടെക്സ്റ്റ് വേർതിരിക്കുന്നു...", saveToVault: "സേവ് & പ്രൊഫൈൽ പൂരിപ്പിക്കുക", reviewExtracted: "വേർതിരിച്ച വിവരം പരിശോധിക്കുക", beneficiariesStat: "ഗുണഭോക്താക്കൾ", disbursedStat: "ആനുകൂല്യ വിതരണം", activeSchemesStat: "സജീവ പദ്ധതികൾ", statesCoveredStat: "സംസ്ഥാനങ്ങൾ", nationalImpact: "സംഖ്യകളിൽ ദേശീയ സ്വാധീനം", incomeFilterAny: "വരുമാനം: ഏതും", incomeFilterBPL: "BPL (₹1.2L-ൽ താഴെ)", incomeFilter2L: "₹2.5 ലക്ഷത്തിൽ താഴെ", incomeFilter5L: "₹5 ലക്ഷത്തിൽ താഴെ",
+    "pm-kisan_name": "പ്രധാൻ മന്ത്രി കിസാൻ സമ്മാൻ നിധി (PM-KISAN)",
+    "pm-kisan_desc": "ഇന്ത്യയിലുടനീളമുള്ള എല്ലാ കർഷക കുടുംബങ്ങൾക്കും തുല്യമായ മൂന്ന് ഗഡുക്കളായി പ്രതിവർഷം ₹6,000 വരുമാന പിന്തുണ നൽകുന്നു.",
+    "pm-awas-yojana_name": "പ്രധാൻ മന്ത്രി ആവാസ് യോജന - ഗ്രാമീൺ (PMAY-G)",
+    "pm-awas-yojana_desc": "ഭവനരഹിതർക്കും അസംസ്കൃത വീടുകളിൽ താമസിക്കുന്നവർക്കും അടിസ്ഥാന സൗകര്യങ്ങളുള്ള പക്കാ വീടുകൾ നിർമ്മിക്കുന്നതിനുള്ള സാമ്പത്തിക സഹായം.",
+    "ayushman-bharat_name": "ആയുഷ്മാൻ ഭാരത് - പി.എം ജൻ ആരോഗ്യ യോജന (PM-JAY)",
+    "ayushman-bharat_desc": "സെക്കൻഡറി, ടെർഷ്യറി ഹോസ്പിറ്റലൈസേഷനായി ഒരു കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം നൽകുന്ന ലോകത്തിലെ ഏറ്റവും വലിയ ആരോഗ്യ ഇൻഷുറൻസ് പദ്ധതി.",
   },
   mr: {
     appName: "GovScheme AI",
@@ -695,3 +709,4 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     login: "লগইন", logout: "লগআউট", register: "নিবন্ধন", guestMode: "অতিথি হিসেবে চালিয়ে যান", loginOrGuest: "লগইন / অতিথি", yourName: "আপনার পূর্ণ নাম", mobileNumber: "মোবাইল নম্বর", yourState: "আপনার রাজ্য", yourOccupation: "আপনার পেশা", annualIncomeLabel: "বার্ষিক আয় (₹)", yourAge: "আপনার বয়স", scanDocument: "নথি স্ক্যান করুন", extractingOCR: "AI পাঠ্য বের করছে...", saveToVault: "সেভ করুন ও প্রোফাইল পূরণ করুন", reviewExtracted: "বের করা তথ্য পর্যালোচনা করুন", beneficiariesStat: "সুবিধাভোগীদের কাছে পৌঁছানো", disbursedStat: "সুবিধা বিতরণ", activeSchemesStat: "সক্রিয় প্রকল্প", statesCoveredStat: "রাজ্য অন্তর্ভুক্ত", nationalImpact: "সংখ্যায় জাতীয় প্রভাব", incomeFilterAny: "আয়: যেকোনো", incomeFilterBPL: "BPL (₹1.2L-এর নিচে)", incomeFilter2L: "₹2.5 লাখের নিচে", incomeFilter5L: "₹5 লাখের নিচে",
   }
 };
+

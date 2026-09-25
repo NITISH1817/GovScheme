@@ -64,7 +64,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
   };
 
   const removeDoc = (doc: string) => {
-    setFormData(prev => ({ ...prev, documentsRequired: prev.documentsRequired.filter(d => d !== doc) }));
+    setFormData(prev => ({ ...prev, documentsRequired: prev.documentsRequired.filter((d: string) => d !== doc) }));
   };
 
   // Visual Rule Builder Methods
@@ -86,7 +86,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
   const removeDynamicRule = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      dynamicRules: prev.dynamicRules.filter((_, i) => i !== index)
+      dynamicRules: prev.dynamicRules.filter((_: any, i: number) => i !== index)
     }));
   };
 
@@ -99,7 +99,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
       return { ...prev, faqs: newFaqs };
     });
   };
-  const removeFaq = (index: number) => setFormData(prev => ({ ...prev, faqs: prev.faqs.filter((_, i) => i !== index) }));
+  const removeFaq = (index: number) => setFormData(prev => ({ ...prev, faqs: prev.faqs.filter((_: any, i: number) => i !== index) }));
 
   const handleSubmit = async () => {
     try {
@@ -244,7 +244,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {formData.dynamicRules.map((rule, idx) => (
+                      {formData.dynamicRules.map((rule: any, idx: number) => (
                         <div key={idx} className="flex items-center gap-3 bg-white p-3 border border-slate-200 rounded-xl shadow-sm animate-in fade-in slide-in-from-bottom-2">
                           {idx > 0 && (
                             <select 
@@ -310,7 +310,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
                   <label className="text-sm font-semibold text-slate-700">Required Documents (Press Enter to add)</label>
                   <input type="text" onKeyDown={handleDocumentAdd} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Aadhaar Card" />
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {formData.documentsRequired.map(doc => (
+                    {formData.documentsRequired.map((doc: string) => (
                       <span key={doc} className="bg-slate-100 border border-slate-200 text-slate-700 px-3 py-1 rounded-full text-sm flex items-center gap-2 shadow-sm">
                         {doc}
                         <button onClick={() => removeDoc(doc)} className="hover:text-red-500">&times;</button>
@@ -366,7 +366,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
                    </div>
                   ) : (
                     <div className="space-y-4">
-                      {formData.faqs.map((faq, idx) => (
+                      {formData.faqs.map((faq: any, idx: number) => (
                         <div key={idx} className="bg-white p-4 border border-slate-200 rounded-xl shadow-sm flex gap-3 relative group">
                            <div className="flex-1 space-y-3">
                               <input 

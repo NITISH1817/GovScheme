@@ -1,4 +1,4 @@
-export type LanguageCode = 'en' | 'hi' | 'ta' | 'te' | 'kn' | 'ml' | 'mr' | 'gu' | 'pa' | 'bn';
+export type LanguageCode = 'en' | 'hi' | 'ta' | 'te' | 'ml';
 
 export type SchemeCategory =
   | 'Agriculture & Farmers'

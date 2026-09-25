@@ -335,7 +335,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
                   {/* Scheme Name */}
                   <h3 className="text-base font-bold text-uswds-primary line-clamp-2 font-sans group-hover:underline transition">
-                    {scheme.name}
+                    {t(`${scheme.id}_name`, scheme.name)}
                   </h3>
 
                   {/* Financial Benefit Amount */}
@@ -347,7 +347,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
                   {/* Short Description */}
                   <p className="text-sm text-uswds-textMuted line-clamp-2 leading-relaxed">
-                    {scheme.shortDescription}
+                    {t(`${scheme.id}_desc`, scheme.shortDescription)}
                   </p>
 
                   {/* Why Eligible / Explanation Preview */}

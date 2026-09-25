@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, 
   Clock, 
@@ -21,17 +22,18 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
   applications,
   onNavigateTab
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
       {/* Header */}
       <div className="bg-white dark:bg-slate-800 border-l-4 border-gov-navy shadow-sm rounded-md p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-200 dark:border-slate-700">
         <div className="space-y-2 text-center sm:text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-600">
-            <Clock className="w-4 h-4 text-gov-navy dark:text-blue-400" /> Live Government DBT Tracking
+            <Clock className="w-4 h-4 text-gov-navy dark:text-blue-400" /> {t('liveTracking', 'Live Government DBT Tracking')}
           </div>
-          <h1 className="text-3xl font-bold font-heading tracking-tight text-slate-900 dark:text-white">Citizen Application Tracker</h1>
+          <h1 className="text-3xl font-bold font-heading tracking-tight text-slate-900 dark:text-white">{t('citizenAppTracker', 'Citizen Application Tracker')}</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Real-time status updates on submitted welfare applications across official government portals.
+            {t('trackerDesc', 'Real-time status updates on submitted welfare applications across official government portals.')}
           </p>
         </div>
 
@@ -40,7 +42,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
           className="px-6 py-3 rounded-md bg-gov-navy hover:bg-gov-blue text-white font-bold text-sm shadow-sm transition flex items-center gap-2"
         >
           <FileText className="w-4 h-4" />
-          <span>Apply For New Scheme</span>
+          <span>{t('applyNewScheme', 'Apply For New Scheme')}</span>
         </button>
       </div>
 
@@ -58,12 +60,10 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                     app.status === 'Approved' || app.status === 'Benefit Released'
                       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                       : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                  }`}>
-                    Status: {app.status}
-                  </span>
+                  }`}>{t('status', 'Status')}: {t(app.status, app.status)}</span>
                 </div>
                 <p className="text-xs text-slate-500 font-mono">
-                  Application ID: {app.applicationNumber} • Applied Date: {app.appliedDate}
+                  {t('appId', 'Application ID')}: {app.applicationNumber} • {t('appliedDate', 'Applied Date')}: {app.appliedDate}
                 </p>
               </div>
 
@@ -73,7 +73,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                 rel="noopener noreferrer"
                 className="px-4 py-2 rounded-md bg-gov-navy hover:bg-gov-blue text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 self-start sm:self-auto"
               >
-                <span>Track on Official Portal</span>
+                <span>{t('trackOfficial', 'Track on Official Portal')}</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
@@ -81,7 +81,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
             {/* Horizontal / Vertical Timeline */}
             <div className="space-y-3">
               <span className="font-bold text-xs text-slate-700 dark:text-slate-300 font-heading block">
-                Official Verification Timeline Stage Progress:
+                {t('timelineProgress', 'Official Verification Timeline Stage Progress:')}
               </span>
 
               <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
@@ -95,7 +95,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold">Stage {idx + 1}</span>
+                      <span className="text-[10px] font-bold">{t('stage', 'Stage')} {idx + 1}</span>
                       {stageItem.completed ? (
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       ) : (
@@ -103,12 +103,12 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                       )}
                     </div>
                     <div>
-                      <span className="font-bold block line-clamp-2">{stageItem.stage}</span>
+                      <span className="font-bold block line-clamp-2">{t(stageItem.stage, stageItem.stage)}</span>
                       <span className="text-[10px] opacity-75">{stageItem.date}</span>
                     </div>
                     {stageItem.remarks && (
                       <p className="text-[10px] text-amber-700 dark:text-amber-300 font-semibold bg-amber-100/50 p-1.5 rounded">
-                        {stageItem.remarks}
+                        {t(stageItem.remarks, stageItem.remarks)}
                       </p>
                     )}
                   </div>

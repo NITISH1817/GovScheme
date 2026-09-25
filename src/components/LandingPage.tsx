@@ -51,7 +51,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         >
           <div className="relative max-w-4xl mx-auto flex flex-col items-start text-left space-y-6">
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight font-sans">
-              {t('heroTitle', "Find Government Schemes You're Eligible For")}
+              {t('tagline', "Find Government Schemes You're Eligible For")}
             </h1>
 
             <p className="text-blue-100 text-base sm:text-lg max-w-2xl leading-relaxed">
@@ -71,7 +71,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 onClick={() => onNavigateTab('schemes')}
                 className="w-full sm:w-auto min-w-[160px] px-6 py-3.5 rounded-md bg-uswds-secondary hover:bg-blue-900 text-white font-bold text-sm sm:text-base transition flex items-center justify-center gap-2 border border-blue-800"
               >
-                <span className="whitespace-nowrap">{t('exploreSchemes', 'Explore Schemes')}</span>
+                <span className="whitespace-nowrap">{t('navSchemes', 'Explore Schemes')}</span>
               </button>
             </div>
           </div>
@@ -201,17 +201,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl font-bold text-uswds-primary font-sans">
-              {t('featuredSchemes', 'Featured National Welfare Schemes')}
+              {t('trending', 'Featured National Welfare Schemes')}
             </h2>
             <p className="text-sm text-uswds-textMuted">
-              {t('featuredSchemesDesc', 'Discover verified welfare initiatives across Central and State Governments.')}
+              {t('heroSubtitle', 'Discover verified welfare initiatives across Central and State Governments.')}
             </p>
           </div>
           <button
             onClick={() => onNavigateTab('schemes')}
             className="text-sm font-bold text-uswds-primary hover:underline flex items-center gap-1 whitespace-nowrap"
           >
-            <span>{t('viewAllSchemes', 'View All Schemes')} ({topSchemes.length}+)</span>
+            <span>{t('allSchemes', 'View All Schemes')} ({topSchemes.length}+)</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -222,18 +222,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="space-y-2">
                 <div className="flex justify-between items-start gap-2">
                   <span className="bg-uswds-background text-uswds-primary border border-uswds-border text-[10px] font-bold px-2.5 py-0.5 rounded whitespace-nowrap uppercase tracking-wider">
-                    {scheme.state === 'Central' ? t('centralGovt', 'Central Govt') : scheme.state}
+                    {scheme.state === 'Central' ? t('centralSchemes', 'Central Govt') : scheme.state}
                   </span>
                   <span className="text-[10px] sm:text-xs font-bold text-uswds-success text-right">
-                    {scheme.financialBenefitAmount ? `${t('upTo', 'Up to')} ₹${scheme.financialBenefitAmount.toLocaleString('en-IN')}` : t('welfareBenefit', 'Welfare Benefit')}
+                    {scheme.financialBenefitAmount ? `₹${scheme.financialBenefitAmount.toLocaleString('en-IN')}` : t('centralSchemes', 'Welfare Benefit')}
                   </span>
                 </div>
 
                 <h3 className="text-base font-bold text-uswds-primary line-clamp-1 font-sans">
-                  {scheme.name}
+                  {t(`${scheme.id}_name`, scheme.name)}
                 </h3>
                 <p className="text-sm text-uswds-textMuted line-clamp-2 leading-relaxed">
-                  {scheme.shortDescription}
+                  {t(`${scheme.id}_desc`, scheme.shortDescription)}
                 </p>
               </div>
 
@@ -245,7 +245,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={() => onNavigateTab('schemes')}
                   className="px-4 py-2 bg-uswds-primary hover:bg-uswds-secondary text-white font-bold rounded-md transition shadow-sm"
                 >
-                  {t('checkEligibility', 'Check Eligibility')}
+                  {t('getStarted', 'Check Eligibility')}
                 </button>
               </div>
             </div>
@@ -258,10 +258,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 rounded-2xl p-8 sm:p-10 text-slate-950 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="space-y-2 max-w-xl">
             <h3 className="text-xl sm:text-2xl font-black font-heading tracking-tight">
-              {t('readyToDiscover', 'Ready to Discover Your Eligible Government Schemes?')}
+              {t('tagline', 'Ready to Discover Your Eligible Government Schemes?')}
             </h3>
             <p className="text-[10px] sm:text-xs font-semibold opacity-90 leading-relaxed">
-              {t('readyToDiscoverDesc', 'Complete your profile in 2 minutes or speak to our AI Assistant to find all welfare programs for your household.')}
+              {t('step1Desc', 'Complete your profile in 2 minutes or speak to our AI Assistant to find all welfare programs for your household.')}
             </p>
           </div>
           <div className="flex flex-wrap gap-3 w-full md:w-auto">
@@ -269,7 +269,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onGetStarted}
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-950 text-white font-bold text-[10px] sm:text-xs hover:bg-slate-900 transition shadow whitespace-nowrap"
             >
-              {t('buildProfile', 'Build Profile')}
+              {t('getStarted', 'Build Profile')}
             </button>
             <button
               onClick={onTalkToAI}

@@ -22,7 +22,7 @@ interface SchemeData {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  Active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  Published: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   Draft: 'bg-amber-50 text-amber-700 border-amber-200',
   Archived: 'bg-slate-100 text-slate-500 border-slate-200',
 };
@@ -54,9 +54,12 @@ export const SchemeManagementView: React.FC = () => {
 
     try {
       setLoading(true);
-      const res = await apiClient.post('/schemes/bulk-import', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('http://localhost:5000/api/schemes/bulk-import', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      }).then(r => r.json());
       if (res.success) {
         toast.success('Bulk Import Successful', `Imported ${res.count} schemes.`);
         fetchSchemes();
@@ -117,7 +120,7 @@ export const SchemeManagementView: React.FC = () => {
   const handleStatusChange = async (scheme: SchemeData, status: string) => {
     try {
       await apiClient.put(`/schemes/${scheme._id}`, { status });
-      toast.success(`Scheme ${status === 'Active' ? 'published' : status.toLowerCase()}`, scheme.name);
+      toast.success(`Scheme ${status === 'Published' ? 'published' : status.toLowerCase()}`, scheme.name);
       setMenuOpen(null);
     } catch {
       toast.error('Update failed');
@@ -199,7 +202,7 @@ export const SchemeManagementView: React.FC = () => {
               className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white outline-none"
             >
               <option value="All">All Status</option>
-              <option value="Active">Published</option>
+              <option value="Published">Published</option>
               <option value="Draft">Draft</option>
               <option value="Archived">Archived</option>
             </select>
@@ -304,7 +307,7 @@ export const SchemeManagementView: React.FC = () => {
                   <td className="px-4 py-3 text-slate-600">{scheme.category}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${STATUS_STYLES[scheme.status] || STATUS_STYLES.Draft}`}>
-                      {scheme.status === 'Active' ? 'Published' : scheme.status}
+                      {scheme.status === 'Published' ? 'Published' : scheme.status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -334,8 +337,8 @@ export const SchemeManagementView: React.FC = () => {
                               transition={{ duration: 0.1 }}
                               className="absolute right-0 top-8 z-20 bg-white border border-slate-200 rounded-xl shadow-xl w-44 py-1 overflow-hidden"
                             >
-                              {scheme.status !== 'Active' && (
-                                <button onClick={() => handleStatusChange(scheme, 'Active')} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 transition-colors">
+                              {scheme.status !== 'Published' && (
+                                <button onClick={() => handleStatusChange(scheme, 'Published')} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 transition-colors">
                                   <Globe size={14} /> Publish
                                 </button>
                               )}

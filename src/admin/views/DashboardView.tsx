@@ -116,6 +116,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const DashboardView: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [timeRange, setTimeRange] = useState('6M');
 
@@ -123,8 +124,9 @@ export const DashboardView: React.FC = () => {
     try {
       const res = await apiClient.get('/analytics/dashboard', { timeRange });
       if (res.success) setData(res);
-    } catch {
-      // fallback handled by skeleton
+      else setErrorMsg(res.message || 'API returned success: false');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Network error');
     } finally {
       setLoading(false);
     }
@@ -145,8 +147,11 @@ export const DashboardView: React.FC = () => {
 
   if (loading) return <DashboardSkeleton />;
   if (!data) return (
-    <div className="flex items-center justify-center h-64 text-slate-400">
-      <AlertCircle size={32} className="mr-3" /> Failed to load dashboard data.
+    <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+      <div className="flex items-center">
+        <AlertCircle size={32} className="mr-3" /> Failed to load dashboard data.
+      </div>
+      <p className="mt-4 text-red-500 font-mono text-xs">{errorMsg}</p>
     </div>
   );
 
@@ -263,7 +268,7 @@ export const DashboardView: React.FC = () => {
                   <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v: number) => [v, 'Applications']} />
+              <Tooltip formatter={(v: any) => [v, 'Applications']} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>

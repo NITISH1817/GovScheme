@@ -7,7 +7,7 @@ export const NotificationsView: React.FC = () => {
   const [composeMode, setComposeMode] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -37,19 +37,19 @@ export const NotificationsView: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.message) {
-      showToast('Title and message are required', 'error');
+      toast('error', 'Title and message are required');
       return;
     }
     try {
       const res = await apiClient.post('/notifications', formData);
       if (res.success) {
-        showToast('Notification sent successfully!', 'success');
+        toast('success', 'Notification sent successfully!');
         setComposeMode(false);
         setFormData({ title: '', message: '', type: 'info', targetAudience: 'All' });
         fetchNotifications();
       }
     } catch (error) {
-      showToast('Failed to send notification', 'error');
+      toast('error', 'Failed to send notification');
     }
   };
 
