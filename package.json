@@ -9,7 +9,7 @@
     "build": "vite build",
     "lint": "npx tsc --noEmit",
     "preview": "vite preview",
-    "server": "npx tsx server/server.js",
+    "server": "npx --yes tsx server/server.js",
     "import-schemes": "node scripts/importSchemes.js"
   },
   "dependencies": {

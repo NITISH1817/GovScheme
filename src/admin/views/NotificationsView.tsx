@@ -172,16 +172,17 @@ export const NotificationsView: React.FC = () => {
                   <th className="p-4">Target</th>
                   <th className="p-4">Sent At</th>
                   <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-sm text-slate-600">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400">Loading notifications...</td>
+                    <td colSpan={5} className="p-8 text-center text-slate-400">Loading notifications...</td>
                   </tr>
                 ) : notifications.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400">No broadcast notifications sent yet.</td>
+                    <td colSpan={5} className="p-8 text-center text-slate-400">No broadcast notifications sent yet.</td>
                   </tr>
                 ) : notifications.map((notif) => (
                   <tr key={notif._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
@@ -206,6 +207,19 @@ export const NotificationsView: React.FC = () => {
                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
                         <CheckCircle size={12} /> Sent
                       </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button onClick={async () => {
+                        try {
+                          await apiClient.delete(`/notifications/${notif._id}`);
+                          toast('success', 'Notification deleted');
+                          fetchNotifications();
+                        } catch (e) {
+                          toast('error', 'Failed to delete notification');
+                        }
+                      }} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}

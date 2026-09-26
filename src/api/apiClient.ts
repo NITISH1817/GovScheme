@@ -8,6 +8,17 @@ const getHeaders = () => {
   };
 };
 
+const handleResponse = async (response: Response) => {
+  if (response.status === 401) {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    window.location.href = '/admin'; // Force reload to login screen
+    throw new Error('Session expired. Please log in again.');
+  }
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return await response.json();
+};
+
 export const apiClient = {
   get: async (endpoint: string, params: Record<string, any> = {}) => {
     const url = new URL(`${API_BASE_URL}${endpoint}`);
@@ -20,8 +31,7 @@ export const apiClient = {
     const response = await fetch(url.toString(), {
       headers: getHeaders()
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
+    return handleResponse(response);
   },
 
   post: async (endpoint: string, data: any) => {
@@ -30,8 +40,7 @@ export const apiClient = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
+    return handleResponse(response);
   },
 
   put: async (endpoint: string, data: any) => {
@@ -40,8 +49,7 @@ export const apiClient = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
+    return handleResponse(response);
   },
 
   delete: async (endpoint: string) => {
@@ -49,7 +57,6 @@ export const apiClient = {
       method: 'DELETE',
       headers: getHeaders()
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
+    return handleResponse(response);
   }
 };

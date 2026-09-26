@@ -1,12 +1,13 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import path from 'path';
 
 dotenv.config();
 
 export const connectDB = async () => {
   try {
-    // Spin up an in-memory MongoDB instance so the user doesn't need it installed locally
+    process.env.MONGOMS_VERSION = '6.0.4';
     const mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
 

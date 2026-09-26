@@ -36,3 +36,19 @@ export const createNotification = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Delete a notification
+// @route   DELETE /api/notifications/:id
+// @access  Private (Admin)
+export const deleteNotification = async (req, res) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+    await notification.deleteOne();
+    res.json({ success: true, message: 'Notification removed' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -84,6 +84,57 @@ export const App: React.FC = () => {
     }
   }, [user]);
 
+  // Fetch schemes from backend on initial load
+  useEffect(() => {
+    const fetchSchemes = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/schemes?limit=100');
+        const data = await response.json();
+        if (data.success && Array.isArray(data.schemes)) {
+          // Merge API schemes with local fallback schemesData
+          setSchemes(prev => {
+            const apiSchemes = data.schemes;
+            const newSchemes = [...apiSchemes];
+            
+            if (Array.isArray(prev)) {
+              prev.forEach(localScheme => {
+                if (!apiSchemes.find((s: any) => s.id === localScheme.id)) {
+                  newSchemes.push(localScheme);
+                }
+              });
+            }
+            return newSchemes;
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch schemes from backend:', error);
+      }
+    };
+    
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/notifications');
+        const data = await response.json();
+        if (data.success && data.notifications) {
+          const apiNotifs = data.notifications.map((n: any) => ({
+            id: n._id,
+            title: n.title,
+            description: n.message,
+            category: n.type,
+            timestamp: new Date(n.createdAt).toLocaleString(),
+            read: n.read
+          }));
+          setNotifications(apiNotifs);
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications from backend:', error);
+      }
+    };
+
+    fetchSchemes();
+    fetchNotifications();
+  }, []);
+
   // Real-time synchronization
   useEffect(() => {
     socketService.connect();
@@ -118,16 +169,32 @@ export const App: React.FC = () => {
       setSchemes(prev => prev.filter(s => s.id !== data.schemeId));
     };
 
+    const handleNewNotification = (data: { notification: any }) => {
+      setNotifications(prev => [
+        {
+          id: data.notification._id,
+          title: data.notification.title,
+          description: data.notification.message,
+          category: data.notification.type,
+          timestamp: new Date(data.notification.createdAt).toLocaleString(),
+          read: data.notification.read
+        },
+        ...prev
+      ]);
+    };
+
     socketService.on('SCHEME_PUBLISHED', handleSchemePublished);
     socketService.on('SCHEME_UPDATED', handleSchemeUpdated);
     socketService.on('SCHEME_DELETED', handleSchemeDeleted);
     socketService.on('SCHEME_CREATED', handleSchemePublished); // Treat created as published for now in the demo
+    socketService.on('NEW_NOTIFICATION', handleNewNotification);
 
     return () => {
       socketService.off('SCHEME_PUBLISHED', handleSchemePublished);
       socketService.off('SCHEME_UPDATED', handleSchemeUpdated);
       socketService.off('SCHEME_DELETED', handleSchemeDeleted);
       socketService.off('SCHEME_CREATED', handleSchemePublished);
+      socketService.off('NEW_NOTIFICATION', handleNewNotification);
       socketService.disconnect();
     };
   }, []);

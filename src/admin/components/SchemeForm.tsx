@@ -35,7 +35,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
     applyURL: scheme?.applyURL || '',
     faqs: scheme?.faqs || [],
     seo: scheme?.seo || { title: '', metaDescription: '', keywords: [] },
-    status: scheme?.status || 'Active'
+    status: scheme?.status || 'Published'
   });
 
   const nextStep = () => setStep(s => Math.min(s + 1, 5));
@@ -102,6 +102,10 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
   const removeFaq = (index: number) => setFormData(prev => ({ ...prev, faqs: prev.faqs.filter((_: any, i: number) => i !== index) }));
 
   const handleSubmit = async () => {
+    if (!formData.name || !formData.department || !formData.shortDescription) {
+      alert('Please fill out the Scheme Name, Department, and Short Description before publishing.');
+      return;
+    }
     try {
       setLoading(true);
       if (isEdit) {
@@ -110,9 +114,10 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
         await apiClient.post('/schemes', formData);
       }
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save scheme:', error);
-      alert('Error saving scheme. Check console.');
+      const serverMsg = error.response?.data?.message || error.message;
+      alert(`Error saving scheme: ${serverMsg}. Please check console.`);
     } finally {
       setLoading(false);
     }
@@ -428,7 +433,7 @@ export const SchemeForm: React.FC<SchemeFormProps> = ({ onClose, onSuccess, sche
                   </div>
                   <div className="flex justify-between pb-2">
                     <span className="text-slate-500 text-sm">Status</span>
-                    <span className="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded text-xs font-bold">Active</span>
+                    <span className="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded text-xs font-bold">{formData.status}</span>
                   </div>
                 </div>
               </motion.div>
