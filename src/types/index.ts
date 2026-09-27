@@ -1,4 +1,4 @@
-export type LanguageCode = 'en' | 'hi' | 'ta' | 'te' | 'ml';
+export type LanguageCode = 'en' | 'hi' | 'ta' | 'te' | 'ml' | 'kn' | 'mr' | 'gu' | 'bn' | 'pa';
 
 export type SchemeCategory =
   | 'Agriculture & Farmers'
@@ -28,6 +28,7 @@ export interface DocumentRecord {
     gender?: string;
     confidenceScore: number;
     issueDate?: string;
+    expiryDate?: string;
   };
   fileUrl?: string;
   uploadedAt: string;
@@ -40,9 +41,11 @@ export interface UserProfile {
   email: string;
   age: number;
   gender: TargetGender;
+  maritalStatus?: string;
   state: string;
   district: string;
   category: CategorySocial;
+  interests?: string[];
   occupation: string;
   annualIncome: number; // In INR ₹
   landHoldingAcres: number;
@@ -56,6 +59,7 @@ export interface UserProfile {
   profileCompletionScore: number; // 0-100%
   savedSchemeIds: string[];
   documents: DocumentRecord[];
+  role?: 'citizen' | 'admin' | 'superadmin';
 }
 
 export interface EligibilityRules {
@@ -98,7 +102,7 @@ export interface Scheme {
 
 export interface RuleEvaluationResult {
   schemeId: string;
-  status: 'Eligible' | 'Conditionally Eligible' | 'Not Eligible';
+  status: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible';
   matchedCriteria: string[];
   failedCriteria: string[];
   missingDocuments: string[];
@@ -108,6 +112,11 @@ export interface RuleEvaluationResult {
 export interface MLRecommendationResult {
   schemeId: string;
   confidenceScore: number; // 0 - 100%
+  scoreBreakdown?: {
+    demographic: number;
+    financial: number;
+    need: number;
+  };
   matchReason: string;
   urgencyLevel: 'High' | 'Medium' | 'Standard';
   relatedSchemeIds: string[];

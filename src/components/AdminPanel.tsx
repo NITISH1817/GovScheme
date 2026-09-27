@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Plus, 
   FileSpreadsheet, 
-  Users, 
-  FileText, 
   Bell, 
-  BarChart3, 
   Trash2, 
-  Edit, 
-  CheckCircle2, 
-  Download, 
   UploadCloud,
-  ShieldCheck
+  FileText,
+  Activity,
+  AlertTriangle,
+  ShieldAlert,
+  Link2Off,
+  RefreshCcw,
+  Terminal
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Scheme } from '../types';
 
 interface AdminPanelProps {
@@ -28,20 +28,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onAddScheme,
   onDeleteScheme
 }) => {
-  const [activeAdminTab, setActiveAdminTab] = useState<'dashboard' | 'schemes' | 'import' | 'users' | 'broadcast'>('dashboard');
+  const { t } = useTranslation();
+  const [activeAdminTab, setActiveAdminTab] = useState<'dashboard' | 'schemes' | 'import' | 'data_quality' | 'broadcast'>('dashboard');
   const [importJsonText, setImportJsonText] = useState('');
   const [importSuccessMsg, setImportSuccessMsg] = useState('');
-  const [broadcastTitle, setBroadcastTitle] = useState('');
-  const [broadcastDesc, setBroadcastDesc] = useState('');
-  const [broadcastSuccess, setBroadcastSuccess] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [commandInput, setCommandInput] = useState('');
+  const [selectedSchemes, setSelectedSchemes] = useState<string[]>([]);
 
-  // New Scheme Form State
-  const [newSchemeName, setNewSchemeName] = useState('');
-  const [newMinistry, setNewMinistry] = useState('');
-  const [newCategory, setNewCategory] = useState<Scheme['category']>('Agriculture & Farmers');
-  const [newState, setNewState] = useState('Central');
-  const [newFinancialBenefit, setNewFinancialBenefit] = useState(5000);
-  const [newApplyUrl, setNewApplyUrl] = useState('https://india.gov.in');
+  // Handle Ctrl+K for command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleImportSchemes = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,315 +65,361 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  const handleCreateScheme = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSchemeName) return;
-
-    const created: Scheme = {
-      id: `scheme-${Date.now()}`,
-      name: newSchemeName,
-      shortDescription: `Official welfare scheme managed by ${newMinistry}.`,
-      department: `${newCategory} Department`,
-      ministry: newMinistry || 'Ministry of Social Welfare',
-      category: newCategory,
-      state: newState,
-      benefitsSummary: `Financial benefit of ₹${newFinancialBenefit.toLocaleString('en-IN')}/year`,
-      financialBenefitAmount: newFinancialBenefit,
-      eligibilityRules: {
-        requiredDocuments: ["Aadhaar Card", "Income Certificate"]
-      },
-      requiredDocuments: ["Aadhaar Card", "Income Certificate"],
-      applicationSteps: ["Visit official portal", "Submit Aadhaar e-KYC"],
-      officialApplyUrl: newApplyUrl,
-      officialWebsite: newApplyUrl,
-      helplineNumber: "1800-11-0000",
-      deadline: "Open All Year",
-      tags: ["Government", "Welfare"],
-      faqs: [],
-      lastUpdated: new Date().toISOString().split('T')[0],
-      popularityScore: 85
-    };
-
-    onAddScheme(created);
-    alert("New Government Scheme added successfully!");
-    setNewSchemeName('');
+  const handleBulkDelete = () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedSchemes.length} schemes?`)) {
+      selectedSchemes.forEach(id => onDeleteScheme(id));
+      setSelectedSchemes([]);
+    }
   };
 
-  const handleSendBroadcast = (e: React.FormEvent) => {
-    e.preventDefault();
-    setBroadcastSuccess(true);
-    setTimeout(() => {
-      setBroadcastSuccess(false);
-      setBroadcastTitle('');
-      setBroadcastDesc('');
-    }, 3000);
+  const handleToggleSelectAll = () => {
+    if (selectedSchemes.length === schemes.length) {
+      setSelectedSchemes([]);
+    } else {
+      setSelectedSchemes(schemes.map(s => s.id));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    if (selectedSchemes.includes(id)) {
+      setSelectedSchemes(selectedSchemes.filter(s => s !== id));
+    } else {
+      setSelectedSchemes([...selectedSchemes, id]);
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="space-y-1 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900 border border-indigo-700 text-amber-400 text-xs font-bold">
-            <LayoutDashboard className="w-4 h-4" /> Government Portal Administrator Control Panel
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F] pt-20 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 mt-8">
+        
+        {/* Header */}
+        <div className="border-b border-gray-200 dark:border-gray-800 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">
+              <LayoutDashboard className="w-3 h-3" /> {t('govtOperations', 'Government Operations')}
+            </div>
+            <h1 className="text-3xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight">
+              {t('adminDashboard', 'Admin Dashboard')}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
+              {t('adminDashboardDesc', 'Manage welfare schemes, track analytics, and maintain data quality.')}
+            </p>
           </div>
-          <h1 className="text-3xl font-black font-heading tracking-tight">Admin & Nodal Officer Portal</h1>
-          <p className="text-xs text-slate-300">
-            Manage welfare schemes, ingest official data feeds, track citizen analytics, and broadcast notifications.
-          </p>
-        </div>
-      </div>
-
-      {/* Admin Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-        {[
-          { id: 'dashboard', label: '📊 System Dashboard' },
-          { id: 'schemes', label: '📁 Manage Schemes' },
-          { id: 'import', label: '📥 Import Scheme Data' },
-          { id: 'broadcast', label: '📢 Send Broadcast' },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveAdminTab(tab.id as any)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeAdminTab === tab.id
-                ? 'bg-indigo-700 text-white shadow'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-            }`}
+          <button 
+            onClick={() => setShowCommandPalette(true)}
+            className="px-4 py-2 bg-[#123C69] hover:bg-[#0A2645] text-white rounded font-semibold text-sm flex items-center gap-2 transition-colors"
           >
-            {tab.label}
+            <Terminal className="w-4 h-4" /> AI Command Center <span className="opacity-50 text-xs ml-1">(Ctrl+K)</span>
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* Admin Tab Content */}
-      {activeAdminTab === 'dashboard' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="gov-card p-5 border-l-4 border-l-blue-600">
-              <span className="text-xs text-slate-500 font-semibold">Total Schemes in DB</span>
-              <span className="text-3xl font-black text-slate-900 dark:text-white font-heading block mt-1">{schemes.length}</span>
+        {/* Admin Tabs */}
+        <div className="flex border-b border-gray-200 dark:border-gray-800">
+          {[
+            { id: 'dashboard', label: t('overview', 'Overview') },
+            { id: 'schemes', label: t('manageSchemes', 'Manage Schemes') },
+            { id: 'data_quality', label: t('dataQuality', 'Data Quality') },
+            { id: 'import', label: t('importData', 'Import Data') },
+            { id: 'broadcast', label: t('broadcasts', 'Broadcasts') },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveAdminTab(tab.id as any)}
+              className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                activeAdminTab === tab.id
+                  ? 'border-[#1769FF] text-[#1769FF]'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {activeAdminTab === 'dashboard' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('totalSchemes', 'Total Schemes')}</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{schemes.length}</span>
+              </div>
+              <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('active', 'Active')}</span>
+                <span className="text-3xl font-bold text-[#15803D] mt-2">{schemes.length}</span>
+              </div>
+              <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('centralGovt', 'Central')}</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{schemes.filter(s => s.state === 'Central').length}</span>
+              </div>
+              <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('stateGovt', 'State')}</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{schemes.filter(s => s.state !== 'Central').length}</span>
+              </div>
+              <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1"><Activity className="w-3 h-3" /> {t('updated30d', 'Updated (30d)')}</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white mt-2">12</span>
+              </div>
+              <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+                <span className="text-xs font-semibold text-[#B91C1C] uppercase tracking-wide flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> {t('dataIssues', 'Data Issues')}</span>
+                <span className="text-3xl font-bold text-[#B91C1C] mt-2">3</span>
+              </div>
             </div>
-            <div className="gov-card p-5 border-l-4 border-l-emerald-600">
-              <span className="text-xs text-slate-500 font-semibold">Registered Citizens</span>
-              <span className="text-3xl font-black text-slate-900 dark:text-white font-heading block mt-1">12,480</span>
-            </div>
-            <div className="gov-card p-5 border-l-4 border-l-amber-600">
-              <span className="text-xs text-slate-500 font-semibold">OCR Scans Processed</span>
-              <span className="text-3xl font-black text-slate-900 dark:text-white font-heading block mt-1">34,910</span>
-            </div>
-            <div className="gov-card p-5 border-l-4 border-l-purple-600">
-              <span className="text-xs text-slate-500 font-semibold">DBT Grants Approved</span>
-              <span className="text-3xl font-black text-slate-900 dark:text-white font-heading block mt-1">₹4.8 Cr</span>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Mock Charts */}
+              <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded border border-gray-200 dark:border-gray-800 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">{t('schemesByCategory', 'Schemes by Category')}</h3>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Agriculture', count: 45, width: '60%' },
+                    { label: 'Education', count: 32, width: '45%' },
+                    { label: 'Healthcare', count: 28, width: '40%' },
+                    { label: 'Housing', count: 15, width: '25%' },
+                  ].map((stat, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between text-xs font-semibold mb-1">
+                        <span className="text-gray-700 dark:text-gray-300">{stat.label}</span>
+                        <span className="text-gray-500">{stat.count}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-sm h-2">
+                        <div className="bg-[#123C69] h-2 rounded-sm" style={{ width: stat.width }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded border border-gray-200 dark:border-gray-800 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wide">{t('recActivity', 'Recommendation Activity (30d)')}</h3>
+                <div className="h-40 flex items-end justify-between gap-2 px-2">
+                  {[40, 60, 45, 80, 50, 90, 70].map((h, i) => (
+                    <div key={i} className="w-full bg-[#1769FF]/20 hover:bg-[#1769FF]/40 rounded-t-sm transition-colors relative group" style={{ height: `${h}%` }}>
+                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap">
+                        {h * 120} matches
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between text-xs font-semibold text-gray-500 mt-2">
+                  <span>Mon</span>
+                  <span>Sun</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Manage Schemes View */}
-      {activeAdminTab === 'schemes' && (
-        <div className="space-y-6">
-          {/* Add Scheme Form */}
-          <div className="gov-card p-6 space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white font-heading">Add New Government Welfare Scheme</h3>
-            <form onSubmit={handleCreateScheme} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div>
-                <label className="block font-semibold mb-1">Scheme Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newSchemeName}
-                  onChange={(e) => setNewSchemeName(e.target.value)}
-                  placeholder="e.g. PM Kisan Maandhan Yojana"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Ministry / Nodal Body</label>
-                <input
-                  type="text"
-                  required
-                  value={newMinistry}
-                  onChange={(e) => setNewMinistry(e.target.value)}
-                  placeholder="Ministry of Agriculture"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Category</label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                >
-                  <option value="Agriculture & Farmers">Agriculture & Farmers</option>
-                  <option value="Health & Healthcare">Health & Healthcare</option>
-                  <option value="Housing & Shelter">Housing & Shelter</option>
-                  <option value="Education & Skill">Education & Skill</option>
-                  <option value="Financial Inclusion & Credit">Financial Inclusion & Credit</option>
-                  <option value="Pensions & Senior Care">Pensions & Senior Care</option>
-                  <option value="Women & Child Welfare">Women & Child Welfare</option>
-                  <option value="Employment & Micro Enterprises">Employment & Micro Enterprises</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">State / Central</label>
-                <input
-                  type="text"
-                  value={newState}
-                  onChange={(e) => setNewState(e.target.value)}
-                  placeholder="Central or Tamil Nadu / UP"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Financial Benefit (₹/yr)</label>
-                <input
-                  type="number"
-                  value={newFinancialBenefit}
-                  onChange={(e) => setNewFinancialBenefit(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Official Apply URL</label>
-                <input
-                  type="url"
-                  value={newApplyUrl}
-                  onChange={(e) => setNewApplyUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div className="sm:col-span-3 pt-2">
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs shadow flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4" /> Add Scheme to Database
+        {/* Manage Schemes */}
+        {activeAdminTab === 'schemes' && (
+          <div className="bg-white dark:bg-[#0F1B2D] rounded border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm">{t('schemeDatabase', 'Scheme Database')}</h3>
+              <div className="flex items-center gap-3">
+                {selectedSchemes.length > 0 && (
+                  <button 
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded bg-red-100 text-red-700 hover:bg-red-200 text-xs font-bold transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" /> Bulk Delete ({selectedSchemes.length})
+                  </button>
+                )}
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded bg-[#1769FF] text-white text-xs font-bold hover:bg-blue-700 transition-colors">
+                  <Plus className="w-4 h-4" /> {t('addScheme', 'Add Scheme')}
                 </button>
               </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-white dark:bg-[#0F1B2D] border-b border-gray-200 dark:border-gray-800">
+                  <tr>
+                    <th className="px-6 py-4">
+                      <input 
+                        type="checkbox" 
+                        checked={schemes.length > 0 && selectedSchemes.length === schemes.length}
+                        onChange={handleToggleSelectAll}
+                        className="rounded border-gray-300"
+                      />
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-gray-900 dark:text-white uppercase tracking-wider text-xs">{t('schemeName', 'Scheme Name')}</th>
+                    <th className="px-6 py-4 font-semibold text-gray-900 dark:text-white uppercase tracking-wider text-xs">{t('level', 'Level')}</th>
+                    <th className="px-6 py-4 font-semibold text-gray-900 dark:text-white uppercase tracking-wider text-xs">{t('category', 'Category')}</th>
+                    <th className="px-6 py-4 font-semibold text-gray-900 dark:text-white uppercase tracking-wider text-xs">{t('actions', 'Actions')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#07111F]">
+                  {schemes.map(sch => (
+                    <tr key={sch.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedSchemes.includes(sch.id)}
+                          onChange={() => handleToggleSelect(sch.id)}
+                          className="rounded border-gray-300"
+                        />
+                      </td>
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{sch.name}</td>
+                      <td className="px-6 py-4 text-gray-500">{sch.state === 'Central' ? 'Central' : 'State'}</td>
+                      <td className="px-6 py-4 text-gray-500">{sch.category.split('&')[0]}</td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => onDeleteScheme(sch.id)}
+                          className="text-[#B91C1C] hover:text-red-900 transition-colors p-1"
+                          title="Delete Scheme"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Import */}
+        {activeAdminTab === 'import' && (
+          <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded border border-gray-200 dark:border-gray-800 shadow-sm max-w-3xl">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
+              <UploadCloud className="w-5 h-5 text-[#1769FF]" /> {t('ingestFeeds', 'Ingest Government Data Feeds (JSON)')}
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              {t('ingestFeedsDesc', 'Paste raw scheme JSON data fetched from official government APIs to dynamically expand the platform database.')}
+            </p>
+
+            {importSuccessMsg && (
+              <div className="p-4 rounded bg-[#15803D]/10 text-[#15803D] text-sm font-bold border border-[#15803D]/20 mb-6">
+                {importSuccessMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleImportSchemes} className="space-y-4">
+              <textarea
+                rows={10}
+                value={importJsonText}
+                onChange={(e) => setImportJsonText(e.target.value)}
+                placeholder='[{"id": "scheme-1", "name": "...", "category": "...", ...}]'
+                className="w-full p-4 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 font-mono text-xs text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!importJsonText.trim()}
+                className="px-6 py-3 rounded bg-[#1769FF] hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm shadow-sm flex items-center gap-2 transition-colors"
+              >
+                <FileSpreadsheet className="w-4 h-4" /> {t('runIngestion', 'Run Scheme Ingestion Script')}
+              </button>
             </form>
           </div>
+        )}
 
-          {/* Scheme Table */}
-          <div className="gov-card overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 uppercase font-bold text-[10px]">
-                <tr>
-                  <th className="p-3">Scheme Name</th>
-                  <th className="p-3">State</th>
-                  <th className="p-3">Category</th>
-                  <th className="p-3">Benefit</th>
-                  <th className="p-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {schemes.map(sch => (
-                  <tr key={sch.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="p-3 font-bold text-slate-900 dark:text-white">{sch.name}</td>
-                    <td className="p-3">{sch.state}</td>
-                    <td className="p-3">{sch.category}</td>
-                    <td className="p-3 text-emerald-600 font-bold">₹{(sch.financialBenefitAmount || 0).toLocaleString('en-IN')}</td>
-                    <td className="p-3">
-                      <button
-                        onClick={() => onDeleteScheme(sch.id)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                        title="Delete Scheme"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Data Quality Center */}
+        {activeAdminTab === 'data_quality' && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded border border-gray-200 dark:border-gray-800 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-[#B91C1C]" /> {t('dataQualityCenter', 'Data Quality Center')}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">{t('dataQualityDesc', 'Detect duplicates, missing data, and broken links across the scheme database.')}</p>
+                </div>
+                <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-bold rounded flex items-center gap-2 transition-colors">
+                  <RefreshCcw className="w-4 h-4" /> {t('runScan', 'Run Scan')}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Missing Data Card */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded p-4">
+                  <div className="flex items-center gap-2 text-[#D97706] mb-3">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="font-bold text-sm">{t('missingData', 'Missing Data')} (3)</span>
+                  </div>
+                  <ul className="space-y-3">
+                    <li className="text-sm">
+                      <div className="font-semibold text-gray-900 dark:text-white">PM Kisan Samman Nidhi</div>
+                      <div className="text-xs text-gray-500">{t('missing', 'Missing:')} officialApplyUrl</div>
+                    </li>
+                    <li className="text-sm">
+                      <div className="font-semibold text-gray-900 dark:text-white">Stand Up India Scheme</div>
+                      <div className="text-xs text-gray-500">{t('missing', 'Missing:')} financialBenefitAmount</div>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Duplicates Card */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded p-4">
+                  <div className="flex items-center gap-2 text-[#123C69] dark:text-[#1769FF] mb-3">
+                    <Activity className="w-4 h-4" />
+                    <span className="font-bold text-sm">{t('possibleDupes', 'Possible Duplicates')} (1)</span>
+                  </div>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
+                    <div className="text-xs font-semibold text-gray-500 mb-2">94% {t('semanticMatch', 'Semantic Match')}</div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">1. PMAY-G (Rural)</div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white mb-3">2. Pradhan Mantri Awas Yojana</div>
+                    <div className="flex gap-2">
+                      <button className="flex-1 py-1 text-xs font-bold bg-[#1769FF] text-white rounded">{t('merge', 'Merge')}</button>
+                      <button className="flex-1 py-1 text-xs font-bold border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded">{t('ignore', 'Ignore')}</button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Broken Links Card */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded p-4">
+                  <div className="flex items-center gap-2 text-[#B91C1C] mb-3">
+                    <Link2Off className="w-4 h-4" />
+                    <span className="font-bold text-sm">{t('brokenLinks', 'Broken Links')} (1)</span>
+                  </div>
+                  <ul className="space-y-3">
+                    <li className="text-sm">
+                      <div className="font-semibold text-gray-900 dark:text-white">National Scholarship Portal</div>
+                      <div className="text-xs text-gray-500 truncate">{t('error404', '404 Error:')} scholarships.gov.in/apply</div>
+                      <button className="mt-2 text-xs font-bold text-[#1769FF] hover:underline">{t('updateUrl', 'Update URL')}</button>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Scheme Import Tool */}
-      {activeAdminTab === 'import' && (
-        <div className="gov-card p-6 space-y-4">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white font-heading flex items-center gap-2">
-            <UploadCloud className="w-5 h-5 text-indigo-600" /> Ingest Government Data Feeds (JSON/CSV)
-          </h3>
-          <p className="text-xs text-slate-500">
-            Paste raw scheme JSON data fetched from official government APIs (data.gov.in / myscheme.gov.in) to dynamically expand the platform database.
-          </p>
+      </div>
 
-          {importSuccessMsg && (
-            <div className="p-3 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold">
-              {importSuccessMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleImportSchemes} className="space-y-4">
-            <textarea
-              rows={8}
-              value={importJsonText}
-              onChange={(e) => setImportJsonText(e.target.value)}
-              placeholder='[{"id": "custom-scheme-1", "name": "PM Krishi Sinchayee Yojana", "category": "Agriculture & Farmers", ...}]'
-              className="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs text-slate-900 dark:text-white"
-            />
-            <button
-              type="submit"
-              disabled={!importJsonText.trim()}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow flex items-center gap-2"
-            >
-              <FileSpreadsheet className="w-4 h-4" /> Run Scheme Ingestion Script
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Broadcast Notifications */}
-      {activeAdminTab === 'broadcast' && (
-        <div className="gov-card p-6 space-y-4 max-w-xl">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white font-heading">
-            Send Push Broadcast Notification to Citizens
-          </h3>
-          {broadcastSuccess && (
-            <div className="p-3 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold">
-              ✓ Broadcast Notification sent to 12,480 active citizen profiles!
-            </div>
-          )}
-
-          <form onSubmit={handleSendBroadcast} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-semibold mb-1">Notification Title</label>
-              <input
-                type="text"
-                required
-                value={broadcastTitle}
-                onChange={(e) => setBroadcastTitle(e.target.value)}
-                placeholder="e.g. Last Date Reminder for Crop Subsidy"
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+      {/* AI Command Palette Modal */}
+      {showCommandPalette && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm" onClick={() => setShowCommandPalette(false)}>
+          <div 
+            className="w-full max-w-2xl bg-white dark:bg-[#0F1B2D] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+              <Terminal className="w-5 h-5 text-[#1769FF] mr-3" />
+              <input 
+                autoFocus
+                type="text" 
+                placeholder="Ask Admin AI or type a command... (e.g., 'Find broken links')"
+                value={commandInput}
+                onChange={e => setCommandInput(e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 text-lg font-sans"
               />
+              <div className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">ESC to close</div>
             </div>
-            <div>
-              <label className="block font-semibold mb-1">Message Body</label>
-              <textarea
-                rows={3}
-                required
-                value={broadcastDesc}
-                onChange={(e) => setBroadcastDesc(e.target.value)}
-                placeholder="Details of the announcement..."
-                className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
+            <div className="max-h-[60vh] overflow-y-auto p-2">
+              <div className="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Suggested Commands</div>
+              {['Audit schemes for missing documents', 'Generate monthly impact report', 'Identify low-performing schemes', 'Sync with central database (Mock)'].map((cmd, i) => (
+                <button 
+                  key={i}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#16243A] text-sm text-gray-700 dark:text-gray-300 rounded-lg transition-colors flex items-center gap-3"
+                >
+                  <Activity className="w-4 h-4 text-gray-400" />
+                  {cmd}
+                </button>
+              ))}
             </div>
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs shadow flex items-center gap-2"
-            >
-              <Bell className="w-4 h-4" /> Broadcast Notification
-            </button>
-          </form>
+          </div>
         </div>
       )}
     </div>

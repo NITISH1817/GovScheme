@@ -1,33 +1,84 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
-  Sparkles,
-  Bot,
-  ShieldCheck,
-  Globe2,
-  ArrowRight,
-  CheckCircle2,
-  UserCheck,
-  FileText,
-  ExternalLink,
-  Mic,
-  ScanLine,
   Zap,
-  Award,
-  ChevronRight
+  Search,
+  Filter,
+  ExternalLink,
+  ArrowRight,
+  ShieldCheck,
+  UserCheck,
+  CheckCircle2,
+  GraduationCap,
+  Tractor,
+  HeartPulse,
+  Home,
+  Briefcase,
+  Baby,
+  Rocket,
+  IndianRupee
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, useAnimation, useMotionValue, useSpring } from 'framer-motion';
 import { LanguageCode, UserProfile, Scheme } from '../types';
 
 interface LandingPageProps {
   currentLang: LanguageCode;
-  onGetStarted: () => void;
+  onGetStarted: (mode: 'wizard' | 'life-event' | 'what-can-i-get') => void;
   onTalkToAI: () => void;
   onNavigateTab: (tab: string) => void;
   topSchemes: Scheme[];
   user: UserProfile | null;
 }
+
+// Magnetic Button Component
+const MagneticButton = ({ children, onClick, className }: { children: React.ReactNode, onClick?: () => void, className?: string }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springConfig = { damping: 15, stiffness: 150, mass: 0.1 };
+  const springX = useSpring(x, springConfig);
+  const springY = useSpring(y, springConfig);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    x.set((e.clientX - centerX) * 0.2);
+    y.set((e.clientY - centerY) * 0.2);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.button
+      onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ x: springX, y: springY }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      className={`relative overflow-hidden group ${className}`}
+    >
+      {children}
+    </motion.button>
+  );
+};
+
+// 2D Card Component
+const TiltCard = ({ children, className }: { children: React.ReactNode, className?: string }) => {
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   currentLang,
@@ -38,247 +89,316 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   user
 }) => {
   const { t } = useTranslation();
+  
+  // Hero Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2, delayChildren: 0.2 }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+  };
+
+  const categories = [
+    { icon: GraduationCap, label: t('Education'), color: 'from-blue-500 to-gov-blue' },
+    { icon: Tractor, label: t('Agriculture'), color: 'from-green-500 to-gov-green' },
+    { icon: HeartPulse, label: t('Healthcare'), color: 'from-red-400 to-gov-red' },
+    { icon: Home, label: t('Housing'), color: 'from-purple-500 to-purple-700' },
+    { icon: Briefcase, label: t('Employment'), color: 'from-gov-saffron to-orange-600' },
+    { icon: Baby, label: t('Women & Child'), color: 'from-pink-500 to-pink-700' },
+    { icon: Rocket, label: t('Entrepreneurship'), color: 'from-teal-500 to-teal-700' },
+    { icon: IndianRupee, label: t('Financial Help'), color: 'from-yellow-500 to-yellow-700' },
+  ];
 
   return (
-    <div className="space-y-16 py-6 pb-16">
-      {/* Hero Section (USAJOBS Style) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <motion.section 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative bg-uswds-primary text-white rounded-lg p-8 sm:p-14 shadow-sm border border-uswds-secondary"
-        >
-          <div className="relative max-w-4xl mx-auto flex flex-col items-start text-left space-y-6">
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight font-sans">
-              {t('tagline', "Find Government Schemes You're Eligible For")}
-            </h1>
+    <div className="pt-12 pb-12 space-y-12 bg-[#F8FAFC] dark:bg-[#07111F] min-h-screen relative overflow-hidden">
+      
+      {/* Clean 2D Background */}
+      <div className="absolute inset-0 bg-white dark:bg-[#07111F] z-0">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMWgxOG0tMTggMThoMTgiIHN0cm9rZT0icmdiYSgwLDAsMCwwLjAyKSIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==')] opacity-50 dark:opacity-20 pointer-events-none" />
+      </div>
 
-            <p className="text-blue-100 text-base sm:text-lg max-w-2xl leading-relaxed">
-              {t('heroSubtitle', 'Helping citizens discover government benefits quickly using AI-powered eligibility recommendations.')}
-            </p>
+      {user ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 pt-4 space-y-8">
+          {/* AI-Powered Personalized Home Dashboard */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white/60 dark:bg-[#0B1220]/60 backdrop-blur-xl p-8 rounded-3xl border border-gov-border dark:border-white/10 shadow-sm"
+          >
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-gov-navy dark:text-white font-sans tracking-tight mb-2">
+                {t('goodMorningCitizen', 'Good morning, Citizen').replace('Citizen', user.fullName.split(' ')[0] || 'Citizen')}
+              </h1>
+              <p className="text-gov-textMuted dark:text-gray-400 text-lg">
+                {t('basedOnProfileIn', 'Based on your profile in')} <span className="font-bold text-gov-navy dark:text-white">{user.state || 'India'}</span> {t('andYourInterests', 'and your interests:')}
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <span className="px-4 py-1.5 bg-gov-green/10 text-gov-green font-bold text-sm rounded-full border border-gov-green/20">
+                  {topSchemes.length} {t('schemesMayBeRelevant', 'schemes may be relevant to you')}
+                </span>
+              </div>
+            </div>
+            <MagneticButton
+              onClick={() => onNavigateTab('schemes')}
+              className="group relative overflow-hidden rounded-full bg-gov-navy dark:bg-white p-2 flex items-center justify-between shadow-lg shrink-0"
+            >
+              <span className="text-white dark:text-black font-bold text-sm pl-6 pr-4">
+                View My Recommendations
+              </span>
+              <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform group-hover:scale-105">
+                <ArrowRight className="w-5 h-5 text-white dark:text-black group-hover:translate-x-1 transition-transform" />
+              </div>
+            </MagneticButton>
+          </motion.div>
+
+          {/* Quick Action Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-gov-border dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onNavigateTab('profile')}>
+              <div className="w-12 h-12 bg-gov-saffron/10 rounded-full flex items-center justify-center mb-4">
+                <UserCheck className="w-6 h-6 text-gov-saffron" />
+              </div>
+              <h3 className="font-bold text-gov-navy dark:text-white mb-2">{t('completeYourProfile', 'Complete Your Profile')}</h3>
+              <p className="text-sm text-gov-textMuted dark:text-gray-400">{t('unlockMoreAccurateAI', 'Unlock more accurate AI recommendations by updating your details.')}</p>
+              <div className="mt-4 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
+                <div className="bg-gov-saffron h-1.5 rounded-full" style={{ width: `${user.profileCompletionScore}%` }}></div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-gov-border dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onNavigateTab('tracker')}>
+              <div className="w-12 h-12 bg-gov-blue/10 rounded-full flex items-center justify-center mb-4">
+                <Building2 className="w-6 h-6 text-gov-blue" />
+              </div>
+              <h3 className="font-bold text-gov-navy dark:text-white mb-2">{t('continueApplications', 'Continue Applications')}</h3>
+              <p className="text-sm text-gov-textMuted dark:text-gray-400">{t('youHavePendingApp', 'You have 1 pending application requiring document verification.')}</p>
+            </div>
+
+            <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-gov-border dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onNavigateTab('assistant')}>
+              <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center mb-4">
+                <ShieldCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="font-bold text-gov-navy dark:text-white mb-2">{t('aiDocAssistant', 'AI Document Assistant (Auto-Detect)')}</h3>
+              <p className="text-sm text-gov-textMuted dark:text-gray-400">{t('needHelpIdentifyingDoc', 'Need help identifying or verifying a government document? Ask AI.')}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Recommended for You */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-gov-navy dark:text-white">{t('recommendedForYou', 'Recommended for You')}</h2>
+              <div className="space-y-3">
+                {topSchemes.slice(0, 3).map(scheme => (
+                  <div key={scheme.id} className="bg-white dark:bg-[#0F1B2D] p-4 rounded-xl border border-gov-border dark:border-white/5 flex items-center justify-between group hover:border-gov-blue transition-colors cursor-pointer" onClick={() => onNavigateTab('schemes')}>
+                    <div>
+                      <h4 className="font-bold text-sm text-gov-navy dark:text-white mb-1 group-hover:text-gov-blue transition-colors">{scheme.name}</h4>
+                      <p className="text-xs text-gov-textMuted dark:text-gray-400 line-clamp-1">{scheme.shortDescription}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gov-border dark:text-gray-600 group-hover:text-gov-blue transition-colors shrink-0 ml-4" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Upcoming Deadlines */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-gov-navy dark:text-white">{t('upcomingDeadlines', 'Upcoming Deadlines')}</h2>
+              <div className="bg-red-50 dark:bg-red-900/10 p-5 rounded-2xl border border-red-100 dark:border-red-900/30">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-red-900 dark:text-red-400">PM Kisan Samman Nidhi</h4>
+                    <p className="text-xs text-red-700 dark:text-red-500">{t('ekycDeadline', 'e-KYC Deadline in 5 days')}</p>
+                  </div>
+                </div>
+                <button className="w-full py-2 bg-white dark:bg-[#111827] border border-red-200 dark:border-red-900/50 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  {t('completeNow', 'Complete Now')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 pt-4">
+        <motion.section 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="relative bg-white/60 dark:bg-[#0B1220]/60 backdrop-blur-2xl text-gov-text dark:text-white rounded-[2rem] p-2 shadow-2xl border border-white/20 dark:border-white/10 overflow-hidden"
+        >
+          {/* Inner Core for Double-Bezel */}
+          <div className="bg-white/40 dark:bg-[#050505]/40 backdrop-blur-xl rounded-[calc(2rem-0.5rem)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border border-white/40 dark:border-white/5 p-6 sm:p-12 relative overflow-hidden">
+            {/* Subtle animated gradient background elements */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 2, ease: "easeOut" }}
+              className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-gov-navy/5 dark:from-white/5 to-transparent rounded-full blur-3xl -mr-64 -mt-64"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 2, delay: 0.5, ease: "easeOut" }}
+              className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-gov-saffron/5 dark:from-gov-saffron/10 to-transparent rounded-full blur-3xl -ml-32 -mb-32"
+            />
+
+            <div className="relative max-w-4xl mx-auto flex flex-col items-center text-center space-y-6">
+            <motion.div variants={itemVariants} className="w-20 h-20 bg-gradient-to-br from-gov-navy to-gov-blue rounded-2xl flex items-center justify-center mb-2 shadow-lg shadow-gov-navy/20">
+              <Building2 className="w-10 h-10 text-white" />
+            </motion.div>
+            
+            <motion.h1 variants={itemVariants} className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight font-sans text-gov-navy">
+              {t('tagline', "Find Government Schemes You May Be Eligible For")}
+            </motion.h1>
+
+            <motion.p variants={itemVariants} className="text-gov-textMuted text-lg sm:text-2xl max-w-3xl leading-relaxed">
+              {t('heroSubtitle', 'Answer a few simple questions and discover government schemes relevant to your age, income, occupation, location and other eligibility criteria.')}
+            </motion.p>
 
             {/* Primary Action Buttons */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-              <button
-                onClick={onGetStarted}
-                className="w-full sm:w-auto min-w-[160px] px-6 py-3.5 rounded-md bg-white text-uswds-primary font-bold text-sm sm:text-base shadow-sm transition hover:bg-slate-50 flex items-center justify-center gap-2"
+            <motion.div variants={itemVariants} className="pt-6 flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+              <MagneticButton
+                onClick={() => onGetStarted('wizard')}
+                className="group relative overflow-hidden rounded-full bg-gov-navy dark:bg-white p-2 flex items-center justify-between shadow-2xl w-full sm:w-auto min-w-[280px]"
               >
-                <span className="whitespace-nowrap">{t('getStarted', 'Get Started')}</span>
-              </button>
+                <span className="text-white dark:text-black font-bold text-lg pl-6 pr-4">
+                  {t('getStarted', 'Check My Eligibility')}
+                </span>
+                <div className="w-12 h-12 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:bg-white/20 dark:group-hover:bg-black/20 group-hover:scale-105">
+                  <ArrowRight className="w-6 h-6 text-white dark:text-black group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
+              </MagneticButton>
 
-              <button
-                onClick={() => onNavigateTab('schemes')}
-                className="w-full sm:w-auto min-w-[160px] px-6 py-3.5 rounded-md bg-uswds-secondary hover:bg-blue-900 text-white font-bold text-sm sm:text-base transition flex items-center justify-center gap-2 border border-blue-800"
+              <MagneticButton
+                onClick={() => onGetStarted('life-event')}
+                className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[240px]"
               >
-                <span className="whitespace-nowrap">{t('navSchemes', 'Explore Schemes')}</span>
-              </button>
-            </div>
+                <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-8 w-full text-center">
+                  {t('lifeEventMode', 'Life Event Mode')}
+                </span>
+              </MagneticButton>
+
+              <MagneticButton
+                onClick={() => onGetStarted('what-can-i-get')}
+                className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[240px]"
+              >
+                <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-8 w-full text-center">
+                  {t('whatCanIGet', '"What Can I Get?"')}
+                </span>
+              </MagneticButton>
+            </motion.div>
+            
+            {/* Trust Indicators */}
+            <motion.div variants={itemVariants} className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-4 w-full border-t border-gov-border mt-4">
+              {[
+                { icon: Search, label: t('Schemes Available'), value: topSchemes.length > 0 ? `${topSchemes.length}+` : '4000+', color: 'text-gov-blue' },
+                { icon: ShieldCheck, label: t('Central & State Schemes'), value: t('Verified'), color: 'text-gov-green' },
+                { icon: UserCheck, label: t('Personalized Eligibility'), value: t('AI Match'), color: 'text-gov-saffron' },
+                { icon: CheckCircle2, label: t('Official Scheme Sources'), value: t('100% Authentic'), color: 'text-gov-navy' }
+              ].map((stat, i) => (
+                <div key={i} className="flex flex-col items-center space-y-3 group">
+                  <div className={`p-3 rounded-full bg-gray-50 group-hover:bg-gray-100 transition-colors ${stat.color}`}>
+                    <stat.icon className="w-6 h-6" />
+                  </div>
+                  <span className="text-xl font-bold text-gov-navy">{stat.value}</span>
+                  <span className="text-xs text-gov-textMuted dark:text-gray-400 font-medium text-center uppercase tracking-wider">{stat.label}</span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
           </div>
         </motion.section>
       </div>
+      )}
 
-      {/* Three Core Cards */}
+      {/* Interactive Category Cards */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: AI Powered */}
-          <div className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
-            <div className="w-12 h-12 rounded bg-uswds-background text-uswds-primary flex items-center justify-center mb-4 border border-uswds-border">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold text-uswds-primary font-sans mb-2">
-              {t('aiPoweredTitle', 'AI Powered Match')}
-            </h3>
-            <p className="text-sm text-uswds-textMuted leading-relaxed flex-grow">
-              {t('aiPoweredDesc', 'Our advanced engine matches your profile...')}
-            </p>
-          </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          className="text-center space-y-3 mb-10"
+        >
+          <h2 className="text-2xl font-extrabold text-gov-navy font-sans">{t('browseByCategory', 'Browse by Category')}</h2>
+        </motion.div>
 
-          {/* Card 2: Multilingual */}
-          <div className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
-            <div className="w-12 h-12 rounded bg-uswds-background text-uswds-primary flex items-center justify-center mb-4 border border-uswds-border">
-              <Globe2 className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold text-uswds-primary font-sans mb-2">
-              {t('multilingualTitle', '10+ Languages')}
-            </h3>
-            <p className="text-sm text-uswds-textMuted leading-relaxed flex-grow">
-              {t('multilingualDesc', 'Experience the platform in your native language...')}
-            </p>
-          </div>
-
-          {/* Card 3: Government Verified */}
-          <div className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
-            <div className="w-12 h-12 rounded bg-uswds-background text-uswds-primary flex items-center justify-center mb-4 border border-uswds-border">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold text-uswds-primary font-sans mb-2">
-              {t('govtVerifiedTitle', 'Govt. Verified')}
-            </h3>
-            <p className="text-sm text-uswds-textMuted leading-relaxed flex-grow">
-              {t('govtVerifiedDesc', 'Only 100% authentic schemes from official portals.')}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* National Impact Stats Banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="bg-white rounded-md px-6 py-8 border-y-4 border-y-uswds-primary shadow-sm border-x border-x-uswds-border">
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-uswds-textMuted mb-6">
-            {t('nationalImpact', 'National Impact in Numbers')}
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {[
-              { value: '15 Cr+', label: t('beneficiariesStat', 'Beneficiaries Reached') },
-              { value: '₹2.5L Cr', label: t('disbursedStat', 'Benefits Disbursed') },
-              { value: '500+', label: t('activeSchemesStat', 'Active Schemes') },
-              { value: '28', label: t('statesCoveredStat', 'States Covered') },
-            ].map((stat, i) => (
-              <div key={i} className="space-y-1">
-                <div className="text-3xl sm:text-4xl font-black font-sans text-uswds-primary tabular-nums">
-                  {stat.value}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {categories.map((cat, idx) => (
+            <TiltCard key={idx}>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="group cursor-pointer bg-white border border-gov-border p-6 rounded-2xl flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold bg-gradient-to-br ${cat.color} text-white shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                  <cat.icon className="w-7 h-7" />
                 </div>
-                <div className="text-xs font-semibold text-uswds-textMuted uppercase tracking-wide">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
+                <h4 className="text-sm font-bold text-gov-navy font-sans group-hover:text-gov-blue transition-colors">
+                  {cat.label}
+                </h4>
+              </motion.div>
+            </TiltCard>
+          ))}
         </div>
       </section>
 
       {/* Simple 4-Step Interactive Workflow */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-6">
-        <div className="text-center space-y-3 mb-10">
-          <h2 className="text-3xl font-extrabold text-uswds-primary font-sans">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center space-y-3 mb-12"
+        >
+          <h2 className="text-2xl font-extrabold text-gov-navy font-sans">
             {t('howItWorks', 'How it Works')}
           </h2>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
+          {/* Animated connector line for desktop */}
+          <div className="hidden md:block absolute top-1/2 left-[10%] right-[10%] h-0.5 bg-gov-border -z-10 -translate-y-1/2">
+            <motion.div 
+              initial={{ width: 0 }}
+              whileInView={{ width: '100%' }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+              className="h-full bg-gov-blue"
+            />
+          </div>
+
           {[
-            {
-              title: t('step1Title', 'Profile & Scan'),
-              desc: t('step1Desc', 'Enter details or scan documents'),
-              icon: FileText
-            },
-            {
-              title: t('step2Title', 'AI Match'),
-              desc: t('step2Desc', 'Engine finds eligible schemes'),
-              icon: Zap
-            },
-            {
-              title: t('step3Title', 'Review'),
-              desc: t('step3Desc', 'Check eligibility rules'),
-              icon: Award
-            },
-            {
-              title: t('step4Title', 'Apply'),
-              desc: t('step4Desc', 'Apply via official portal'),
-              icon: ExternalLink
-            }
+            { title: t('step1Title', 'Tell us about yourself'), icon: UserCheck },
+            { title: t('step2Title', 'Analyze eligibility'), icon: Zap },
+            { title: t('step3Title', 'Discover matching schemes'), icon: Search },
+            { title: t('step4Title', 'Understand why you qualify'), icon: Filter },
+            { title: t('step5Title', 'Apply'), icon: ExternalLink }
           ].map((step, idx) => (
-            <div key={idx} className="bg-white border border-uswds-border p-6 rounded-md flex flex-col justify-between space-y-4 h-full shadow-sm">
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded flex items-center justify-center font-bold bg-uswds-background text-uswds-primary border border-uswds-border">
-                  <step.icon className="w-5 h-5" />
+             <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.2 }}
+                className="bg-white border border-gov-border p-6 rounded-2xl flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-md transition-shadow relative z-10"
+             >
+                <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold bg-white text-gov-navy border-4 border-gov-background shadow-inner">
+                  <step.icon className="w-6 h-6" />
                 </div>
-                <h4 className="text-base font-bold text-uswds-primary font-sans">
+                <h4 className="text-sm font-bold text-gov-navy font-sans">
                   {step.title}
                 </h4>
-                <p className="text-sm text-uswds-textMuted leading-relaxed">
-                  {step.desc}
-                </p>
-              </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </section>
-
-      {/* Featured Schemes Showcase */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-uswds-primary font-sans">
-              {t('trending', 'Featured National Welfare Schemes')}
-            </h2>
-            <p className="text-sm text-uswds-textMuted">
-              {t('heroSubtitle', 'Discover verified welfare initiatives across Central and State Governments.')}
-            </p>
-          </div>
-          <button
-            onClick={() => onNavigateTab('schemes')}
-            className="text-sm font-bold text-uswds-primary hover:underline flex items-center gap-1 whitespace-nowrap"
-          >
-            <span>{t('allSchemes', 'View All Schemes')} ({topSchemes.length}+)</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {topSchemes.slice(0, 3).map(scheme => (
-            <div key={scheme.id} className="bg-white border border-uswds-border p-6 rounded-md shadow-sm hover:shadow-md transition-shadow flex flex-col space-y-4 h-full">
-              <div className="space-y-2">
-                <div className="flex justify-between items-start gap-2">
-                  <span className="bg-uswds-background text-uswds-primary border border-uswds-border text-[10px] font-bold px-2.5 py-0.5 rounded whitespace-nowrap uppercase tracking-wider">
-                    {scheme.state === 'Central' ? t('centralSchemes', 'Central Govt') : scheme.state}
-                  </span>
-                  <span className="text-[10px] sm:text-xs font-bold text-uswds-success text-right">
-                    {scheme.financialBenefitAmount ? `₹${scheme.financialBenefitAmount.toLocaleString('en-IN')}` : t('centralSchemes', 'Welfare Benefit')}
-                  </span>
-                </div>
-
-                <h3 className="text-base font-bold text-uswds-primary line-clamp-1 font-sans">
-                  {t(`${scheme.id}_name`, scheme.name)}
-                </h3>
-                <p className="text-sm text-uswds-textMuted line-clamp-2 leading-relaxed">
-                  {t(`${scheme.id}_desc`, scheme.shortDescription)}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-uswds-border flex flex-wrap justify-between items-center gap-2 text-xs">
-                <span className="text-uswds-textMuted font-medium bg-uswds-background px-2 py-1 border border-uswds-border rounded">
-                  {t(scheme.category, scheme.category)}
-                </span>
-                <button
-                  onClick={() => onNavigateTab('schemes')}
-                  className="px-4 py-2 bg-uswds-primary hover:bg-uswds-secondary text-white font-bold rounded-md transition shadow-sm"
-                >
-                  {t('getStarted', 'Check Eligibility')}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Call to Action Banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 rounded-2xl p-8 sm:p-10 text-slate-950 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-          <div className="space-y-2 max-w-xl">
-            <h3 className="text-xl sm:text-2xl font-black font-heading tracking-tight">
-              {t('tagline', 'Ready to Discover Your Eligible Government Schemes?')}
-            </h3>
-            <p className="text-[10px] sm:text-xs font-semibold opacity-90 leading-relaxed">
-              {t('step1Desc', 'Complete your profile in 2 minutes or speak to our AI Assistant to find all welfare programs for your household.')}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3 w-full md:w-auto">
-            <button
-              onClick={onGetStarted}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-950 text-white font-bold text-[10px] sm:text-xs hover:bg-slate-900 transition shadow whitespace-nowrap"
-            >
-              {t('getStarted', 'Build Profile')}
-            </button>
-            <button
-              onClick={onTalkToAI}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-slate-950 font-bold text-[10px] sm:text-xs hover:bg-slate-100 transition shadow flex items-center justify-center gap-1.5 whitespace-nowrap"
-            >
-              <Bot className="w-4 h-4 text-blue-700 shrink-0" />
-              <span>{t('talkToAI', 'Talk to AI')}</span>
-            </button>
-          </div>
         </div>
       </section>
     </div>

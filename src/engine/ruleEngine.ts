@@ -8,8 +8,8 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
   const failedCriteria: string[] = [];
   const missingDocuments: string[] = [];
 
-  const minAge = rules.minAge ?? rules.ageMin;
-  const maxAge = rules.maxAge ?? rules.ageMax;
+  const minAge = rules.minAge ?? (rules as any).ageMin;
+  const maxAge = rules.maxAge ?? (rules as any).ageMax;
   if (minAge !== undefined || maxAge !== undefined) {
     const finalMin = minAge ?? 0;
     const finalMax = maxAge ?? 120;
@@ -39,7 +39,7 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     matchedCriteria.push(i18n.t('Central Scheme open across India', 'Central Scheme open across India'));
   }
 
-  const maxIncome = rules.maxAnnualIncome ?? rules.incomeLimit;
+  const maxIncome = rules.maxAnnualIncome ?? (rules as any).incomeLimit;
   if (maxIncome !== undefined && maxIncome > 0) {
     if (user.annualIncome <= maxIncome) {
       matchedCriteria.push(`${i18n.t('Income', 'Income')} ₹${user.annualIncome.toLocaleString('en-IN')}/yr below limit of ₹${maxIncome.toLocaleString('en-IN')}/yr`);
@@ -102,7 +102,7 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     }
   });
 
-  let status: 'Eligible' | 'Conditionally Eligible' | 'Not Eligible';
+  let status: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible';
   let overallReason = '';
 
   if (failedCriteria.length === 0 && missingDocuments.length === 0) {
@@ -112,6 +112,9 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     status = 'Conditionally Eligible';
     const docsStr = missingDocuments.map(d => i18n.t(d, d)).join(', ');
     overallReason = i18n.t('ruleConditional', { count: missingDocuments.length, docs: docsStr, defaultValue: `Eligible based on profile criteria, but missing ${missingDocuments.length} document(s) in Document Vault (${docsStr}). Upload before applying on official portal.` });
+  } else if (failedCriteria.length === 1) {
+    status = 'Almost Eligible';
+    overallReason = i18n.t('ruleAlmostEligible', { criteria: i18n.t(failedCriteria[0], failedCriteria[0]), defaultValue: `Almost eligible! You are missing one requirement: ${failedCriteria[0]}` });
   } else {
     status = 'Not Eligible';
     const critStr = failedCriteria.map(c => i18n.t(c, c)).join('; ');

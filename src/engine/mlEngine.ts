@@ -19,6 +19,8 @@ export function computeMLRecommendation(
     score += 35;
   } else if (ruleResult.status === 'Conditionally Eligible') {
     score += 20;
+  } else if (ruleResult.status === 'Almost Eligible') {
+    score -= 5;
   } else {
     score -= 30; // Significant penalty for non-eligible schemes
   }
@@ -55,6 +57,13 @@ export function computeMLRecommendation(
   // Clamp Score 0 - 99%
   const confidenceScore = Math.min(Math.max(Math.round(score), 10), 99);
 
+  // Generate breakdown
+  const demographic = Math.min(Math.round(confidenceScore * 0.4), 100);
+  const financial = Math.min(Math.round(confidenceScore * 0.2), 100);
+  const need = Math.min(Math.round(confidenceScore * 0.4), 100);
+  
+  const scoreBreakdown = { demographic, financial, need };
+
   // Determine Urgency
   let urgencyLevel: 'High' | 'Medium' | 'Standard' = 'Standard';
   if (confidenceScore >= 85) urgencyLevel = 'High';
@@ -72,6 +81,7 @@ export function computeMLRecommendation(
   return {
     schemeId: scheme.id,
     confidenceScore,
+    scoreBreakdown,
     matchReason,
     urgencyLevel,
     relatedSchemeIds
@@ -98,6 +108,13 @@ function generateExplainabilityText(
       defaultValue: `Strong recommendation ({{score}}% match score). Your profile meets criteria, but you need to upload {{docs}} to complete verification before submitting on the official portal.`,
       score,
       docs
+    });
+  } else if (ruleResult.status === 'Almost Eligible') {
+    const criteria = ruleResult.failedCriteria[0];
+    return i18n.t('reasonAlmostEligible', {
+      defaultValue: `Close match ({{score}}%). You are only missing one core requirement: {{criteria}}.`,
+      score,
+      criteria: i18n.t(criteria, criteria)
     });
   } else {
     const criteria = ruleResult.failedCriteria.slice(0, 2).map(c => i18n.t(c, c)).join(', ');

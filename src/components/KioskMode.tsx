@@ -1,212 +1,142 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Users, FileText, ChevronRight, ShieldCheck, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { 
-  Monitor, 
-  Volume2, 
-  RefreshCw, 
-  Building2, 
-  CheckCircle2, 
-  ArrowRight, 
-  ChevronRight, 
-  ExternalLink,
-  User,
-  Sparkles
-} from 'lucide-react';
-import { Scheme, UserProfile, LanguageCode } from '../types';
-import { evaluateSchemeEligibility } from '../engine/ruleEngine';
+import { UserProfile } from '../types';
 
 interface KioskModeProps {
-  schemes: Scheme[];
-  currentLang: LanguageCode;
-  onSelectScheme: (scheme: Scheme) => void;
-  onExitKiosk: () => void;
+  onGenerateReport: (profile: Partial<UserProfile>) => void;
+  onExit: () => void;
 }
 
-export const KioskMode: React.FC<KioskModeProps> = ({
-  schemes,
-  currentLang,
-  onSelectScheme,
-  onExitKiosk
-}) => {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [selectedOccupation, setSelectedOccupation] = useState<string>('Farmer');
-  const [selectedIncomeRange, setSelectedIncomeRange] = useState<number>(100000);
-
-  const occupations = ['Farmer', 'Daily Wager / Laborer', 'Artisan / Craftsman', 'Student', 'Small Business Owner'];
-  const incomeRanges = [
-    { label: 'Below ₹1 Lakh / year', maxIncome: 100000 },
-    { label: '₹1 Lakh to ₹2.5 Lakh / year', maxIncome: 250000 },
-    { label: 'Above ₹2.5 Lakh / year', maxIncome: 500000 },
-  ];
-
-  const kioskProfile: UserProfile = {
-    id: 'kiosk-temp',
-    fullName: 'Gram Panchayat Citizen',
-    mobile: '9999999999',
-    email: 'kiosk@csc.gov.in',
-    age: 40,
-    gender: 'Male',
-    state: 'Tamil Nadu',
-    district: 'Rural District',
-    category: 'OBC',
-    occupation: selectedOccupation,
-    annualIncome: selectedIncomeRange,
-    landHoldingAcres: 2.0,
-    educationLevel: 'Class 10 Pass',
-    familyMembersCount: 4,
-    hasDisability: false,
-    verificationBadge: true,
-    profileCompletionScore: 90,
-    savedSchemeIds: [],
-    documents: []
-  };
-
-  const eligibleKioskSchemes = schemes.filter(scheme => {
-    const res = evaluateSchemeEligibility(kioskProfile, scheme);
-    return res.status !== 'Not Eligible';
+export const KioskMode: React.FC<KioskModeProps> = ({ onGenerateReport, onExit }) => {
+  const { t } = useTranslation();
+  const [formData, setFormData] = useState({
+    fullName: '',
+    age: '',
+    mobile: '',
+    state: '',
+    income: '',
+    occupation: ''
   });
 
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    onGenerateReport({
+      fullName: formData.fullName,
+      age: Number(formData.age),
+      mobile: formData.mobile,
+      state: formData.state,
+      annualIncome: Number(formData.income),
+      occupation: formData.occupation
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8 flex flex-col justify-between">
-      {/* Top Banner */}
-      <div className="bg-slate-800 border border-slate-700 rounded-3xl p-6 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-bold">
-            <Monitor className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black font-heading text-amber-400">
-              CSC Gram Panchayat Touch Kiosk Mode
-            </h1>
-            <p className="text-xs text-slate-300">Simplified 3-Step Scheme Discovery for Rural Citizens</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setStep(1);
-              setSelectedOccupation('Farmer');
-            }}
-            className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition flex items-center gap-2 shadow"
-          >
-            <RefreshCw className="w-5 h-5" />
-            <span>Reset Kiosk Session</span>
-          </button>
-
-          <button
-            onClick={onExitKiosk}
-            className="px-4 py-3 rounded-2xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs"
-          >
-            Exit Kiosk Mode
-          </button>
-        </div>
-      </div>
-
-      {/* Step Wizard */}
-      <div className="my-8 max-w-4xl mx-auto w-full">
-        {step === 1 && (
-          <div className="space-y-6 text-center">
-            <h2 className="text-3xl font-black font-heading text-white">
-              Step 1: Select Your Occupation (தொழில்)
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {occupations.map(occ => (
-                <button
-                  key={occ}
-                  onClick={() => {
-                    setSelectedOccupation(occ);
-                    setStep(2);
-                  }}
-                  className={`p-8 rounded-3xl border-2 text-xl font-extrabold text-left transition transform hover:scale-105 shadow-xl flex justify-between items-center ${
-                    selectedOccupation === occ
-                      ? 'bg-purple-600 border-amber-400 text-white'
-                      : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
-                  }`}
-                >
-                  <span>{occ}</span>
-                  <ChevronRight className="w-8 h-8 text-amber-400" />
-                </button>
-              ))}
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F]">
+      
+      {/* Kiosk Header */}
+      <header className="bg-[#123C69] text-white p-4 shadow-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded flex items-center justify-center">
+              <Users className="w-5 h-5 text-[#F59E0B]" />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg leading-tight">{t('cscAssistedMode', 'CSC Assisted Mode')}</h1>
+              <p className="text-xs text-blue-200">{t('cscOperator', 'Authorized Common Service Centre Operator')}</p>
             </div>
           </div>
-        )}
+          <button onClick={onExit} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-sm font-bold transition-colors">
+            {t('exitKiosk', 'Exit Kiosk')}
+          </button>
+        </div>
+      </header>
 
-        {step === 2 && (
-          <div className="space-y-6 text-center">
-            <h2 className="text-3xl font-black font-heading text-white">
-              Step 2: Select Household Annual Income Range
-            </h2>
-            <div className="grid grid-cols-1 gap-4">
-              {incomeRanges.map(inc => (
-                <button
-                  key={inc.label}
-                  onClick={() => {
-                    setSelectedIncomeRange(inc.maxIncome);
-                    setStep(3);
-                  }}
-                  className="p-8 rounded-3xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-xl font-extrabold text-left transition transform hover:scale-102 shadow-xl flex justify-between items-center"
-                >
-                  <span>{inc.label}</span>
-                  <ChevronRight className="w-8 h-8 text-amber-400" />
-                </button>
-              ))}
-            </div>
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <div className="bg-white dark:bg-[#0F1B2D] rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-8">
+          <div className="flex items-center gap-2 mb-6 text-[#15803D]">
+            <ShieldCheck className="w-5 h-5" />
+            <span className="font-bold uppercase tracking-wider text-sm">{t('secureSearch', 'Secure Beneficiary Search')}</span>
           </div>
-        )}
 
-        {step === 3 && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-bold text-[#123C69] dark:text-white mb-2">{t('helpSomeoneFind', 'Help someone find schemes')}</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            {t('helpSomeoneDesc', "Enter the citizen's basic details to instantly generate a personalized, printable eligibility report. No permanent account creation required.")}
+          </p>
+
+          <form onSubmit={handleGenerate} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
               <div>
-                <h2 className="text-3xl font-black font-heading text-amber-400">
-                  Step 3: Eligible Government Schemes Found ({eligibleKioskSchemes.length})
-                </h2>
-                <p className="text-sm text-slate-300">Filtered for {selectedOccupation} with income below ₹{selectedIncomeRange.toLocaleString('en-IN')}.</p>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">{t('citizenName', 'Citizen Name')}</label>
+                <input 
+                  required type="text" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})}
+                  className="w-full p-3 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] outline-none text-gray-900 dark:text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">{t('mobileOptional', 'Mobile Number (Optional)')}</label>
+                <input 
+                  type="tel" value={formData.mobile} onChange={e => setFormData({...formData, mobile: e.target.value})}
+                  className="w-full p-3 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] outline-none text-gray-900 dark:text-white"
+                />
               </div>
 
-              <button
-                onClick={() => setStep(1)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-amber-400 font-bold text-xs border border-slate-700"
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">{t('yourAge', 'Age')}</label>
+                <input 
+                  required type="number" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})}
+                  className="w-full p-3 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] outline-none text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">{t('state', 'State')}</label>
+                <input 
+                  required type="text" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} placeholder={t('statePlaceholder', 'e.g. Tamil Nadu')}
+                  className="w-full p-3 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] outline-none text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">{t('yourOccupation', 'Occupation')}</label>
+                <input 
+                  required type="text" value={formData.occupation} onChange={e => setFormData({...formData, occupation: e.target.value})} placeholder={t('occupationPlaceholder', 'e.g. Farmer, Student')}
+                  className="w-full p-3 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] outline-none text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">{t('annualIncomeLabel', 'Annual Family Income (₹)')}</label>
+                <input 
+                  required type="number" value={formData.income} onChange={e => setFormData({...formData, income: e.target.value})}
+                  className="w-full p-3 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] outline-none text-gray-900 dark:text-white"
+                />
+              </div>
+
+            </div>
+
+            <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex gap-4">
+              <button 
+                type="submit"
+                className="flex-1 py-4 bg-[#15803D] hover:bg-green-700 text-white font-bold rounded shadow-sm transition-colors flex items-center justify-center gap-2"
               >
-                ← Change Parameters
+                <FileText className="w-5 h-5" /> {t('genAssessmentReport', 'Generate Assessment Report')}
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {eligibleKioskSchemes.map(scheme => (
-                <div key={scheme.id} className="bg-slate-800 border-2 border-purple-500/50 rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-2xl">
-                  <div className="space-y-2">
-                    <span className="bg-emerald-500 text-slate-950 font-black text-xs px-3 py-1 rounded-full inline-block">
-                      ✓ ELIGIBLE FOR YOU
-                    </span>
-                    <h3 className="text-xl font-extrabold text-white font-heading">{scheme.name}</h3>
-                    <p className="text-xs text-slate-300 leading-relaxed">{scheme.shortDescription}</p>
-                    <div className="text-lg font-black text-amber-400">
-                      Benefit: ₹{(scheme.financialBenefitAmount || 0).toLocaleString('en-IN')}/year
-                    </div>
-                  </div>
-
-                  <a
-                    href={scheme.officialApplyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base shadow-lg transition text-center flex items-center justify-center gap-2"
-                  >
-                    <span>Apply Now on Official Portal</span>
-                    <ExternalLink className="w-5 h-5" />
-                  </a>
-                </div>
-              ))}
+            <div className="text-center">
+              <button type="button" className="text-sm font-semibold text-[#1769FF] hover:underline flex items-center justify-center gap-1 mx-auto">
+                <Printer className="w-4 h-4" /> {t('connectPrinter', 'Connect Bluetooth Printer')}
+              </button>
             </div>
-          </div>
-        )}
+          </form>
+
+        </div>
       </div>
 
-      {/* Footer Info */}
-      <div className="text-center text-xs text-slate-500 pt-4 border-t border-slate-800">
-        Common Service Centre (CSC) Kiosk Terminal • National Portal Verified Dataset
-      </div>
     </div>
   );
 };

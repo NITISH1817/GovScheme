@@ -4,62 +4,44 @@
 
 @layer base {
   :root {
-    --background: 210 33% 98%;
-    --foreground: 0 0% 10%;
-
-    --primary: 205 100% 32%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 215 66% 30%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 211 27% 88%;
-    --muted-foreground: 0 0% 36%;
-
-    --accent: 215 66% 30%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 2 68% 52%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 211 27% 88%;
-    --input: 211 27% 88%;
-    --ring: 205 100% 32%;
-
-    --radius: 0.5rem;
+    --bg: 248 250 252; /* #F8FAFC */
+    --surface: 255 255 255; /* #FFFFFF */
+    --surface-elevated: 241 245 249; /* #F1F5F9 */
+    --text-primary: 7 17 31; /* #07111F */
+    --text-secondary: 71 85 105; /* #475569 */
+    --border: 203 213 225; /* #CBD5E1 */
+    --primary: 23 105 255; /* #1769FF */
+    --success: 21 128 61; /* #15803D */
+    --warning: 217 119 6; /* #D97706 */
+    --error: 185 28 28; /* #B91C1C */
+    
+    --font-scale: 1;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --bg: 7 17 31; /* #07111F */
+    --surface: 15 27 45; /* #0F1B2D */
+    --surface-elevated: 22 36 58; /* #16243A */
+    --text-primary: 248 250 252; /* #F8FAFC */
+    --text-secondary: 203 213 225; /* #CBD5E1 */
+    --border: 51 65 85; /* #334155 */
+    --primary: 96 165 250; /* #60A5FA */
+    --success: 74 222 128; /* #4ADE80 */
+    --warning: 251 191 36; /* #FBBF24 */
+    --error: 248 113 113; /* #F87171 */
   }
 
   * {
-    border-color: hsl(var(--border));
+    border-color: rgb(var(--border) / <alpha-value>);
   }
   
+  html {
+    font-size: calc(16px * var(--font-scale));
+  }
+
   body {
-    background-color: #F9FAFB;
-    color: #1B1B1B;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text-primary));
     font-family: 'Inter', 'Public Sans', system-ui, -apple-system, sans-serif;
   }
   
@@ -80,16 +62,11 @@
   }
 }
 
-/* Custom Accessibility Font Size Controls */
-html.text-size-large {
-  font-size: 112.5%; /* 18px base */
-}
+/* Accessibility Controls */
+html.text-size-small { --font-scale: 0.9; }
+html.text-size-large { --font-scale: 1.12; }
+html.text-size-xlarge { --font-scale: 1.25; }
 
-html.text-size-xlarge {
-  font-size: 125%; /* 20px base */
-}
-
-/* High Contrast Mode */
 html.high-contrast {
   filter: contrast(135%);
 }
@@ -99,12 +76,19 @@ html.high-contrast body {
   color: #FFFFFF !important;
 }
 
-html.high-contrast .bg-white,
-html.high-contrast .bg-slate-50,
-html.high-contrast .bg-slate-100 {
+html.high-contrast .bg-surface,
+html.high-contrast .bg-surface-elevated {
   background-color: #121212 !important;
   color: #FFFFFF !important;
   border-color: #333333 !important;
+}
+
+/* Reduced Motion */
+html.reduced-motion *, html.reduced-motion *::before, html.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* Scrollbar Styling */
@@ -113,40 +97,20 @@ html.high-contrast .bg-slate-100 {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-.dark ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: rgb(var(--bg));
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgb(var(--border));
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgb(var(--text-secondary));
 }
 
-/* Custom Card & Pulse Effects */
 .gov-card {
-  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200;
+  @apply bg-surface border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-200;
 }
 
 .gov-badge {
   @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
-}
-
-.pulse-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #16a34a;
-  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
-  animation: pulse-ring 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
-}
-
-@keyframes pulse-ring {
-  to {
-    box-shadow: 0 0 0 10px rgba(22, 163, 74, 0);
-  }
 }

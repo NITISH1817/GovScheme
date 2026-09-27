@@ -1,15 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { 
   CheckCircle2, 
   Clock, 
   ExternalLink, 
   FileText, 
-  Building2, 
-  AlertCircle, 
-  Calendar, 
-  ShieldCheck,
-  ChevronRight
+  AlertCircle
 } from 'lucide-react';
 import { ApplicationTrackerRecord } from '../types';
 
@@ -23,101 +20,201 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
   onNavigateTab
 }) => {
   const { t } = useTranslation();
+  const customBezier = [0.32, 0.72, 0, 1];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: customBezier } }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-32 space-y-16">
+      
       {/* Header */}
-      <div className="bg-white dark:bg-slate-800 border-l-4 border-gov-navy shadow-sm rounded-md p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-200 dark:border-slate-700">
-        <div className="space-y-2 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-600">
-            <Clock className="w-4 h-4 text-gov-navy dark:text-blue-400" /> {t('liveTracking', 'Live Government DBT Tracking')}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: customBezier }}
+        className="flex flex-col md:flex-row items-center justify-between gap-8 text-center sm:text-left"
+      >
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gov-navy/5 dark:bg-white/10 text-gov-navy dark:text-white text-xs font-bold border border-gov-navy/10 dark:border-white/10">
+            <Clock className="w-4 h-4 text-gov-saffron animate-pulse" /> {t('liveTracking', 'Live Government DBT Tracking')}
           </div>
-          <h1 className="text-3xl font-bold font-heading tracking-tight text-slate-900 dark:text-white">{t('citizenAppTracker', 'Citizen Application Tracker')}</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            {t('trackerDesc', 'Real-time status updates on submitted welfare applications across official government portals.')}
+          <h1 className="text-4xl md:text-5xl font-extrabold font-sans tracking-tight text-gov-navy dark:text-white">
+            {t('citizenAppTracker', 'Application Tracker')}
+          </h1>
+          <p className="text-lg text-gov-textMuted dark:text-gray-400 max-w-xl">
+            {t('trackerDesc', 'Real-time status updates on submitted welfare applications across official portals.')}
           </p>
         </div>
 
         <button
           onClick={() => onNavigateTab('schemes')}
-          className="px-6 py-3 rounded-md bg-gov-navy hover:bg-gov-blue text-white font-bold text-sm shadow-sm transition flex items-center gap-2"
+          className="px-6 py-3 rounded bg-[#123C69] hover:bg-blue-900 text-white font-bold text-sm shadow-sm transition-colors flex items-center gap-2"
         >
+          {t('applyNewScheme', 'Apply For New Scheme')}
           <FileText className="w-4 h-4" />
-          <span>{t('applyNewScheme', 'Apply For New Scheme')}</span>
         </button>
-      </div>
+      </motion.div>
 
       {/* Applications List */}
-      <div className="space-y-6">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="space-y-12"
+      >
         {applications.map((app) => (
-          <div key={app.id} className="gov-card p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-lg text-slate-900 dark:text-white font-heading">
-                    {t(`${app.schemeId}_name`, app.schemeName)}
-                  </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                    app.status === 'Approved' || app.status === 'Benefit Released'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                  }`}>{t('status', 'Status')}: {t(app.status, app.status)}</span>
-                </div>
-                <p className="text-xs text-slate-500 font-mono">
-                  {t('appId', 'Application ID')}: {app.applicationNumber} • {t('appliedDate', 'Applied Date')}: {app.appliedDate}
-                </p>
-              </div>
-
-              <a
-                href={app.officialPortalLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 rounded-md bg-gov-navy hover:bg-gov-blue text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 self-start sm:self-auto"
-              >
-                <span>{t('trackOfficial', 'Track on Official Portal')}</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-
-            {/* Horizontal / Vertical Timeline */}
-            <div className="space-y-3">
-              <span className="font-bold text-xs text-slate-700 dark:text-slate-300 font-heading block">
-                {t('timelineProgress', 'Official Verification Timeline Stage Progress:')}
-              </span>
-
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-                {app.statusTimeline.map((stageItem, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 rounded-md border text-xs flex flex-col justify-between space-y-2 ${
-                      stageItem.completed
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300'
-                        : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold">{t('stage', 'Stage')} {idx + 1}</span>
-                      {stageItem.completed ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      ) : (
-                        <Clock className="w-4 h-4 text-slate-400" />
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-bold block line-clamp-2">{t(stageItem.stage, stageItem.stage)}</span>
-                      <span className="text-[10px] opacity-75">{stageItem.date}</span>
-                    </div>
-                    {stageItem.remarks && (
-                      <p className="text-[10px] text-amber-700 dark:text-amber-300 font-semibold bg-amber-100/50 p-1.5 rounded">
-                        {t(stageItem.remarks, stageItem.remarks)}
-                      </p>
-                    )}
+          <motion.div key={app.id} variants={itemVariants} className="p-0 rounded border border-gray-200 dark:border-gray-800 shadow-sm relative group overflow-hidden bg-white dark:bg-[#0F1B2D]">
+            <div className="relative z-10 flex flex-col">
+              
+              <div className="p-8 sm:p-10 border-b border-gov-border dark:border-white/10 bg-slate-50 dark:bg-[#050505] flex flex-col md:flex-row md:items-start justify-between gap-6">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="font-extrabold text-2xl text-gov-navy dark:text-white font-sans tracking-tight">
+                      {t(`${app.schemeId}_name`, app.schemeName)}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold tracking-wider uppercase shadow-sm border ${
+                      app.status === 'Approved' || app.status === 'Benefit Released'
+                        ? 'bg-gov-green/10 text-gov-green border-gov-green/20'
+                        : 'bg-gov-saffron/10 text-gov-saffron border-gov-saffron/20'
+                    }`}>
+                      {t(app.status, app.status)}
+                    </span>
                   </div>
-                ))}
+                  <p className="text-sm text-gov-textMuted dark:text-gray-400 font-medium">
+                    {t('appId', 'Application ID')}: <span className="font-mono text-gov-navy dark:text-gray-300">{app.applicationNumber}</span> • {t('appliedDate', 'Applied')}: <span className="font-mono text-gov-navy dark:text-gray-300">{app.appliedDate}</span>
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => window.open(app.officialPortalLink, '_blank')}
+                  className="px-6 py-2.5 rounded bg-[#1769FF] text-white font-bold text-xs shadow-sm hover:bg-blue-700 transition-colors flex items-center gap-2 shrink-0"
+                >
+                  {t('Track on Official Portal')} <ExternalLink className="w-4 h-4" />
+                </button>
               </div>
+
+              {/* Document Verification Smart Checklist */}
+              <div className="px-8 sm:px-10 py-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#07111F]">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">{t('Document Verification Checklist')}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-3 p-3 rounded bg-green-50 dark:bg-[#16243A] border border-green-200 dark:border-gray-700">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div>
+                      <span className="block text-sm font-bold text-gray-900 dark:text-white">{t('Aadhaar Card')}</span>
+                      <span className="text-xs text-green-700 dark:text-green-400">{t('Verified via DigiLocker')}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded bg-green-50 dark:bg-[#16243A] border border-green-200 dark:border-gray-700">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div>
+                      <span className="block text-sm font-bold text-gray-900 dark:text-white">{t('Bank Passbook')}</span>
+                      <span className="text-xs text-green-700 dark:text-green-400">{t('NPCI Mapping Complete')}</span>
+                    </div>
+                  </div>
+                  {app.status === 'Under Review' ? (
+                    <div className="flex items-center gap-3 p-3 rounded bg-yellow-50 dark:bg-[#16243A] border border-yellow-200 dark:border-gray-700 relative overflow-hidden">
+                      <AlertCircle className="w-5 h-5 text-[#D97706]" />
+                      <div className="flex-1">
+                        <span className="block text-sm font-bold text-gray-900 dark:text-white">{t('Income Certificate')}</span>
+                        <span className="text-xs text-[#D97706]">{t('Awaiting Officer Verification')}</span>
+                      </div>
+                      <button className="text-xs font-bold text-[#1769FF] hover:underline shrink-0">{t('Upload New')}</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 rounded bg-green-50 dark:bg-[#16243A] border border-green-200 dark:border-gray-700">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      <div>
+                        <span className="block text-sm font-bold text-gray-900 dark:text-white">{t('Income Certificate')}</span>
+                        <span className="text-xs text-green-700 dark:text-green-400">{t('Manually Verified')}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Animated Horizontal Timeline */}
+              <div className="p-8 sm:p-10 relative">
+                <h3 className="font-bold text-sm text-gov-navy dark:text-white font-sans tracking-tight mb-8">
+                  {t('timelineProgress', 'Verification Timeline')}
+                </h3>
+
+                <div className="relative">
+                  {/* Background Track Line */}
+                  <div className="absolute top-6 left-6 right-6 h-1 bg-gray-200 dark:bg-gray-800 rounded-full" />
+                  
+                  {/* Progress Line */}
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${(app.statusTimeline.filter(s => s.completed).length / (app.statusTimeline.length - 1)) * 100}%` }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1.5, delay: 0.5 }}
+                    className="absolute top-6 left-6 h-1 bg-[#15803D] rounded-full origin-left z-0"
+                  />
+
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-6 relative z-10">
+                    {app.statusTimeline.map((stageItem, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: 0.2 + (idx * 0.1), ease: customBezier }}
+                        className="flex flex-col items-center text-center group/node"
+                      >
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm mb-4 transition-colors relative z-10 ${
+                            stageItem.completed
+                              ? 'bg-[#15803D] text-white border-2 border-white dark:border-[#0F1B2D]'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-2 border-gray-200 dark:border-gray-700'
+                          }`}
+                        >
+                          {stageItem.completed ? (
+                            <CheckCircle2 className="w-5 h-5" />
+                          ) : (
+                            <Clock className="w-4 h-4 opacity-50" />
+                          )}
+                        </div>
+                        
+                        <span className="font-extrabold text-sm text-gov-navy dark:text-white leading-tight mb-1">
+                          {t(stageItem.stage, stageItem.stage)}
+                        </span>
+                        
+                        {stageItem.completed && (
+                          <span className="text-[10px] font-bold text-gov-textMuted dark:text-gray-400 tracking-wider uppercase">
+                            {stageItem.date}
+                          </span>
+                        )}
+                        
+                        {stageItem.remarks && (
+                          <motion.p 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="text-[10px] text-gov-saffron font-bold bg-gov-saffron/10 px-2 py-1.5 rounded-md mt-2 w-full leading-tight"
+                          >
+                            {t(stageItem.remarks, stageItem.remarks)}
+                          </motion.p>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };
