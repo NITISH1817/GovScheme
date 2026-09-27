@@ -79,6 +79,17 @@ export interface TranslationDict {
   incomeFilterBPL: string;
   incomeFilter2L: string;
   incomeFilter5L: string;
+  "Central Scheme open across India"?: string;
+  "Occupation matches"?: string;
+  "Farmer"?: string;
+  "Student"?: string;
+  "Age Requirement Met"?: string;
+  "Gender requirement met"?: string;
+  "Resident of"?: string;
+  "Income"?: string;
+  "Male"?: string;
+  "Female"?: string;
+  "All"?: string;
   [key: string]: string;
 }
 
@@ -166,6 +177,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     incomeFilterBPL: "BPL (below ₹1.2L)",
     incomeFilter2L: "Below ₹2.5 Lakh",
     incomeFilter5L: "Below ₹5 Lakh",
+    "Central Scheme open across India": "Central Scheme open across India",
+    "Occupation matches": "Occupation matches",
+    "Farmer": "Farmer",
+    "Student": "Student",
+    "Age Requirement Met": "Age Requirement Met",
+    "Gender requirement met": "Gender requirement met",
+    "Resident of": "Resident of",
+    "Income": "Income",
+    "Male": "Male",
+    "Female": "Female",
+    "All": "All",
     "pm-kisan_name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
     "pm-kisan_desc": "Income support of ₹6,000 per year in three equal installments to all landholding farmer families across India.",
     "pmay-g_name": "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
@@ -248,6 +270,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     incomeFilterBPL: "BPL (₹1.2L से कम)",
     incomeFilter2L: "₹2.5 लाख से कम",
     incomeFilter5L: "₹5 लाख से कम",
+    "Central Scheme open across India": "पूरे भारत में केंद्रीय योजना खुली है",
+    "Occupation matches": "पेशा मेल खाता है",
+    "Farmer": "किसान",
+    "Student": "छात्र",
+    "Age Requirement Met": "आयु सीमा पूरी हुई",
+    "Gender requirement met": "लिंग की आवश्यकता पूरी हुई",
+    "Resident of": "निवासी",
+    "Income": "आय",
+    "Male": "पुरुष",
+    "Female": "महिला",
+    "All": "सभी",
     "pm-kisan_name": "प्रधानमंत्री किसान सम्मान निधि (PM-KISAN)",
     "pm-kisan_desc": "भारत भर के सभी किसान परिवारों को तीन समान किश्तों में प्रति वर्ष ₹6,000 की आय सहायता।",
     "pmay-g_name": "प्रधानमंत्री आवास योजना - ग्रामीण (PMAY-G)",
@@ -330,6 +363,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     incomeFilterBPL: "BPL (₹1.2L க்கும் கீழ்)",
     incomeFilter2L: "₹2.5 லட்சத்திற்கும் கீழ்",
     incomeFilter5L: "₹5 லட்சத்திற்கும் கீழ்",
+    "Central Scheme open across India": "இந்தியா முழுவதும் திறக்கப்பட்ட மத்திய திட்டம்",
+    "Occupation matches": "தொழில் பொருந்துகிறது",
+    "Farmer": "விவசாயி",
+    "Student": "மாணவர்",
+    "Age Requirement Met": "வயது வரம்பு பொருந்துகிறது",
+    "Gender requirement met": "பாலினம் பொருந்துகிறது",
+    "Resident of": "குடியிருப்பு",
+    "Income": "வருமானம்",
+    "Male": "ஆண்",
+    "Female": "பெண்",
+    "All": "அனைவரும்",
 
     "pm-kisan_name": "பிரதான் மந்திரி கிசான் சம்மான் நிதி (PM-KISAN)",
     "pm-kisan_desc": "இந்தியா முழுவதும் உள்ள அனைத்து விவசாயக் குடும்பங்களுக்கும் மூன்று சம தவணைகளில் ஆண்டுக்கு ₹6,000 வருமான ஆதரவு.",
@@ -390,6 +434,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     voiceAssistant: "వాయిస్ అసిస్టెంట్",
     listenVoice: "శోధించడానికి మాట్లాడండి...",
     login: "లాగిన్", logout: "లాగ్ అవుట్", register: "నమోదు", guestMode: "అతిథిగా కొనసాగండి", loginOrGuest: "లాగిన్ / అతిథి", yourName: "మీ పూర్తి పేరు", mobileNumber: "మొబైల్ నంబర్", yourState: "మీ రాష్ట్రం", yourOccupation: "మీ వృత్తి", annualIncomeLabel: "వార్షిక ఆదాయం (₹)", yourAge: "మీ వయసు", scanDocument: "పత్రాన్ని స్కాన్ చేయండి", extractingOCR: "AI టెక్స్ట్ వెలికితీస్తోంది...", saveToVault: "సేవ్ & ప్రొఫైల్ పూరించు", reviewExtracted: "వెలికితీసిన సమాచారాన్ని సమీక్షించండి", beneficiariesStat: "లబ్ధిదారులు చేరుకున్నారు", disbursedStat: "ప్రయోజనాలు పంపిణీ", activeSchemesStat: "చురుకైన పథకాలు", statesCoveredStat: "రాష్ట్రాలు కవర్", nationalImpact: "సంఖ్యల్లో జాతీయ ప్రభావం", incomeFilterAny: "ఆదాయం: ఏదైనా", incomeFilterBPL: "BPL (₹1.2L కింద)", incomeFilter2L: "₹2.5 లక్షల కంటే తక్కువ", incomeFilter5L: "₹5 లక్షల కంటే తక్కువ",
+    "Central Scheme open across India": "భారతదేశమంతటా కేంద్ర పథకం",
+    "Occupation matches": "వృత్తి సరిపోలుతుంది",
+    "Farmer": "రైతు",
+    "Student": "విద్యార్థి",
+    "Age Requirement Met": "వయస్సు అర్హత",
+    "Gender requirement met": "లింగ అర్హత",
+    "Resident of": "నివాసి",
+    "Income": "ఆదాయం",
+    "Male": "పురుషుడు",
+    "Female": "స్త్రీ",
+    "All": "అందరూ",
   },
   kn: {
     appName: "GovScheme AI",
@@ -443,6 +498,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     voiceAssistant: "ವಾಯ್ಸ್ ಅಸಿಸ್ಟೆಂಟ್",
     listenVoice: "ಹುಡುಕಲು ಮಾತನಾಡಿ...",
     login: "ಲಾಗಿನ್", logout: "ಲಾಗ್ ಔಟ್", register: "ನೋಂದಣಿ", guestMode: "ಅತಿಥಿಯಾಗಿ ಮುಂದುವರಿಯಿರಿ", loginOrGuest: "ಲಾಗಿನ್ / ಅತಿಥಿ", yourName: "ನಿಮ್ಮ ಪೂರ್ಣ ಹೆಸರು", mobileNumber: "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ", yourState: "ನಿಮ್ಮ ರಾಜ್ಯ", yourOccupation: "ನಿಮ್ಮ ವೃತ್ತಿ", annualIncomeLabel: "ವಾರ್ಷಿಕ ಆದಾಯ (₹)", yourAge: "ನಿಮ್ಮ ವಯಸ್ಸು", scanDocument: "ದಾಖಲೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ", extractingOCR: "AI ಪಠ್ಯ ಹೊರತೆಗೆಯುತ್ತಿದೆ...", saveToVault: "ಉಳಿಸಿ & ಪ್ರೊಫೈಲ್ ತುಂಬಿಸಿ", reviewExtracted: "ಹೊರತೆಗೆದ ಮಾಹಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ", beneficiariesStat: "ಫಲಾನುಭವಿಗಳು ತಲುಪಿದ್ದಾರೆ", disbursedStat: "ಪ್ರಯೋಜನಗಳ ವಿತರಣೆ", activeSchemesStat: "ಸಕ್ರಿಯ ಯೋಜನೆಗಳು", statesCoveredStat: "ರಾಜ್ಯಗಳು ಒಳಗೊಂಡಿವೆ", nationalImpact: "ಸಂಖ್ಯೆಗಳಲ್ಲಿ ರಾಷ್ಟ್ರೀಯ ಪ್ರಭಾವ", incomeFilterAny: "ಆದಾಯ: ಯಾವುದಾದರೂ", incomeFilterBPL: "BPL (₹1.2L ಕೆಳಗೆ)", incomeFilter2L: "₹2.5 ಲಕ್ಷಕ್ಕಿಂತ ಕಡಿಮೆ", incomeFilter5L: "₹5 ಲಕ್ಷಕ್ಕಿಂತ ಕಡಿಮೆ",
+    "Central Scheme open across India": "ಭಾರತದಾದ್ಯಂತ ಕೇಂದ್ರ ಯೋಜನೆ",
+    "Occupation matches": "ವೃತ್ತಿ ಹೊಂದಾಣಿಕೆಯಾಗಿದೆ",
+    "Farmer": "ರೈತ",
+    "Student": "ವಿದ್ಯಾರ್ಥಿ",
+    "Age Requirement Met": "ವಯಸ್ಸಿನ ಅರ್ಹತೆ",
+    "Gender requirement met": "ಲಿಂಗ ಅರ್ಹತೆ",
+    "Resident of": "ನಿವಾಸಿ",
+    "Income": "ಆದಾಯ",
+    "Male": "ಪುರುಷ",
+    "Female": "ಮಹಿಳೆ",
+    "All": "ಎಲ್ಲರೂ",
   },
   ml: {
     appName: "GovScheme AI",
@@ -496,6 +562,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     voiceAssistant: "വോയ്സ് അസിസ്റ്റന്റ്",
     listenVoice: "തിരയാൻ സംസാരിക്കുക...",
     login: "ലോഗിൻ", logout: "ലോഗൗട്ട്", register: "രജിസ്റ്റർ", guestMode: "അതിഥിയായി തുടരുക", loginOrGuest: "ലോഗിൻ / അതിഥി", yourName: "നിങ്ങളുടെ പൂർണ്ണ നാമം", mobileNumber: "മൊബൈൽ നമ്പർ", yourState: "നിങ്ങളുടെ സംസ്ഥാനം", yourOccupation: "നിങ്ങളുടെ തൊഴിൽ", annualIncomeLabel: "വാർഷിക വരുമാനം (₹)", yourAge: "നിങ്ങളുടെ പ്രായം", scanDocument: "രേഖ സ്കാൻ ചെയ്യുക", extractingOCR: "AI ടെക്സ്റ്റ് വേർതിരിക്കുന്നു...", saveToVault: "സേവ് & പ്രൊഫൈൽ പൂരിപ്പിക്കുക", reviewExtracted: "വേർതിരിച്ച വിവരം പരിശോധിക്കുക", beneficiariesStat: "ഗുണഭോക്താക്കൾ", disbursedStat: "ആനുകൂല്യ വിതരണം", activeSchemesStat: "സജീവ പദ്ധതികൾ", statesCoveredStat: "സംസ്ഥാനങ്ങൾ", nationalImpact: "സംഖ്യകളിൽ ദേശീയ സ്വാധീനം", incomeFilterAny: "വരുമാനം: ഏതും", incomeFilterBPL: "BPL (₹1.2L-ൽ താഴെ)", incomeFilter2L: "₹2.5 ലക്ഷത്തിൽ താഴെ", incomeFilter5L: "₹5 ലക്ഷത്തിൽ താഴെ",
+    "Central Scheme open across India": "ഇന്ത്യയിലുടനീളം കേന്ദ്ര പദ്ധതി",
+    "Occupation matches": "തൊഴിൽ പൊരുത്തപ്പെടുന്നു",
+    "Farmer": "കർഷകൻ",
+    "Student": "വിദ്യാർത്ഥി",
+    "Age Requirement Met": "പ്രായപരിധി",
+    "Gender requirement met": "ലിംഗ അർഹത",
+    "Resident of": "താമസക്കാരൻ",
+    "Income": "വരുമാനം",
+    "Male": "പുരുഷൻ",
+    "Female": "സ്ത്രീ",
+    "All": "എല്ലാവരും",
     "pm-kisan_name": "പ്രധാൻ മന്ത്രി കിസാൻ സമ്മാൻ നിധി (PM-KISAN)",
     "pm-kisan_desc": "ഇന്ത്യയിലുടനീളമുള്ള എല്ലാ കർഷക കുടുംബങ്ങൾക്കും തുല്യമായ മൂന്ന് ഗഡുക്കളായി പ്രതിവർഷം ₹6,000 വരുമാന പിന്തുണ നൽകുന്നു.",
     "pmay-g_name": "പ്രധാൻ മന്ത്രി ആവാസ് യോജന - ഗ്രാമീൺ (PMAY-G)",

@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { socketService } from './api/socketClient';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +8,7 @@ import { schemesData } from './data/schemes';
 import { initialUserProfile, initialApplications, initialNotifications } from './data/initialUserData';
 import { evaluateSchemeEligibility } from './engine/ruleEngine';
 import { computeMLRecommendation } from './engine/mlEngine';
+import { calculateProfileCompletion } from './utils/profileUtils';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LandingPage } from './components/LandingPage';
@@ -20,17 +23,28 @@ import { KioskMode } from './components/KioskMode';
 import { AuthModal } from './components/AuthModal';
 import { NotificationsModal } from './components/NotificationsModal';
 import { startVoiceListening } from './services/voiceService';
+import { EligibilityWizard } from './components/EligibilityWizard';
+import { AIAnalysis } from './components/AIAnalysis';
+import { AdminPlatform } from './components/admin/AdminPlatform';
+import { KioskReport } from './components/KioskReport';
 
 export const App: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState<LanguageCode>(
     (i18n.language as LanguageCode) || 'en'
   );
   const [theme, setTheme] = useState<'light' | 'dark' | 'high-contrast'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark' | 'high-contrast') || 'light';
   });
-  const [textSize, setTextSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
+  const [textSize, setTextSize] = useState<'small' | 'normal' | 'large' | 'xlarge'>(() => {
+    return (localStorage.getItem('textSize') as 'small' | 'normal' | 'large' | 'xlarge') || 'normal';
+  });
+  const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
+    return localStorage.getItem('reducedMotion') === 'true';
+  });
   const [activeTab, setActiveTab] = useState<string>('home');
+  const [wizardMode, setWizardMode] = useState<'wizard' | 'life-event' | 'what-can-i-get' | 'ai-interview'>('wizard');
+  const [kioskProfile, setKioskProfile] = useState<Partial<UserProfile> | null>(null);
 
   // User & Data State
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -54,7 +68,7 @@ export const App: React.FC = () => {
   // Sync theme & accessibility font sizing onto html tag
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'high-contrast', 'text-size-large', 'text-size-xlarge');
+    root.classList.remove('dark', 'high-contrast', 'text-size-small', 'text-size-large', 'text-size-xlarge', 'reduced-motion');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -64,12 +78,22 @@ export const App: React.FC = () => {
 
     localStorage.setItem('theme', theme);
 
-    if (textSize === 'large') {
+    localStorage.setItem('theme', theme);
+    localStorage.setItem('textSize', textSize);
+    localStorage.setItem('reducedMotion', String(reducedMotion));
+
+    if (textSize === 'small') {
+      root.classList.add('text-size-small');
+    } else if (textSize === 'large') {
       root.classList.add('text-size-large');
     } else if (textSize === 'xlarge') {
       root.classList.add('text-size-xlarge');
     }
-  }, [theme, textSize]);
+
+    if (reducedMotion) {
+      root.classList.add('reduced-motion');
+    }
+  }, [theme, textSize, reducedMotion]);
 
   // Sync language with i18n and HTML element
   useEffect(() => {
@@ -95,7 +119,7 @@ export const App: React.FC = () => {
           setSchemes(prev => {
             const apiSchemes = data.schemes;
             const newSchemes = [...apiSchemes];
-            
+
             if (Array.isArray(prev)) {
               prev.forEach(localScheme => {
                 if (!apiSchemes.find((s: any) => s.id === localScheme.id)) {
@@ -110,7 +134,7 @@ export const App: React.FC = () => {
         console.error('Failed to fetch schemes from backend:', error);
       }
     };
-    
+
     const fetchNotifications = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/notifications');
@@ -309,14 +333,35 @@ export const App: React.FC = () => {
   if (activeTab === 'kiosk') {
     return (
       <KioskMode
-        schemes={schemes}
-        currentLang={currentLang}
-        onSelectScheme={(sch) => {
-          const ruleRes = evaluateSchemeEligibility(user || initialUserProfile, sch);
-          const mlRes = computeMLRecommendation(user || initialUserProfile, sch, ruleRes, schemes);
-          setSelectedSchemeAnalysis({ scheme: sch, ruleResult: ruleRes, mlResult: mlRes });
+        onGenerateReport={(profile) => {
+          setKioskProfile(profile);
+          setActiveTab('kiosk-report');
         }}
-        onExitKiosk={() => setActiveTab('home')}
+        onExit={() => setActiveTab('home')}
+      />
+    );
+  }
+
+  // If Kiosk Report Mode
+  if (activeTab === 'kiosk-report' && kioskProfile) {
+    return (
+      <KioskReport 
+        profile={kioskProfile} 
+        schemes={schemes} 
+        onBack={() => setActiveTab('kiosk')} 
+      />
+    );
+  }
+
+  // If Admin Mode
+  if (activeTab === 'admin' && user) {
+    return (
+      <AdminPlatform 
+        user={user} 
+        schemes={schemes} 
+        onExit={() => setActiveTab('home')}
+        theme={theme}
+        setTheme={setTheme}
       />
     );
   }
@@ -326,7 +371,7 @@ export const App: React.FC = () => {
       {/* Global Voice Listening Banner */}
       {isListeningGlobalVoice && (
         <div className="bg-red-600 text-white py-2 px-4 text-center text-xs font-bold animate-pulse flex items-center justify-center gap-2 z-50">
-          <span>Listening to voice command... Speak (e.g. "Find Farmer Schemes", "Open Profile")</span>
+          <span>{t('listeningSpeechBanner', 'Listening to voice command... Speak (e.g. "Find Farmer Schemes", "Open Profile")')}</span>
         </div>
       )}
 
@@ -343,6 +388,8 @@ export const App: React.FC = () => {
         setTheme={setTheme}
         textSize={textSize}
         setTextSize={setTextSize}
+        reducedMotion={reducedMotion}
+        setReducedMotion={setReducedMotion}
         user={user}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
@@ -356,9 +403,9 @@ export const App: React.FC = () => {
         {activeTab === 'home' && (
           <LandingPage
             currentLang={currentLang}
-            onGetStarted={() => {
-              if (!user) setIsAuthOpen(true);
-              else setActiveTab('profile');
+            onGetStarted={(mode) => {
+              setWizardMode(mode);
+              setActiveTab('wizard');
             }}
             onTalkToAI={() => {
               if (!user) setIsAuthOpen(true);
@@ -374,6 +421,28 @@ export const App: React.FC = () => {
             }}
             topSchemes={schemes}
             user={user}
+          />
+        )}
+
+        {activeTab === 'wizard' && (
+          <EligibilityWizard
+            user={user}
+            mode={wizardMode}
+            onComplete={(profileData) => {
+              setUser(prev => {
+                const updated = prev ? { ...prev, ...profileData } : { ...initialUserProfile, ...profileData };
+                updated.profileCompletionScore = calculateProfileCompletion(updated);
+                return updated;
+              });
+              setActiveTab('analyzing');
+            }}
+            onCancel={() => setActiveTab('home')}
+          />
+        )}
+
+        {activeTab === 'analyzing' && (
+          <AIAnalysis
+            onComplete={() => setActiveTab('schemes')}
           />
         )}
 
@@ -415,7 +484,10 @@ export const App: React.FC = () => {
         {activeTab === 'profile' && user && (
           <ProfileView
             user={user}
-            onUpdateProfile={(updated) => setUser(updated)}
+            onUpdateProfile={(updated) => {
+              updated.profileCompletionScore = calculateProfileCompletion(updated);
+              setUser(updated);
+            }}
             onNavigateTab={setActiveTab}
             eligibleSchemesCount={eligibleSchemesCount}
           />
@@ -428,6 +500,7 @@ export const App: React.FC = () => {
       {/* Scheme Details Modal */}
       {selectedSchemeAnalysis && (
         <SchemeModal
+          user={user}
           analysis={selectedSchemeAnalysis}
           onClose={() => setSelectedSchemeAnalysis(null)}
           currentLang={currentLang}

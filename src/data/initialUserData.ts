@@ -22,6 +22,7 @@ export const initialUserProfile: UserProfile = {
   verificationBadge: true,
   profileCompletionScore: 88,
   savedSchemeIds: ["pm-kisan", "pmay-g", "tn-pudhumai-penn"],
+  role: "admin",
   documents: [
     {
       id: "doc-aadhaar-1",

@@ -1,24 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Building2,
-  Languages,
-  Sun,
-  Moon,
-  Eye,
-  Bell,
-  User as UserIcon,
-  Mic,
-  LayoutDashboard,
-  Monitor,
-  Sparkles,
-  LogOut,
-  ChevronDown,
-  Menu,
-  X
+  Building2, Languages, Sun, Moon, Eye, Bell, User as UserIcon, Mic, Monitor, Sparkles, LogOut, ChevronDown, Menu, X, Settings2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile } from '../types';
 import { languages } from '../data/translations';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
   currentLang: LanguageCode;
@@ -27,307 +14,303 @@ interface NavbarProps {
   setActiveTab: (tab: string) => void;
   theme: 'light' | 'dark' | 'high-contrast';
   setTheme: (theme: 'light' | 'dark' | 'high-contrast') => void;
-  textSize: 'normal' | 'large' | 'xlarge';
-  setTextSize: (size: 'normal' | 'large' | 'xlarge') => void;
+  textSize: 'small' | 'normal' | 'large' | 'xlarge';
+  setTextSize: (size: 'small' | 'normal' | 'large' | 'xlarge') => void;
   user: UserProfile | null;
   onOpenAuth: () => void;
   onLogout: () => void;
   unreadCount: number;
   onOpenNotifications: () => void;
   onStartVoiceCommand: () => void;
+  reducedMotion: boolean;
+  setReducedMotion: (val: boolean) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  currentLang,
-  onLanguageChange,
-  activeTab,
-  setActiveTab,
-  theme,
-  setTheme,
-  textSize,
-  setTextSize,
-  user,
-  onOpenAuth,
-  onLogout,
-  unreadCount,
-  onOpenNotifications,
-  onStartVoiceCommand
+  currentLang, onLanguageChange, activeTab, setActiveTab, theme, setTheme,
+  textSize, setTextSize, reducedMotion, setReducedMotion,
+  user, onOpenAuth, onLogout, unreadCount, onOpenNotifications, onStartVoiceCommand
 }) => {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
-  const nextTextSize = textSize === 'normal' ? 'large' : textSize === 'large' ? 'xlarge' : 'normal';
+  const customBezier = [0.32, 0.72, 0, 1];
+
+  const navItems = [
+    { id: 'home', label: t('navHome', 'Home') },
+    { id: 'schemes', label: t('navSchemes', 'Schemes') },
+    { id: 'assistant', label: t('navAssistant', 'AI Assistant'), isAI: true },
+    { id: 'vault', label: t('navVault', 'Vault') },
+    { id: 'tracker', label: t('navTracker', 'Tracker') },
+  ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 shadow-sm transition-colors border-b border-uswds-border">
-      {/* Top Govt Bar (USAJOBS Style) */}
-      <div className="bg-uswds-secondary text-white text-xs py-3 px-6 sm:px-12 flex flex-wrap justify-between items-center gap-2">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-          <span className="inline-flex items-center font-bold tracking-wide whitespace-nowrap">
-            🇺🇸 {t('govtVerifiedTitle', 'An official website of the United States Government')}
-          </span>
-          <span className="hidden md:inline opacity-50">|</span>
-          <span className="opacity-80 truncate max-w-[200px] sm:max-w-none">{t('tagline', 'National Scheme Eligibility Platform')}</span>
-        </div>
-
-        {/* Accessibility & Language Bar */}
-        <div className="flex items-center space-x-3">
-          {/* Text Size Control */}
-          <button
-            onClick={() => setTextSize(nextTextSize)}
-            title={t('adjustFontSize', 'Adjust Font Size')}
-            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[10px] sm:text-xs transition whitespace-nowrap"
-          >
-            {t('font', 'Font')}: {textSize.toUpperCase()}
-          </button>
-
-          {/* High Contrast Toggle */}
-          <button
-            onClick={() => setTheme(theme === 'high-contrast' ? 'light' : 'high-contrast')}
-            title={t('toggleContrast', 'Toggle Contrast')}
-            className={`px-2 py-0.5 rounded text-[10px] sm:text-xs transition flex items-center gap-1 whitespace-nowrap ${theme === 'high-contrast' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-          >
-            <Eye className="w-3 h-3 hidden sm:block" /> {t('contrast', 'Contrast')}
-          </button>
-
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title="Toggle Light/Dark Theme"
-            className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-          >
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-300" /> : <Moon className="w-3.5 h-3.5" />}
-          </button>
-
-          {/* Language Selector Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/20 hover:bg-black/30 text-white text-xs font-medium transition"
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span>{languages.find(l => l.code === currentLang)?.nativeName || 'English'}</span>
-            </button>
-
-            {langDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50">
-                {languages.map(lang => (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      onLanguageChange(lang.code);
-                      setLangDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-xs flex justify-between items-center hover:bg-blue-50 dark:hover:bg-slate-700 ${currentLang === lang.code ? 'font-bold text-blue-600 dark:text-blue-400 bg-blue-50/50' : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                  >
-                    <span>{lang.nativeName}</span>
-                    <span className="text-[10px] text-slate-400">({lang.name})</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Nav Bar */}
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 xl:px-12 py-5 flex flex-wrap xl:flex-nowrap items-center justify-between gap-6">
-        {/* Brand Header */}
-        <div
-          onClick={() => setActiveTab('home')}
-          className="flex items-center gap-3 cursor-pointer group"
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center w-full">
+        <motion.div 
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white/90 dark:bg-[#07111F]/90 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center justify-between w-full"
         >
-          <div className="w-10 h-10 rounded-lg bg-uswds-primary text-white flex items-center justify-center shadow-sm">
-            <Building2 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight text-uswds-primary dark:text-white font-sans">
-                {t('appName', 'GovScheme AI')}
-              </h1>
+          {/* Brand */}
+          <div onClick={() => setActiveTab('home')} className="flex items-center gap-2 cursor-pointer shrink-0 group ml-2">
+            <div className="w-8 h-8 rounded-full bg-gov-navy dark:bg-white text-white dark:text-[#050505] flex items-center justify-center transition-transform group-hover:scale-105">
+              <Building2 className="w-4 h-4" />
             </div>
-            <p className="text-xs text-uswds-textMuted dark:text-slate-400 font-medium">
-              {t('tagline', 'National Scheme Eligibility Platform')}
-            </p>
+            <span className="font-extrabold tracking-tight text-gov-navy dark:text-white hidden sm:block">GovScheme</span>
           </div>
-        </div>
 
-        {/* Desktop Nav Items */}
-        <nav className="hidden xl:flex items-center gap-2 flex-wrap justify-center">
-          {[
-            { id: 'home', label: t('navHome', 'Home') },
-            { id: 'schemes', label: t('navSchemes', 'Schemes') },
-            { id: 'assistant', label: t('navAssistant', 'AI Assistant'), isAI: true },
-            { id: 'vault', label: t('navVault', 'Vault') },
-            { id: 'tracker', label: t('navTracker', 'Tracker') },
-            { id: 'profile', label: t('navProfile', 'Profile') },
-          ].map(item => (
-            <button
-              key={item.id}
-              onClick={() => {
-                const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'tracker'];
-                if (protectedTabs.includes(item.id) && !user) {
-                  onOpenAuth();
-                } else {
-                  setActiveTab(item.id);
-                }
-              }}
-              className={`px-5 py-3 rounded-md text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === item.id
-                  ? 'bg-uswds-primary text-white shadow-md'
-                  : 'text-uswds-text hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-                }`}
-            >
-              {item.isAI && <Sparkles className="w-4 h-4 text-uswds-saffron animate-pulse" />}
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Action Controls & Hamburger */}
-        <div className="flex items-center gap-2">
-          {/* Voice Search Button */}
-          <button
-            onClick={onStartVoiceCommand}
-            className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition flex items-center gap-1 text-[10px] sm:text-xs font-semibold whitespace-nowrap"
-            title={t('voiceSearchTitle', 'Voice Search Schemes (Speak to AI)')}
-          >
-            <Mic className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-bounce hidden sm:block" />
-            <span>{t('voice', 'Voice')}</span>
-          </button>
-
-          {/* Kiosk Mode Toggle */}
-          <button
-            onClick={() => {
-              if (!user) onOpenAuth();
-              else setActiveTab('kiosk');
-            }}
-            className={`px-2.5 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${activeTab === 'kiosk'
-                ? 'bg-purple-700 text-white shadow'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-slate-700'
-              }`}
-            title={t('kioskModeTitle', 'Switch to CSC Kiosk Mode')}
-          >
-            <Monitor className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 hidden sm:block" />
-            <span>{t('navKiosk', 'Kiosk')}</span>
-          </button>
-
-
-
-          {/* Notifications Button */}
-          <button
-            onClick={() => {
-              if (!user) onOpenAuth();
-              else onOpenNotifications();
-            }}
-            className="relative p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
-            title="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-
-          {/* User Auth Profile Button */}
-          {/* User Auth Profile Button */}
-          {/* User Auth Profile Button */}
-          {user ? (
-            <div className="relative shrink-0">
+          {/* Desktop Links */}
+          <nav className="hidden md:flex items-center gap-2">
+            {navItems.map(item => (
               <button
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-slate-300 dark:hover:border-slate-600"
+                key={item.id}
+                onClick={() => {
+                  const protectedTabs = ['schemes', 'assistant', 'vault', 'tracker'];
+                  if (protectedTabs.includes(item.id) && !user) onOpenAuth();
+                  else setActiveTab(item.id);
+                }}
+                className={`px-4 py-2 rounded text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === item.id ? 'bg-[#1769FF]/10 text-[#1769FF]' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
               >
-                <img
-                  src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`}
-                  alt="Profile Avatar"
-                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
-                />
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200 hidden md:inline truncate max-w-[120px]">
-                  {user.fullName.split(' ')[0]}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                {item.isAI && <Sparkles className="w-4 h-4 text-[#F59E0B]" />}
+                {item.label}
               </button>
-              {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 overflow-hidden transform origin-top-right transition-all">
-                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
-                    <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
-                      {user.fullName}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => { setActiveTab('profile'); setUserDropdownOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
+            ))}
+          </nav>
+
+          {/* Action Items */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Language Switcher */}
+            <div className="relative hidden sm:block">
+              <button
+                onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+              >
+                <Languages className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
+              </button>
+              <AnimatePresence>
+                {langDropdownOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-3 w-40 bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xl border border-gov-border dark:border-white/10 rounded-[1.5rem] p-2 shadow-2xl"
                   >
-                    <UserIcon className="w-4 h-4" /> {t('navProfile', 'Profile')}
-                  </button>
-                  <button
-                    onClick={() => { onLogout(); setUserDropdownOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-700 flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" /> {t('logout', 'Logout')}
-                  </button>
-                </div>
-              )}
+                    {languages.map(lang => (
+                      <button
+                        key={lang.code}
+                        onClick={() => { onLanguageChange(lang.code); setLangDropdownOpen(false); }}
+                        className={`w-full text-left px-4 py-2 text-xs font-bold rounded-xl transition-colors ${currentLang === lang.code ? 'bg-[#1769FF] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-900 dark:text-white'}`}
+                      >
+                        {lang.nativeName}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          ) : (
-            <button
-              onClick={onOpenAuth}
-              className="px-3.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-[10px] sm:text-xs font-bold shadow-sm transition flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <UserIcon className="w-3.5 h-3.5 hidden sm:block" />
-              <span>{t('loginOrGuest', 'Sign In / Register')}</span>
-            </button>
-          )}
 
-          {/* Hamburger Menu Toggle (Mobile) */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            title="Menu"
+            {/* Display Settings / Accessibility */}
+            <div className="relative hidden sm:block">
+              <button
+                onClick={() => setSettingsDropdownOpen(!settingsDropdownOpen)}
+                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                title={t('displaySettings', 'Display Settings')}
+              >
+                <Settings2 className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
+              </button>
+              <AnimatePresence>
+                {settingsDropdownOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-3 w-64 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-xl border border-border rounded-[1.5rem] p-4 shadow-2xl z-50"
+                  >
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{t('displaySettings', 'Display Settings')}</h3>
+                    
+                    {/* Theme */}
+                    <div className="mb-4">
+                      <span className="block text-xs font-semibold text-text-primary mb-2">{t('theme', 'Theme')}</span>
+                      <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                        <button onClick={() => setTheme('light')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-colors ${theme === 'light' ? 'bg-white dark:bg-gray-700 shadow text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('light', 'Light')}</button>
+                        <button onClick={() => setTheme('dark')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-colors ${theme === 'dark' ? 'bg-white dark:bg-gray-700 shadow text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('dark', 'Dark')}</button>
+                      </div>
+                    </div>
+
+                    {/* Text Size */}
+                    <div className="mb-4">
+                      <span className="block text-xs font-semibold text-text-primary mb-2">{t('textSize', 'Text Size')}</span>
+                      <div className="flex gap-1">
+                        {['small', 'normal', 'large', 'xlarge'].map((size) => (
+                          <button 
+                            key={size}
+                            onClick={() => setTextSize(size as 'small' | 'normal' | 'large' | 'xlarge')} 
+                            className={`flex-1 py-1 text-xs font-bold rounded-md border transition-colors ${textSize === size ? 'bg-primary text-white border-primary' : 'bg-transparent text-text-secondary border-border hover:border-gray-400'}`}
+                            title={size}
+                          >
+                            A
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Accessibility Toggles */}
+                    <div className="space-y-2 mb-4">
+                      <label className="flex items-center justify-between cursor-pointer">
+                        <span className="text-xs font-semibold text-text-primary">{t('highContrast', 'High Contrast')}</span>
+                        <input type="checkbox" className="sr-only peer" checked={theme === 'high-contrast'} onChange={(e) => setTheme(e.target.checked ? 'high-contrast' : 'light')} />
+                        <div className="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                      </label>
+                      <label className="flex items-center justify-between cursor-pointer">
+                        <span className="text-xs font-semibold text-text-primary">{t('reducedMotion', 'Reduced Motion')}</span>
+                        <input type="checkbox" className="sr-only peer" checked={reducedMotion} onChange={(e) => setReducedMotion(e.target.checked)} />
+                        <div className="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        setTheme('light');
+                        setTextSize('normal');
+                        setReducedMotion(false);
+                      }}
+                      className="w-full py-1.5 text-xs font-bold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border-t border-border mt-2 pt-3"
+                    >
+                      {t('resetSettings', 'Reset to Default')}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Notifications */}
+            <button
+              onClick={() => { if (!user) onOpenAuth(); else onOpenNotifications(); }}
+              className="relative w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+            >
+              <Bell className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border border-white dark:border-[#111827]" />
+              )}
+            </button>
+
+            {/* User Profile */}
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 p-0.5 transition-transform hover:scale-105"
+                >
+                  <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                </button>
+                <AnimatePresence>
+                  {userDropdownOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-3 w-48 bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xl border border-gov-border dark:border-white/10 rounded-[1.5rem] p-2 shadow-2xl"
+                    >
+                      <button onClick={() => { setActiveTab('profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                        <UserIcon className="w-3.5 h-3.5" /> {t('profile', 'Profile')}
+                      </button>
+                      {(user.role === 'admin' || user.role === 'superadmin') && (
+                        <button onClick={() => { setActiveTab('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-primary">
+                          <Settings2 className="w-3.5 h-3.5" /> Admin Panel
+                        </button>
+                      )}
+                      <button onClick={() => { onLogout(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl text-red-500 hover:bg-red-500/10 flex items-center gap-2">
+                        <LogOut className="w-3.5 h-3.5" /> {t('logout', 'Logout')}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-105 transition-transform"
+              >
+                Sign In
+              </button>
+            )}
+
+            {/* Hamburger (Mobile) */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden w-8 h-8 relative flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10"
+            >
+              <div className="w-4 h-3 flex flex-col justify-between items-center relative">
+                <motion.span animate={mobileMenuOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute top-0" />
+                <motion.span animate={mobileMenuOpen ? { opacity: 0 } : { opacity: 1 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute top-1/2 -translate-y-1/2" />
+                <motion.span animate={mobileMenuOpen ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute bottom-0" />
+              </div>
+            </button>
+          </div>
+        </motion.div>
+      </header>
+
+      {/* Fullscreen Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: customBezier }}
+            className="fixed inset-0 z-40 bg-white/95 dark:bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center pt-20"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Navigation Dropdown */}
-      {mobileMenuOpen && (
-        <div className="xl:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 absolute left-0 w-full shadow-lg px-4 py-3 flex flex-col gap-2">
-          {[
-            { id: 'home', label: t('navHome', 'Home') },
-            { id: 'schemes', label: t('navSchemes', 'Schemes') },
-            { id: 'assistant', label: t('navAssistant', 'AI Assistant') },
-            { id: 'vault', label: t('navVault', 'Vault') },
-            { id: 'tracker', label: t('navTracker', 'Tracker') },
-            { id: 'profile', label: t('navProfile', 'Profile') },
-          ].map(item => (
-            <button
-              key={item.id}
-              onClick={() => {
-                const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'tracker'];
-                if (protectedTabs.includes(item.id) && !user) {
-                  onOpenAuth();
-                  setMobileMenuOpen(false);
-                } else {
-                  setActiveTab(item.id);
-                  setMobileMenuOpen(false);
-                }
-              }}
-              className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition text-left ${activeTab === item.id
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </header>
+            <div className="flex flex-col gap-8 text-center">
+              {navItems.map((item, idx) => (
+                <div key={item.id} className="overflow-hidden">
+                  <motion.button
+                    initial={{ y: 40, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -40, opacity: 0 }}
+                    transition={{ delay: idx * 0.1, duration: 0.6, ease: customBezier }}
+                    onClick={() => {
+                      const protectedTabs = ['schemes', 'assistant', 'vault', 'tracker'];
+                      if (protectedTabs.includes(item.id) && !user) onOpenAuth();
+                      else setActiveTab(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-4xl font-extrabold text-gov-navy dark:text-white"
+                  >
+                    {item.label}
+                  </motion.button>
+                </div>
+              ))}
+              
+              <div className="overflow-hidden mt-4">
+                <motion.div
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -40, opacity: 0 }}
+                  transition={{ delay: navItems.length * 0.1, duration: 0.6, ease: customBezier }}
+                  className="flex flex-wrap justify-center gap-2"
+                >
+                  {languages.map(lang => (
+                    <button
+                      key={lang.code}
+                      onClick={() => { onLanguageChange(lang.code); setMobileMenuOpen(false); }}
+                      className={`px-4 py-2 text-sm font-bold rounded-full ${currentLang === lang.code ? 'bg-[#1769FF] text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white'}`}
+                    >
+                      {lang.nativeName}
+                    </button>
+                  ))}
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };

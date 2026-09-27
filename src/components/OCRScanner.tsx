@@ -17,7 +17,7 @@ import { performOCRScan, OCRScanResult } from '../services/ocrService';
 interface OCRScannerProps {
   isOpen: boolean;
   onClose: () => void;
-  expectedType: DocumentRecord['type'];
+  expectedType: DocumentRecord['type'] | 'Unknown';
   onSaveDocument: (doc: DocumentRecord, autoFillFields?: Partial<UserProfile>) => void;
 }
 
@@ -34,6 +34,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   const [editableName, setEditableName] = useState('');
   const [editableIncome, setEditableIncome] = useState<number | undefined>(undefined);
   const [selectedRawText, setSelectedRawText] = useState('');
+  const [manualMode, setManualMode] = useState(false);
 
   const handleRawTextSelection = () => {
     const text = window.getSelection()?.toString().trim() || '';
@@ -55,12 +56,20 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     setIsScanning(true);
     try {
       const res = await performOCRScan(selectedFile, expectedType);
-      setScanResult(res);
-      setEditableDocNumber(res.docNumber);
-      setEditableName(res.extractedFields.fullName || '');
-      setEditableIncome(res.extractedFields.annualIncome);
+      
+      // Simulating an OCR failure or low confidence to trigger manual mode occasionally or explicitly
+      if (res.extractedFields.confidenceScore < 40) {
+        setManualMode(true);
+        setScanResult(null);
+      } else {
+        setScanResult(res);
+        setEditableDocNumber(res.docNumber);
+        setEditableName(res.extractedFields.fullName || '');
+        setEditableIncome(res.extractedFields.annualIncome);
+      }
     } catch (err) {
       console.error(err);
+      setManualMode(true);
     } finally {
       setIsScanning(false);
     }
@@ -71,7 +80,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
 
     const newDoc: DocumentRecord = {
       id: `doc-${Date.now()}`,
-      type: expectedType,
+      type: scanResult.docType,
       docNumber: editableDocNumber || scanResult.docNumber,
       status: scanResult.isValidDocType ? 'Verified' : 'Pending',
       ocrExtracted: {
@@ -82,6 +91,28 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
       uploadedAt: new Date().toISOString().split('T')[0]
     };
 
+    const autoFill: Partial<UserProfile> = {};
+    if (editableName) autoFill.fullName = editableName;
+    if (editableIncome !== undefined) autoFill.annualIncome = editableIncome;
+
+    onSaveDocument(newDoc, autoFill);
+    onClose();
+  };
+
+  const handleManualSave = () => {
+    const newDoc: DocumentRecord = {
+      id: `doc-${Date.now()}`,
+      type: expectedType === 'Unknown' ? 'Aadhaar' : expectedType,
+      docNumber: editableDocNumber || `MANUAL-${Date.now()}`,
+      status: 'Pending',
+      ocrExtracted: {
+        fullName: editableName,
+        annualIncome: editableIncome,
+        confidenceScore: 0
+      },
+      uploadedAt: new Date().toISOString().split('T')[0]
+    };
+    
     const autoFill: Partial<UserProfile> = {};
     if (editableName) autoFill.fullName = editableName;
     if (editableIncome !== undefined) autoFill.annualIncome = editableIncome;
@@ -105,7 +136,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
             <ScanLine className="w-5 h-5 text-amber-400" />
             <span className="text-xs font-semibold text-blue-200 uppercase tracking-wider">AI OCR Document Extraction</span>
           </div>
-          <h2 className="text-2xl font-bold font-heading">Scan {expectedType} Document</h2>
+          <h2 className="text-2xl font-bold font-heading">Scan {expectedType === 'Unknown' ? 'Document' : expectedType}</h2>
           <p className="text-xs text-blue-100 mt-1">Extract details & auto-fill profile for rule verification.</p>
         </div>
 
@@ -115,7 +146,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
             <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center space-y-4 hover:border-blue-500 transition">
               <UploadCloud className="w-12 h-12 text-blue-600 mx-auto" />
               <div>
-                <span className="font-bold text-slate-900 dark:text-white text-sm block">Upload {expectedType} Document (PDF/Image)</span>
+                <span className="font-bold text-slate-900 dark:text-white text-sm block">Upload {expectedType === 'Unknown' ? 'Any Supported' : expectedType} Document (PDF/Image)</span>
                 <span className="text-slate-500 text-xs">Supports PDF, JPG, PNG up to 10MB</span>
               </div>
               <input
@@ -138,6 +169,15 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                   <span>Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
                 </div>
               )}
+              
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <button 
+                  onClick={() => setManualMode(true)}
+                  className="text-sm font-semibold text-blue-600 hover:underline"
+                >
+                  Enter Details Manually
+                </button>
+              </div>
             </div>
           )}
 
@@ -259,6 +299,51 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
               </div>
             </div>
           )}
+
+          {/* Manual Entry Fallback */}
+          {manualMode && !isScanning && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl border bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <div>
+                  <span className="font-bold block">Manual Entry Mode</span>
+                  <span className="text-[11px]">We couldn't reliably identify this document via OCR. Please enter details manually.</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <div>
+                  <label className="block font-semibold mb-1">Document Number</label>
+                  <input
+                    type="text"
+                    value={editableDocNumber}
+                    onChange={(e) => setEditableDocNumber(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Name on Document</label>
+                  <input
+                    type="text"
+                    value={editableName}
+                    onChange={(e) => setEditableName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+                  />
+                </div>
+                {expectedType === 'Income Certificate' && (
+                  <div>
+                    <label className="block font-semibold mb-1">Annual Income (₹)</label>
+                    <input
+                      type="number"
+                      value={editableIncome || ''}
+                      onChange={(e) => setEditableIncome(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Footer Actions */}
@@ -270,7 +355,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
             Cancel
           </button>
 
-          {!scanResult ? (
+          {!scanResult && !manualMode ? (
             <button
               onClick={handleStartScan}
               disabled={!selectedFile}
@@ -281,7 +366,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
             </button>
           ) : (
             <button
-              onClick={handleSaveToVault}
+              onClick={manualMode ? handleManualSave : handleSaveToVault}
               className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow flex items-center gap-1.5"
             >
               <Save className="w-4 h-4" />

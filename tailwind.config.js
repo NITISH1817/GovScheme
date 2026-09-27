@@ -8,42 +8,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: 'var(--background)',
-        foreground: 'var(--foreground)',
-        primary: {
-          DEFAULT: 'var(--primary)',
-          foreground: 'var(--primary-foreground)',
-        },
-        secondary: {
-          DEFAULT: 'var(--secondary)',
-          foreground: 'var(--secondary-foreground)',
-        },
-        muted: {
-          DEFAULT: 'var(--muted)',
-          foreground: 'var(--muted-foreground)',
-        },
-        accent: {
-          DEFAULT: 'var(--accent)',
-          foreground: 'var(--accent-foreground)',
-        },
-        destructive: {
-          DEFAULT: 'var(--destructive)',
-          foreground: 'var(--destructive-foreground)',
-        },
-        border: 'var(--border)',
-        input: 'var(--input)',
-        ring: 'var(--ring)',
-        uswds: {
-          primary: '#005EA2',
-          secondary: '#1A4480',
-          success: '#2E8540',
-          warning: '#FFBE2E',
-          danger: '#D83933',
-          background: '#F9FAFB',
+        background: 'rgb(var(--bg) / <alpha-value>)',
+        surface: 'rgb(var(--surface) / <alpha-value>)',
+        'surface-elevated': 'rgb(var(--surface-elevated) / <alpha-value>)',
+        'text-primary': 'rgb(var(--text-primary) / <alpha-value>)',
+        'text-secondary': 'rgb(var(--text-secondary) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
+        primary: 'rgb(var(--primary) / <alpha-value>)',
+        success: 'rgb(var(--success) / <alpha-value>)',
+        warning: 'rgb(var(--warning) / <alpha-value>)',
+        error: 'rgb(var(--error) / <alpha-value>)',
+        gov: {
+          navy: '#0B2A4A',
+          blue: '#1769FF',
+          cyan: '#22C7E8',
+          saffron: '#F59E0B',
+          green: '#16A34A',
+          background: '#F5F7FA',
           card: '#FFFFFF',
-          border: '#D9E2EC',
-          text: '#1B1B1B',
-          textMuted: '#5C5C5C',
+          border: '#E2E8F0',
+          text: '#050B14',
+          textMuted: '#64748B',
         }
       },
       borderRadius: {

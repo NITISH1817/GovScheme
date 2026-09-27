@@ -7,14 +7,9 @@ import {
   MicOff,
   Volume2,
   VolumeX,
-  Paperclip,
-  Sparkles,
   User,
-  Building2,
   ExternalLink,
-  RefreshCw,
-  CheckCircle2,
-  FileText
+  Info
 } from 'lucide-react';
 import { ChatMessage, Scheme, UserProfile, LanguageCode } from '../types';
 import { startVoiceListening, speakText, stopSpeaking, isSpeechRecognitionSupported, checkVoiceNavigationCommand } from '../services/voiceService';
@@ -37,16 +32,35 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     {
       id: 'msg-init',
       sender: 'assistant',
-      text: `Namaste ${user.fullName.split(' ')[0]}! 🙏 I am your AI Government Scheme Assistant. Based on your profile as a ${user.occupation} in ${user.state}, you have ${schemes.length}+ schemes to explore. I can help you discover welfare schemes, analyze eligibility, compare programs, and guide your official application.`,
-      timestamp: 'Just now',
+      text: t('aiGreeting', 'Hello Citizen. I am your Official AI Scheme Assistant. Based on your profile, I can help you discover welfare schemes, analyze eligibility, compare programs, and guide your official application. How can I help you today?').replace('Citizen', user.fullName.split(' ')[0] || 'Citizen'),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       suggestedPrompts: [
-        `What schemes am I eligible for as a ${user.occupation}?`,
-        `How do I apply for PM-KISAN?`,
-        `Tell me about Atal Pension Yojana`,
-        `What is Jan Dhan Yojana?`
+        t('qRelevantToStudents', 'Which schemes are relevant to students?'),
+        t('qSchemesForFarmers', 'What schemes can farmers apply for?'),
+        t('qWhyRecommended', 'Why was a scheme recommended?'),
+        t('qWhatDocs', 'What documents do I need?')
       ]
     }
   ]);
+
+  useEffect(() => {
+    setMessages(prev => {
+      const newMsgs = [...prev];
+      if (newMsgs.length > 0 && newMsgs[0].id === 'msg-init') {
+        newMsgs[0] = {
+          ...newMsgs[0],
+          text: t('aiGreeting', 'Hello Citizen. I am your Official AI Scheme Assistant...').replace('Citizen', user.fullName.split(' ')[0] || 'Citizen'),
+          suggestedPrompts: [
+            t('qRelevantToStudents', 'Which schemes are relevant to students?'),
+            t('qSchemesForFarmers', 'What schemes can farmers apply for?'),
+            t('qWhyRecommended', 'Why was a scheme recommended?'),
+            t('qWhatDocs', 'What documents do I need?')
+          ]
+        };
+      }
+      return newMsgs;
+    });
+  }, [currentLang, t, user.fullName]);
 
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -96,42 +110,68 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ message: text })
-      });
+      }).catch(() => null); // Catch network errors and fallback
 
-      if (!response.body) throw new Error('ReadableStream not yet supported in this browser.');
-      
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
       let fullText = '';
-      
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+      if (response && response.body && response.ok) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
         
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.error) {
-                fullText = "I encountered an error connecting to the AI.";
-                break;
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.error) {
+                  fullText = "I encountered an error connecting to the AI.";
+                  break;
+                }
+                if (data.done) {
+                  break;
+                }
+                if (data.text) {
+                  fullText += data.text;
+                  setMessages(prev => prev.map(m => 
+                    m.id === aiMsgId ? { ...m, text: fullText } : m
+                  ));
+                }
+              } catch (e) {
+                console.error('SSE JSON parse error:', e);
               }
-              if (data.done) {
-                break;
-              }
-              if (data.text) {
-                fullText += data.text;
-                setMessages(prev => prev.map(m => 
-                  m.id === aiMsgId ? { ...m, text: fullText } : m
-                ));
-              }
-            } catch (e) {
-              console.error('SSE JSON parse error:', e);
             }
           }
+        }
+      } else {
+        // Fallback Local AI Generation Engine
+        const lowerText = text.toLowerCase();
+        let matchedSchemes = schemes.filter(s => lowerText.includes(s.category.toLowerCase().split(' ')[0]) || lowerText.includes(s.name.toLowerCase()));
+        
+        if (matchedSchemes.length === 0) {
+          if (lowerText.includes('farmer') || lowerText.includes('agriculture')) {
+            matchedSchemes = schemes.filter(s => s.category.includes('Agriculture'));
+          } else if (lowerText.includes('student') || lowerText.includes('education')) {
+            matchedSchemes = schemes.filter(s => s.category.includes('Education'));
+          } else {
+            matchedSchemes = schemes.slice(0, 2);
+          }
+        }
+
+        const generatedResponse = `Based on your query, here is what I found:\n\n${matchedSchemes.length > 0 ? `I recommend looking into ${matchedSchemes[0].name}. ${matchedSchemes[0].shortDescription}` : 'I could not find a specific scheme for that, but I recommend checking the discovery portal for more categories.'}\n\nYou can also provide your specific requirements or documents, and I'll find more accurate matches.`;
+        
+        // Stream effect simulation
+        const words = generatedResponse.split(' ');
+        for (let i = 0; i < words.length; i++) {
+          fullText += words[i] + ' ';
+          setMessages(prev => prev.map(m => 
+            m.id === aiMsgId ? { ...m, text: fullText } : m
+          ));
+          await new Promise(r => setTimeout(r, 50));
         }
       }
 
@@ -142,9 +182,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         m.id === aiMsgId ? {
           ...m,
           suggestedPrompts: [
-            "What documents do I need?",
-            "Tell me about crop insurance",
-            "Find pension schemes for me"
+            "Tell me more about the eligibility criteria",
+            "What documents do I need to prepare?",
+            "How do I track my application?"
           ]
         } : m
       ));
@@ -198,158 +238,130 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
-      <div className="gov-card flex flex-col h-[75vh] overflow-hidden shadow-sm rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        {/* Chat Header */}
-        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-4 sm:p-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-md bg-gov-navy text-white flex items-center justify-center font-bold shadow-sm">
-              <Bot className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold font-heading text-slate-900 dark:text-white">{t('aiAssistantTitle', 'GovScheme AI Assistant')}</h2>
-                <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                  <span className="pulse-dot"></span> Online
-                </span>
+    <div className="h-[calc(100vh-80px)] bg-[#F8FAFC] dark:bg-[#07111F] py-6 pb-20 sm:pb-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
+        <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded shadow-sm overflow-hidden">
+          
+          {/* Chat Header */}
+          <div className="border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between bg-gray-50 dark:bg-[#16243A]/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded bg-[#123C69] text-white flex items-center justify-center shadow-sm shrink-0">
+                <Bot className="w-5 h-5" />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t('aiAssistantDesc', 'Multilingual Voice & Chat Assistance for Rural Citizens')}</p>
+              <div>
+                <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  Ask Scheme Assistant
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Online
+                  </span>
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Natural language semantic analysis enabled</p>
+              </div>
             </div>
+
+            <button
+              onClick={() => {
+                setVoicePlaybackEnabled(!voicePlaybackEnabled);
+                if (voicePlaybackEnabled) stopSpeaking();
+              }}
+              className="p-2 rounded text-xs font-semibold flex items-center gap-2 transition-colors text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              title="Toggle Voice Output"
+            >
+              {voicePlaybackEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              <span className="hidden sm:inline">{voicePlaybackEnabled ? 'Voice On' : 'Voice Off'}</span>
+            </button>
           </div>
 
-          <button
-            onClick={() => {
-              setVoicePlaybackEnabled(!voicePlaybackEnabled);
-              if (voicePlaybackEnabled) stopSpeaking();
-            }}
-            className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition ${voicePlaybackEnabled
-                ? 'bg-amber-400 text-slate-950 border-amber-500'
-                : 'bg-blue-950/60 text-blue-200 border-blue-700'
-              }`}
-            title="Toggle Text-to-Speech Voice Playback"
-          >
-            {voicePlaybackEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            <span className="hidden sm:inline">{voicePlaybackEnabled ? 'Voice On' : 'Voice Off'}</span>
-          </button>
-        </div>
+          {/* Message Stream */}
+          <div className="flex-1 p-6 overflow-y-auto space-y-6">
+            {messages.map(msg => (
+              <div key={msg.id} className={`flex gap-4 max-w-[85%] ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+                <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${msg.sender === 'user' ? 'bg-[#1769FF] text-white' : 'bg-[#123C69] text-white'}`}>
+                  {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                </div>
 
-        {/* Message Stream */}
-        <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-slate-50/50 dark:bg-slate-900/50">
-          {messages.map(msg => (
-            <div
-              key={msg.id}
-              className={`flex gap-3 max-w-3xl ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${msg.sender === 'user' ? 'bg-blue-700 text-white' : 'bg-amber-500 text-slate-950'
-                }`}>
-                {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-              </div>
+                <div className={`space-y-2 flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`p-4 text-sm leading-relaxed ${msg.sender === 'user' ? 'bg-[#1769FF] text-white rounded-l rounded-br' : 'bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-gray-100 rounded-r rounded-bl border border-gray-200 dark:border-gray-800'}`}>
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                    
+                    {msg.sender === 'assistant' && msg.text.length > 50 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2">
+                         <button onClick={() => onNavigateTab('schemes')} className="px-3 py-1.5 rounded bg-white dark:bg-[#0F1B2D] border border-gray-300 dark:border-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1">
+                           <ExternalLink className="w-3 h-3" /> View Scheme
+                         </button>
+                         <button className="px-3 py-1.5 rounded bg-white dark:bg-[#0F1B2D] border border-gray-300 dark:border-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1">
+                           <Info className="w-3 h-3" /> View Source
+                         </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <span className="text-[10px] font-semibold text-gray-400 px-1">{msg.timestamp}</span>
 
-              <div className="space-y-3">
-                <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.sender === 'user'
-                    ? 'bg-blue-700 text-white rounded-tr-none'
-                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none shadow-sm'
-                  }`}>
-                  <p className="whitespace-pre-line">{msg.text}</p>
-
-                  {/* Referenced Scheme Cards inside Assistant */}
-                  {msg.referencedSchemes && msg.referencedSchemes.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                        Referenced Scheme Card:
-                      </span>
-                      {msg.referencedSchemes.map(sch => (
-                        <div key={sch.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
-                          <div>
-                            <span className="font-bold text-slate-900 dark:text-white block">{sch.name}</span>
-                            <span className="text-emerald-600 font-bold">{sch.benefitsSummary}</span>
-                          </div>
-                          <a
-                            href={sch.officialApplyUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-[11px] hover:bg-amber-400 transition flex items-center gap-1"
-                          >
-                            <span>Apply</span> <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
+                  {/* Suggested Prompts */}
+                  {msg.suggestedPrompts && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {msg.suggestedPrompts.map((prompt, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSendMessage(prompt)}
+                          className="px-3 py-1.5 rounded-full bg-white dark:bg-[#0F1B2D] border border-gray-300 dark:border-gray-700 hover:border-[#1769FF] hover:text-[#1769FF] text-gray-600 dark:text-gray-300 text-xs font-semibold transition-colors text-left"
+                        >
+                          {prompt}
+                        </button>
                       ))}
                     </div>
                   )}
-
-                  <span className="block text-[10px] text-right mt-1 opacity-60">{msg.timestamp}</span>
                 </div>
-
-                {/* Suggested Prompt Chips */}
-                {msg.suggestedPrompts && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {msg.suggestedPrompts.map((prompt, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSendMessage(prompt)}
-                        className="px-3 py-1.5 rounded-full bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-slate-700 text-[11px] font-medium transition"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
+            ))}
 
-          {/* Typing Animation Indicator */}
-          {isTyping && (
-            <div className="flex items-center gap-2 text-xs text-slate-500 italic">
-              <Bot className="w-4 h-4 text-amber-500 animate-spin" />
-              <span>GovScheme AI is processing legal rules & generating response...</span>
-            </div>
-          )}
+            {isTyping && (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-[#123C69] text-white flex items-center justify-center shrink-0">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="p-4 bg-gray-50 dark:bg-[#16243A] rounded border border-gray-200 dark:border-gray-800 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                </div>
+              </div>
+            )}
 
-          <div ref={messagesEndRef} />
-        </div>
+            <div ref={messagesEndRef} />
+          </div>
 
-        {/* Input Bar */}
-        <div className="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-            className="flex items-center gap-2"
-          >
-            {/* Voice Mic Input Button */}
-            <button
-              type="button"
-              onClick={handleMicClick}
-              className={`p-3 rounded-xl transition ${isListening
-                  ? 'bg-red-600 text-white animate-pulse'
-                  : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800'
-                }`}
-              title="Voice Input (Speech-to-Text)"
-            >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </button>
-
-            {/* Text Input */}
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder={isListening ? "Listening... Speak your question now" : t('askAboutSchemes', 'Ask about schemes, eligibility, required documents...')}
-              className="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-blue-600 outline-none"
-            />
-
-            {/* Submit Send Button */}
-            <button
-              type="submit"
-              disabled={!inputText.trim()}
-              className="px-5 py-3 rounded-xl bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-xs shadow transition flex items-center gap-1.5"
-            >
-              <span>{t('send', 'Send')}</span>
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+          {/* Input Area */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0F1B2D]">
+            <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleMicClick}
+                className={`p-3 rounded transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
+                title="Voice Search"
+              >
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
+              
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder={isListening ? "Listening... Speak your question now" : t('askAboutSchemes', "Ask about schemes, eligibility, or required documents...")}
+                className="flex-1 p-3 rounded bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] focus:ring-1 focus:ring-[#1769FF] outline-none text-gray-900 dark:text-white text-sm"
+              />
+              
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className="px-6 py-3 rounded bg-[#1769FF] text-white font-bold text-sm disabled:opacity-50 hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                {t('send', 'Send')} <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+          
         </div>
       </div>
     </div>
