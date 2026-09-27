@@ -195,8 +195,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {topSchemes.slice(0, 3).map(scheme => (
                   <div key={scheme.id} className="bg-white dark:bg-[#0F1B2D] p-4 rounded-xl border border-gov-border dark:border-white/5 flex items-center justify-between group hover:border-gov-blue transition-colors cursor-pointer" onClick={() => onNavigateTab('schemes')}>
                     <div>
-                      <h4 className="font-bold text-sm text-gov-navy dark:text-white mb-1 group-hover:text-gov-blue transition-colors">{scheme.name}</h4>
-                      <p className="text-xs text-gov-textMuted dark:text-gray-400 line-clamp-1">{scheme.shortDescription}</p>
+                      <h4 className="font-bold text-sm text-gov-navy dark:text-white mb-1 group-hover:text-gov-blue transition-colors">
+                        {t(`${scheme.id}_name`, scheme.name)}
+                      </h4>
+                      <p className="text-xs text-gov-textMuted dark:text-gray-400 line-clamp-1">
+                        {t(`${scheme.id}_desc`, scheme.shortDescription)}
+                      </p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-gov-border dark:text-gray-600 group-hover:text-gov-blue transition-colors shrink-0 ml-4" />
                   </div>
@@ -213,7 +217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm text-red-900 dark:text-red-400">PM Kisan Samman Nidhi</h4>
+                    <h4 className="font-bold text-sm text-red-900 dark:text-red-400">{t('pm-kisan_name', 'PM Kisan Samman Nidhi')}</h4>
                     <p className="text-xs text-red-700 dark:text-red-500">{t('ekycDeadline', 'e-KYC Deadline in 5 days')}</p>
                   </div>
                 </div>
