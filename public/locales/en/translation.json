@@ -199,7 +199,7 @@
   "footerRights": "© 2026 GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.",
   "nationalPortal": "National Portal of India",
   "pmay-g_name": "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
-  "pmay-g_desc": "Financial assistance to construct pucca houses with basic amenities for homeless and kutcha house dwellers.",
+  "pmay-g_desc": "Financial assistance to construct pucca houses with basic amenities for homeless and those living in dilapidated houses.",
   "pmjay-ayushman_name": "Ayushman Bharat - PM Jan Arogya Yojana (PM-JAY)",
   "pmjay-ayushman_desc": "World's largest health insurance scheme providing ₹5 Lakh per family per year for secondary and tertiary hospitalization.",
   "pm-fasal-bima_name": "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
@@ -366,5 +366,7 @@
   "qRelevantToStudents": "Which schemes are relevant to students?",
   "qSchemesForFarmers": "What schemes can farmers apply for?",
   "qWhyRecommended": "Why was a scheme recommended?",
-  "qWhatDocs": "What documents do I need?"
+  "qWhatDocs": "What documents do I need?",
+  "pm-jay_name": "Ayushman Bharat - PM Jan Arogya Yojana (PM-JAY)",
+  "pm-jay_desc": "World's largest health insurance scheme providing ₹5 Lakh per family per year for secondary and tertiary care hospitalization."
 }
