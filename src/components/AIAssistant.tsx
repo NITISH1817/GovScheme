@@ -287,10 +287,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     {msg.sender === 'assistant' && msg.text.length > 50 && (
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2">
                          <button onClick={() => onNavigateTab('schemes')} className="px-3 py-1.5 rounded bg-white dark:bg-[#0F1B2D] border border-gray-300 dark:border-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1">
-                           <ExternalLink className="w-3 h-3" /> View Scheme
+                           <ExternalLink className="w-3 h-3" /> {t('viewScheme', 'View Scheme')}
                          </button>
                          <button className="px-3 py-1.5 rounded bg-white dark:bg-[#0F1B2D] border border-gray-300 dark:border-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1">
-                           <Info className="w-3 h-3" /> View Source
+                           <Info className="w-3 h-3" /> {t('viewSource', 'View Source')}
                          </button>
                       </div>
                     )}
