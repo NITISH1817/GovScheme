@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   X,
   UploadCloud,
@@ -27,6 +28,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   expectedType,
   onSaveDocument
 }) => {
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<OCRScanResult | null>(null);
