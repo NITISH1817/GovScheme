@@ -69,7 +69,7 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
-                  {cat}
+                  {t('cat_' + cat.replace(/\s+/g, ''), cat)}
                 </button>
               ))}
             </div>
@@ -78,7 +78,7 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
           {/* List */}
           <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0F1B2D] p-6">
             <div className="flex justify-between items-center mb-6">
-              <span className="text-sm font-bold text-gray-900 dark:text-white">{activeCategory === 'All' ? t('allAlerts', 'All Alerts') : activeCategory}</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{activeCategory === 'All' ? t('allAlerts', 'All Alerts') : t('cat_' + activeCategory.replace(/\s+/g, ''), activeCategory)}</span>
               <button onClick={onMarkAllRead} className="text-xs text-[#1769FF] font-bold hover:underline">
                 {t('markAllRead', 'Mark all as read')}
               </button>
@@ -101,12 +101,12 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
                     <div className="flex-1">
                       <div className="flex justify-between items-start gap-2 mb-1">
                         <span className={`font-bold ${notif.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-white'}`}>
-                          {notif.title}
+                          {t('notifTitle_' + notif.id, notif.title)}
                         </span>
-                        <span className="text-[10px] text-gray-500 font-semibold">{notif.timestamp}</span>
+                        <span className="text-[10px] text-gray-500 font-semibold">{t('notifTime_' + notif.id, notif.timestamp)}</span>
                       </div>
                       <p className={`text-xs mb-3 ${notif.read ? 'text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                        {notif.description}
+                        {t('notifDesc_' + notif.id, notif.description)}
                       </p>
                       
                       {/* Action Required States */}

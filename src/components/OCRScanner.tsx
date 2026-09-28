@@ -134,10 +134,10 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
           </button>
           <div className="flex items-center gap-2 mb-1">
             <ScanLine className="w-5 h-5 text-amber-400" />
-            <span className="text-xs font-semibold text-blue-200 uppercase tracking-wider">AI OCR Document Extraction</span>
+            <span className="text-xs font-semibold text-blue-200 uppercase tracking-wider">{t('ocrExtraction', 'AI OCR Document Extraction')}</span>
           </div>
-          <h2 className="text-2xl font-bold font-heading">Scan {expectedType === 'Unknown' ? 'Document' : expectedType}</h2>
-          <p className="text-xs text-blue-100 mt-1">Extract details & auto-fill profile for rule verification.</p>
+          <h2 className="text-2xl font-bold font-heading">{t('scan', 'Scan')} {expectedType === 'Unknown' ? t('document', 'Document') : expectedType}</h2>
+          <p className="text-xs text-blue-100 mt-1">{t('ocrExtractDetails', 'Extract details & auto-fill profile for rule verification.')}</p>
         </div>
 
         <div className="p-6 space-y-6 text-xs text-slate-700 dark:text-slate-300">
@@ -146,8 +146,8 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
             <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center space-y-4 hover:border-blue-500 transition">
               <UploadCloud className="w-12 h-12 text-blue-600 mx-auto" />
               <div>
-                <span className="font-bold text-slate-900 dark:text-white text-sm block">Upload {expectedType === 'Unknown' ? 'Any Supported' : expectedType} Document (PDF/Image)</span>
-                <span className="text-slate-500 text-xs">Supports PDF, JPG, PNG up to 10MB</span>
+                <span className="font-bold text-slate-900 dark:text-white text-sm block">{t('upload', 'Upload')} {expectedType === 'Unknown' ? t('anySupported', 'Any Supported') : expectedType} {t('documentPdfImage', 'Document (PDF/Image)')}</span>
+                <span className="text-slate-500 text-xs">{t('supportsPdfJpg', 'Supports PDF, JPG, PNG up to 10MB')}</span>
               </div>
               <input
                 type="file"
@@ -160,7 +160,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                 htmlFor="ocr-file-input"
                 className="inline-block px-5 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold cursor-pointer transition shadow"
               >
-                Select File
+                {t('selectFile', 'Select File')}
               </label>
 
               {selectedFile && (
@@ -175,7 +175,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                   onClick={() => setManualMode(true)}
                   className="text-sm font-semibold text-blue-600 hover:underline"
                 >
-                  Enter Details Manually
+                  {t('enterDetailsManually', 'Enter Details Manually')}
                 </button>
               </div>
             </div>
@@ -352,7 +352,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
             onClick={onClose}
             className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs"
           >
-            Cancel
+            {t('cancel', 'Cancel')}
           </button>
 
           {!scanResult && !manualMode ? (
@@ -361,7 +361,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
               disabled={!selectedFile}
               className="px-6 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-xs shadow flex items-center gap-1.5"
             >
-              <span>Start AI Extraction</span>
+              <span>{t('startAIExtraction', 'Start AI Extraction')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
@@ -370,7 +370,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
               className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow flex items-center gap-1.5"
             >
               <Save className="w-4 h-4" />
-              <span>Save Document & Auto-Fill Profile</span>
+              <span>{t('saveDocumentAutoFill', 'Save Document & Auto-Fill Profile')}</span>
             </button>
           )}
         </div>
