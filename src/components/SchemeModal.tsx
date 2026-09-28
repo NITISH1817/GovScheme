@@ -1,5 +1,5 @@
 import React from 'react';
-import { CombinedSchemeAnalysis } from '../types';
+import { CombinedSchemeAnalysis, UserProfile, DocumentRecord } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Bookmark, BookmarkCheck, Check, FileText, AlertCircle, HelpCircle, Activity } from 'lucide-react';
@@ -245,10 +245,10 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               {user && (
                 <div className="mb-4">
                   <span className="text-sm font-semibold text-gray-500">
-                    {scheme.requiredDocuments.filter(doc => user.documents.some(d => d.type === doc)).length} / {scheme.requiredDocuments.length} {t('documentsReady', 'documents ready')}
+                    {scheme.requiredDocuments.filter(doc => user.documents.some((d: any) => d.type === doc)).length} / {scheme.requiredDocuments.length} {t('documentsReady', 'documents ready')}
                   </span>
                   <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5 mt-2">
-                    <div className="bg-[#15803D] h-1.5 rounded-full" style={{ width: `${(scheme.requiredDocuments.filter(doc => user.documents.some(d => d.type === doc)).length / scheme.requiredDocuments.length) * 100}%` }}></div>
+                    <div className="bg-[#15803D] h-1.5 rounded-full" style={{ width: `${(scheme.requiredDocuments.filter(doc => user.documents.some((d: any) => d.type === doc)).length / scheme.requiredDocuments.length) * 100}%` }}></div>
                   </div>
                 </div>
               )}

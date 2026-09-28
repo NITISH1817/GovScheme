@@ -26,6 +26,7 @@ import { startVoiceListening } from './services/voiceService';
 import { EligibilityWizard } from './components/EligibilityWizard';
 import { AIAnalysis } from './components/AIAnalysis';
 import { AdminPlatform } from './components/admin/AdminPlatform';
+import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
 
 export const App: React.FC = () => {
@@ -354,7 +355,18 @@ export const App: React.FC = () => {
   }
 
   // If Admin Mode
-  if (activeTab === 'admin' && user) {
+  if (activeTab === 'admin') {
+    if (!user || user.role !== 'admin') {
+      return (
+        <AdminLogin 
+          onLoginSuccess={(u) => {
+            setUser(u);
+            localStorage.setItem('govscheme_user', JSON.stringify(u));
+          }} 
+          onExit={() => setActiveTab('home')}
+        />
+      );
+    }
     return (
       <AdminPlatform 
         user={user} 
