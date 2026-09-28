@@ -28,6 +28,7 @@ import { AIAnalysis } from './components/AIAnalysis';
 import { AdminPlatform } from './components/admin/AdminPlatform';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
+import { GovSchemeLogoAnimated } from './components/brand';
 
 export const App: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -65,6 +66,8 @@ export const App: React.FC = () => {
   const [ocrModalOpen, setOcrModalOpen] = useState(false);
   const [ocrTargetDocType, setOcrTargetDocType] = useState<DocumentRecord['type']>('Aadhaar');
   const [isListeningGlobalVoice, setIsListeningGlobalVoice] = useState(false);
+  
+  const [isBooting, setIsBooting] = useState(true);
 
   // Sync theme & accessibility font sizing onto html tag
   useEffect(() => {
@@ -329,6 +332,10 @@ export const App: React.FC = () => {
       () => setIsListeningGlobalVoice(false)
     );
   };
+
+  if (isBooting) {
+    return <GovSchemeLogoAnimated onComplete={() => setIsBooting(false)} />;
+  }
 
   // If in Kiosk Mode, render full-screen CSC Kiosk view
   if (activeTab === 'kiosk') {

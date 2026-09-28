@@ -21,6 +21,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { motion, useAnimation, useMotionValue, useSpring } from 'framer-motion';
 import { LanguageCode, UserProfile, Scheme } from '../types';
+import { GovSchemeLogo3D } from './brand';
 
 interface LandingPageProps {
   currentLang: LanguageCode;
@@ -136,7 +137,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {t('goodMorningCitizen', 'Good morning, Citizen').replace('Citizen', user.fullName.split(' ')[0] || 'Citizen')}
               </h1>
               <p className="text-gov-textMuted dark:text-gray-400 text-lg">
-                {t('basedOnProfileIn', 'Based on your profile in')} <span className="font-bold text-gov-navy dark:text-white">{user.state || 'India'}</span> {t('andYourInterests', 'and your interests:')}
+                {t('basedOnProfileIn', 'Based on your profile in')} <span className="font-bold text-gov-navy dark:text-white">{user.state ? t(`state_${user.state.replace(/\\s+/g, '')}`, user.state) : 'India'}</span> {t('andYourInterests', 'and your interests:')}
               </p>
               <div className="mt-4 flex items-center gap-3">
                 <span className="px-4 py-1.5 bg-gov-green/10 text-gov-green font-bold text-sm rounded-full border border-gov-green/20">
@@ -252,51 +253,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-gov-saffron/5 dark:from-gov-saffron/10 to-transparent rounded-full blur-3xl -ml-32 -mb-32"
             />
 
-            <div className="relative max-w-4xl mx-auto flex flex-col items-center text-center space-y-6">
-            <motion.div variants={itemVariants} className="w-20 h-20 bg-gradient-to-br from-gov-navy to-gov-blue rounded-2xl flex items-center justify-center mb-2 shadow-lg shadow-gov-navy/20">
-              <Building2 className="w-10 h-10 text-white" />
-            </motion.div>
-            
-            <motion.h1 variants={itemVariants} className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight font-sans text-gov-navy">
-              {t('tagline', "Find Government Schemes You May Be Eligible For")}
-            </motion.h1>
+            <div className="relative max-w-5xl mx-auto flex flex-col md:flex-row items-center text-center md:text-left gap-12">
+              
+              <div className="flex-1 space-y-6 flex flex-col items-center md:items-start">
+                <motion.h1 variants={itemVariants} className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight font-sans text-gov-navy dark:text-white">
+                  {t('tagline', "Find Government Schemes You May Be Eligible For")}
+                </motion.h1>
 
-            <motion.p variants={itemVariants} className="text-gov-textMuted text-lg sm:text-2xl max-w-3xl leading-relaxed">
-              {t('heroSubtitle', 'Answer a few simple questions and discover government schemes relevant to your age, income, occupation, location and other eligibility criteria.')}
-            </motion.p>
+                <motion.p variants={itemVariants} className="text-gov-textMuted dark:text-gray-400 text-lg sm:text-2xl max-w-2xl leading-relaxed">
+                  {t('heroSubtitle', 'Answer a few simple questions and discover government schemes relevant to your age, income, occupation, location and other eligibility criteria.')}
+                </motion.p>
 
-            {/* Primary Action Buttons */}
-            <motion.div variants={itemVariants} className="pt-6 flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-              <MagneticButton
-                onClick={() => onGetStarted('wizard')}
-                className="group relative overflow-hidden rounded-full bg-gov-navy dark:bg-white p-2 flex items-center justify-between shadow-2xl w-full sm:w-auto min-w-[280px]"
-              >
-                <span className="text-white dark:text-black font-bold text-lg pl-6 pr-4">
-                  {t('getStarted', 'Check My Eligibility')}
-                </span>
-                <div className="w-12 h-12 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:bg-white/20 dark:group-hover:bg-black/20 group-hover:scale-105">
-                  <ArrowRight className="w-6 h-6 text-white dark:text-black group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
-                </div>
-              </MagneticButton>
+                {/* Primary Action Buttons */}
+                <motion.div variants={itemVariants} className="pt-6 flex flex-col sm:flex-row items-center gap-4 w-full md:justify-start justify-center">
+                  <MagneticButton
+                    onClick={() => onGetStarted('wizard')}
+                    className="group relative overflow-hidden rounded-full bg-gov-navy dark:bg-white p-2 flex items-center justify-between shadow-2xl w-full sm:w-auto min-w-[280px]"
+                  >
+                    <span className="text-white dark:text-black font-bold text-lg pl-6 pr-4">
+                      {t('getStarted', 'Check My Eligibility')}
+                    </span>
+                    <div className="w-12 h-12 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:bg-white/20 dark:group-hover:bg-black/20 group-hover:scale-105">
+                      <ArrowRight className="w-6 h-6 text-white dark:text-black group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
+                    </div>
+                  </MagneticButton>
 
-              <MagneticButton
-                onClick={() => onGetStarted('life-event')}
-                className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[240px]"
-              >
-                <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-8 w-full text-center">
-                  {t('lifeEventMode', 'Life Event Mode')}
-                </span>
-              </MagneticButton>
+                  <MagneticButton
+                    onClick={() => onGetStarted('life-event')}
+                    className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[240px]"
+                  >
+                    <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-8 w-full text-center">
+                      {t('lifeEventMode', 'Life Event Mode')}
+                    </span>
+                  </MagneticButton>
+                </motion.div>
+              </div>
 
-              <MagneticButton
-                onClick={() => onGetStarted('what-can-i-get')}
-                className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[240px]"
-              >
-                <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-8 w-full text-center">
-                  {t('whatCanIGet', '"What Can I Get?"')}
-                </span>
-              </MagneticButton>
-            </motion.div>
+              {/* 3D Logo Hero Presentation */}
+              <motion.div variants={itemVariants} className="flex-1 flex justify-center items-center w-full max-w-[320px] md:max-w-[400px]">
+                <GovSchemeLogo3D size={320} interactive={true} />
+              </motion.div>
+
+            </div>
             
             {/* Trust Indicators */}
             <motion.div variants={itemVariants} className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-4 w-full border-t border-gov-border mt-4">
@@ -315,7 +313,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               ))}
             </motion.div>
-          </div>
           </div>
         </motion.section>
       </div>
@@ -385,7 +382,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             { title: t('step2Title', 'Analyze eligibility'), icon: Zap },
             { title: t('step3Title', 'Discover matching schemes'), icon: Search },
             { title: t('step4Title', 'Understand why you qualify'), icon: Filter },
-            { title: t('step5Title', 'Apply'), icon: ExternalLink }
+            { title: t('apply', 'Apply'), icon: ExternalLink }
           ].map((step, idx) => (
              <motion.div 
                 key={idx} 

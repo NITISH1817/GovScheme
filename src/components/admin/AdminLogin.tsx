@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Shield, Activity, Database, Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { UserProfile } from '../../types';
+import { GovSchemeLogo3D } from '../brand';
 
 interface AdminLoginProps {
   onLoginSuccess: (user: UserProfile) => void;
@@ -112,17 +113,22 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
           </div>
 
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-12 cursor-pointer" onClick={onExit}>
-              <div className="w-10 h-10 bg-[#1769FF] rounded-lg flex items-center justify-center shadow-lg">
-                <Database className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-3 mb-8 cursor-pointer" onClick={onExit}>
+              <span className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                <ArrowRight className="w-5 h-5 rotate-180" /> GOVSCHEME
+              </span>
+            </div>
+
+            <div className="flex justify-center md:justify-start mb-6">
+              <div className="-ml-12 md:ml-0">
+                <GovSchemeLogo3D size={220} interactive={true} />
               </div>
-              <span className="text-2xl font-bold tracking-tight">GOVSCHEME</span>
             </div>
 
             <h1 className="text-4xl font-bold mb-4 leading-tight">
               Government Scheme<br/>Intelligence Platform
             </h1>
-            <p className="text-blue-200 text-sm mb-12 max-w-sm">
+            <p className="text-blue-200 text-sm mb-8 max-w-sm">
               Advanced administrative control center for managing national scheme infrastructure and demographic intelligence.
             </p>
 
