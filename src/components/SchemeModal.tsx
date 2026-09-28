@@ -140,15 +140,15 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   {mlResult.scoreBreakdown && (
                     <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-blue-100 dark:border-blue-900/50">
                       <div className="text-center">
-                        <span className="block text-[10px] uppercase font-bold text-gray-500">Demographic</span>
+                        <span className="block text-[10px] uppercase font-bold text-gray-500">{t('demographic', 'Demographic')}</span>
                         <span className="font-semibold text-blue-700 dark:text-blue-300">{mlResult.scoreBreakdown.demographic}%</span>
                       </div>
                       <div className="text-center border-l border-r border-blue-100 dark:border-blue-900/50">
-                        <span className="block text-[10px] uppercase font-bold text-gray-500">Need/Affinity</span>
+                        <span className="block text-[10px] uppercase font-bold text-gray-500">{t('needAffinity', 'Need/Affinity')}</span>
                         <span className="font-semibold text-blue-700 dark:text-blue-300">{mlResult.scoreBreakdown.need}%</span>
                       </div>
                       <div className="text-center">
-                        <span className="block text-[10px] uppercase font-bold text-gray-500">Financial</span>
+                        <span className="block text-[10px] uppercase font-bold text-gray-500">{t('financial', 'Financial')}</span>
                         <span className="font-semibold text-blue-700 dark:text-blue-300">{mlResult.scoreBreakdown.financial}%</span>
                       </div>
                     </div>
@@ -245,7 +245,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               {user && (
                 <div className="mb-4">
                   <span className="text-sm font-semibold text-gray-500">
-                    {scheme.requiredDocuments.filter(doc => user.documents.some(d => d.type === doc)).length} / {scheme.requiredDocuments.length} documents ready
+                    {scheme.requiredDocuments.filter(doc => user.documents.some(d => d.type === doc)).length} / {scheme.requiredDocuments.length} {t('documentsReady', 'documents ready')}
                   </span>
                   <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5 mt-2">
                     <div className="bg-[#15803D] h-1.5 rounded-full" style={{ width: `${(scheme.requiredDocuments.filter(doc => user.documents.some(d => d.type === doc)).length / scheme.requiredDocuments.length) * 100}%` }}></div>

@@ -368,5 +368,20 @@
   "qWhyRecommended": "Why was a scheme recommended?",
   "qWhatDocs": "What documents do I need?",
   "pm-jay_name": "Ayushman Bharat - PM Jan Arogya Yojana (PM-JAY)",
-  "pm-jay_desc": "World's largest health insurance scheme providing ₹5 Lakh per family per year for secondary and tertiary care hospitalization."
+  "pm-jay_desc": "World's largest health insurance scheme providing ₹5 Lakh per family per year for secondary and tertiary care hospitalization.",
+  "viewMyRecommendations": "View My Recommendations",
+  "demographic": "Demographic",
+  "needAffinity": "Need/Affinity",
+  "financial": "Financial",
+  "documentsReady": "documents ready",
+  "state_TamilNadu": "Tamil Nadu",
+  "state_Maharashtra": "Maharashtra",
+  "state_Kerala": "Kerala",
+  "state_Karnataka": "Karnataka",
+  "allStates": "All States",
+  "location": "Location",
+  "missingDoc": "Missing Document:",
+  "pleaseUpload": "Please upload this document to your vault.",
+  "officialVerified": "Verified Official Source",
+  "matchDesc": "AI-driven confidence based on profile factors."
 }

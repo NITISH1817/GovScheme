@@ -175,10 +175,10 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none"
                   >
                     <option value="">{t('allStates', 'All States')}</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Kerala">Kerala</option>
-                    <option value="Karnataka">Karnataka</option>
+                    <option value="Tamil Nadu">{t('state_TamilNadu', 'Tamil Nadu')}</option>
+                    <option value="Maharashtra">{t('state_Maharashtra', 'Maharashtra')}</option>
+                    <option value="Kerala">{t('state_Kerala', 'Kerala')}</option>
+                    <option value="Karnataka">{t('state_Karnataka', 'Karnataka')}</option>
                   </select>
                 </div>
 
