@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Download, Plus, MoreHorizontal, Eye, Edit, Trash2, X, FileText, BarChart3, Database } from 'lucide-react';
+import { Search, Filter, Download, Plus, MoreHorizontal, Eye, Edit, Trash2, X, FileText, BarChart3, Database, CheckSquare } from 'lucide-react';
 import { Scheme } from '../../types';
 
 interface SchemeOperationsViewProps {

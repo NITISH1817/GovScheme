@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ChatMessage, Scheme, UserProfile, LanguageCode } from '../types';
 import { startVoiceListening, speakText, stopSpeaking, isSpeechRecognitionSupported, checkVoiceNavigationCommand } from '../services/voiceService';
+import { GovSchemeLogoMark, GovSchemeLogoLoader } from './brand';
 
 interface AIAssistantProps {
   user: UserProfile;
@@ -245,8 +246,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           {/* Chat Header */}
           <div className="border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between bg-gray-50 dark:bg-[#16243A]/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded bg-[#123C69] text-white flex items-center justify-center shadow-sm shrink-0">
-                <Bot className="w-5 h-5" />
+              <div className="w-10 h-10 rounded bg-white dark:bg-black/20 text-[#123C69] dark:text-white flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-800 shrink-0">
+                <GovSchemeLogoMark size={24} />
               </div>
               <div>
                 <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -276,8 +277,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           <div className="flex-1 p-6 overflow-y-auto space-y-6">
             {messages.map(msg => (
               <div key={msg.id} className={`flex gap-4 max-w-[85%] ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
-                <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${msg.sender === 'user' ? 'bg-[#1769FF] text-white' : 'bg-[#123C69] text-white'}`}>
-                  {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${msg.sender === 'user' ? 'bg-[#1769FF] text-white' : 'bg-white dark:bg-[#07111F] text-[#123C69] dark:text-white border border-gray-200 dark:border-gray-800'}`}>
+                  {msg.sender === 'user' ? <User className="w-4 h-4" /> : <GovSchemeLogoMark size={20} />}
                 </div>
 
                 <div className={`space-y-2 flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
@@ -318,8 +319,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
             {isTyping && (
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded bg-[#123C69] text-white flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4" />
+                <div className="w-8 h-8 rounded bg-white dark:bg-[#07111F] text-[#123C69] dark:text-white border border-gray-200 dark:border-gray-800 flex items-center justify-center shrink-0">
+                  <GovSchemeLogoMark size={20} />
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-[#16243A] rounded border border-gray-200 dark:border-gray-800 flex items-center gap-2">
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>

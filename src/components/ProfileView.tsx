@@ -34,18 +34,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6 mt-8">
           <div>
             <h1 className="text-3xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight">
-              Good morning, {user.fullName.split(' ')[0]}
+              {t('goodMorningCitizen', 'Good morning, Citizen')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
-              Here is your civic-tech overview for today.
+              {t('civicTechOverview', 'Here is your civic-tech overview for today.')}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => onNavigateTab('vault')} className="flex items-center gap-2 px-4 py-2 rounded bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              <UserIcon className="w-4 h-4" /> Manage Profile
+              <UserIcon className="w-4 h-4" /> {t('manageProfile', 'Manage Profile')}
             </button>
             <button onClick={() => onNavigateTab('settings')} className="flex items-center gap-2 px-4 py-2 rounded bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              <Settings className="w-4 h-4" /> Settings
+              <Settings className="w-4 h-4" /> {t('settings', 'Settings')}
             </button>
           </div>
         </div>
@@ -57,13 +57,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             
             {/* Metric Cards */}
             <section>
-              <h2 className="text-lg font-bold text-[#123C69] dark:text-white mb-4">Your Scheme Discovery</h2>
+              <h2 className="text-lg font-bold text-[#123C69] dark:text-white mb-4">{t('yourSchemeDiscovery', 'Your Scheme Discovery')}</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Recommended', value: eligibleSchemesCount, icon: CheckCircle2, color: 'text-[#15803D]', bg: 'bg-[#15803D]/10' },
-                  { label: 'Saved', value: user.savedSchemeIds.length, icon: Bookmark, color: 'text-[#1769FF]', bg: 'bg-[#1769FF]/10' },
-                  { label: 'Applications', value: 2, icon: FileText, color: 'text-[#123C69] dark:text-white', bg: 'bg-gray-100 dark:bg-gray-800' },
-                  { label: 'Action Required', value: 1, icon: AlertCircle, color: 'text-[#D97706]', bg: 'bg-[#D97706]/10' },
+                  { label: t('recommended', 'Recommended'), value: eligibleSchemesCount, icon: CheckCircle2, color: 'text-[#15803D]', bg: 'bg-[#15803D]/10' },
+                  { label: t('saved', 'Saved'), value: user.savedSchemeIds.length, icon: Bookmark, color: 'text-[#1769FF]', bg: 'bg-[#1769FF]/10' },
+                  { label: t('applications', 'Applications'), value: 2, icon: FileText, color: 'text-[#123C69] dark:text-white', bg: 'bg-gray-100 dark:bg-gray-800' },
+                  { label: t('actionRequired', 'Action Required'), value: 1, icon: AlertCircle, color: 'text-[#D97706]', bg: 'bg-[#D97706]/10' },
                 ].map((stat, idx) => (
                   <div key={idx} className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-4">
@@ -83,17 +83,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {/* Recommended Schemes */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">Recommended For You</h2>
+                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">{t('recommendedForYou', 'Recommended For You')}</h2>
                 <button onClick={() => onNavigateTab('schemes')} className="text-sm font-semibold text-[#1769FF] hover:underline flex items-center">
-                  View all <ChevronRight className="w-4 h-4 ml-1" />
+                  {t('viewAll', 'View all')} <ChevronRight className="w-4 h-4 ml-1" />
                 </button>
               </div>
               <div className="bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded shadow-sm">
                 <div className="divide-y divide-gray-200 dark:divide-gray-800">
                   {/* Mock Scheme rows */}
                   {[
-                    { title: 'PM Kisan Samman Nidhi', cat: 'Agriculture', amount: '₹6,000/year' },
-                    { title: 'National Family Benefit Scheme', cat: 'Financial', amount: '₹20,000' }
+                    { title: t('pmKisanSammanNidhi', 'PM Kisan Samman Nidhi'), cat: t('agriculture', 'Agriculture'), amount: t('amt6000PerYear', '₹6,000/year') },
+                    { title: t('nationalFamilyBenefitScheme', 'National Family Benefit Scheme'), cat: t('financial', 'Financial'), amount: t('amt20000', '₹20,000') }
                   ].map((s, idx) => (
                     <div key={idx} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                       <div className="flex items-start gap-4">
@@ -110,7 +110,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                         </div>
                       </div>
                       <button onClick={() => onNavigateTab('schemes')} className="px-4 py-1.5 rounded bg-gray-100 dark:bg-[#16243A] text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                        Apply
+                        {t('apply', 'Apply')}
                       </button>
                     </div>
                   ))}
@@ -124,22 +124,22 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             
             {/* Active Applications */}
             <section>
-              <h2 className="text-lg font-bold text-[#123C69] dark:text-white mb-4">Active Applications</h2>
+              <h2 className="text-lg font-bold text-[#123C69] dark:text-white mb-4">{t('activeApplications', 'Active Applications')}</h2>
               <div className="bg-white dark:bg-[#0F1B2D] rounded border border-gray-200 dark:border-gray-800 shadow-sm p-4 space-y-4">
                 <div className="flex items-start gap-3 pb-4 border-b border-gray-100 dark:border-gray-800">
                   <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
                     <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Post Matric Scholarship</h4>
-                    <p className="text-xs text-gray-500 mt-1">Under review by State Nodal Officer</p>
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">{t('postMatricScholarship', 'Post Matric Scholarship')}</h4>
+                    <p className="text-xs text-gray-500 mt-1">{t('underReviewNodal', 'Under review by State Nodal Officer')}</p>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-3">
                       <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: '45%' }}></div>
                     </div>
                   </div>
                 </div>
                 <button onClick={() => onNavigateTab('tracker')} className="w-full py-2 text-sm font-semibold text-[#1769FF] text-center hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors">
-                  Track all applications
+                  {t('trackAllApplications', 'Track all applications')}
                 </button>
               </div>
             </section>
@@ -147,15 +147,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {/* Profile Completion Widget */}
             <section>
               <div className="bg-gradient-to-br from-[#123C69] to-[#1769FF] rounded p-6 shadow-sm text-white">
-                <h3 className="font-bold text-lg mb-2">Profile Completion</h3>
+                <h3 className="font-bold text-lg mb-2">{t('profileCompletion', 'Profile Completion')}</h3>
                 <p className="text-sm text-blue-100 mb-4 leading-relaxed">
-                  Your profile is {user.profileCompletionScore}% complete. Add your banking details to instantly apply for DBT schemes.
+                  {t('profileCompleteDesc', 'Your profile is {{score}}% complete. Add your banking details to instantly apply for DBT schemes.', { score: user.profileCompletionScore })}
                 </p>
                 <div className="w-full bg-black/20 rounded-full h-2 mb-4">
                   <div className="bg-white h-2 rounded-full" style={{ width: `${user.profileCompletionScore}%` }}></div>
                 </div>
                 <button onClick={() => onNavigateTab('wizard')} className="w-full py-2 bg-white text-[#123C69] text-sm font-bold rounded shadow-sm hover:bg-gray-50 transition-colors">
-                  Complete Profile
+                  {t('completeYourProfile', 'Complete Your Profile')}
                 </button>
               </div>
             </section>

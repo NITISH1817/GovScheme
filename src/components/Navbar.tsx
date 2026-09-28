@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
-  Building2, Languages, Sun, Moon, Eye, Bell, User as UserIcon, Mic, Monitor, Sparkles, LogOut, ChevronDown, Menu, X, Settings2
+  Languages, Sun, Moon, Eye, Bell, User as UserIcon, Mic, Monitor, Sparkles, LogOut, ChevronDown, Menu, X, Settings2
 } from 'lucide-react';
+import { GovSchemeLogo } from './brand';
 import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile } from '../types';
 import { languages } from '../data/translations';
@@ -56,11 +57,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="bg-white/90 dark:bg-[#07111F]/90 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center justify-between w-full"
         >
           {/* Brand */}
-          <div onClick={() => setActiveTab('home')} className="flex items-center gap-2 cursor-pointer shrink-0 group ml-2">
-            <div className="w-8 h-8 rounded-full bg-gov-navy dark:bg-white text-white dark:text-[#050505] flex items-center justify-center transition-transform group-hover:scale-105">
-              <Building2 className="w-4 h-4" />
-            </div>
-            <span className="font-extrabold tracking-tight text-gov-navy dark:text-white hidden sm:block">GovScheme</span>
+          <div onClick={() => setActiveTab('home')} className="flex items-center cursor-pointer shrink-0 ml-2">
+            <GovSchemeLogo markSize={32} hideWordmarkOnMobile={true} />
           </div>
 
           {/* Desktop Links */}

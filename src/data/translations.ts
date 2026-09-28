@@ -79,17 +79,7 @@ export interface TranslationDict {
   incomeFilterBPL: string;
   incomeFilter2L: string;
   incomeFilter5L: string;
-  "Central Scheme open across India"?: string;
-  "Occupation matches"?: string;
-  "Farmer"?: string;
-  "Student"?: string;
-  "Age Requirement Met"?: string;
-  "Gender requirement met"?: string;
-  "Resident of"?: string;
-  "Income"?: string;
-  "Male"?: string;
-  "Female"?: string;
-  "All"?: string;
+  "All": string;
   [key: string]: string;
 }
 
