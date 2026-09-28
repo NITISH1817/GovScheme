@@ -149,7 +149,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               className="group relative overflow-hidden rounded-full bg-gov-navy dark:bg-white p-2 flex items-center justify-between shadow-lg shrink-0"
             >
               <span className="text-white dark:text-black font-bold text-sm pl-6 pr-4">
-                View My Recommendations
+                {t('viewMyRecommendations', 'View My Recommendations')}
               </span>
               <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform group-hover:scale-105">
                 <ArrowRight className="w-5 h-5 text-white dark:text-black group-hover:translate-x-1 transition-transform" />
