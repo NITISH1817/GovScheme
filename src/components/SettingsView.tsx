@@ -395,7 +395,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+        </div>
+      </motion.div>
     </div>
   );
 };
