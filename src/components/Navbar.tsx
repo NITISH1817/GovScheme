@@ -203,9 +203,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 p-0.5 transition-transform hover:scale-105"
+                  className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                 >
-                  <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 p-0.5 transition-transform">
+                    <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 hidden sm:block">{user.fullName.split(' ')[0]}</span>
+                  <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
                 </button>
                 <AnimatePresence>
                   {userDropdownOpen && (
@@ -214,19 +218,43 @@ export const Navbar: React.FC<NavbarProps> = ({
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-3 w-48 bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xl border border-gov-border dark:border-white/10 rounded-[1.5rem] p-2 shadow-2xl"
+                      className="absolute right-0 mt-3 w-64 bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xl border border-gov-border dark:border-white/10 rounded-2xl p-2 shadow-2xl"
                     >
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 mb-2">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.fullName}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email || 'user@email.com'}</p>
+                      </div>
+                      
                       <button onClick={() => { setActiveTab('profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
-                        <UserIcon className="w-3.5 h-3.5" /> {t('profile', 'Profile')}
+                        <UserIcon className="w-4 h-4" /> {t('profile', 'Profile')}
                       </button>
+                      <button onClick={() => { setActiveTab('settings'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                        <Settings2 className="w-4 h-4" /> {t('settings', 'Settings')}
+                      </button>
+                      <button onClick={() => { onOpenNotifications(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                        <Bell className="w-4 h-4" /> {t('notifications', 'Notifications')}
+                      </button>
+                      <button onClick={() => { setActiveTab('schemes'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                        <Sparkles className="w-4 h-4" /> {t('savedSchemes', 'Saved Schemes')}
+                      </button>
+                      <button onClick={() => { setActiveTab('tracker'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                        <Monitor className="w-4 h-4" /> {t('myApplications', 'My Applications')}
+                      </button>
+                      <button onClick={() => { setActiveTab('kiosk'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                        <Eye className="w-4 h-4" /> {t('reports', 'Reports')}
+                      </button>
+                      
                       {(user.role === 'admin' || user.role === 'superadmin') && (
                         <button onClick={() => { setActiveTab('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-primary">
-                          <Settings2 className="w-3.5 h-3.5" /> Admin Panel
+                          <Settings2 className="w-4 h-4" /> Admin Panel
                         </button>
                       )}
-                      <button onClick={() => { onLogout(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl text-red-500 hover:bg-red-500/10 flex items-center gap-2">
-                        <LogOut className="w-3.5 h-3.5" /> {t('logout', 'Logout')}
-                      </button>
+                      
+                      <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                        <button onClick={() => { onLogout(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl text-red-500 hover:bg-red-500/10 flex items-center gap-2">
+                          <LogOut className="w-4 h-4" /> {t('logout', 'Logout')}
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

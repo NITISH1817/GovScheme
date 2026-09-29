@@ -19,6 +19,7 @@ import { AIAssistant } from './components/AIAssistant';
 import { DocumentVault } from './components/DocumentVault';
 import { OCRScanner } from './components/OCRScanner';
 import { ApplicationTracker } from './components/ApplicationTracker';
+import { SettingsView } from './components/SettingsView';
 import { KioskMode } from './components/KioskMode';
 import { AuthModal } from './components/AuthModal';
 import { NotificationsModal } from './components/NotificationsModal';
@@ -509,6 +510,28 @@ export const App: React.FC = () => {
             }}
             onNavigateTab={setActiveTab}
             eligibleSchemesCount={eligibleSchemesCount}
+          />
+        )}
+
+        {activeTab === 'settings' && user && (
+          <SettingsView
+            user={user}
+            currentLang={currentLang}
+            onLanguageChange={(lang) => {
+              i18n.changeLanguage(lang);
+              setCurrentLang(lang);
+            }}
+            theme={theme}
+            setTheme={setTheme}
+            textSize={textSize}
+            setTextSize={setTextSize}
+            reducedMotion={reducedMotion}
+            setReducedMotion={setReducedMotion}
+            onUpdateProfile={(updated) => {
+              updated.profileCompletionScore = calculateProfileCompletion(updated);
+              setUser(updated);
+            }}
+            onLogout={handleLogout}
           />
         )}
       </main>
