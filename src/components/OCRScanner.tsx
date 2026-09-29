@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { DocumentRecord, UserProfile } from '../types';
 import { performOCRScan, OCRScanResult } from '../services/ocrService';
+import { GovSchemeLogoLoader } from './brand';
 
 interface OCRScannerProps {
   isOpen: boolean;
@@ -186,8 +187,8 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
           {/* Scanning Animation */}
           {isScanning && (
             <div className="p-12 text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center mx-auto animate-pulse">
-                <ScanLine className="w-8 h-8 animate-spin" />
+              <div className="flex items-center justify-center mx-auto mb-6">
+                <GovSchemeLogoLoader size={64} />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white font-heading">
                 AI OCR Extracting Text...

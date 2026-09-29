@@ -570,7 +570,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     "pmjay-ayushman_name": "ആയുഷ്മാൻ ഭാരത് - പി.എം ജൻ ആരോഗ്യ യോജന (PM-JAY)",
     "pmjay-ayushman_desc": "സെക്കൻഡറി, ടെർഷ്യറി ഹോസ്പിറ്റലൈസേഷനായി ഒരു കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം നൽകുന്ന ലോകത്തിലെ ഏറ്റവും വലിയ ആരോഗ്യ ഇൻഷുറൻസ് പദ്ധതി.",
   },
-  mr: {
+  mr: { "All": "All",
     appName: "GovScheme AI",
     tagline: "तुम्ही पात्र असलेल्या सरकारी योजना शोधा",
     heroSubtitle: "कृत्रिम बुद्धिमत्ता आणि नियम-आधारित पात्रता इंजिन वापरून मिनिटांत कल्याणकारी योजना शोधण्यात भारतीय नागरिकांना मदत करणे.",
@@ -623,7 +623,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     listenVoice: "शोधण्यासाठी बोला...",
     login: "लॉगिन", logout: "लॉगआउट", register: "नोंदणी", guestMode: "अतिथी म्हणून सुरू ठेवा", loginOrGuest: "लॉगिन / अतिथी", yourName: "तुमचे पूर्ण नाव", mobileNumber: "मोबाइल नंबर", yourState: "तुमचे राज्य", yourOccupation: "तुमचा व्यवसाय", annualIncomeLabel: "वार्षिक उत्पन्न (₹)", yourAge: "तुमचे वय", scanDocument: "कागदपत्र स्कॅन करा", extractingOCR: "AI मजकूर काढत आहे...", saveToVault: "सेव्ह करा आणि प्रोफाइल भरा", reviewExtracted: "काढलेल्या माहितीचे पुनरावलोकन करा", beneficiariesStat: "लाभार्थी पोहोचले", disbursedStat: "लाभ वाटप", activeSchemesStat: "सक्रिय योजना", statesCoveredStat: "राज्ये समाविष्ट", nationalImpact: "संख्यांमध्ये राष्ट्रीय प्रभाव", incomeFilterAny: "उत्पन्न: कोणतेही", incomeFilterBPL: "BPL (₹1.2L खाली)", incomeFilter2L: "₹2.5 लाखांपेक्षा कमी", incomeFilter5L: "₹5 लाखांपेक्षा कमी",
   },
-  gu: {
+  gu: { "All": "All",
     appName: "GovScheme AI",
     tagline: "તમે પાત્ર છો તેવી સરકારી યોજનાઓ શોધો",
     heroSubtitle: "કૃત્રિમ બુદ્ધિમત્તાનો ઉપયોગ કરીને મિનિટોમાં સરકારી યોજનાઓ શોધવામાં ભારતીય નાગરિકોને મદદ કરવી.",
@@ -676,7 +676,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     listenVoice: "શોધવા માટે બોલો...",
     login: "લૉગઇન", logout: "લૉગઆઉટ", register: "નોંધણી", guestMode: "અતિથિ તરીકે ચાલુ રાખો", loginOrGuest: "લૉગઇન / અતિથિ", yourName: "તમારું પૂરું નામ", mobileNumber: "મોબાઇલ નંબર", yourState: "તમારું રાજ્ય", yourOccupation: "તમારો વ્યવસાય", annualIncomeLabel: "વાર્ષિક આવક (₹)", yourAge: "તમારી ઉંમર", scanDocument: "દસ્તાવેજ સ્કેન કરો", extractingOCR: "AI ટેક્સ્ટ કાઢી રહ્યું છે...", saveToVault: "સાચવો & પ્રોફાઇલ ભરો", reviewExtracted: "કાઢેલી માહિતી ચકાસો", beneficiariesStat: "લાભાર્થીઓ", disbursedStat: "લાભ વિતરણ", activeSchemesStat: "સક્રિય યોજનાઓ", statesCoveredStat: "રાજ્યો", nationalImpact: "સંખ્યામાં રાષ્ટ્રીય પ્રભાવ", incomeFilterAny: "આવક: કોઈ પણ", incomeFilterBPL: "BPL (₹1.2L નીચે)", incomeFilter2L: "₹2.5 લાખ કરતા ઓછી", incomeFilter5L: "₹5 લાખ કરતા ઓછી",
   },
-  pa: {
+  pa: { "All": "All",
     appName: "GovScheme AI",
     tagline: "ਉਹ ਸਰਕਾਰੀ ਸਕੀਮਾਂ ਲੱਭੋ ਜਿਨ੍ਹਾਂ ਲਈ ਤੁਸੀਂ ਯੋਗ ਹੋ",
     heroSubtitle: "ਆਰਟੀਫਿਸ਼ੀਅਲ ਇੰਟੈਲੀਜੈਂਸ ਦੀ ਵਰਤੋਂ ਕਰਕੇ ਮਿੰਟਾਂ ਵਿੱਚ ਭਲਾਈ ਸਕੀਮਾਂ ਲੱਭਣ ਵਿੱਚ ਭਾਰਤੀ ਨਾਗਰਿਕਾਂ ਦੀ ਮਦਦ ਕਰਨਾ।",
@@ -729,7 +729,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     listenVoice: "ਖੋਜਣ ਲਈ ਬੋਲੋ...",
     login: "ਲਾਗਇਨ", logout: "ਲੌਗਆਉਟ", register: "ਰਜਿਸਟਰ", guestMode: "ਮਹਿਮਾਨ ਵਜੋਂ ਜਾਰੀ ਰੱਖੋ", loginOrGuest: "ਲਾਗਇਨ / ਮਹਿਮਾਨ", yourName: "ਤੁਹਾਡਾ ਪੂਰਾ ਨਾਮ", mobileNumber: "ਮੋਬਾਈਲ ਨੰਬਰ", yourState: "ਤੁਹਾਡਾ ਰਾਜ", yourOccupation: "ਤੁਹਾਡਾ ਕਿੱਤਾ", annualIncomeLabel: "ਸਾਲਾਨਾ ਆਮਦਨ (₹)", yourAge: "ਤੁਹਾਡੀ ਉਮਰ", scanDocument: "ਦਸਤਾਵੇਜ਼ ਸਕੈਨ ਕਰੋ", extractingOCR: "AI ਟੈਕਸਟ ਕੱਢ ਰਿਹਾ ਹੈ...", saveToVault: "ਸੇਵ ਕਰੋ ਅਤੇ ਪ੍ਰੋਫ਼ਾਈਲ ਭਰੋ", reviewExtracted: "ਕੱਢੀ ਜਾਣਕਾਰੀ ਦੀ ਸਮੀਖਿਆ ਕਰੋ", beneficiariesStat: "ਲਾਭਪਾਤਰੀ ਪਹੁੰਚੇ", disbursedStat: "ਲਾਭ ਵੰਡੇ", activeSchemesStat: "ਕਿਰਿਆਸ਼ੀਲ ਸਕੀਮਾਂ", statesCoveredStat: "ਰਾਜ ਸ਼ਾਮਲ", nationalImpact: "ਅੰਕੜਿਆਂ ਵਿੱਚ ਰਾਸ਼ਟਰੀ ਪ੍ਰਭਾਵ", incomeFilterAny: "ਆਮਦਨ: ਕੋਈ ਵੀ", incomeFilterBPL: "BPL (₹1.2L ਤੋਂ ਘੱਟ)", incomeFilter2L: "₹2.5 ਲੱਖ ਤੋਂ ਘੱਟ", incomeFilter5L: "₹5 ਲੱਖ ਤੋਂ ਘੱਟ",
   },
-  bn: {
+  bn: { "All": "All",
     appName: "GovScheme AI",
     tagline: "আপনি যোগ্য এমন সরকারি প্রকল্পগুলি খুঁজুন",
     heroSubtitle: "কৃত্রিম বুদ্ধিমত্তা এবং যোগ্যতা ইঞ্জিন ব্যবহার করে মিনিটে সরকারি কল্যাণমূলক প্রকল্প আবিষ্কার করতে সাহায্য করে।",

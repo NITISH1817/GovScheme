@@ -25,12 +25,13 @@ interface NavbarProps {
   onStartVoiceCommand: () => void;
   reducedMotion: boolean;
   setReducedMotion: (val: boolean) => void;
+  onOpenSettings: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentLang, onLanguageChange, activeTab, setActiveTab, theme, setTheme,
   textSize, setTextSize, reducedMotion, setReducedMotion,
-  user, onOpenAuth, onLogout, unreadCount, onOpenNotifications, onStartVoiceCommand
+  user, onOpenAuth, onLogout, unreadCount, onOpenNotifications, onStartVoiceCommand, onOpenSettings
 }) => {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -228,7 +229,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <button onClick={() => { setActiveTab('profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
                         <UserIcon className="w-4 h-4" /> {t('profile', 'Profile')}
                       </button>
-                      <button onClick={() => { setActiveTab('settings'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                      <button onClick={() => { onOpenSettings(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
                         <Settings2 className="w-4 h-4" /> {t('settings', 'Settings')}
                       </button>
                       <button onClick={() => { onOpenNotifications(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { 
   User as UserIcon, Palette, Accessibility, Bell, 
   Shield, Lock, Database, Monitor, Globe, Moon, Sun, 
-  CheckCircle2, Download, Trash2, Smartphone
+  CheckCircle2, Download, Trash2, Smartphone, X, Settings2
 } from 'lucide-react';
 import { UserProfile, LanguageCode } from '../types';
 import { languages } from '../data/translations';
@@ -21,6 +21,8 @@ interface SettingsViewProps {
   setReducedMotion: (val: boolean) => void;
   onUpdateProfile: (updated: UserProfile) => void;
   onLogout: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 type TabType = 'account' | 'appearance' | 'accessibility' | 'notifications' | 'privacy' | 'security' | 'data';
@@ -36,7 +38,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   reducedMotion,
   setReducedMotion,
   onUpdateProfile,
-  onLogout
+  onLogout,
+  isOpen,
+  onClose
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('appearance');
@@ -57,9 +61,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     { id: 'data', label: t('data', 'Data'), icon: Database },
   ];
 
+  if (!isOpen) return null;
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F] pt-24 pb-20">
-      
+    <div className="fixed inset-0 z-[100] flex justify-end bg-slate-950/70 backdrop-blur-sm">
+      <motion.div 
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="w-full max-w-4xl h-full bg-[#F8FAFC] dark:bg-[#07111F] shadow-2xl flex flex-col overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0F1B2D]">
+          <h1 className="text-2xl font-bold text-[#123C69] dark:text-white flex items-center gap-2">
+            <Settings2 className="w-6 h-6" /> {t('settings', 'Settings')}
+          </h1>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto relative p-6">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
@@ -67,7 +90,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-full shadow-lg z-50 flex items-center gap-3 font-semibold text-sm"
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-full shadow-lg z-50 flex items-center gap-3 font-semibold text-sm"
           >
             <CheckCircle2 className="w-5 h-5 text-green-500" />
             {toastMessage}
@@ -75,11 +98,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         )}
       </AnimatePresence>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight mb-8">
-          {t('settings', 'Settings')}
-        </h1>
-
+      <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row gap-8">
           
           {/* Sidebar */}

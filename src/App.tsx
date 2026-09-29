@@ -67,6 +67,7 @@ export const App: React.FC = () => {
   const [ocrModalOpen, setOcrModalOpen] = useState(false);
   const [ocrTargetDocType, setOcrTargetDocType] = useState<DocumentRecord['type']>('Aadhaar');
   const [isListeningGlobalVoice, setIsListeningGlobalVoice] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const [isBooting, setIsBooting] = useState(true);
 
@@ -416,6 +417,7 @@ export const App: React.FC = () => {
         unreadCount={notifications.filter(n => !n.read).length}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onStartVoiceCommand={handleStartVoiceCommand}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Dynamic Tab Body Content */}
@@ -513,26 +515,6 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'settings' && user && (
-          <SettingsView
-            user={user}
-            currentLang={currentLang}
-            onLanguageChange={(lang) => {
-              i18n.changeLanguage(lang);
-              setCurrentLang(lang);
-            }}
-            theme={theme}
-            setTheme={setTheme}
-            textSize={textSize}
-            setTextSize={setTextSize}
-            reducedMotion={reducedMotion}
-            setReducedMotion={setReducedMotion}
-            onUpdateProfile={(updated) => {
-              updated.profileCompletionScore = calculateProfileCompletion(updated);
-              setUser(updated);
-            }}
-            onLogout={handleLogout}
-          />
         )}
       </main>
 
@@ -579,6 +561,31 @@ export const App: React.FC = () => {
         notifications={notifications}
         onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
       />
+
+      {/* Settings Modal */}
+      {user && (
+        <SettingsView
+          user={user}
+          currentLang={currentLang}
+          onLanguageChange={(lang) => {
+            i18n.changeLanguage(lang);
+            setCurrentLang(lang);
+          }}
+          theme={theme}
+          setTheme={setTheme}
+          textSize={textSize}
+          setTextSize={setTextSize}
+          reducedMotion={reducedMotion}
+          setReducedMotion={setReducedMotion}
+          onUpdateProfile={(updated) => {
+            updated.profileCompletionScore = calculateProfileCompletion(updated);
+            setUser(updated);
+          }}
+          onLogout={handleLogout}
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      )}
     </div>
   );
 };
