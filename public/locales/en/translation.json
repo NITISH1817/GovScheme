@@ -436,5 +436,11 @@
   "nationalFamilyBenefitScheme": "National Family Benefit Scheme",
   "agriculture": "Agriculture",
   "amt6000PerYear": "₹6,000/year",
-  "amt20000": "₹20,000"
+  "amt20000": "₹20,000",
+  "maxAnnualIncome": "Max Annual Income",
+  "Upload": "Upload",
+  "state_AndhraPradesh": "Andhra Pradesh",
+  "state_Telangana": "Telangana",
+  "state_UttarPradesh": "Uttar Pradesh",
+  "state_Central": "Central"
 }

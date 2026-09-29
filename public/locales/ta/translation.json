@@ -149,7 +149,7 @@
   "Approved": "ஒப்புதல் அளிக்கப்பட்டது",
   "Benefit Released": "நலன் வழங்கப்பட்டது",
   "Aadhaar": "ஆதார்",
-  "PAN": "பான் கார்டு",
+  "PAN": "பான்",
   "Income Certificate": "வருமானச் சான்றிதழ்",
   "Community Certificate": "சாதிச் சான்றிதழ்",
   "Bank Passbook": "வங்கி பாஸ்புக்",
@@ -773,5 +773,11 @@
   "nationalFamilyBenefitScheme": "தேசிய குடும்ப நலத் திட்டம்",
   "agriculture": "விவசாயம்",
   "amt6000PerYear": "₹6,000/ஆண்டு",
-  "amt20000": "₹20,000"
+  "amt20000": "₹20,000",
+  "maxAnnualIncome": "அதிகபட்ச ஆண்டு வருமானம்",
+  "Upload": "பதிவேற்றவும்",
+  "state_AndhraPradesh": "ஆந்திரப் பிரதேசம்",
+  "state_Telangana": "தெலுங்கானா",
+  "state_UttarPradesh": "உத்தரப் பிரதேசம்",
+  "state_Central": "மத்திய"
 }

@@ -703,7 +703,7 @@
   "state_TamilNadu": "തമിഴ്നാട്",
   "state_Maharashtra": "മഹാരാഷ്ട്ര",
   "state_Kerala": "കേരളം",
-  "state_Karnataka": "കർണ്ണാടക",
+  "state_Karnataka": "കർണാടക",
   "allStates": "എല്ലാ സംസ്ഥാനങ്ങളും",
   "govtLevel": "സർക്കാർ തലം",
   "location": "സ്ഥലം",
@@ -714,7 +714,7 @@
   "viewScheme": "പദ്ധതി കാണുക",
   "viewSource": "ഉറവിടം കാണുക",
   "ocrExtraction": "AI OCR രേഖ വേർതിരിച്ചെടുക്കൽ",
-  "scan": "സ്കാൻ",
+  "scan": "സ്കാൻ ചെയ്യുക",
   "document": "രേഖ",
   "ocrExtractDetails": "വിശദാംശങ്ങൾ എക്‌സ്‌ട്രാക്റ്റുചെയ്‌ത് നിയമ പരിശോധനയ്‌ക്കായി പ്രൊഫൈൽ സ്വയമേവ പൂരിപ്പിക്കുക.",
   "upload": "അപ്‌ലോഡ്",
@@ -770,5 +770,11 @@
   "nationalFamilyBenefitScheme": "ദേശീയ കുടുംബ ആനുകൂല്യ പദ്ധതി",
   "agriculture": "കൃഷി",
   "amt6000PerYear": "₹6,000/വർഷം",
-  "amt20000": "₹20,000"
+  "amt20000": "₹20,000",
+  "maxAnnualIncome": "പരമാവധി വാർഷിക വരുമാനം",
+  "Upload": "അപ്‌ലോഡ് ചെയ്യുക",
+  "state_AndhraPradesh": "ആന്ധ്രാപ്രദേശ്",
+  "state_Telangana": "തെലങ്കാന",
+  "state_UttarPradesh": "ഉത്തർപ്രദേശ്",
+  "state_Central": "കേന്ദ്ര"
 }
