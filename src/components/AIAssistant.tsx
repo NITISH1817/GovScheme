@@ -322,10 +322,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 <div className="w-8 h-8 rounded bg-white dark:bg-[#07111F] text-[#123C69] dark:text-white border border-gray-200 dark:border-gray-800 flex items-center justify-center shrink-0">
                   <GovSchemeLogoMark size={20} />
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#16243A] rounded border border-gray-200 dark:border-gray-800 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                <div className="p-4 bg-gray-50 dark:bg-[#16243A] rounded border border-gray-200 dark:border-gray-800 flex items-center gap-2 h-[52px]">
+                  <GovSchemeLogoLoader size={24} />
                 </div>
               </div>
             )}

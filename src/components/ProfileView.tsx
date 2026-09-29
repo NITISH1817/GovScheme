@@ -63,7 +63,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user.fullName}</h2>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{user.email || 'No email provided'} • +91 {user.phone}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{user.email || 'No email provided'} • +91 {user.mobile}</p>
                   
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-1">

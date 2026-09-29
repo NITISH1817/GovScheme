@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ArrowRight } from 'lucide-react';
+import { GovSchemeLogoLoader } from './brand';
 
 interface AIAnalysisProps {
   onComplete: () => void;
@@ -58,7 +59,10 @@ export const AIAnalysis: React.FC<AIAnalysisProps> = ({ onComplete }) => {
             transition={{ duration: 0.5 }}
             className="w-full max-w-md mx-auto flex flex-col"
           >
-            <div className="mb-12 text-center">
+            <div className="mb-12 text-center flex flex-col items-center">
+              <div className="mb-6">
+                <GovSchemeLogoLoader size={64} />
+              </div>
               <h2 className="text-3xl font-bold text-gov-navy dark:text-white font-sans tracking-tight">
                 Finding schemes relevant to you
               </h2>
