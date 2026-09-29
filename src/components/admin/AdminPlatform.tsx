@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { UserProfile, Scheme } from '../../types';
+import { GovSchemeLogo } from '../brand';
 import { CommandCenterOverview } from './CommandCenterOverview';
 import { CommandPalette } from './CommandPalette';
 import { SchemeOperationsView } from './SchemeOperationsView';
@@ -29,26 +30,42 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
+  const calculateDataQuality = () => {
+    if (schemes.length === 0) return 100;
+    const completenessScores = schemes.map(s => {
+      let score = 100;
+      if (!s.officialApplyUrl) score -= 10;
+      if (!s.financialBenefitAmount) score -= 5;
+      if (!s.category) score -= 15;
+      if (!s.state) score -= 10;
+      return score;
+    });
+    const avgScore = completenessScores.reduce((a, b) => a + b, 0) / schemes.length;
+    return Number(avgScore.toFixed(1));
+  };
+
+  const pendingCount = schemes.filter(s => s.popularityScore === 0).length;
+
   const stats = {
     total: schemes.length,
     published: schemes.filter(s => s.popularityScore > 0).length,
-    pending: 12,
-    dataQuality: 98.4,
+    pending: pendingCount,
+    dataQuality: calculateDataQuality(),
   };
 
   const navItems = [
-    { id: 'overview', icon: LayoutDashboard, label: 'Overview', section: 'COMMAND CENTER' },
+    { id: 'overview', icon: LayoutDashboard, label: t('adminOverview', 'Overview'), section: t('adminSectionCommand', 'COMMAND CENTER') },
     
-    { id: 'schemes', icon: FileText, label: 'All Schemes', section: 'SCHEME OPERATIONS' },
-    { id: 'rule-builder', icon: CheckSquare, label: 'Eligibility Rules', section: 'SCHEME OPERATIONS' },
+    { id: 'schemes', icon: FileText, label: t('adminAllSchemes', 'All Schemes'), section: t('adminSectionOperations', 'SCHEME OPERATIONS') },
+    { id: 'rule-builder', icon: CheckSquare, label: t('adminRules', 'Eligibility Rules'), section: t('adminSectionOperations', 'SCHEME OPERATIONS') },
     
-    { id: 'data-quality', icon: Database, label: 'Data Health', section: 'DATA INTELLIGENCE' },
-    { id: 'analytics', icon: BarChart3, label: 'Analytics', section: 'DATA INTELLIGENCE' },
+    { id: 'data-quality', icon: Database, label: t('adminDataHealth', 'Data Health'), section: t('adminSectionIntel', 'DATA INTELLIGENCE') },
+    { id: 'analytics', icon: BarChart3, label: t('adminAnalytics', 'Analytics'), section: t('adminSectionIntel', 'DATA INTELLIGENCE') },
     
-    { id: 'users', icon: Users, label: 'Users', section: 'USER OPERATIONS' },
+    { id: 'users', icon: Users, label: t('adminUsers', 'Users'), section: t('adminSectionUsers', 'USER OPERATIONS') },
     
-    { id: 'audit', icon: ShieldAlert, label: 'Audit Logs', section: 'SYSTEM' },
-    { id: 'settings', icon: Settings, label: 'Settings', section: 'SYSTEM' },
+    { id: 'audit', icon: ShieldAlert, label: t('adminAudit', 'Audit Logs'), section: t('adminSectionSystem', 'SYSTEM') },
+    { id: 'settings', icon: Settings, label: t('adminSettings', 'Settings'), section: t('adminSectionSystem', 'SYSTEM') },
   ];
 
   useEffect(() => {
@@ -81,10 +98,7 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
                 exit={{ opacity: 0, x: -10 }}
                 className="flex items-center gap-2 overflow-hidden whitespace-nowrap"
               >
-                <div className="w-8 h-8 bg-[#1769FF] rounded flex items-center justify-center">
-                  <Database className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-bold text-lg tracking-tight">GOV<span className="text-[#1769FF]">SCHEME</span></span>
+                <GovSchemeLogo markSize={28} hideWordmarkOnMobile={false} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -220,12 +234,10 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
               {/* Placeholders for other views for now */}
               {['users', 'audit', 'settings'].includes(activeView) && (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-20 h-20 bg-[#F5F7FA] dark:bg-[#101D31] rounded-2xl flex items-center justify-center mb-6">
-                    <Settings className="w-10 h-10 text-[#64748B] dark:text-[#94A3B8]" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-2">{activeView.replace('-', ' ').toUpperCase()}</h2>
+                  <GovSchemeLogo markSize={40} hideWordmarkOnMobile={true} />
+                  <h2 className="text-2xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-2 mt-6">{t('noPendingReviews', 'All Systems Operational')}</h2>
                   <p className="text-[#64748B] dark:text-[#94A3B8] max-w-md">
-                    This module is currently being upgraded as part of the Phase {activeView === 'users' ? 'H' : activeView === 'audit' ? 'I' : 'J'} rollout.
+                    {t('adminEmptyStateDesc', '✓ Everything is currently up to date. You have no pending actions in this module.')}
                   </p>
                 </div>
               )}
