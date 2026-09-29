@@ -705,7 +705,7 @@
   "viewScheme": "స్కీమ్‌ని వీక్షించండి",
   "viewSource": "మూలాన్ని వీక్షించండి",
   "ocrExtraction": "AI OCR డాక్యుమెంట్ ఎక్స్‌ట్రాక్షన్",
-  "scan": "స్కాన్",
+  "scan": "స్కాన్ చేయండి",
   "document": "పత్రం",
   "ocrExtractDetails": "రూల్ ధృవీకరణ కోసం వివరాలను సంగ్రహించి, ప్రొఫైల్‌ను స్వయంచాలకంగా పూరించండి.",
   "upload": "అప్‌లోడ్ చేయండి",
@@ -761,5 +761,11 @@
   "nationalFamilyBenefitScheme": "జాతీయ కుటుంబ ప్రయోజన పథకం",
   "agriculture": "వ్యవసాయం",
   "amt6000PerYear": "₹6,000/సంవత్సరం",
-  "amt20000": "₹20,000"
+  "amt20000": "₹20,000",
+  "maxAnnualIncome": "గరిష్ట వార్షిక ఆదాయం",
+  "Upload": "అప్‌లోడ్ చేయండి",
+  "state_AndhraPradesh": "ఆంధ్రప్రదేశ్",
+  "state_Telangana": "తెలంగాణ",
+  "state_UttarPradesh": "ఉత్తర ప్రదేశ్",
+  "state_Central": "కేంద్ర"
 }
