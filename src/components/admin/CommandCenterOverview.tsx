@@ -2,26 +2,29 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, CheckSquare, Clock, Database, TrendingUp, AlertTriangle, ShieldAlert, CheckCircle2, Activity, Zap, ExternalLink } from 'lucide-react';
 
+import { useTranslation } from 'react-i18next';
+
 interface CommandCenterOverviewProps {
   stats: any;
 }
 
 export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ stats }) => {
+  const { t } = useTranslation();
   const [expandedKpi, setExpandedKpi] = useState<string | null>(null);
   const [selectedInsight, setSelectedInsight] = useState<number | null>(null);
 
   const kpis = [
-    { id: 'total', label: 'Total Schemes', value: stats.total, trend: '+120 this month', icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', details: 'Central: 2,100 | State: 2,400' },
-    { id: 'published', label: 'Published', value: stats.published, trend: '+5% active', icon: CheckSquare, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', details: 'High confidence matches: 84%' },
-    { id: 'pending', label: 'Pending Review', value: stats.pending, trend: '-2 since yesterday', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', details: 'Urgent: 3 | Standard: 9' },
-    { id: 'health', label: 'Data Health', value: `${stats.dataQuality}%`, trend: '+2% improved', icon: Database, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20', details: 'No critical errors detected.' },
+    { id: 'total', label: t('adminTotalSchemes', 'Total Schemes'), value: stats.total, trend: t('adminTrendMonth', '+120 this month'), icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', details: t('adminTotalDetails', 'Central: 2,100 | State: 2,400') },
+    { id: 'published', label: t('adminPublished', 'Published'), value: stats.published, trend: t('adminTrendActive', '+5% active'), icon: CheckSquare, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', details: t('adminPublishedDetails', 'High confidence matches: 84%') },
+    { id: 'pending', label: t('adminPendingReview', 'Pending Review'), value: stats.pending, trend: t('adminTrendYesterday', '-2 since yesterday'), icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', details: t('adminPendingDetails', 'Urgent: 3 | Standard: 9') },
+    { id: 'health', label: t('adminDataHealth', 'Data Health'), value: `${stats.dataQuality}%`, trend: t('adminTrendImproved', '+2% improved'), icon: Database, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20', details: t('adminHealthDetails', 'No critical errors detected.') },
   ];
 
   const insights = [
-    { id: 1, type: 'warning', text: '12 schemes require verification', icon: AlertTriangle, color: 'text-amber-500', action: 'Review Queue' },
-    { id: 2, type: 'error', text: '4 official URLs appear unavailable', icon: ShieldAlert, color: 'text-red-500', action: 'Fix Links' },
-    { id: 3, type: 'trend', text: 'Education searches increased 24%', icon: TrendingUp, color: 'text-blue-500', action: 'View Analytics' },
-    { id: 4, type: 'info', text: '8 schemes have incomplete eligibility data', icon: Database, color: 'text-indigo-500', action: 'Update Records' },
+    { id: 1, type: 'warning', text: t('insightVerification', '12 schemes require verification'), icon: AlertTriangle, color: 'text-amber-500', action: t('actionReviewQueue', 'Review Queue') },
+    { id: 2, type: 'error', text: t('insightUrls', '4 official URLs appear unavailable'), icon: ShieldAlert, color: 'text-red-500', action: t('actionFixLinks', 'Fix Links') },
+    { id: 3, type: 'trend', text: t('insightSearchTrend', 'Education searches increased 24%'), icon: TrendingUp, color: 'text-blue-500', action: t('actionViewAnalytics', 'View Analytics') },
+    { id: 4, type: 'info', text: t('insightIncomplete', '8 schemes have incomplete eligibility data'), icon: Database, color: 'text-indigo-500', action: t('actionUpdateRecords', 'Update Records') },
   ];
 
   const containerVariants = {
@@ -50,25 +53,25 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <div className="flex items-center gap-2 text-blue-300 font-bold text-xs tracking-widest uppercase mb-2">
-              <Activity className="w-4 h-4" /> GOVSCHEME OPERATIONS
+              <Activity className="w-4 h-4" /> {t('adminOperationsHeader', 'GOVSCHEME OPERATIONS')}
             </div>
-            <h2 className="text-3xl font-bold mb-2">Scheme Ecosystem Overview</h2>
+            <h2 className="text-3xl font-bold mb-2">{t('adminOverviewTitle', 'Scheme Ecosystem Overview')}</h2>
             <div className="flex items-center gap-2 text-sm text-blue-200">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              All systems operational
+              {t('adminSystemsOperational', 'All systems operational')}
             </div>
           </div>
           <div className="flex gap-8 bg-black/20 backdrop-blur-sm rounded-xl p-4 border border-white/10">
             <div>
-              <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Schemes</div>
+              <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">{t('adminSchemesLabel', 'Schemes')}</div>
               <div className="text-2xl font-bold">{stats.total.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Recommendations</div>
+              <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">{t('adminRecsLabel', 'Recommendations')}</div>
               <div className="text-2xl font-bold">2,840</div>
             </div>
             <div>
-              <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Data Health</div>
+              <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">{t('adminDataHealthLabel', 'Data Health')}</div>
               <div className="text-2xl font-bold text-emerald-400">{stats.dataQuality}%</div>
             </div>
           </div>
@@ -105,7 +108,7 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
                 >
                   <p className="text-sm text-[#07111F] dark:text-[#F8FAFC] font-medium">{kpi.details}</p>
                   <button className="mt-3 text-xs font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline flex items-center gap-1">
-                    View Details <ExternalLink className="w-3 h-3" />
+                    {t('adminViewDetails', 'View Details')} <ExternalLink className="w-3 h-3" />
                   </button>
                 </motion.div>
               )}
@@ -119,9 +122,9 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
         <motion.div variants={itemVariants} className="lg:col-span-2 bg-[#FFFFFF] dark:bg-[#0B1424] rounded-xl border border-[#E2E8F0] dark:border-[#243449] shadow-sm flex flex-col h-full">
           <div className="p-6 border-b border-[#E2E8F0] dark:border-[#243449] flex justify-between items-center bg-[#F8FAFC] dark:bg-[#101D31] rounded-t-xl">
             <h3 className="font-bold text-[#07111F] dark:text-[#F8FAFC] flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#1769FF] dark:text-[#60A5FA]" /> AI DATA INSIGHTS
+              <Zap className="w-5 h-5 text-[#1769FF] dark:text-[#60A5FA]" /> {t('adminAIInsights', 'AI DATA INSIGHTS')}
             </h3>
-            <span className="text-xs font-bold bg-[#1769FF]/10 text-[#1769FF] dark:text-[#60A5FA] px-2 py-1 rounded-md">Live Analysis</span>
+            <span className="text-xs font-bold bg-[#1769FF]/10 text-[#1769FF] dark:text-[#60A5FA] px-2 py-1 rounded-md">{t('adminLiveAnalysis', 'Live Analysis')}</span>
           </div>
           <div className="p-6 flex-1 flex flex-col gap-4">
             {insights.map(insight => (
@@ -135,7 +138,7 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
                     <span className="font-semibold text-sm text-[#07111F] dark:text-[#F8FAFC]">{insight.text}</span>
                   </div>
                   <button className="text-xs font-bold text-[#64748B] dark:text-[#94A3B8]">
-                    {selectedInsight === insight.id ? 'Close' : 'Review'}
+                    {selectedInsight === insight.id ? t('close', 'Close') : t('review', 'Review')}
                   </button>
                 </div>
                 <AnimatePresence>
