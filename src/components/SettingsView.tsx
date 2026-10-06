@@ -392,6 +392,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </div>
                     </div>
                   </div>
+                </div>
               )}
 
               {/* Data Setting */}
@@ -451,13 +452,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         </div>
-        </div>
-        </div>
-      </motion.div>
+      </div>
+    </div>
+  </motion.div>
 
       <ConfirmationModal
         isOpen={showResetModal}
