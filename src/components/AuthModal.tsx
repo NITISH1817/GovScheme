@@ -145,7 +145,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       <div className="relative bg-white rounded-[24px] md:rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-4xl max-h-[95vh] flex overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500">
         
         {/* Left Side: Form */}
-        <div className="w-full lg:w-1/2 p-6 md:p-10 relative flex flex-col justify-center bg-white overflow-y-auto">
+        <div className="w-full lg:w-1/2 p-6 md:p-10 relative flex flex-col bg-white overflow-y-auto custom-scrollbar">
           {/* Close Button on mobile */}
           <button 
             onClick={onClose} 
@@ -154,9 +154,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <div className="max-w-[400px] w-full mx-auto">
+          <div className="max-w-[400px] w-full mx-auto my-auto py-4">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-[#2563EB] text-white flex items-center justify-center rounded-[12px] shadow-sm">
                 <ShieldCheck className="w-6 h-6 stroke-[2]" />
               </div>
@@ -167,7 +167,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
 
             {/* Titles */}
-            <h2 className="text-3xl font-extrabold text-[#0F172A] mb-2 font-sans tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-2 font-sans tracking-tight">
               Welcome Back
             </h2>
             <p className="text-[14px] text-[#64748B] mb-6 font-medium">
@@ -223,7 +223,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <button type="button" className="text-[#2563EB] font-bold hover:underline transition-all">Create Account</button>
                 </div>
 
-                <div className="my-5 flex items-center px-2">
+                <div className="mt-4 flex items-center px-2">
                   <div className="flex-1 border-t border-slate-200"></div>
                   <span className="px-4 text-[12px] text-slate-400 font-bold tracking-wider">OR</span>
                   <div className="flex-1 border-t border-slate-200"></div>
@@ -337,17 +337,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {/* Trust Section */}
-            <div className="mt-8 flex items-start gap-3 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+            <div className="mt-6 flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm">
               <div className="mt-0.5 w-6 h-6 rounded-full bg-[#16A34A]/10 text-[#16A34A] flex items-center justify-center shrink-0">
                 <Lock className="w-3 h-3" />
               </div>
-              <p className="text-[12px] font-medium text-[#64748B] leading-relaxed">
+              <p className="text-[11.5px] font-medium text-[#64748B] leading-relaxed">
                 Your information is secure and used exclusively to find relevant government schemes and determine eligibility.
               </p>
             </div>
 
             {/* Guest Mode fallback */}
-            <div className="mt-6 text-center">
+            <div className="mt-4 text-center">
               <button
                 type="button"
                 onClick={() => { onContinueGuest(); onClose(); }}
@@ -375,14 +375,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <X className="w-6 h-6" />
           </button>
 
-          <div className="absolute bottom-0 left-0 right-0 p-12 text-left text-white">
-            <h3 className="text-4xl font-bold mb-4 tracking-tight leading-tight">
+          <div className="absolute bottom-0 left-0 right-0 p-10 text-left text-white bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent">
+            <h3 className="text-3xl font-bold mb-3 tracking-tight leading-tight">
               Hello there.
             </h3>
-            <p className="text-slate-300 text-lg mb-8 max-w-sm leading-relaxed">
+            <p className="text-slate-300 text-[15px] mb-6 max-w-sm leading-relaxed">
               Begin your journey to discover government schemes, grants, and scholarships available for you.
             </p>
-            <button type="button" className="px-8 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold transition-all flex items-center gap-2">
+            <button type="button" className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold transition-all flex items-center gap-2 text-sm">
               Sign Up <ArrowRight className="w-4 h-4" />
             </button>
           </div>
