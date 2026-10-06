@@ -37,7 +37,7 @@
   left: 0;
   bottom: 0;
   width: 50%;
-  background: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url("https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=80") center/cover no-repeat;
+  background: linear-gradient(rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.7)), url("/hero-bg.jpg") center/cover no-repeat;
   border-radius: 18px;
   translate: 100% 0;
   transition: 0.65s ease-in-out;
