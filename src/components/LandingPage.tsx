@@ -320,14 +320,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Interactive Category Cards */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          className="text-center space-y-3 mb-10"
-        >
+        <div className="text-center space-y-3 mb-10">
           <h2 className="text-2xl font-extrabold text-gov-navy font-sans">{t('browseByCategory', 'Browse by Category')}</h2>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {categories.map((cat, idx) => (
@@ -354,16 +349,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Simple 4-Step Interactive Workflow */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center space-y-3 mb-12"
-        >
+        <div className="text-center space-y-3 mb-12">
           <h2 className="text-2xl font-extrabold text-gov-navy font-sans">
             {t('howItWorks', 'How it Works')}
           </h2>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
           {/* Animated connector line for desktop */}
