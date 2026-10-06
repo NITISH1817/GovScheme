@@ -421,7 +421,7 @@ export const App: React.FC = () => {
       />
 
       {/* Dynamic Tab Body Content */}
-      <main className="flex-1">
+      <main className="flex-1 pt-20">
         {activeTab === 'home' && (
           <LandingPage
             currentLang={currentLang}
