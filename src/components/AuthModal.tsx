@@ -141,11 +141,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const hasError = error !== null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="relative bg-white rounded-[24px] md:rounded-[28px] shadow-2xl w-full max-w-4xl flex overflow-hidden animate-in fade-in zoom-in-95 duration-200 min-h-[600px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#F8FAFC] animate-in fade-in duration-300">
+      <div className="relative bg-white rounded-[24px] md:rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-4xl max-h-[95vh] flex overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500">
         
         {/* Left Side: Form */}
-        <div className="w-full lg:w-1/2 p-8 md:p-12 relative flex flex-col justify-center bg-[#F8FAFC]">
+        <div className="w-full lg:w-1/2 p-6 md:p-10 relative flex flex-col justify-center bg-white overflow-y-auto">
           {/* Close Button on mobile */}
           <button 
             onClick={onClose} 
@@ -170,7 +170,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <h2 className="text-3xl font-extrabold text-[#0F172A] mb-2 font-sans tracking-tight">
               Welcome Back
             </h2>
-            <p className="text-[15px] text-[#64748B] mb-8 font-medium">
+            <p className="text-[14px] text-[#64748B] mb-6 font-medium">
               Login to discover government schemes available for you
             </p>
 
@@ -213,17 +213,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full py-4 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-70"
+                  className="w-full py-3.5 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70"
                 >
                   {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Login</span>}
                 </button>
                 
-                <div className="mt-5 text-center text-[14px]">
+                <div className="mt-4 text-center text-[14px]">
                   <span className="text-[#64748B] font-medium">Don't have an account? </span>
                   <button type="button" className="text-[#2563EB] font-bold hover:underline transition-all">Create Account</button>
                 </div>
 
-                <div className="my-6 flex items-center px-2">
+                <div className="my-5 flex items-center px-2">
                   <div className="flex-1 border-t border-slate-200"></div>
                   <span className="px-4 text-[12px] text-slate-400 font-bold tracking-wider">OR</span>
                   <div className="flex-1 border-t border-slate-200"></div>
