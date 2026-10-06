@@ -135,7 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [registerConfirm, setRegisterConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,6 +231,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     },
     onError: errorResponse => console.error(errorResponse),
   });
+  if (!isOpen) return null;
 
   return (
     <div className="auth-overlay">
