@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useGoogleLogin } from '@react-oauth/google';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
 import { calculateProfileCompletion } from '../utils/profileUtils';
 import './Auth/AuthModal.css';
@@ -69,7 +70,7 @@ const PasswordField = ({ value, onChange, placeholder, name }: any) => {
   );
 };
 
-const Socials = ({ onSocialLogin }: { onSocialLogin: () => void }) => (
+const Socials = ({ onSocialLogin, onGoogleLogin }: { onSocialLogin: () => void, onGoogleLogin?: () => void }) => (
   <>
     <div className="auth-socials-divider">Or Sign in with</div>
     <div className="auth-socials">
@@ -78,7 +79,7 @@ const Socials = ({ onSocialLogin }: { onSocialLogin: () => void }) => (
           <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.5c-1.5 0-1.96.93-1.96 1.89v2.26h3.32l-.53 3.5h-2.8V24C19.62 23.1 24 18.1 24 12.07" />
         </svg>
       </button>
-      <button type="button" onClick={onSocialLogin} className="auth-social-btn" aria-label="Google">
+      <button type="button" onClick={onGoogleLogin || onSocialLogin} className="auth-social-btn" aria-label="Google">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
           <path fill="#FFC107" d="M43.61 20.08H42V20H24v8h11.3C34.04 31.72 29.5 35 24 35c-6.07 0-11-4.93-11-11s4.93-11 11-11c2.61 0 5.01.91 6.9 2.43l5.65-5.65C33.2 6.55 28.87 4 24 4 12.96 4 4 12.96 4 24s8.96 20 20 20c10.45 0 19.12-8.03 19.86-18.25L43.61 20.08z" />
           <path fill="#FF3D00" d="M6.31 14.65l6.57 4.84C14.61 15.65 18.96 12 24 12c2.61 0 5.01.91 6.9 2.43l5.65-5.65C33.2 6.55 28.87 4 24 4 16.32 4 9.66 8.35 6.31 14.65z" />
@@ -203,6 +204,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }).then(res => res.json());
+
+        const profile = buildNewProfile({
+          fullName: userInfo.name || 'Citizen',
+          email: userInfo.email || 'googleuser@example.com',
+          state: 'Tamil Nadu',
+          occupation: 'Student',
+          age: 21,
+          annualIncome: 200000,
+          gender: 'Male'
+        });
+        profile.avatarUrl = userInfo.picture || profile.avatarUrl;
+        
+        onLoginSuccess(profile);
+        onClose();
+      } catch (err) {
+        console.error('Failed to fetch user info from Google', err);
+        setError('Failed to login with Google.');
+      }
+    },
+    onError: errorResponse => console.error(errorResponse),
+  });
+
   return (
     <div className="auth-overlay">
       <button 
@@ -243,7 +272,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button type="submit" className="auth-submit-btn">Sign Up</button>
             
             <div className="mt-4">
-              <Socials onSocialLogin={handleSocialLogin} />
+              <Socials onSocialLogin={handleSocialLogin} onGoogleLogin={() => googleLogin()} />
             </div>
           </form>
         </div>
@@ -278,7 +307,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <button type="submit" className="auth-submit-btn">Login</button>
             
-            <Socials onSocialLogin={handleSocialLogin} />
+            <Socials onSocialLogin={handleSocialLogin} onGoogleLogin={() => googleLogin()} />
           </form>
         </div>
       </div>
