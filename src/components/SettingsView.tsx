@@ -8,6 +8,7 @@ import {
 import { UserProfile, LanguageCode } from '../types';
 import { languages } from '../data/translations';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ConfirmationModal } from './GlobalUI';
 
 interface SettingsViewProps {
   user: UserProfile;
@@ -45,6 +46,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('appearance');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -389,6 +392,63 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </div>
                     </div>
                   </div>
+              )}
+
+              {/* Data Setting */}
+              {activeTab === 'data' && (
+                <div className="space-y-10 animate-in fade-in duration-300">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-200 dark:border-gray-800 pb-2 flex items-center gap-2">
+                      <Database className="w-5 h-5 text-[#1769FF]" /> {t('dataManagement', 'Data Management')}
+                    </h2>
+                    
+                    <div className="bg-white dark:bg-[#16243A] border border-gray-200 dark:border-gray-800 rounded-xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white">{t('downloadData', 'Download My Data')}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Get a copy of all your saved profile information and bookmarks in JSON format.</p>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(user, null, 2));
+                          const dlAnchorElem = document.createElement('a');
+                          dlAnchorElem.setAttribute("href", dataStr);
+                          dlAnchorElem.setAttribute("download", "govscheme_profile.json");
+                          dlAnchorElem.click();
+                          showToast("Data downloaded successfully");
+                        }}
+                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold flex items-center gap-2 transition"
+                      >
+                        <Download className="w-4 h-4" /> {t('download', 'Download')}
+                      </button>
+                    </div>
+
+                    <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 rounded-xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="font-bold text-orange-800 dark:text-orange-400">{t('clearInformation', 'Clear Form Information')}</h3>
+                        <p className="text-sm text-orange-700 dark:text-orange-300/70 mt-1">Reset your profile data (age, income, location) without deleting your account.</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowResetModal(true)}
+                        className="px-4 py-2 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 text-orange-700 dark:text-orange-400 rounded-lg font-semibold flex items-center gap-2 transition"
+                      >
+                        {t('reset', 'Reset')}
+                      </button>
+                    </div>
+
+                    <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="font-bold text-red-700 dark:text-red-400">{t('deleteAccount', 'Delete Account')}</h3>
+                        <p className="text-sm text-red-600 dark:text-red-300/70 mt-1">Permanently remove your account and all associated data from GovScheme.</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowDeleteModal(true)}
+                        className="px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg font-semibold flex items-center gap-2 transition"
+                      >
+                        <Trash2 className="w-4 h-4" /> {t('delete', 'Delete')}
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
               )}
 
@@ -398,6 +458,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
         </div>
       </motion.div>
+
+      <ConfirmationModal
+        isOpen={showResetModal}
+        title={t('clearInformation', 'Clear Profile Information')}
+        message="Are you sure you want to clear your profile details? Your account and saved schemes will remain, but you will need to re-enter your eligibility information."
+        onConfirm={() => {
+          onUpdateProfile({ ...user, age: 0, annualIncome: 0, state: '', district: '', interests: [], profileCompletionScore: 10 });
+          setShowResetModal(false);
+          showToast("Profile information cleared");
+        }}
+        onCancel={() => setShowResetModal(false)}
+        confirmText="Clear Profile"
+        destructive={true}
+      />
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title={t('deleteAccount', 'Delete Account')}
+        message="This action cannot be undone. This will permanently delete your GovScheme account, settings, and all saved schemes."
+        onConfirm={() => {
+          setShowDeleteModal(false);
+          onLogout();
+        }}
+        onCancel={() => setShowDeleteModal(false)}
+        confirmText="Delete Permanently"
+        destructive={true}
+      />
+
     </div>
   );
 };
