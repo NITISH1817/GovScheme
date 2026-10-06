@@ -56,6 +56,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const { t } = useTranslation();
 
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('email');
   const [authStep, setAuthStep] = useState<'input' | 'otp'>('input');
   
@@ -168,10 +169,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             {/* Titles */}
             <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-2 font-sans tracking-tight">
-              Welcome Back
+              {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
             <p className="text-[14px] text-[#64748B] mb-6 font-medium">
-              Login to discover government schemes available for you
+              {authMode === 'login' 
+                ? 'Login to discover government schemes available for you'
+                : 'Join us to discover government schemes tailored for you'}
             </p>
 
             {/* Email Login Form */}
@@ -215,12 +218,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   disabled={loading}
                   className="w-full py-3.5 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70"
                 >
-                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Login</span>}
+                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>{authMode === 'login' ? 'Login' : 'Sign Up'}</span>}
                 </button>
                 
                 <div className="mt-4 text-center text-[14px]">
-                  <span className="text-[#64748B] font-medium">Don't have an account? </span>
-                  <button type="button" className="text-[#2563EB] font-bold hover:underline transition-all">Create Account</button>
+                  {authMode === 'login' ? (
+                    <>
+                      <span className="text-[#64748B] font-medium">Don't have an account? </span>
+                      <button type="button" onClick={() => setAuthMode('signup')} className="text-[#2563EB] font-bold hover:underline transition-all">Create Account</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[#64748B] font-medium">Already have an account? </span>
+                      <button type="button" onClick={() => setAuthMode('login')} className="text-[#2563EB] font-bold hover:underline transition-all">Login</button>
+                    </>
+                  )}
                 </div>
 
                 <div className="mt-4 flex items-center px-2">
@@ -289,7 +301,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <div className="mt-5 text-center">
                   <button type="button" onClick={() => { setAuthMethod('email'); setError(null); }} className="text-[#64748B] text-[14px] font-semibold hover:text-[#0F172A] transition-colors">
-                    Back to Email Login
+                    Back to Email {authMode === 'login' ? 'Login' : 'Sign Up'}
                   </button>
                 </div>
               </form>
@@ -326,7 +338,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   disabled={loading}
                   className="w-full py-4 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-2"
                 >
-                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Verify & Login</span>}
+                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Verify & {authMode === 'login' ? 'Login' : 'Sign Up'}</span>}
                 </button>
                 <div className="mt-4">
                   <button type="button" className="text-[#64748B] text-[13px] font-semibold hover:text-[#0F172A] transition-colors">
@@ -377,13 +389,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <div className="absolute bottom-0 left-0 right-0 p-10 text-left text-white bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent">
             <h3 className="text-3xl font-bold mb-3 tracking-tight leading-tight">
-              Hello there.
+              {authMode === 'login' ? 'Hello there.' : 'Welcome back.'}
             </h3>
             <p className="text-slate-300 text-[15px] mb-6 max-w-sm leading-relaxed">
-              Begin your journey to discover government schemes, grants, and scholarships available for you.
+              {authMode === 'login' 
+                ? 'Begin your journey to discover government schemes, grants, and scholarships available for you.'
+                : 'Already have an account? Log in to continue tracking your scheme applications.'}
             </p>
-            <button type="button" className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold transition-all flex items-center gap-2 text-sm">
-              Sign Up <ArrowRight className="w-4 h-4" />
+            <button 
+              type="button" 
+              onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+              className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold transition-all flex items-center gap-2 text-sm"
+            >
+              {authMode === 'login' ? 'Sign Up' : 'Log In'} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
