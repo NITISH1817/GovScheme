@@ -69,16 +69,16 @@ const PasswordField = ({ value, onChange, placeholder, name }: any) => {
   );
 };
 
-const Socials = () => (
+const Socials = ({ onSocialLogin }: { onSocialLogin: () => void }) => (
   <>
     <div className="auth-socials-divider">Or Sign in with</div>
     <div className="auth-socials">
-      <button type="button" className="auth-social-btn" aria-label="Facebook">
+      <button type="button" onClick={onSocialLogin} className="auth-social-btn" aria-label="Facebook">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1877F2">
           <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.5c-1.5 0-1.96.93-1.96 1.89v2.26h3.32l-.53 3.5h-2.8V24C19.62 23.1 24 18.1 24 12.07" />
         </svg>
       </button>
-      <button type="button" className="auth-social-btn" aria-label="Google">
+      <button type="button" onClick={onSocialLogin} className="auth-social-btn" aria-label="Google">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
           <path fill="#FFC107" d="M43.61 20.08H42V20H24v8h11.3C34.04 31.72 29.5 35 24 35c-6.07 0-11-4.93-11-11s4.93-11 11-11c2.61 0 5.01.91 6.9 2.43l5.65-5.65C33.2 6.55 28.87 4 24 4 12.96 4 4 12.96 4 24s8.96 20 20 20c10.45 0 19.12-8.03 19.86-18.25L43.61 20.08z" />
           <path fill="#FF3D00" d="M6.31 14.65l6.57 4.84C14.61 15.65 18.96 12 24 12c2.61 0 5.01.91 6.9 2.43l5.65-5.65C33.2 6.55 28.87 4 24 4 16.32 4 9.66 8.35 6.31 14.65z" />
@@ -86,7 +86,7 @@ const Socials = () => (
           <path fill="#1976D2" d="M43.61 20.08H42V20H24v8h11.3c-.76 3.19-2.73 5.86-5.36 7.46l6.22 5.27C40.06 37.14 44 31.06 44 24c0-1.34-.14-2.65-.39-3.92z" />
         </svg>
       </button>
-      <button type="button" className="auth-social-btn" aria-label="Apple">
+      <button type="button" onClick={onSocialLogin} className="auth-social-btn" aria-label="Apple">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000">
           <path d="M17.05 13.9c0-3.32 2.72-4.92 2.85-5-1.55-2.27-3.95-2.58-4.81-2.63-2.02-.2-3.95 1.18-4.98 1.18-1.02 0-2.64-1.15-4.33-1.12-2.2.04-4.22 1.28-5.35 3.25-2.3 4-1.36 10.98.67 13.9 1.2 1.73 2.58 3.53 4.41 3.47 1.76-.07 2.44-1.14 4.57-1.14 2.1 0 2.74 1.14 4.57 1.1 1.9-.04 3.09-1.66 4.28-3.4 1.37-1.99 1.93-3.93 1.96-4.03-.04-.02-3.84-1.47-3.84-5.58z" />
           <path d="M14.93 4.14c.98-1.18 1.63-2.82 1.45-4.46-1.42.06-3.13.95-4.14 2.14-.9.1-1.63 2.65-1.41 4.22 1.58.12 3.13-.72 4.1-1.9z" />
@@ -188,6 +188,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
+  const handleSocialLogin = () => {
+    setError(null);
+    const profile = buildNewProfile({
+      fullName: 'Citizen',
+      email: 'citizen@example.com',
+      state: 'Tamil Nadu',
+      occupation: 'Student',
+      age: 21,
+      annualIncome: 200000,
+      gender: 'Male'
+    });
+    onLoginSuccess(profile);
+    onClose();
+  };
+
   return (
     <div className="auth-overlay">
       <button 
@@ -228,7 +243,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button type="submit" className="auth-submit-btn">Sign Up</button>
             
             <div className="mt-4">
-              <Socials />
+              <Socials onSocialLogin={handleSocialLogin} />
             </div>
           </form>
         </div>
@@ -263,7 +278,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <button type="submit" className="auth-submit-btn">Login</button>
             
-            <Socials />
+            <Socials onSocialLogin={handleSocialLogin} />
           </form>
         </div>
       </div>
