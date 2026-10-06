@@ -114,7 +114,7 @@
   "eligibleSchemes": "അർഹമായ പദ്ധതികൾ",
   "appliedSchemes": "അപേക്ഷിച്ച പദ്ധതികൾ",
   "underReview": "പരിശോധനയിലാണ്",
-  "savedSchemes": "സേവ് ചെയ്ത പദ്ധതികൾ",
+  "savedSchemes": "സംരക്ഷിച്ച പദ്ധതികൾ",
   "vaultDocuments": "വോൾട്ട് രേഖകൾ",
   "citizenProfileDetails": "പൗരന്റെ പ്രൊഫൈൽ വിവരങ്ങൾ",
   "citizenProfileDesc": "നിയമപരമായ ക്ഷേമ യോഗ്യത നിർണ്ണയിക്കാൻ റൂൾ എഞ്ചിൻ ഉപയോഗിക്കുന്ന വിവരങ്ങൾ.",
@@ -813,5 +813,8 @@
   "needsDesc": "നിങ്ങൾ സഹായം തേടുന്ന എല്ലാ മേഖലകളും തിരഞ്ഞെടുക്കുക.",
   "back": "തിരികെ",
   "continue": "തുടരുക",
-  "viewResults": "ഫലങ്ങൾ കാണുക"
+  "viewResults": "ഫലങ്ങൾ കാണുക",
+  "notifications": "അറിയിപ്പുകൾ",
+  "myApplications": "എന്റെ അപേക്ഷകൾ",
+  "reports": "റിപ്പോർട്ടുകൾ"
 }

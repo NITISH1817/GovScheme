@@ -32,7 +32,7 @@
   }
 
   * {
-    border-color: rgb(var(--border) / <alpha-value>);
+    border-color: rgb(var(--border));
   }
   
   html {

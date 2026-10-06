@@ -9,6 +9,7 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
+    supportedLngs: ['en', 'hi', 'ml', 'ta', 'te'],
     backend: {
       loadPath: '/locales/{{lng}}/translation.json?v=2',
     },
@@ -18,6 +19,9 @@ i18n
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+    },
+    react: {
+      useSuspense: false
     }
   });
 

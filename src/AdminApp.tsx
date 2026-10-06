@@ -1,34 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { AdminLayout } from './admin/AdminLayout';
-import { AdminLogin } from './admin/AdminLogin';
+import React, { useState } from 'react';
+import { AdminPlatform } from './components/admin/AdminPlatform';
+import { AdminLogin } from './components/admin/AdminLogin';
+import { UserProfile, Scheme } from './types';
+import { schemesData } from './data/schemes';
 
 export const AdminApp: React.FC = () => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
+  const [adminUser, setAdminUser] = useState<UserProfile | null>(() => {
+    const stored = localStorage.getItem('adminUser');
+    return stored ? JSON.parse(stored) : null;
+  });
+  
+  const [theme, setTheme] = useState<'light' | 'dark' | 'high-contrast'>('light');
 
-  useEffect(() => {
-    // Check if token exists in local storage on mount
-    const storedToken = localStorage.getItem('adminToken');
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
-
-  const handleLogin = (newToken: string) => {
-    setToken(newToken);
+  const handleLogin = (user: UserProfile) => {
+    setAdminUser(user);
+    localStorage.setItem('adminUser', JSON.stringify(user));
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    setToken(null);
+    setAdminUser(null);
   };
 
   return (
-    <div className="w-full h-screen bg-slate-50 text-slate-900 font-sans">
-      {token ? (
-        <AdminLayout onLogout={handleLogout} />
+    <div className="w-full h-screen bg-[#F5F7FA] dark:bg-[#060D18] text-[#07111F] dark:text-[#F8FAFC] font-sans">
+      {adminUser ? (
+        <AdminPlatform 
+          user={adminUser} 
+          schemes={schemesData} 
+          onExit={handleLogout} 
+          theme={theme}
+          setTheme={setTheme}
+        />
       ) : (
-        <AdminLogin onLogin={handleLogin} />
+        <AdminLogin 
+          onLoginSuccess={handleLogin} 
+          onExit={() => window.location.href = '/'}
+        />
       )}
     </div>
   );
