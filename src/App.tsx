@@ -26,6 +26,7 @@ import { NotificationsModal } from './components/NotificationsModal';
 import { startVoiceListening } from './services/voiceService';
 import { EligibilityWizard } from './components/EligibilityWizard';
 import { AIAnalysis } from './components/AIAnalysis';
+import { GlobalUI, ConfirmationModal } from './components/GlobalUI';
 import { AdminPlatform } from './components/admin/AdminPlatform';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
@@ -68,6 +69,7 @@ export const App: React.FC = () => {
   const [ocrTargetDocType, setOcrTargetDocType] = useState<DocumentRecord['type']>('Aadhaar');
   const [isListeningGlobalVoice, setIsListeningGlobalVoice] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   
   const [isBooting, setIsBooting] = useState(true);
 
@@ -413,7 +415,7 @@ export const App: React.FC = () => {
         setReducedMotion={setReducedMotion}
         user={user}
         onOpenAuth={() => setIsAuthOpen(true)}
-        onLogout={handleLogout}
+        onLogout={() => setLogoutConfirmOpen(true)}
         unreadCount={notifications.filter(n => !n.read).length}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onStartVoiceCommand={handleStartVoiceCommand}
@@ -580,11 +582,28 @@ export const App: React.FC = () => {
             updated.profileCompletionScore = calculateProfileCompletion(updated);
             setUser(updated);
           }}
-          onLogout={handleLogout}
+          onLogout={() => setLogoutConfirmOpen(true)}
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
         />
       )}
+
+      {/* Logout Confirmation */}
+      <ConfirmationModal
+        isOpen={logoutConfirmOpen}
+        title={t('confirmLogoutTitle', 'Sign Out')}
+        message={t('confirmLogoutDesc', 'Are you sure you want to sign out of your account?')}
+        onConfirm={() => {
+          handleLogout();
+          setLogoutConfirmOpen(false);
+        }}
+        onCancel={() => setLogoutConfirmOpen(false)}
+        confirmText={t('logout', 'Logout')}
+        cancelText={t('cancel', 'Cancel')}
+        destructive={true}
+      />
+
+      <GlobalUI />
     </div>
   );
 };
