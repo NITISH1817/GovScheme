@@ -109,15 +109,15 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
             <div className="space-y-2 text-xs">
               <div className="flex items-center gap-2 text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-amber-400" />
-                <span>{t("PM-KISAN Helpline", "PM-KISAN Helpline")}: <strong>155261 / 011-24300606</strong></span>
+                <span>{t("PM-KISAN Helpline", "PM-KISAN Helpline")}: <strong><a href="tel:155261" className="hover:underline">155261</a> / <a href="tel:01124300606" className="hover:underline">011-24300606</a></strong></span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{t("Ayushman Bharat", "Ayushman Bharat")}: <strong>14555</strong></span>
+                <span>{t("Ayushman Bharat", "Ayushman Bharat")}: <strong><a href="tel:14555" className="hover:underline">14555</a></strong></span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-blue-400" />
-                <span>{t("National Pension Portal", "National Pension Portal")}: <strong>1800-11-0001</strong></span>
+                <span>{t("National Pension Portal", "National Pension Portal")}: <strong><a href="tel:1800110001" className="hover:underline">1800-11-0001</a></strong></span>
               </div>
             </div>
 
@@ -129,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
         </div>
 
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
-          <p>{t('footerRights', '© 2026 GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.')}</p>
+          <p>{t('footerRights', `© ${new Date().getFullYear()} GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.`)}</p>
           <div className="flex space-x-4">
             <a href="https://india.gov.in" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300">{t('nationalPortal', 'National Portal of India')}</a>
             <span>•</span>

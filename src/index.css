@@ -37,12 +37,14 @@
   
   html {
     font-size: calc(16px * var(--font-scale));
+    overflow-x: hidden;
   }
 
   body {
     background-color: rgb(var(--bg));
     color: rgb(var(--text-primary));
     font-family: 'Inter', 'Public Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
   }
   
   h1, h2, h3, .font-heading {

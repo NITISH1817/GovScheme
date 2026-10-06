@@ -116,6 +116,57 @@ export const App: React.FC = () => {
     }
   }, [user]);
 
+  // Dynamic Page Titles & Meta Descriptions
+  useEffect(() => {
+    let title = 'GovScheme AI — National Government Scheme Eligibility';
+    let metaDesc = 'Discover and track eligible government schemes intelligently.';
+
+    switch (activeTab) {
+      case 'home':
+        title = 'GovScheme AI | Home';
+        break;
+      case 'schemes':
+        title = 'Discover Schemes | GovScheme AI';
+        metaDesc = 'Search and filter hundreds of national and state government schemes tailored for you.';
+        break;
+      case 'assistant':
+        title = 'AI Assistant | GovScheme AI';
+        metaDesc = 'Chat with our intelligent AI to quickly find schemes and check your eligibility.';
+        break;
+      case 'vault':
+        title = 'Document Vault | GovScheme AI';
+        metaDesc = 'Securely store and manage your Aadhaar, PAN, and other official documents.';
+        break;
+      case 'tracker':
+        title = 'Application Tracker | GovScheme AI';
+        metaDesc = 'Track the real-time status of your government scheme applications.';
+        break;
+      case 'profile':
+        title = 'My Profile | GovScheme AI';
+        break;
+      case 'kiosk':
+        title = 'Kiosk Mode | GovScheme AI';
+        break;
+      case 'admin':
+        title = 'Admin Panel | GovScheme AI';
+        break;
+      default:
+        title = 'Not Found | GovScheme AI';
+        break;
+    }
+
+    document.title = title;
+    const metaTag = document.querySelector('meta[name="description"]');
+    if (metaTag) {
+      metaTag.setAttribute('content', metaDesc);
+    } else {
+      const newMeta = document.createElement('meta');
+      newMeta.name = 'description';
+      newMeta.content = metaDesc;
+      document.head.appendChild(newMeta);
+    }
+  }, [activeTab]);
+
   // Fetch schemes from backend on initial load
   useEffect(() => {
     const fetchSchemes = async () => {
@@ -515,6 +566,21 @@ export const App: React.FC = () => {
             onNavigateTab={setActiveTab}
             eligibleSchemesCount={eligibleSchemesCount}
           />
+        )}
+
+        {/* 404 Not Found Page */}
+        {!['home', 'wizard', 'analyzing', 'schemes', 'assistant', 'vault', 'tracker', 'profile'].includes(activeTab) && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+            <div className="text-9xl font-bold text-gray-200 dark:text-gray-800 mb-4">404</div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Page Not Found</h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">The page or service you are looking for doesn't exist, is under construction, or you don't have permission to access it.</p>
+            <button
+              onClick={() => setActiveTab('home')}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition"
+            >
+              Return Home
+            </button>
+          </div>
         )}
 
       </main>
