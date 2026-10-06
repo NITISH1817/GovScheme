@@ -482,5 +482,8 @@
   "needsDesc": "Select all areas you are looking for assistance in.",
   "back": "Back",
   "continue": "Continue",
-  "viewResults": "View Results"
+  "viewResults": "View Results",
+  "notifications": "Notifications",
+  "myApplications": "My Applications",
+  "reports": "Reports"
 }
