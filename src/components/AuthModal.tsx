@@ -142,211 +142,251 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      {/* 
-        Container matching the provided Clerk-like design.
-        White background, rounded corners, subtle shadow, max-width.
-      */}
-      <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[420px] p-8 md:p-10 text-center overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-[24px] md:rounded-[28px] shadow-2xl w-full max-w-4xl flex overflow-hidden animate-in fade-in zoom-in-95 duration-200 min-h-[600px]">
         
-        {/* Close Button */}
-        <button 
-          onClick={onClose} 
-          className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Left Side: Form */}
+        <div className="w-full lg:w-1/2 p-8 md:p-12 relative flex flex-col justify-center bg-[#F8FAFC]">
+          {/* Close Button on mobile */}
+          <button 
+            onClick={onClose} 
+            className="lg:hidden absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
-        {/* Header Icon */}
-        <div className="mx-auto w-16 h-16 bg-[#EEF2FF] text-[#2563EB] flex items-center justify-center rounded-[18px] mb-6">
-          <ShieldCheck className="w-8 h-8 stroke-[2.5]" />
-        </div>
-
-        {/* Titles */}
-        <h2 className="text-2xl font-bold text-slate-900 mb-1">
-          {t('appName', 'GovScheme AI')}
-        </h2>
-        <p className="text-[15px] text-slate-600 font-medium mb-8">
-          {t('login')} - {t('appName', 'GovScheme AI')}
-        </p>
-
-        {/* Tabs */}
-        {authStep === 'input' && (
-          <div className="flex bg-slate-100 p-1 rounded-lg mb-6">
-            <button
-              onClick={() => { setAuthMethod('email'); setError(null); }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${authMethod === 'email' ? 'bg-white shadow text-[#2563EB]' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              Email
-            </button>
-            <button
-              onClick={() => { setAuthMethod('phone'); setError(null); }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${authMethod === 'phone' ? 'bg-white shadow text-[#2563EB]' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              Phone
-            </button>
-          </div>
-        )}
-
-        {/* Form */}
-        {authStep === 'input' && authMethod === 'email' && (
-          <form onSubmit={handleEmailLogin} className="text-left space-y-5">
-            <div>
-              <label className="block text-[14px] font-bold text-slate-900 mb-2">Email Address</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={e => { setEmail(e.target.value); setError(null); }}
-                className="w-full px-4 py-3 text-[15px] rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium"
-                placeholder="citizen@india.gov.in"
-                required
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-[14px] font-bold text-slate-900">Password</label>
-                <a href="#" className="text-xs font-bold text-[#2563EB] hover:underline">Forgot password?</a>
+          <div className="max-w-[400px] w-full mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 bg-[#2563EB] text-white flex items-center justify-center rounded-[12px] shadow-sm">
+                <ShieldCheck className="w-6 h-6 stroke-[2]" />
               </div>
-              <div className="relative">
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError(null); }}
-                  className="w-full px-4 py-3 text-[15px] rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium pr-12"
-                  placeholder="••••••••"
-                  required
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold">
-                  {showPassword ? 'Hide' : 'Show'}
+              <div>
+                <h1 className="text-lg font-bold text-[#0F172A] leading-tight">GovScheme AI</h1>
+                <p className="text-[11px] font-medium text-[#64748B] uppercase tracking-wider">Discover Government Schemes</p>
+              </div>
+            </div>
+
+            {/* Titles */}
+            <h2 className="text-3xl font-extrabold text-[#0F172A] mb-2 font-sans tracking-tight">
+              Welcome Back
+            </h2>
+            <p className="text-[15px] text-[#64748B] mb-8 font-medium">
+              Login to discover government schemes available for you
+            </p>
+
+            {/* Email Login Form */}
+            {authStep === 'input' && authMethod === 'email' && (
+              <form onSubmit={handleEmailLogin} className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-bold text-[#0F172A] mb-1.5 ml-1">Email Address / Mobile Number</label>
+                  <input 
+                    type="text" 
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setError(null); }}
+                    className="w-full px-4 py-3.5 text-[15px] rounded-2xl border border-slate-200 bg-white text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 outline-none transition-all shadow-sm font-medium"
+                    placeholder="citizen@example.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5 px-1">
+                    <label className="block text-[13px] font-bold text-[#0F172A]">Password</label>
+                    <button type="button" className="text-[13px] font-bold text-[#2563EB] hover:text-[#1D4ED8] transition-colors">Forgot Password?</button>
+                  </div>
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      value={password}
+                      onChange={e => { setPassword(e.target.value); setError(null); }}
+                      className="w-full px-4 py-3.5 text-[15px] rounded-2xl border border-slate-200 bg-white text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 outline-none transition-all shadow-sm font-medium pr-12"
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-1">
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+
+                {hasError && <p className="text-red-600 text-[13px] font-bold pl-1 animate-in slide-in-from-top-1">{error}</p>}
+
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-70"
+                >
+                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Login</span>}
                 </button>
-              </div>
-            </div>
-            {hasError && <p className="text-red-600 text-[13px] font-bold animate-in slide-in-from-top-1">{error}</p>}
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[15px] shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] transition-all flex items-center justify-center gap-2 mt-2"
-            >
-              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Login securely</span>}
-            </button>
-          </form>
-        )}
+                
+                <div className="mt-5 text-center text-[14px]">
+                  <span className="text-[#64748B] font-medium">Don't have an account? </span>
+                  <button type="button" className="text-[#2563EB] font-bold hover:underline transition-all">Create Account</button>
+                </div>
 
-        {authStep === 'input' && authMethod === 'phone' && (
-          <form onSubmit={handleSendOtp} className="text-left space-y-6">
-            <div>
-              <label className="block text-[14px] font-bold text-slate-900 mb-2">
-                {t('mobileNumber', 'Phone Number')}
-              </label>
-              
-              <div 
-                className={`flex items-center rounded-xl border-[1.5px] overflow-hidden transition-all duration-200 ${
-                  hasError 
-                    ? 'border-red-400 bg-red-50/30 shadow-[0_0_0_4px_rgba(248,113,113,0.1)]' 
-                    : isValidNumber
-                      ? 'border-emerald-400 bg-white'
-                      : 'border-slate-200 bg-white focus-within:border-blue-500 focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.1)]'
-                }`}
-              >
-                {/* Prefix */}
-                <div className="bg-slate-50/80 px-4 py-3 border-r border-inherit text-[15px] font-bold text-slate-900">
-                  +91
+                <div className="my-6 flex items-center px-2">
+                  <div className="flex-1 border-t border-slate-200"></div>
+                  <span className="px-4 text-[12px] text-slate-400 font-bold tracking-wider">OR</span>
+                  <div className="flex-1 border-t border-slate-200"></div>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => { setAuthMethod('phone'); setError(null); }}
+                  className="w-full py-3.5 rounded-2xl border-2 border-slate-200 bg-white text-[#0F172A] font-bold hover:bg-slate-50 hover:border-slate-300 transition-all"
+                >
+                  Continue with Mobile OTP
+                </button>
+              </form>
+            )}
+
+            {/* Mobile OTP Login Form */}
+            {authStep === 'input' && authMethod === 'phone' && (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-bold text-[#0F172A] mb-1.5 ml-1">Mobile Number</label>
+                  <div 
+                    className={`flex items-center rounded-2xl border-[1.5px] overflow-hidden transition-all duration-200 bg-white shadow-sm ${
+                      hasError 
+                        ? 'border-red-400 bg-red-50/30 ring-4 ring-red-400/10' 
+                        : isValidNumber
+                          ? 'border-[#16A34A] focus-within:ring-4 focus-within:ring-[#16A34A]/10'
+                          : 'border-slate-200 focus-within:border-[#2563EB] focus-within:ring-4 focus-within:ring-[#2563EB]/10'
+                    }`}
+                  >
+                    <div className="bg-slate-50/80 px-4 py-3.5 border-r border-inherit text-[15px] font-bold text-slate-600">
+                      +91
+                    </div>
+                    <input 
+                      type="tel" 
+                      value={mobileNumber}
+                      onChange={e => {
+                        setMobileNumber(e.target.value.replace(/\D/g, ''));
+                        setError(null);
+                      }}
+                      className="flex-1 px-4 py-3.5 text-[15px] text-[#0F172A] placeholder:text-slate-400 outline-none bg-transparent font-medium"
+                      placeholder="Enter 10 digit number"
+                      maxLength={10}
+                    />
+                    {isValidNumber && !hasError && (
+                      <div className="pr-4 flex items-center justify-center">
+                        <div className="bg-[#16A34A] rounded-full w-5 h-5 flex items-center justify-center">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-white stroke-[3]" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {hasError && <p className="text-red-600 text-[13px] font-bold pl-1 animate-in slide-in-from-top-1">{error}</p>}
+
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-2"
+                >
+                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Send OTP</span>}
+                </button>
+
+                <div className="mt-5 text-center">
+                  <button type="button" onClick={() => { setAuthMethod('email'); setError(null); }} className="text-[#64748B] text-[14px] font-semibold hover:text-[#0F172A] transition-colors">
+                    Back to Email Login
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* OTP Verification Step */}
+            {authStep === 'otp' && (
+              <form onSubmit={handleVerifyOtp} className="space-y-5 text-center">
+                <div className="mb-4">
+                  <p className="text-[14px] text-[#64748B] font-medium leading-relaxed">
+                    We've sent a 6-digit code to<br/>
+                    <strong className="text-[#0F172A]">+91 {mobileNumber}</strong>
+                  </p>
+                  <button type="button" onClick={() => { setAuthStep('input'); setOtp(''); }} className="text-[#2563EB] text-[13px] font-bold hover:underline mt-2">
+                    Change Number
+                  </button>
                 </div>
                 
-                {/* Input */}
-                <input 
-                  type="tel" 
-                  value={mobileNumber}
-                  onChange={e => {
-                    setMobileNumber(e.target.value.replace(/\D/g, ''));
-                    setError(null);
-                  }}
-                  className="flex-1 px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none bg-transparent font-medium"
-                  placeholder="Enter 10 digit number"
-                  maxLength={10}
-                />
+                <div>
+                  <input 
+                    type="text" 
+                    value={otp}
+                    onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError(null); }}
+                    className="w-full px-4 py-4 text-center tracking-[0.5em] text-2xl rounded-2xl border border-slate-200 bg-white text-[#0F172A] placeholder:text-slate-300 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 outline-none transition-all shadow-sm font-bold"
+                    placeholder="••••••"
+                    maxLength={6}
+                    required
+                  />
+                  {hasError && <p className="text-red-600 text-[13px] font-bold mt-2 animate-in slide-in-from-top-1">{error}</p>}
+                </div>
+                
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-2"
+                >
+                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Verify & Login</span>}
+                </button>
+                <div className="mt-4">
+                  <button type="button" className="text-[#64748B] text-[13px] font-semibold hover:text-[#0F172A] transition-colors">
+                    Resend OTP
+                  </button>
+                </div>
+              </form>
+            )}
 
-                {/* Success Indicator */}
-                {isValidNumber && !hasError && (
-                  <div className="pr-4 flex items-center justify-center">
-                    <div className="bg-emerald-500 rounded-full w-5 h-5 flex items-center justify-center">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-white stroke-[3]" />
-                    </div>
-                  </div>
-                )}
+            {/* Trust Section */}
+            <div className="mt-8 flex items-start gap-3 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+              <div className="mt-0.5 w-6 h-6 rounded-full bg-[#16A34A]/10 text-[#16A34A] flex items-center justify-center shrink-0">
+                <Lock className="w-3 h-3" />
               </div>
-
-              {/* Error Message */}
-              {hasError && (
-                <p className="text-red-600 text-[13px] font-bold mt-2 animate-in slide-in-from-top-1">
-                  {error}
-                </p>
-              )}
+              <p className="text-[12px] font-medium text-[#64748B] leading-relaxed">
+                Your information is secure and used exclusively to find relevant government schemes and determine eligibility.
+              </p>
             </div>
 
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[15px] shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Send OTP</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
-        {authStep === 'otp' && (
-          <form onSubmit={handleVerifyOtp} className="text-left space-y-6">
-            <div className="text-center mb-6">
-              <p className="text-sm text-slate-600">Enter the verification code sent to <br/><strong className="text-slate-900">+91 {mobileNumber}</strong></p>
-              <button type="button" onClick={() => { setAuthStep('input'); setOtp(''); }} className="text-[#2563EB] text-xs font-bold hover:underline mt-1">Change Number</button>
+            {/* Guest Mode fallback */}
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => { onContinueGuest(); onClose(); }}
+                className="text-[13px] text-slate-400 font-semibold hover:text-slate-700 transition-colors"
+              >
+                Continue as Guest instead
+              </button>
             </div>
-            <div>
-              <input 
-                type="text" 
-                value={otp}
-                onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError(null); }}
-                className="w-full px-4 py-4 text-center tracking-[0.5em] text-2xl rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold"
-                placeholder="••••••"
-                maxLength={6}
-                required
-              />
-              {hasError && <p className="text-red-600 text-[13px] font-bold mt-2 text-center animate-in slide-in-from-top-1">{error}</p>}
-            </div>
-            
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[15px] shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Verify and Login</span>}
-            </button>
-            <div className="text-center">
-              <button type="button" className="text-slate-500 text-sm font-medium hover:text-slate-900">Resend OTP</button>
-            </div>
-          </form>
-        )}
-
-        {/* Security Footer */}
-        <div className="mt-8 flex items-center justify-center gap-2 text-[#10B981]">
-          <Lock className="w-3.5 h-3.5" />
-          <span className="text-[12px] font-bold">{t('encryptedData', 'Your data is encrypted end-to-end')}</span>
+          </div>
         </div>
 
-        {/* Guest Mode fallback */}
-        <button
-          type="button"
-          onClick={() => { onContinueGuest(); onClose(); }}
-          className="mt-6 text-[13px] text-slate-500 font-medium hover:text-slate-800 transition-colors"
-        >
-          {t('guestMode', 'Continue as Guest instead')}
-        </button>
+        {/* Right Side: Visual/Branding */}
+        <div className="hidden lg:block w-1/2 relative bg-slate-900 overflow-hidden">
+          <img 
+            src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+            alt="Landscape" 
+            className="absolute inset-0 w-full h-full object-cover opacity-50 transition-transform duration-1000 hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+          
+          <button 
+            onClick={onClose} 
+            className="absolute top-6 right-6 text-white/50 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all z-10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div className="absolute bottom-0 left-0 right-0 p-12 text-left text-white">
+            <h3 className="text-4xl font-bold mb-4 tracking-tight leading-tight">
+              Hello there.
+            </h3>
+            <p className="text-slate-300 text-lg mb-8 max-w-sm leading-relaxed">
+              Begin your journey to discover government schemes, grants, and scholarships available for you.
+            </p>
+            <button type="button" className="px-8 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold transition-all flex items-center gap-2">
+              Sign Up <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
       </div>
     </div>
