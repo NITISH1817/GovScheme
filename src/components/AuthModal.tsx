@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
 import { calculateProfileCompletion } from '../utils/profileUtils';
+import './Auth/AuthModal.css';
 
 function buildNewProfile(opts: {
   fullName: string;
-  mobile: string;
   email: string;
   state: string;
   occupation: string;
@@ -14,10 +14,10 @@ function buildNewProfile(opts: {
   annualIncome: number;
   gender: TargetGender;
 }): UserProfile {
-  const profile = {
+  const profile: UserProfile = {
     id: `user-${Date.now()}`,
     fullName: opts.fullName,
-    mobile: opts.mobile,
+    mobile: '',
     email: opts.email,
     age: opts.age,
     gender: opts.gender,
@@ -40,6 +40,76 @@ function buildNewProfile(opts: {
   return profile;
 }
 
+// ---------------------------------------------------------
+// Subcomponents
+// ---------------------------------------------------------
+
+const PasswordField = ({ value, onChange, placeholder, name }: any) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="auth-input-group">
+      <input
+        type={show ? "text" : "password"}
+        name={name}
+        placeholder={placeholder}
+        className="auth-input"
+        value={value}
+        onChange={onChange}
+        required
+      />
+      <button
+        type="button"
+        className="auth-password-eye"
+        onClick={() => setShow(prev => !prev)}
+        aria-label={show ? "Hide password" : "Show password"}
+      >
+        {show ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+  );
+};
+
+const Socials = () => (
+  <>
+    <div className="auth-socials-divider">Or Sign in with</div>
+    <div className="auth-socials">
+      <button type="button" className="auth-social-btn" aria-label="Facebook">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1877F2">
+          <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.5c-1.5 0-1.96.93-1.96 1.89v2.26h3.32l-.53 3.5h-2.8V24C19.62 23.1 24 18.1 24 12.07" />
+        </svg>
+      </button>
+      <button type="button" className="auth-social-btn" aria-label="Google">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+          <path fill="#FFC107" d="M43.61 20.08H42V20H24v8h11.3C34.04 31.72 29.5 35 24 35c-6.07 0-11-4.93-11-11s4.93-11 11-11c2.61 0 5.01.91 6.9 2.43l5.65-5.65C33.2 6.55 28.87 4 24 4 12.96 4 4 12.96 4 24s8.96 20 20 20c10.45 0 19.12-8.03 19.86-18.25L43.61 20.08z" />
+          <path fill="#FF3D00" d="M6.31 14.65l6.57 4.84C14.61 15.65 18.96 12 24 12c2.61 0 5.01.91 6.9 2.43l5.65-5.65C33.2 6.55 28.87 4 24 4 16.32 4 9.66 8.35 6.31 14.65z" />
+          <path fill="#4CAF50" d="M24 44c5.17 0 9.77-1.96 13.16-5.18l-6.22-5.27C29.08 35.1 26.68 36 24 36c-5.28 0-9.81-3.35-11.41-8.1l-6.86 5.16C9.07 39.81 15.93 44 24 44z" />
+          <path fill="#1976D2" d="M43.61 20.08H42V20H24v8h11.3c-.76 3.19-2.73 5.86-5.36 7.46l6.22 5.27C40.06 37.14 44 31.06 44 24c0-1.34-.14-2.65-.39-3.92z" />
+        </svg>
+      </button>
+      <button type="button" className="auth-social-btn" aria-label="Apple">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000">
+          <path d="M17.05 13.9c0-3.32 2.72-4.92 2.85-5-1.55-2.27-3.95-2.58-4.81-2.63-2.02-.2-3.95 1.18-4.98 1.18-1.02 0-2.64-1.15-4.33-1.12-2.2.04-4.22 1.28-5.35 3.25-2.3 4-1.36 10.98.67 13.9 1.2 1.73 2.58 3.53 4.41 3.47 1.76-.07 2.44-1.14 4.57-1.14 2.1 0 2.74 1.14 4.57 1.1 1.9-.04 3.09-1.66 4.28-3.4 1.37-1.99 1.93-3.93 1.96-4.03-.04-.02-3.84-1.47-3.84-5.58z" />
+          <path d="M14.93 4.14c.98-1.18 1.63-2.82 1.45-4.46-1.42.06-3.13.95-4.14 2.14-.9.1-1.63 2.65-1.41 4.22 1.58.12 3.13-.72 4.1-1.9z" />
+        </svg>
+      </button>
+    </div>
+  </>
+);
+
+const Hero = ({ variant, title, text, buttonLabel, onSwitch }: any) => (
+  <div className={`auth-hero ${variant}`}>
+    <h2 className="auth-hero-title">{title}</h2>
+    <p className="auth-hero-text">{text}</p>
+    <button type="button" className="auth-hero-switch" onClick={onSwitch}>
+      {buttonLabel}
+    </button>
+  </div>
+);
+
+// ---------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,360 +122,150 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   onLoginSuccess,
-  onContinueGuest,
 }) => {
   const { t } = useTranslation();
-
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('email');
-  const [authStep, setAuthStep] = useState<'input' | 'otp'>('input');
+  const [isRegister, setIsRegister] = useState(false);
   
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerConfirm, setRegisterConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (mobileNumber.length < 10) {
-        setError('Invalid mobile number');
-        return;
-      }
-      setAuthStep('otp');
-    }, 600);
-  };
-
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (otp.length < 6) {
-        setError('Invalid OTP code');
-        return;
-      }
-      completeLogin(mobileNumber, '');
-    }, 800);
-  };
-
-  const handleEmailLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (!email.includes('@') || password.length < 6) {
-        setError('Invalid email or password');
-        return;
-      }
-      completeLogin('', email);
-    }, 800);
-  };
-
-  const completeLogin = (loginMobile: string, loginEmail: string) => {
-    const saved = localStorage.getItem('govscheme_user');
-    if (saved) {
-      const savedUser: UserProfile = JSON.parse(saved);
-      if ((loginMobile && savedUser.mobile === loginMobile) || (loginEmail && savedUser.email === loginEmail) || (!savedUser.mobile && !savedUser.email)) {
-        onLoginSuccess(savedUser);
-        onClose();
-        return;
-      }
+    if (!loginEmail.includes('@') || loginPassword.length < 6) {
+      setError('Invalid email or password');
+      return;
     }
-    
-    const profile = buildNewProfile({ 
-      fullName: 'Citizen', 
-      mobile: loginMobile || '9999999999', 
-      email: loginEmail || 'citizen@example.com', 
-      state: 'Tamil Nadu', 
-      occupation: 'Student', 
-      age: 21, 
-      annualIncome: 200000, 
-      gender: 'Male' 
+    setError(null);
+    const profile = buildNewProfile({
+      fullName: 'Citizen',
+      email: loginEmail,
+      state: 'Tamil Nadu',
+      occupation: 'Student',
+      age: 21,
+      annualIncome: 200000,
+      gender: 'Male'
     });
     onLoginSuccess(profile);
     onClose();
   };
 
-  const isValidNumber = mobileNumber.length >= 10;
-  const hasError = error !== null;
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerName) {
+      setError('Name is required');
+      return;
+    }
+    if (!registerEmail.includes('@')) {
+      setError('Valid email is required');
+      return;
+    }
+    if (registerPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (registerPassword !== registerConfirm) {
+      setError('Passwords do not match');
+      return;
+    }
+    setError(null);
+    const profile = buildNewProfile({
+      fullName: registerName,
+      email: registerEmail,
+      state: 'Tamil Nadu',
+      occupation: 'Student',
+      age: 21,
+      annualIncome: 200000,
+      gender: 'Male'
+    });
+    onLoginSuccess(profile);
+    onClose();
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#F8FAFC] animate-in fade-in duration-300">
-      <div className="relative bg-white rounded-[24px] md:rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-4xl max-h-[95vh] flex overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-500">
-        
-        {/* Left Side: Form */}
-        <div className="w-full lg:w-1/2 p-6 md:p-10 relative flex flex-col bg-white overflow-y-auto custom-scrollbar">
-          {/* Close Button on mobile */}
-          <button 
-            onClick={onClose} 
-            className="lg:hidden absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <div className="auth-overlay">
+      <button 
+        onClick={onClose} 
+        className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors z-[100]"
+        aria-label="Close"
+      >
+        <X size={24} />
+      </button>
 
-          <div className="max-w-[400px] w-full mx-auto my-auto py-4">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-[#2563EB] text-white flex items-center justify-center rounded-[12px] shadow-sm">
-                <ShieldCheck className="w-6 h-6 stroke-[2]" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-[#0F172A] leading-tight">GovScheme AI</h1>
-                <p className="text-[11px] font-medium text-[#64748B] uppercase tracking-wider">Discover Government Schemes</p>
-              </div>
+      <div className={`auth-card ${isRegister ? 'register' : ''}`}>
+        <div className="auth-card-bg"></div>
+
+        <Hero
+          variant="register"
+          title="Welcome back"
+          text="Login to continue your journey..."
+          buttonLabel="Login"
+          onSwitch={() => { setIsRegister(false); setError(null); }}
+        />
+
+        <div className="auth-form-wrapper register">
+          <form className="auth-form-container" onSubmit={handleRegisterSubmit}>
+            <h2>Create Account</h2>
+            
+            <div className="auth-input-group">
+              <input type="text" placeholder="Full Name" className="auth-input" value={registerName} onChange={e => setRegisterName(e.target.value)} required />
             </div>
-
-            {/* Titles */}
-            <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-2 font-sans tracking-tight">
-              {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
-            </h2>
-            <p className="text-[14px] text-[#64748B] mb-6 font-medium">
-              {authMode === 'login' 
-                ? 'Login to discover government schemes available for you'
-                : 'Join us to discover government schemes tailored for you'}
-            </p>
-
-            {/* Email Login Form */}
-            {authStep === 'input' && authMethod === 'email' && (
-              <form onSubmit={handleEmailLogin} className="space-y-4">
-                <div>
-                  <label className="block text-[13px] font-bold text-[#0F172A] mb-1.5 ml-1">Email Address / Mobile Number</label>
-                  <input 
-                    type="text" 
-                    value={email}
-                    onChange={e => { setEmail(e.target.value); setError(null); }}
-                    className="w-full px-4 py-3.5 text-[15px] rounded-2xl border border-slate-200 bg-white text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 outline-none transition-all shadow-sm font-medium"
-                    placeholder="citizen@example.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1.5 px-1">
-                    <label className="block text-[13px] font-bold text-[#0F172A]">Password</label>
-                    <button type="button" className="text-[13px] font-bold text-[#2563EB] hover:text-[#1D4ED8] transition-colors">Forgot Password?</button>
-                  </div>
-                  <div className="relative">
-                    <input 
-                      type={showPassword ? 'text' : 'password'} 
-                      value={password}
-                      onChange={e => { setPassword(e.target.value); setError(null); }}
-                      className="w-full px-4 py-3.5 text-[15px] rounded-2xl border border-slate-200 bg-white text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 outline-none transition-all shadow-sm font-medium pr-12"
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-1">
-                      {showPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                </div>
-
-                {hasError && <p className="text-red-600 text-[13px] font-bold pl-1 animate-in slide-in-from-top-1">{error}</p>}
-
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full py-3.5 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70"
-                >
-                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>{authMode === 'login' ? 'Login' : 'Sign Up'}</span>}
-                </button>
-                
-                <div className="mt-4 text-center text-[14px]">
-                  {authMode === 'login' ? (
-                    <>
-                      <span className="text-[#64748B] font-medium">Don't have an account? </span>
-                      <button type="button" onClick={() => setAuthMode('signup')} className="text-[#2563EB] font-bold hover:underline transition-all">Create Account</button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[#64748B] font-medium">Already have an account? </span>
-                      <button type="button" onClick={() => setAuthMode('login')} className="text-[#2563EB] font-bold hover:underline transition-all">Login</button>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-4 flex items-center px-2">
-                  <div className="flex-1 border-t border-slate-200"></div>
-                  <span className="px-4 text-[12px] text-slate-400 font-bold tracking-wider">OR</span>
-                  <div className="flex-1 border-t border-slate-200"></div>
-                </div>
-
-                <button 
-                  type="button" 
-                  onClick={() => { setAuthMethod('phone'); setError(null); }}
-                  className="w-full py-3.5 rounded-2xl border-2 border-slate-200 bg-white text-[#0F172A] font-bold hover:bg-slate-50 hover:border-slate-300 transition-all"
-                >
-                  Continue with Mobile OTP
-                </button>
-              </form>
-            )}
-
-            {/* Mobile OTP Login Form */}
-            {authStep === 'input' && authMethod === 'phone' && (
-              <form onSubmit={handleSendOtp} className="space-y-4">
-                <div>
-                  <label className="block text-[13px] font-bold text-[#0F172A] mb-1.5 ml-1">Mobile Number</label>
-                  <div 
-                    className={`flex items-center rounded-2xl border-[1.5px] overflow-hidden transition-all duration-200 bg-white shadow-sm ${
-                      hasError 
-                        ? 'border-red-400 bg-red-50/30 ring-4 ring-red-400/10' 
-                        : isValidNumber
-                          ? 'border-[#16A34A] focus-within:ring-4 focus-within:ring-[#16A34A]/10'
-                          : 'border-slate-200 focus-within:border-[#2563EB] focus-within:ring-4 focus-within:ring-[#2563EB]/10'
-                    }`}
-                  >
-                    <div className="bg-slate-50/80 px-4 py-3.5 border-r border-inherit text-[15px] font-bold text-slate-600">
-                      +91
-                    </div>
-                    <input 
-                      type="tel" 
-                      value={mobileNumber}
-                      onChange={e => {
-                        setMobileNumber(e.target.value.replace(/\D/g, ''));
-                        setError(null);
-                      }}
-                      className="flex-1 px-4 py-3.5 text-[15px] text-[#0F172A] placeholder:text-slate-400 outline-none bg-transparent font-medium"
-                      placeholder="Enter 10 digit number"
-                      maxLength={10}
-                    />
-                    {isValidNumber && !hasError && (
-                      <div className="pr-4 flex items-center justify-center">
-                        <div className="bg-[#16A34A] rounded-full w-5 h-5 flex items-center justify-center">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-white stroke-[3]" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {hasError && <p className="text-red-600 text-[13px] font-bold pl-1 animate-in slide-in-from-top-1">{error}</p>}
-
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full py-4 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-2"
-                >
-                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Send OTP</span>}
-                </button>
-
-                <div className="mt-5 text-center">
-                  <button type="button" onClick={() => { setAuthMethod('email'); setError(null); }} className="text-[#64748B] text-[14px] font-semibold hover:text-[#0F172A] transition-colors">
-                    Back to Email {authMode === 'login' ? 'Login' : 'Sign Up'}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* OTP Verification Step */}
-            {authStep === 'otp' && (
-              <form onSubmit={handleVerifyOtp} className="space-y-5 text-center">
-                <div className="mb-4">
-                  <p className="text-[14px] text-[#64748B] font-medium leading-relaxed">
-                    We've sent a 6-digit code to<br/>
-                    <strong className="text-[#0F172A]">+91 {mobileNumber}</strong>
-                  </p>
-                  <button type="button" onClick={() => { setAuthStep('input'); setOtp(''); }} className="text-[#2563EB] text-[13px] font-bold hover:underline mt-2">
-                    Change Number
-                  </button>
-                </div>
-                
-                <div>
-                  <input 
-                    type="text" 
-                    value={otp}
-                    onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError(null); }}
-                    className="w-full px-4 py-4 text-center tracking-[0.5em] text-2xl rounded-2xl border border-slate-200 bg-white text-[#0F172A] placeholder:text-slate-300 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 outline-none transition-all shadow-sm font-bold"
-                    placeholder="••••••"
-                    maxLength={6}
-                    required
-                  />
-                  {hasError && <p className="text-red-600 text-[13px] font-bold mt-2 animate-in slide-in-from-top-1">{error}</p>}
-                </div>
-                
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full py-4 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white font-bold text-[16px] shadow-[0_4px_14px_0_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2 mt-2"
-                >
-                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span>Verify & {authMode === 'login' ? 'Login' : 'Sign Up'}</span>}
-                </button>
-                <div className="mt-4">
-                  <button type="button" className="text-[#64748B] text-[13px] font-semibold hover:text-[#0F172A] transition-colors">
-                    Resend OTP
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Trust Section */}
-            <div className="mt-6 flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm">
-              <div className="mt-0.5 w-6 h-6 rounded-full bg-[#16A34A]/10 text-[#16A34A] flex items-center justify-center shrink-0">
-                <Lock className="w-3 h-3" />
-              </div>
-              <p className="text-[11.5px] font-medium text-[#64748B] leading-relaxed">
-                Your information is secure and used exclusively to find relevant government schemes and determine eligibility.
-              </p>
+            <div className="auth-input-group">
+              <input type="email" placeholder="Email Address" className="auth-input" value={registerEmail} onChange={e => setRegisterEmail(e.target.value)} required />
             </div>
-
-            {/* Guest Mode fallback */}
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => { onContinueGuest(); onClose(); }}
-                className="text-[13px] text-slate-400 font-semibold hover:text-slate-700 transition-colors"
-              >
-                Continue as Guest instead
-              </button>
+            
+            <PasswordField placeholder="Password" value={registerPassword} onChange={(e: any) => setRegisterPassword(e.target.value)} />
+            <PasswordField placeholder="Confirm Password" value={registerConfirm} onChange={(e: any) => setRegisterConfirm(e.target.value)} />
+            
+            {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
+            
+            <button type="submit" className="auth-submit-btn">Sign Up</button>
+            
+            <div className="mt-4">
+              <Socials />
             </div>
-          </div>
+          </form>
         </div>
 
-        {/* Right Side: Visual/Branding */}
-        <div className="hidden lg:block w-1/2 relative bg-slate-900 overflow-hidden">
-          <img 
-            src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-            alt="Landscape" 
-            className="absolute inset-0 w-full h-full object-cover opacity-50 transition-transform duration-1000 hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
-          
-          <button 
-            onClick={onClose} 
-            className="absolute top-6 right-6 text-white/50 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all z-10"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <Hero
+          variant="login"
+          title="Hello there"
+          text="Begin your journey with us..."
+          buttonLabel="Sign Up"
+          onSwitch={() => { setIsRegister(true); setError(null); }}
+        />
 
-          <div className="absolute bottom-0 left-0 right-0 p-10 text-left text-white bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent">
-            <h3 className="text-3xl font-bold mb-3 tracking-tight leading-tight">
-              {authMode === 'login' ? 'Hello there.' : 'Welcome back.'}
-            </h3>
-            <p className="text-slate-300 text-[15px] mb-6 max-w-sm leading-relaxed">
-              {authMode === 'login' 
-                ? 'Begin your journey to discover government schemes, grants, and scholarships available for you.'
-                : 'Already have an account? Log in to continue tracking your scheme applications.'}
-            </p>
-            <button 
-              type="button" 
-              onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-              className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold transition-all flex items-center gap-2 text-sm"
-            >
-              {authMode === 'login' ? 'Sign Up' : 'Log In'} <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="auth-form-wrapper login">
+          <form className="auth-form-container" onSubmit={handleLoginSubmit}>
+            <h2>Welcome Back</h2>
+            
+            <div className="auth-input-group">
+              <input type="email" placeholder="Email Address" className="auth-input" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
+            </div>
+            
+            <PasswordField placeholder="Password" value={loginPassword} onChange={(e: any) => setLoginPassword(e.target.value)} />
+            
+            <div className="flex justify-between items-center mb-4 text-sm px-1">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                <input type="checkbox" className="rounded text-[#212625] focus:ring-[#212625]" />
+                Remember me
+              </label>
+              <a href="#" className="text-slate-600 hover:text-[#212625] hover:underline">Forgot password?</a>
+            </div>
+
+            {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
+
+            <button type="submit" className="auth-submit-btn">Login</button>
+            
+            <Socials />
+          </form>
         </div>
-
       </div>
     </div>
   );
