@@ -2,7 +2,7 @@ import React from 'react';
 import { CombinedSchemeAnalysis, UserProfile, DocumentRecord } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Bookmark, BookmarkCheck, Check, FileText, AlertCircle, HelpCircle, Activity } from 'lucide-react';
+import { X, ExternalLink, Bookmark, BookmarkCheck, Check, FileText, AlertCircle, HelpCircle, Activity, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SchemeModalProps {
   user: UserProfile | null;
@@ -25,6 +25,14 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
 }) => {
   const { scheme, mlResult, ruleResult } = analysis;
   const { t } = useTranslation();
+  const [copied, setCopied] = React.useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(null);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`Scheme: ${scheme.name}\nWebsite: ${scheme.officialWebsite}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <AnimatePresence>
@@ -63,10 +71,17 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 {t(`${scheme.id}_name`, scheme.name)}
               </h2>
               <div className="text-sm text-gray-500">
-                {t('lastUpdatedLabel', 'Last updated:')} {new Date().toLocaleDateString()}
+                {t('lastUpdatedLabel', 'Last updated:')} {scheme.lastUpdated ? new Date(scheme.lastUpdated).toLocaleDateString() : new Date().toLocaleDateString()}
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button 
+                onClick={handleCopy}
+                className="w-10 h-10 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center justify-center hover:bg-blue-100 transition-colors relative"
+                title={copied ? "Copied!" : "Copy Scheme Info"}
+              >
+                {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-blue-600" />}
+              </button>
               <button 
                 onClick={() => {
                   const url = encodeURIComponent(window.location.href);
@@ -292,6 +307,44 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 ))}
               </div>
             </section>
+
+            {/* Expandable FAQs */}
+            {scheme.faqs && scheme.faqs.length > 0 && (
+              <section className="space-y-4 pt-4">
+                <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5" />
+                  {t('frequentlyAskedQuestions', 'Frequently Asked Questions')}
+                </h3>
+                <div className="space-y-2">
+                  {scheme.faqs.map((faq, idx) => (
+                    <div key={idx} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-[#0F1B2D]">
+                      <button
+                        className="w-full px-6 py-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-[#16243A] transition"
+                        onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                      >
+                        <span className="font-bold text-gray-900 dark:text-white text-left">{faq.question}</span>
+                        {openFaqIndex === idx ? <ChevronUp className="w-5 h-5 text-gray-500 shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />}
+                      </button>
+                      <AnimatePresence>
+                        {openFaqIndex === idx && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-6 pb-4 pt-2 text-gray-700 dark:text-gray-300">
+                              {faq.answer}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
           </div>
 
           {/* Footer Sticky Action */}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserProfile } from '../types';
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Loader2 } from 'lucide-react';
 import { LocationSelector } from './LocationSelector';
 
 interface EligibilityWizardProps {
@@ -40,8 +40,16 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
     if (page > 1) setPage([page - 1, -1]);
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   const handleSubmit = () => {
-    onComplete(formData);
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitSuccess(true);
+      setTimeout(() => onComplete(formData), 800);
+    }, 1000);
   };
 
   const steps = [
@@ -343,12 +351,32 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
         )}
 
         {(isWhatCanIGet || isLifeEvent || page < 5) ? (
-          <button onClick={isWhatCanIGet || isLifeEvent ? handleSubmit : nextStep} className="px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2">
-            {isWhatCanIGet || isLifeEvent ? t('viewResults', 'View Results') : t('continue', 'Continue')} <ChevronRight className="w-5 h-5" />
+          <button 
+            onClick={isWhatCanIGet || isLifeEvent ? handleSubmit : nextStep} 
+            disabled={isSubmitting || submitSuccess}
+            className="px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-70"
+          >
+            {isSubmitting ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> {t('processing', 'Processing...')}</>
+            ) : submitSuccess ? (
+              <><Check className="w-5 h-5" /> {t('success', 'Success!')}</>
+            ) : (
+              <>{isWhatCanIGet || isLifeEvent ? t('viewResults', 'View Results') : t('continue', 'Continue')} <ChevronRight className="w-5 h-5" /></>
+            )}
           </button>
         ) : (
-          <button onClick={handleSubmit} className="px-8 py-3 rounded bg-[#15803D] text-white font-semibold hover:bg-green-700 transition-colors flex items-center gap-2">
-            {t('viewResults', 'View Results')} <ChevronRight className="w-5 h-5" />
+          <button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting || submitSuccess}
+            className={`px-8 py-3 rounded text-white font-semibold transition-colors flex items-center gap-2 disabled:opacity-70 ${submitSuccess ? 'bg-green-600' : 'bg-[#15803D] hover:bg-green-700'}`}
+          >
+            {isSubmitting ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> {t('processing', 'Processing...')}</>
+            ) : submitSuccess ? (
+              <><Check className="w-5 h-5" /> {t('success', 'Success!')}</>
+            ) : (
+              <>{t('viewResults', 'View Results')} <ChevronRight className="w-5 h-5" /></>
+            )}
           </button>
         )}
       </div>
