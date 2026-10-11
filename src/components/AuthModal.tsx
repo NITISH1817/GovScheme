@@ -327,44 +327,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-        }).then(res => res.json());
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken: tokenResponse.access_token
+          })
+        });
 
-        let backendResponse: any = null;
-        try {
-          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-          const res = await fetch(`${API_URL}/api/auth/google`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: userInfo.email,
-              name: userInfo.name,
-              picture: userInfo.picture,
-            })
-          });
-          backendResponse = await res.json();
-        } catch {
-          backendResponse = {
-            success: true,
-            _id: `user-google-${Date.now()}`,
-            fullName: userInfo.name,
-            email: userInfo.email,
-            avatarUrl: userInfo.picture,
-            role: 'citizen',
-            token: `google-demo-token-${Date.now()}`
-          };
-        }
+        const data = await response.json();
 
-        if (backendResponse.success) {
-          const profile = createProfileFromAuthData(backendResponse, userInfo.name, userInfo.email);
+        if (response.ok && data.success) {
+          const profile = createProfileFromAuthData(data, data.fullName, data.email);
+          if (data.token) {
+            localStorage.setItem('govscheme_token', data.token);
+            localStorage.setItem('govscheme_user', JSON.stringify(profile));
+          }
           onLoginSuccess(profile);
           onClose();
         } else {
-          setError(backendResponse.message || t('authFailed', 'Failed to authenticate with backend.'));
+          setError(data.message || t('authFailed', 'Failed to authenticate with backend.'));
         }
-      } catch (err) {
-        console.error('Failed to fetch user info from Google', err);
+      } catch (err: any) {
+        console.error('Google auth error:', err);
         setError(t('googleLoginFailed', 'Failed to login with Google. Please try again.'));
       }
     },

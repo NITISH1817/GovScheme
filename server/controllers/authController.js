@@ -194,31 +194,105 @@ export const verifyOTP = async (req, res) => {
 
 export const googleAuth = async (req, res) => {
   try {
-    const { email, name, picture } = req.body;
-    let user = await User.findOne({ email });
+    const { idToken, accessToken, email: rawEmail, name: rawName, picture: rawPicture } = req.body;
+    let verifiedEmail = '';
+    let verifiedName = '';
+    let verifiedPicture = '';
+    let googleSub = '';
+
+    // Verify token with Google's endpoint (supports id_token tokeninfo or userinfo via access_token)
+    if (idToken) {
+      const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+      if (!response.ok) {
+        return res.status(401).json({ success: false, message: 'Invalid or expired Google ID token' });
+      }
+      const payload = await response.json();
+      
+      const configuredClientId = process.env.GOOGLE_CLIENT_ID;
+      if (configuredClientId && payload.aud && payload.aud !== configuredClientId) {
+        return res.status(401).json({ success: false, message: 'Google Token audience mismatch' });
+      }
+
+      verifiedEmail = payload.email;
+      verifiedName = payload.name || payload.given_name || 'Citizen User';
+      verifiedPicture = payload.picture || '';
+      googleSub = payload.sub;
+    } else if (accessToken) {
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!response.ok) {
+        return res.status(401).json({ success: false, message: 'Invalid or expired Google Access token' });
+      }
+      const userInfo = await response.json();
+      verifiedEmail = userInfo.email;
+      verifiedName = userInfo.name || 'Citizen User';
+      verifiedPicture = userInfo.picture || '';
+      googleSub = userInfo.sub;
+    } else if (process.env.NODE_ENV !== 'production' && rawEmail) {
+      // Local development test fallback only
+      verifiedEmail = rawEmail;
+      verifiedName = rawName || 'Test User';
+      verifiedPicture = rawPicture || '';
+    } else {
+      return res.status(400).json({ success: false, message: 'Google authentication credential is required' });
+    }
+
+    if (!verifiedEmail) {
+      return res.status(400).json({ success: false, message: 'Google account did not provide a valid email' });
+    }
+
+    let user = await User.findOne({ email: verifiedEmail });
 
     if (!user) {
+      const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
       user = await User.create({
-        fullName: name,
-        email,
-        password: Math.random().toString(36).slice(-8), // random password for google users
+        fullName: verifiedName,
+        email: verifiedEmail,
+        googleId: googleSub,
+        avatarUrl: verifiedPicture,
+        password: randomPassword,
         role: 'Citizen',
-        avatarUrl: picture
+        profile: {
+          age: 25,
+          gender: 'Male',
+          maritalStatus: 'Single',
+          state: '',
+          district: '',
+          annualIncome: 0,
+          category: 'General',
+          occupation: '',
+          profileCompletionScore: 0
+        }
       });
+    } else {
+      if (googleSub && !user.googleId) {
+        user.googleId = googleSub;
+      }
+      if (verifiedPicture && !user.avatarUrl) {
+        user.avatarUrl = verifiedPicture;
+      }
+      await user.save();
     }
+
+    const token = generateToken(user._id, user.fullName, user.role);
 
     res.json({
       success: true,
       _id: user._id,
+      id: user._id.toString(),
       fullName: user.fullName,
       email: user.email,
       role: user.role,
       avatarUrl: user.avatarUrl,
-      profileCompletionScore: user.profileCompletionScore || 0,
-      token: generateToken(user._id, user.fullName, user.role),
+      savedSchemeIds: user.savedSchemeIds || [],
+      profile: user.profile || {},
+      token,
       user
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Google Auth Error]:', error);
+    res.status(500).json({ success: false, message: 'Google authentication service failure' });
   }
 };
+

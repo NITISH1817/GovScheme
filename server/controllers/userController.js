@@ -85,7 +85,36 @@ export const getUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.json({ success: true, user });
+
+    const profileData = {
+      id: user._id.toString(),
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      mobile: user.mobile || '',
+      avatarUrl: user.avatarUrl || '',
+      role: user.role,
+      savedSchemeIds: user.savedSchemeIds || [],
+      age: user.profile?.age ?? 25,
+      gender: user.profile?.gender || 'Male',
+      maritalStatus: user.profile?.maritalStatus || 'Single',
+      state: user.profile?.state || '',
+      district: user.profile?.district || '',
+      annualIncome: user.profile?.annualIncome ?? 0,
+      category: user.profile?.category || 'General',
+      occupation: user.profile?.occupation || '',
+      educationLevel: user.profile?.educationLevel || '',
+      landHoldingAcres: user.profile?.landHoldingAcres ?? 0,
+      familyMembersCount: user.profile?.familyMembersCount ?? 1,
+      hasDisability: user.profile?.hasDisability || false,
+      disabilityPercentage: user.profile?.disabilityPercentage ?? 0,
+      isRegisteredWorker: user.profile?.isRegisteredWorker || false,
+      verificationBadge: user.profile?.verificationBadge || false,
+      profileCompletionScore: user.profile?.profileCompletionScore ?? 0,
+      interests: user.profile?.interests || []
+    };
+
+    res.json({ success: true, user: profileData, profile: profileData });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -99,15 +128,35 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    user.fullName = req.body.fullName || user.fullName;
-    user.mobile = req.body.mobile || user.mobile;
-    
-    if (req.body.profile) {
-      user.profile = {
-        ...user.profile,
-        ...req.body.profile
-      };
+    if (req.body.fullName) user.fullName = req.body.fullName.trim();
+    if (req.body.mobile !== undefined) user.mobile = req.body.mobile;
+    if (req.body.avatarUrl) user.avatarUrl = req.body.avatarUrl;
+    if (Array.isArray(req.body.savedSchemeIds)) {
+      user.savedSchemeIds = req.body.savedSchemeIds;
     }
+
+    // Merge profile fields whether provided flat or nested under profile
+    const p = req.body.profile || req.body;
+    user.profile = {
+      ...user.profile,
+      age: p.age !== undefined && p.age !== '' ? Number(p.age) : user.profile?.age,
+      gender: p.gender || user.profile?.gender,
+      maritalStatus: p.maritalStatus || user.profile?.maritalStatus,
+      state: p.state !== undefined ? p.state : user.profile?.state,
+      district: p.district !== undefined ? p.district : user.profile?.district,
+      annualIncome: p.annualIncome !== undefined && p.annualIncome !== '' ? Number(p.annualIncome) : user.profile?.annualIncome,
+      category: p.category || user.profile?.category,
+      occupation: p.occupation !== undefined ? p.occupation : user.profile?.occupation,
+      educationLevel: p.educationLevel !== undefined ? p.educationLevel : user.profile?.educationLevel,
+      landHoldingAcres: p.landHoldingAcres !== undefined && p.landHoldingAcres !== '' ? Number(p.landHoldingAcres) : user.profile?.landHoldingAcres,
+      familyMembersCount: p.familyMembersCount !== undefined ? Number(p.familyMembersCount) : user.profile?.familyMembersCount,
+      hasDisability: p.hasDisability !== undefined ? Boolean(p.hasDisability) : user.profile?.hasDisability,
+      disabilityPercentage: p.disabilityPercentage !== undefined ? Number(p.disabilityPercentage) : user.profile?.disabilityPercentage,
+      isRegisteredWorker: p.isRegisteredWorker !== undefined ? Boolean(p.isRegisteredWorker) : user.profile?.isRegisteredWorker,
+      verificationBadge: p.verificationBadge !== undefined ? Boolean(p.verificationBadge) : user.profile?.verificationBadge,
+      profileCompletionScore: p.profileCompletionScore !== undefined ? Number(p.profileCompletionScore) : user.profile?.profileCompletionScore,
+      interests: Array.isArray(p.interests) ? p.interests : user.profile?.interests
+    };
 
     if (req.body.password) {
       user.password = req.body.password;
@@ -115,18 +164,44 @@ export const updateUserProfile = async (req, res) => {
 
     const updatedUser = await user.save();
 
-    res.json({
-      success: true,
+    const flatProfile = {
+      id: updatedUser._id.toString(),
       _id: updatedUser._id,
       fullName: updatedUser.fullName,
       email: updatedUser.email,
-      mobile: updatedUser.mobile,
-      profile: updatedUser.profile,
+      mobile: updatedUser.mobile || '',
+      avatarUrl: updatedUser.avatarUrl || '',
+      role: updatedUser.role,
+      savedSchemeIds: updatedUser.savedSchemeIds || [],
+      age: updatedUser.profile?.age ?? 25,
+      gender: updatedUser.profile?.gender || 'Male',
+      maritalStatus: updatedUser.profile?.maritalStatus || 'Single',
+      state: updatedUser.profile?.state || '',
+      district: updatedUser.profile?.district || '',
+      annualIncome: updatedUser.profile?.annualIncome ?? 0,
+      category: updatedUser.profile?.category || 'General',
+      occupation: updatedUser.profile?.occupation || '',
+      educationLevel: updatedUser.profile?.educationLevel || '',
+      landHoldingAcres: updatedUser.profile?.landHoldingAcres ?? 0,
+      familyMembersCount: updatedUser.profile?.familyMembersCount ?? 1,
+      hasDisability: updatedUser.profile?.hasDisability || false,
+      disabilityPercentage: updatedUser.profile?.disabilityPercentage ?? 0,
+      isRegisteredWorker: updatedUser.profile?.isRegisteredWorker || false,
+      verificationBadge: updatedUser.profile?.verificationBadge || false,
+      profileCompletionScore: updatedUser.profile?.profileCompletionScore ?? 0,
+      interests: updatedUser.profile?.interests || []
+    };
+
+    res.json({
+      success: true,
+      user: flatProfile,
+      profile: flatProfile
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // @desc    Get detailed citizen profile with their applications and documents
 // @route   GET /api/users/:id/details

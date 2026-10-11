@@ -11,22 +11,26 @@ import authRoutes from './routes/authRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 
 const seedAdmin = async () => {
+  if (process.env.NODE_ENV === 'production' && !process.env.SEED_ADMIN) {
+    return;
+  }
   try {
     const adminExists = await User.findOne({ email: 'admin@govscheme.in' });
     if (!adminExists) {
       await User.create({
         fullName: 'Super Admin',
         email: 'admin@govscheme.in',
-        password: 'password123', // hooks handle hashing
+        password: process.env.ADMIN_SEED_PASSWORD || 'password123',
         role: 'Super Admin',
         isActive: true
       });
-      console.log('Default Admin seeded: admin@govscheme.in / password123');
+      console.log('[Security] Development Default Admin seeded.');
     }
   } catch (error) {
     console.error('Failed to seed admin', error);
   }
 };
+
 
 const seedMockData = async () => {
   try {
@@ -108,13 +112,39 @@ import rateLimit from 'express-rate-limit';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Dynamic CORS configuration allowing localhost, configured CLIENT_URL, and Vercel domains
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy: Not allowed by Access-Control-Allow-Origin'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Connect to MongoDB and seed
 connectDB().then(() => {
   seedAdmin();
   seedMockData();
+}).catch(err => {
+  console.error('[Critical Startup Error] Database initialization failed:', err);
 });
+
 
 // Security Middleware
 app.use(helmet());

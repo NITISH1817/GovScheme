@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 const UserSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  googleId: { type: String },
+  avatarUrl: { type: String },
   mobile: { type: String },
   password: { type: String, required: true },
   role: { 
@@ -22,18 +24,31 @@ const UserSchema = new mongoose.Schema({
   
   // Detailed Citizen Profile for AI & Eligibility Engine
   profile: {
-    age: { type: Number },
-    gender: { type: String, enum: ['Male', 'Female', 'Transgender', 'Other'] },
+    age: { type: Number, default: 25 },
+    gender: { type: String, default: 'Male' },
+    maritalStatus: { type: String, default: 'Single' },
     annualIncome: { type: Number, default: 0 },
-    category: { type: String, enum: ['General', 'OBC', 'SC', 'ST'] },
-    state: { type: String },
-    district: { type: String },
-    education: { type: String },
-    occupation: { type: String },
-    disability: { type: Boolean, default: false },
-    familySize: { type: Number, default: 1 },
-    landOwnership: { type: Number, default: 0 }, // in acres
+    category: { type: String, default: 'General' },
+    state: { type: String, default: '' },
+    district: { type: String, default: '' },
+    educationLevel: { type: String, default: '' },
+    occupation: { type: String, default: '' },
+    interests: [{ type: String }],
+    hasDisability: { type: Boolean, default: false },
+    disabilityPercentage: { type: Number, default: 0 },
+    familyMembersCount: { type: Number, default: 1 },
+    landHoldingAcres: { type: Number, default: 0 },
+    isRegisteredWorker: { type: Boolean, default: false },
+    verificationBadge: { type: Boolean, default: false },
+    profileCompletionScore: { type: Number, default: 0 }
   },
+
+  savedSchemeIds: [{ type: String }],
+  recommendationHistory: [{
+    timestamp: { type: Date, default: Date.now },
+    eligibleCount: { type: Number, default: 0 },
+    topSchemeIds: [{ type: String }]
+  }],
 
   isActive: { type: Boolean, default: true },
   

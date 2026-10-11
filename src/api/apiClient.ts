@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '') + '/api';
+
 
 const getMockData = (endpoint: string) => {
   if (endpoint.includes('/schemes')) {
@@ -303,7 +304,7 @@ const getMockData = (endpoint: string) => {
 };
 
 const getHeaders = () => {
-  const token = localStorage.getItem('adminToken');
+  const token = localStorage.getItem('govscheme_token') || localStorage.getItem('adminToken');
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -312,14 +313,23 @@ const getHeaders = () => {
 
 const handleResponse = async (response: Response) => {
   if (response.status === 401) {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
-    window.location.href = '/admin'; // Force reload to login screen
+    const isAdminScreen = window.location.pathname.startsWith('/admin') || window.location.hash.startsWith('#admin');
+    if (isAdminScreen) {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      window.location.href = '/#admin';
+    } else {
+      localStorage.removeItem('govscheme_token');
+    }
     throw new Error('Session expired. Please log in again.');
   }
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+  }
   return await response.json();
 };
+
 
 export const apiClient = {
   get: async (endpoint: string, params: Record<string, any> = {}) => {

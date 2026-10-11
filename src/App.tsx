@@ -196,11 +196,14 @@ export const App: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Fetch schemes from backend on initial load
+  // Fetch schemes and sync cloud profile from backend on initial load
   useEffect(() => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+
     const fetchSchemes = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/schemes?limit=100');
+        const response = await fetch(`${API_URL}/api/schemes?limit=100`);
         const data = await response.json();
         if (data.success && Array.isArray(data.schemes)) {
           // Merge API schemes with local fallback schemesData
@@ -225,7 +228,7 @@ export const App: React.FC = () => {
 
     const fetchNotifications = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/notifications');
+        const response = await fetch(`${API_URL}/api/notifications`);
         const data = await response.json();
         if (data.success && data.notifications) {
           const apiNotifs = data.notifications.map((n: any) => ({
@@ -243,8 +246,33 @@ export const App: React.FC = () => {
       }
     };
 
+    // If citizen has stored token, fetch latest persistent profile from cloud backend
+    const syncCloudProfile = async () => {
+      const token = localStorage.getItem('govscheme_token');
+      if (!token) return;
+      try {
+        const response = await fetch(`${API_URL}/api/users/profile`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && (data.user || data.profile)) {
+            const u = data.user || data.profile;
+            setUser(prev => {
+              const merged = { ...(prev || {}), ...u };
+              localStorage.setItem('govscheme_user', JSON.stringify(merged));
+              return merged;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Could not sync profile from cloud backend on launch:', err);
+      }
+    };
+
     fetchSchemes();
     fetchNotifications();
+    syncCloudProfile();
   }, []);
 
   // Real-time synchronization
@@ -314,6 +342,7 @@ export const App: React.FC = () => {
   // Logout handler
   const handleLogout = () => {
     localStorage.removeItem('govscheme_user');
+    localStorage.removeItem('govscheme_token');
     setUser(null);
     setActiveTab('home');
   };
@@ -326,25 +355,45 @@ export const App: React.FC = () => {
   }).length;
 
   // Handlers
-  const handleToggleBookmark = (schemeId: string) => {
+  const handleToggleBookmark = async (schemeId: string) => {
     if (!user) {
       setIsAuthOpen(true);
       return;
     }
 
-    setUser(prev => {
-      if (!prev) return prev;
-      const saved = prev.savedSchemeIds || [];
-      const isSaved = saved.includes(schemeId);
-      const updatedSaved = isSaved
-        ? saved.filter(id => id !== schemeId)
-        : [...saved, schemeId];
-      return {
-        ...prev,
-        savedSchemeIds: updatedSaved
-      };
-    });
+    const saved = user.savedSchemeIds || [];
+    const isSaved = saved.includes(schemeId);
+    const updatedSaved = isSaved
+      ? saved.filter(id => id !== schemeId)
+      : [...saved, schemeId];
+
+    const updatedUser = {
+      ...user,
+      savedSchemeIds: updatedSaved
+    };
+
+    setUser(updatedUser);
+    localStorage.setItem('govscheme_user', JSON.stringify(updatedUser));
+
+    // Persist to backend if token exists
+    const token = localStorage.getItem('govscheme_token');
+    if (token) {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        await fetch(`${API_URL}/api/users/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ savedSchemeIds: updatedSaved })
+        });
+      } catch (err) {
+        console.warn('Could not persist bookmark update to backend:', err);
+      }
+    }
   };
+
 
   const isBookmarked = (schemeId: string) => {
     return user ? (user.savedSchemeIds || []).includes(schemeId) : false;
@@ -545,12 +594,37 @@ export const App: React.FC = () => {
           <EligibilityWizard
             user={user}
             mode={wizardMode}
-            onComplete={(profileData) => {
-              setUser(prev => {
-                const updated = prev ? { ...prev, ...profileData } : { ...initialUserProfile, ...profileData };
-                updated.profileCompletionScore = calculateProfileCompletion(updated);
-                return updated;
-              });
+            onComplete={async (profileData) => {
+              const updated = user ? { ...user, ...profileData } : { ...initialUserProfile, ...profileData };
+              updated.profileCompletionScore = calculateProfileCompletion(updated);
+              setUser(updated);
+              localStorage.setItem('govscheme_user', JSON.stringify(updated));
+
+              // Persist to backend if token exists
+              const token = localStorage.getItem('govscheme_token');
+              if (token) {
+                try {
+                  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                  const res = await fetch(`${API_URL}/api/users/profile`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify(updated)
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.user) {
+                      setUser(prev => ({ ...prev, ...data.user }));
+                      localStorage.setItem('govscheme_user', JSON.stringify({ ...updated, ...data.user }));
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Could not persist wizard completion to backend:', err);
+                }
+              }
+
               setActiveTab('analyzing');
             }}
             onCancel={() => setActiveTab('home')}
@@ -602,9 +676,27 @@ export const App: React.FC = () => {
         {activeTab === 'profile' && user && (
           <ProfileView
             user={user}
-            onUpdateProfile={(updated) => {
+            onUpdateProfile={async (updated) => {
               updated.profileCompletionScore = calculateProfileCompletion(updated);
               setUser(updated);
+              localStorage.setItem('govscheme_user', JSON.stringify(updated));
+
+              const token = localStorage.getItem('govscheme_token');
+              if (token) {
+                try {
+                  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                  await fetch(`${API_URL}/api/users/profile`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify(updated)
+                  });
+                } catch (err) {
+                  console.warn('Could not persist profile update to backend:', err);
+                }
+              }
             }}
             onNavigateTab={setActiveTab}
             eligibleSchemesCount={eligibleSchemesCount}
