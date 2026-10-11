@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "start": "tsx server/server.js",
     "server": "tsx server/server.js",
-    "import-schemes": "node scripts/importSchemes.js"
+    "import-schemes": "node scripts/importSchemes.js",
+    "deploy": "git add . && git commit -m \"update: sync latest changes\" && git push origin main"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
