@@ -270,11 +270,11 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                       <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('socialCategory', 'Social Category')}</label>
                       <select name="category" value={formData.category || ''} onChange={e => updateForm('category', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
                         <option value="">{t('selectCategory', 'Select Category')}</option>
-                        <option value="General">General</option>
-                        <option value="OBC">OBC</option>
-                        <option value="SC">SC</option>
-                        <option value="ST">ST</option>
-                        <option value="EWS">EWS</option>
+                        <option value="General">{t('General', 'General')}</option>
+                        <option value="OBC">{t('OBC', 'OBC')}</option>
+                        <option value="SC">{t('SC', 'SC')}</option>
+                        <option value="ST">{t('ST', 'ST')}</option>
+                        <option value="EWS">{t('EWS', 'EWS')}</option>
                       </select>
                     </div>
                   </div>

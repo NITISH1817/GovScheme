@@ -987,5 +987,19 @@
   "Targeted for": "Targeted for",
   "Scheme restricted to": "Scheme restricted to",
   "Conditionally Eligible": "Conditionally Eligible",
-  "Not Eligible": "Not Eligible"
+  "Not Eligible": "Not Eligible",
+  "Worker": "Worker",
+  "Entrepreneur": "Entrepreneur",
+  "Government": "Government Employee",
+  "Private Sector": "Private Sector",
+  "Retired": "Retired",
+  "Job": "Job & Employment",
+  "Farming": "Farming & Agriculture",
+  "Financial Support": "Financial Support",
+  "Women & Child Welfare": "Women & Child Welfare",
+  "Skill Development": "Skill Development",
+  "Pension": "Pension",
+  "Disability Support": "Disability Support",
+  "High School": "High School",
+  "EWS": "EWS"
 }
