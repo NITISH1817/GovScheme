@@ -11,15 +11,24 @@ export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, role } = req.body;
 
-    const userExists = await User.findOne({ email });
+    if (!email || !password || !fullName) {
+      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+    }
+
+    const normalizedEmail = (email || '').trim().toLowerCase();
+
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
-      return res.status(400).json({ success: false, message: 'User already exists' });
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists. Please sign in.'
+      });
     }
 
     const user = await User.create({
-      fullName,
-      email,
+      fullName: (fullName || '').trim(),
+      email: normalizedEmail,
       password,
       role: role || 'Citizen'
     });
@@ -31,13 +40,13 @@ export const registerUser = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        age: user.age || 25,
-        gender: user.gender || 'Female',
-        state: user.state || 'Maharashtra',
-        annualIncome: user.annualIncome || 200000,
-        occupation: user.occupation || 'Employed',
-        category: user.category || 'General',
-        profileCompletionScore: 60,
+        age: user.profile?.age || 25,
+        gender: user.profile?.gender || 'Female',
+        state: user.profile?.state || 'Maharashtra',
+        annualIncome: user.profile?.annualIncome || 200000,
+        occupation: user.profile?.occupation || 'Employed',
+        category: user.profile?.category || 'General',
+        profileCompletionScore: user.profile?.profileCompletionScore || 60,
       };
 
       res.status(201).json({
@@ -50,7 +59,18 @@ export const registerUser = async (req, res) => {
       res.status(400).json({ success: false, message: 'Invalid user data' });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (
+      error.code === 11000 ||
+      (error.name === 'MongoServerError' && error.code === 11000) ||
+      (typeof error.message === 'string' && error.message.includes('E11000'))
+    ) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists. Please sign in.'
+      });
+    }
+    console.error('[Registration Error]:', error);
+    res.status(500).json({ success: false, message: 'Registration failed. Please try again.' });
   }
 };
 
@@ -60,7 +80,8 @@ export const loginUser = async (req, res) => {
     const ipAddress = req.ip || req.connection.remoteAddress;
     const device = req.headers['user-agent'] || 'Unknown';
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -131,7 +152,8 @@ export const loginUser = async (req, res) => {
 export const generateOTP = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -148,7 +170,7 @@ export const generateOTP = async (req, res) => {
     await user.save();
 
     // Mock sending email via Nodemailer
-    console.log(`[MOCK EMAIL] OTP for ${email} is ${otp}`);
+    console.log(`[MOCK EMAIL] OTP for ${normalizedEmail} is ${otp}`);
 
     res.json({ success: true, message: 'OTP sent successfully to email' });
   } catch (error) {
@@ -159,7 +181,8 @@ export const generateOTP = async (req, res) => {
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -242,6 +265,7 @@ export const googleAuth = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Google account did not provide a valid email' });
     }
 
+    verifiedEmail = verifiedEmail.trim().toLowerCase();
     let user = await User.findOne({ email: verifiedEmail });
 
     if (!user) {

@@ -272,13 +272,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const response = await fetch(`${API_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullName: registerName, email: registerEmail, password: registerPassword })
+          body: JSON.stringify({ fullName: registerName.trim(), email: registerEmail.trim().toLowerCase(), password: registerPassword })
         });
         if (response.ok) {
           data = await response.json();
         } else {
           const errData = await response.json().catch(() => null);
-          data = errData || { success: false, message: t('registrationFailed', 'Registration failed') };
+          const rawMessage = errData?.message || '';
+          let userFriendlyMessage = rawMessage;
+          if (
+            response.status === 409 ||
+            rawMessage.includes('E11000') ||
+            rawMessage.toLowerCase().includes('duplicate key') ||
+            rawMessage.toLowerCase().includes('already exists')
+          ) {
+            userFriendlyMessage = t('accountAlreadyExists', 'An account with this email already exists. Please sign in.');
+          } else if (
+            rawMessage.includes('buffering timed out') ||
+            rawMessage.includes('MongoServerError') ||
+            rawMessage.includes('timed out after')
+          ) {
+            userFriendlyMessage = t('serviceUnavailable', 'Database service is temporarily busy. Please try again shortly.');
+          }
+          data = {
+            success: false,
+            message: userFriendlyMessage || t('registrationFailed', 'Registration failed')
+          };
         }
       } catch (networkErr) {
         console.warn('Backend unavailable during registration, creating local user profile:', registerEmail);
@@ -301,11 +320,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onLoginSuccess(profile);
         onClose();
       } else {
-        setError(data?.message || t('registrationFailed', 'Registration failed'));
+        const rawMsg = data?.message || '';
+        const safeMsg = (rawMsg.includes('E11000') || rawMsg.toLowerCase().includes('duplicate key'))
+          ? t('accountAlreadyExists', 'An account with this email already exists. Please sign in.')
+          : rawMsg || t('registrationFailed', 'Registration failed');
+        setError(safeMsg);
       }
     } catch (err: any) {
       console.error('Register error:', err);
-      setError(err?.message && !err.message.includes('fetch') ? err.message : t('networkError', 'Network error. Please try again.'));
+      const errMsg = err?.message || '';
+      if (errMsg.includes('E11000') || errMsg.toLowerCase().includes('duplicate key') || errMsg.toLowerCase().includes('already exists')) {
+        setError(t('accountAlreadyExists', 'An account with this email already exists. Please sign in.'));
+      } else {
+        setError(errMsg && !errMsg.includes('fetch') && !errMsg.includes('Mongo') ? errMsg : t('networkError', 'Network error. Please try again.'));
+      }
     }
   };
 
