@@ -137,14 +137,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Connect to MongoDB and seed
-connectDB().then(() => {
-  seedAdmin();
-  seedMockData();
-}).catch(err => {
-  console.error('[Critical Startup Error] Database initialization failed:', err);
-});
-
 
 // Security Middleware
 app.use(helmet());
@@ -219,6 +211,18 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`GovScheme AI Express Backend running on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    await seedAdmin();
+    await seedMockData();
+  } catch (err) {
+    console.error('[Critical Startup Error] Database initialization failed:', err);
+  }
+
+  server.listen(PORT, () => {
+    console.log(`GovScheme AI Express Backend running on port ${PORT}`);
+  });
+};
+
+startServer();
