@@ -1,4 +1,4 @@
-import { Scheme } from '../types';
+import type { Scheme } from '../types';
 
 export const schemesData: Scheme[] = [
   {
