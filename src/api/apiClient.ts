@@ -324,8 +324,22 @@ const handleResponse = async (response: Response) => {
     throw new Error('Session expired. Please log in again.');
   }
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+    let errorMsg = `HTTP error! status: ${response.status}`;
+    try {
+      const cloned = response.clone();
+      const errorData = await cloned.json();
+      if (errorData?.message) {
+        errorMsg = errorData.message;
+      }
+    } catch {
+      try {
+        const text = await response.text();
+        if (text && text.trim().length > 0 && text.length < 300) {
+          errorMsg = text;
+        }
+      } catch {}
+    }
+    throw new Error(errorMsg);
   }
   return await response.json();
 };
@@ -354,12 +368,18 @@ export const apiClient = {
   post: async (endpoint: string, data: any, options: { headers?: Record<string, string> } = {}) => {
     const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
     const baseHeaders: Record<string, string> = { ...getHeaders() };
+    const customHeaders: Record<string, string> = { ...(options.headers || {}) };
+
     if (isFormData) {
       delete baseHeaders['Content-Type'];
+      delete baseHeaders['content-type'];
+      delete customHeaders['Content-Type'];
+      delete customHeaders['content-type'];
     }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: { ...baseHeaders, ...(options.headers || {}) },
+      headers: { ...baseHeaders, ...customHeaders },
       body: isFormData ? data : JSON.stringify(data)
     });
     return handleResponse(response);

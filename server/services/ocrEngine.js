@@ -42,24 +42,33 @@ export async function preprocessDocumentFile(filePath, mimeType) {
  * Core OCR text extraction using Tesseract.js with English + Tamil language fallback
  */
 export async function extractRawTextFromFile(filePath, mimeType) {
-  // If PDF, check if it's text-searchable or extract pages
-  if (mimeType === 'application/pdf') {
+  const isPdf = mimeType === 'application/pdf' || (filePath && filePath.toLowerCase().endsWith('.pdf'));
+
+  // If PDF, process using pdfjs-dist
+  if (isPdf) {
     try {
       const pdfBuffer = fs.readFileSync(filePath);
       const pdfText = await extractTextFromPdfBuffer(pdfBuffer);
-      if (pdfText && pdfText.trim().length > 30) {
+      if (pdfText && pdfText.trim().length > 0) {
         return {
-          rawText: pdfText,
+          rawText: pdfText.trim(),
           meanConfidence: 90,
           engine: 'pdfjs-native'
         };
       }
     } catch (pdfErr) {
-      console.warn('[PDF Extract Notice] Direct PDF text stream unavailable, falling back to OCR:', pdfErr.message);
+      console.warn('[PDF Extract Notice] Direct PDF text stream unavailable:', pdfErr.message);
     }
+
+    // Do NOT pass PDF paths to Tesseract (Tesseract only supports image buffers/formats)
+    return {
+      rawText: 'PDF document uploaded. Please verify or complete fields manually.',
+      meanConfidence: 65,
+      engine: 'pdf-fallback'
+    };
   }
 
-  // Tesseract OCR worker
+  // Tesseract OCR worker for image formats (JPG, PNG)
   let worker = null;
   try {
     worker = await createWorker('eng');
@@ -75,7 +84,12 @@ export async function extractRawTextFromFile(filePath, mimeType) {
     };
   } catch (err) {
     if (worker) await worker.terminate().catch(() => {});
-    throw new Error(`OCR processing failed: ${err.message}`);
+    console.error('[OCR Worker Processing Warning]:', err.message);
+    return {
+      rawText: '',
+      meanConfidence: 40,
+      engine: 'tesseract-fallback'
+    };
   }
 }
 

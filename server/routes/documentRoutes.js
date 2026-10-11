@@ -51,8 +51,20 @@ const upload = multer({
 
 const router = express.Router();
 
+const handleMulterUpload = (req, res, next) => {
+  upload.single('document')(req, res, (err) => {
+    if (err) {
+      if (err.name === 'MulterError') {
+        return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
+      }
+      return res.status(400).json({ success: false, message: err.message || 'File upload error.' });
+    }
+    next();
+  });
+};
+
 // MODULE 11: Document Endpoints for Citizens (authenticated & strictly isolated)
-router.post('/upload', protect, upload.single('document'), uploadAndProcessDocument);
+router.post('/upload', protect, handleMulterUpload, uploadAndProcessDocument);
 router.get('/', protect, (req, res, next) => {
   // If admin query with specific status and role is admin, allow admin view; otherwise return authenticated user's documents
   if (req.user && ['Super Admin', 'Ministry Admin', 'State Admin'].includes(req.user.role) && req.query.adminView === 'true') {

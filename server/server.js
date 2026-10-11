@@ -190,6 +190,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Global structured JSON error handler (avoids sending default Express HTML 500 pages)
+app.use((err, req, res, next) => {
+  console.error('[Global Server Error Caught]:', err.message || err);
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
+  }
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'An unexpected error occurred on the server.'
+  });
+});
+
 import http from 'http';
 import { Server } from 'socket.io';
 

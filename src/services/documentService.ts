@@ -37,11 +37,8 @@ export async function uploadCitizenDocument(
   formData.append('document', file);
   formData.append('documentType', documentType);
 
-  const res = (await apiClient.post('/documents/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  })) as DocumentUploadResponse;
+  // Note: Do not pass Content-Type header for FormData; the browser must generate the multipart boundary automatically
+  const res = (await apiClient.post('/documents/upload', formData)) as DocumentUploadResponse;
 
   return res.document;
 }
