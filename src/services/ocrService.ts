@@ -136,11 +136,11 @@ function detectDocumentType(text: string, expectedType: DocumentRecord['type']):
   const hasIncome = upper.includes('INCOME CERTIFICATE') || upper.includes('ANNUAL INCOME') || upper.includes('REVENUE DEPARTMENT');
   const hasRation = upper.includes('RATION CARD') || upper.includes('FAIR PRICE');
 
-  const detected = hasAadhaar ? 'Aadhaar'
+  const detected: string = (hasAadhaar ? 'Aadhaar'
     : hasPAN ? 'PAN'
       : hasIncome ? 'Income Certificate'
         : hasRation ? 'Ration Card'
-          : expectedType;
+          : expectedType) || 'Unknown';
 
   return {
     detectedType: detected,

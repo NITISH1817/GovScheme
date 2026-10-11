@@ -91,12 +91,12 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     }
   }
 
-  const uploadedDocTypes = (user.documents || []).map(d => d.type);
+  const uploadedDocTypes = (user.documents || []).map(d => d.documentType || d.type || '').filter(Boolean);
   const docsList = scheme.requiredDocuments || (scheme as any).documentsRequired || [];
   
   docsList.forEach((reqDoc: string) => {
     const isDocPresent = uploadedDocTypes.some(docType => 
-      reqDoc.toLowerCase().includes(docType.toLowerCase()) || docType.toLowerCase().includes(reqDoc.toLowerCase())
+      docType && (reqDoc.toLowerCase().includes(docType.toLowerCase()) || docType.toLowerCase().includes(reqDoc.toLowerCase()))
     );
     if (!isDocPresent) {
       missingDocuments.push(reqDoc);

@@ -18,7 +18,7 @@ interface NavbarProps {
   textSize: 'small' | 'normal' | 'large' | 'xlarge';
   setTextSize: (size: 'small' | 'normal' | 'large' | 'xlarge') => void;
   user: UserProfile | null;
-  onOpenAuth: () => void;
+  onOpenAuth: (mode?: 'login' | 'register') => void;
   onLogout: () => void;
   unreadCount: number;
   onOpenNotifications: () => void;
@@ -261,9 +261,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </AnimatePresence>
               </div>
             ) : (
+              <div className="hidden md:flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onOpenAuth('login')}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold text-gov-navy dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                  {t('signIn', 'Sign In')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenAuth('register')}
+                  className="px-4 py-1.5 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-105 transition-transform shadow-sm"
+                >
+                  {t('signUp', 'Sign Up')}
+                </button>
+              </div>
+            )}
+
+            {/* Mobile Header Sign In */}
+            {!user && (
               <button
-                onClick={onOpenAuth}
-                className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-105 transition-transform"
+                type="button"
+                onClick={() => onOpenAuth('login')}
+                className="md:hidden flex items-center gap-1 px-3 py-1 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-105 transition-transform shadow-sm"
               >
                 {t('signIn', 'Sign In')}
               </button>
@@ -273,6 +294,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden w-8 h-8 relative flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10"
+              aria-label="Toggle menu"
             >
               <div className="w-4 h-3 flex flex-col justify-between items-center relative">
                 <motion.span animate={mobileMenuOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute top-0" />
@@ -315,7 +337,39 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               ))}
               
-              <div className="overflow-hidden mt-4">
+              {/* Mobile Menu Auth Buttons */}
+              {!user && (
+                <div className="flex flex-col gap-3 w-full max-w-xs mx-auto px-2 mt-2">
+                  <motion.button
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -30, opacity: 0 }}
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenAuth('login');
+                    }}
+                    className="w-full py-3 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black font-bold text-base shadow-lg"
+                  >
+                    {t('signIn', 'Sign In')}
+                  </motion.button>
+                  <motion.button
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -30, opacity: 0 }}
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenAuth('register');
+                    }}
+                    className="w-full py-3 rounded-full bg-transparent border-2 border-gov-navy dark:border-white text-gov-navy dark:text-white font-bold text-base"
+                  >
+                    {t('signUp', 'Sign Up')}
+                  </motion.button>
+                </div>
+              )}
+
+              <div className="overflow-hidden mt-2">
                 <motion.div
                   initial={{ y: 40, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}

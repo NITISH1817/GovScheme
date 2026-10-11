@@ -226,6 +226,54 @@ export const bulkImportSchemes = async (req, res) => {
   }
 };
 import { evaluateEligibility } from '../services/eligibilityEngine.js';
+import { recommendSchemesForProfile } from '../services/schemeRecommendationEngine.js';
+
+// @desc    Get single scheme by ID or schemeId
+// @route   GET /api/schemes/:id
+// @access  Public / Authenticated
+export const getSchemeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let scheme = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      scheme = await Scheme.findById(id);
+    }
+    if (!scheme) {
+      scheme = await Scheme.findOne({ $or: [{ schemeId: id }, { id: id }] });
+    }
+
+    if (!scheme) {
+      return res.status(404).json({ success: false, message: 'Scheme not found' });
+    }
+
+    res.json({ success: true, scheme });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Recommend schemes based on citizen profile attributes
+// @route   POST /api/schemes/recommend
+// @access  Public or Authenticated Citizen
+export const recommendSchemes = async (req, res) => {
+  try {
+    const profile = req.body.profile || {};
+    const filters = req.body.filters || {};
+
+    // Pull active published schemes
+    const schemes = await Scheme.find({ activeStatus: true });
+
+    const results = recommendSchemesForProfile(schemes, profile, filters);
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('Scheme recommendation error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // @desc    Evaluate scheme eligibility for a user
 // @route   POST /api/schemes/:id/evaluate
@@ -254,3 +302,4 @@ export const evaluateUserEligibility = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

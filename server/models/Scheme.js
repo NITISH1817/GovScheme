@@ -1,69 +1,141 @@
 import mongoose from 'mongoose';
 
 const SchemeSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  schemeId: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    index: true 
+  },
+  // Legacy id alias for frontend backwards compatibility
+  id: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    index: true 
+  },
+  schemeName: { type: String, required: true },
   name: { type: String, required: true },
-  department: { type: String, required: true },
-  ministry: { type: String },
-  state: { type: String, required: true },
-  category: { type: String, required: true },
-  subCategory: { type: String },
+  description: { type: String, required: true },
   shortDescription: { type: String, required: true },
   detailedDescription: { type: String },
-  benefits: { type: String },
+
+  governmentLevel: { 
+    type: String, 
+    enum: ['Central', 'State', 'District', 'Municipal'],
+    default: 'Central',
+    index: true
+  },
+  state: { type: String, required: true, index: true },
+  ministry: { type: String },
+  department: { type: String, required: true },
+
+  category: { 
+    type: String, 
+    required: true, 
+    index: true 
+  },
+  subcategory: { type: String },
+  subCategory: { type: String },
+
+  benefits: { type: mongoose.Schema.Types.Mixed, required: true },
+  benefitAmount: { type: mongoose.Schema.Types.Mixed, default: "" },
+  financialBenefitAmount: { type: mongoose.Schema.Types.Mixed, default: "" },
+  benefitFrequency: { 
+    type: String, 
+    default: 'As needed' 
+  },
+
+  // Structured eligibility conditions
+  minimumAge: { type: Number, default: 0 },
+  maximumAge: { type: Number, default: 120 },
+  incomeLimit: { type: mongoose.Schema.Types.Mixed, default: null }, // number or null
+  eligibleOccupations: [{ type: String }],
+  educationRequirements: { type: mongoose.Schema.Types.Mixed, default: [] },
+  genderRequirements: { type: mongoose.Schema.Types.Mixed, default: 'All' },
+  applicableSocialCategories: { type: mongoose.Schema.Types.Mixed, default: ['All'] },
   
-  financialBenefitAmount: { type: Number, default: 0 },
-  financialBenefitType: { type: String, default: 'None' },
+  disabilityRequirements: { type: mongoose.Schema.Types.Mixed, default: 'All' },
+  studentRequirements: { type: mongoose.Schema.Types.Mixed, default: 'No' },
+  farmerRequirements: { type: mongoose.Schema.Types.Mixed, default: 'No' },
+  firstGraduateRequirements: { type: mongoose.Schema.Types.Mixed, default: 'No' },
+  residenceRequirements: { type: mongoose.Schema.Types.Mixed, default: 'Citizen of India' },
+
+  otherEligibilityRules: { type: mongoose.Schema.Types.Mixed, default: {} },
   
+  // Legacy compatibility rules block
   eligibilityRules: {
     incomeLimit: { type: Number, default: 0 },
     ageMin: { type: Number, default: 0 },
-    ageMax: { type: Number, default: 100 },
+    ageMax: { type: Number, default: 120 },
+    minAge: { type: Number, default: 0 },
+    maxAge: { type: Number, default: 120 },
     gender: { type: [String], default: ['All'] },
+    allowedGenders: { type: [String], default: ['All'] },
     occupation: { type: [String], default: [] },
+    allowedOccupations: { type: [String], default: [] },
     education: { type: [String], default: [] },
     category: { type: [String], default: ['All'] },
+    allowedCategories: { type: [String], default: ['All'] },
+    allowedStates: { type: [String], default: ['All'] },
     disabilityRequired: { type: Boolean, default: false },
     familySizeMax: { type: Number, default: 99 },
     landOwnershipMax: { type: Number, default: 999 },
+    maxLandHoldingAcres: { type: Number, default: 999 }
   },
-  
-  dynamicRules: [{
-    field: { type: String, required: true },
-    operator: { type: String, required: true, enum: ['=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT_IN'] },
-    value: { type: mongoose.Schema.Types.Mixed, required: true },
-    logic: { type: String, enum: ['AND', 'OR'], default: 'AND' }
-  }],
-  
+
+  requiredDocuments: [{ type: String }],
   documentsRequired: [{ type: String }],
-  applicationDeadline: { type: Date },
+
+  applicationMode: { 
+    type: String, 
+    default: 'Online' 
+  },
+  applicationSteps: [{ type: String }],
+
   officialWebsite: { type: String },
+  officialApplicationUrl: { type: String },
   applyURL: { type: String },
+  officialHelpline: { type: String },
   helpline: { type: String },
-  
+
+  sourceUrl: { type: String, required: true },
+  lastVerifiedAt: { type: Date, default: Date.now },
+  verificationStatus: { 
+    type: String, 
+    default: 'Verified' 
+  },
+  activeStatus: { type: Boolean, default: true, index: true },
+  status: { type: String, default: 'Published' },
+  keywords: [{ type: String }],
+  tags: [{ type: String }],
+
   faqs: [{
     question: { type: String },
     answer: { type: String }
   }],
-  
-  seo: {
-    title: { type: String },
-    keywords: [{ type: String }],
-    metaDescription: { type: String }
-  },
 
-  featuredImageUrl: { type: String },
-
-  version: { type: Number, default: 1 },
-  versionHistory: [{
-    version: Number,
-    updatedAt: Date,
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    changes: String
-  }],
-  
-  status: { type: String, enum: ['Draft', 'Published', 'Archived'], default: 'Draft' },
-  publishedAt: { type: Date },
+  version: { type: Number, default: 1 }
 }, { timestamps: true });
+
+// Auto-sync legacy fields before saving
+SchemeSchema.pre('save', function() {
+  if (this.schemeId && !this.id) this.id = this.schemeId;
+  if (this.id && !this.schemeId) this.schemeId = this.id;
+  if (this.schemeName && !this.name) this.name = this.schemeName;
+  if (this.name && !this.schemeName) this.schemeName = this.name;
+  if (this.description && !this.shortDescription) this.shortDescription = this.description;
+  if (this.shortDescription && !this.description) this.description = this.shortDescription;
+  if (this.benefitAmount && !this.financialBenefitAmount) this.financialBenefitAmount = this.benefitAmount;
+  if (this.financialBenefitAmount && !this.benefitAmount) this.benefitAmount = this.financialBenefitAmount;
+  if (this.officialApplicationUrl && !this.applyURL) this.applyURL = this.officialApplicationUrl;
+  if (this.applyURL && !this.officialApplicationUrl) this.officialApplicationUrl = this.applyURL;
+  if (this.officialHelpline && !this.helpline) this.helpline = this.officialHelpline;
+  if (this.helpline && !this.officialHelpline) this.officialHelpline = this.helpline;
+  if (this.requiredDocuments && !this.documentsRequired) this.documentsRequired = this.requiredDocuments;
+  if (this.documentsRequired && !this.requiredDocuments) this.requiredDocuments = this.documentsRequired;
+  if (this.keywords && !this.tags) this.tags = this.keywords;
+  if (this.tags && !this.keywords) this.keywords = this.tags;
+});
 
 export default mongoose.model('Scheme', SchemeSchema);

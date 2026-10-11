@@ -351,11 +351,16 @@ export const apiClient = {
     }
   },
 
-  post: async (endpoint: string, data: any) => {
+  post: async (endpoint: string, data: any, options: { headers?: Record<string, string> } = {}) => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const baseHeaders: Record<string, string> = { ...getHeaders() };
+    if (isFormData) {
+      delete baseHeaders['Content-Type'];
+    }
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
+      headers: { ...baseHeaders, ...(options.headers || {}) },
+      body: isFormData ? data : JSON.stringify(data)
     });
     return handleResponse(response);
   },
@@ -363,6 +368,15 @@ export const apiClient = {
   put: async (endpoint: string, data: any) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(response);
+  },
+
+  patch: async (endpoint: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PATCH',
       headers: getHeaders(),
       body: JSON.stringify(data)
     });

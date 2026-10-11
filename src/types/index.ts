@@ -15,23 +15,49 @@ export type SchemeCategory =
 export type TargetGender = 'All' | 'Female' | 'Male' | 'Transgender';
 export type CategorySocial = 'All' | 'General' | 'OBC' | 'SC' | 'ST' | 'EWS' | 'Minority';
 
+export type VerificationStatusType = 
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'TEXT_EXTRACTED'
+  | 'NEEDS_REVIEW'
+  | 'CHECKS_PASSED'
+  | 'OFFICIALLY_VERIFIED'
+  | 'VERIFICATION_FAILED'
+  | 'INCONCLUSIVE';
+
 export interface DocumentRecord {
-  id: string;
-  type: 'Aadhaar' | 'PAN' | 'Income Certificate' | 'Community Certificate' | 'Bank Passbook' | 'Ration Card' | 'Education Certificate';
-  docNumber: string;
-  status: 'Verified' | 'Pending' | 'Expired';
-  ocrExtracted: {
-    fullName?: string;
-    dob?: string;
-    annualIncome?: number;
-    state?: string;
-    gender?: string;
-    confidenceScore: number;
-    issueDate?: string;
-    expiryDate?: string;
-  };
+  _id?: string;
+  id?: string;
+  documentId: string;
+  documentType: string;
+  type?: string;
+  originalFileName?: string;
+  fileMimeType?: string;
+  fileSize?: number;
   fileUrl?: string;
+  ocrStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  rawOcrText?: string;
+  extractedFields?: Record<string, any>;
+  fieldConfidences?: Record<string, number>;
+  fieldFlags?: Record<string, string[]>;
+  correctedFields?: Record<string, any>;
+  isUserConfirmed?: boolean;
+  userConfirmedAt?: string;
+  verificationStatus?: VerificationStatusType;
+  verificationChecks?: Array<{
+    checkName: string;
+    passed: boolean;
+    details: string;
+  }>;
+  verificationLimitations?: string;
+  verificationOutcomeReason?: string;
+  verifiedAt?: string;
+  status?: string;
+  docNumber?: string;
+  ocrExtracted?: any;
   uploadedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserProfile {

@@ -86,6 +86,7 @@ export const App: React.FC = () => {
   // Modal Controls
   const [selectedSchemeAnalysis, setSelectedSchemeAnalysis] = useState<CombinedSchemeAnalysis | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [ocrModalOpen, setOcrModalOpen] = useState(false);
   const [ocrTargetDocType, setOcrTargetDocType] = useState<DocumentRecord['type']>('Aadhaar');
@@ -413,8 +414,8 @@ export const App: React.FC = () => {
     return user ? (user.savedSchemeIds || []).includes(schemeId) : false;
   };
 
-  const handleOpenOCRForDoc = (docType: DocumentRecord['type']) => {
-    setOcrTargetDocType(docType);
+  const handleOpenOCRForDoc = (docType: string) => {
+    setOcrTargetDocType(docType as any);
     setOcrModalOpen(true);
   };
 
@@ -422,7 +423,8 @@ export const App: React.FC = () => {
     if (!user) return;
     setUser(prev => {
       if (!prev) return prev;
-      const existingFiltered = (prev.documents || []).filter(d => d.type !== newDoc.type);
+      // Do not overwrite other documents; match strictly by documentId if existing
+      const existingFiltered = (prev.documents || []).filter(d => (d.documentId || d.id) !== (newDoc.documentId || newDoc.id));
       return {
         ...prev,
         ...autoFillFields,
@@ -435,8 +437,8 @@ export const App: React.FC = () => {
     setNotifications(prev => [
       {
         id: `notif-${Date.now()}`,
-        title: `${newDoc.type} Verified`,
-        description: `Your ${newDoc.type} document has been parsed & saved to your DigiLocker Vault.`,
+        title: `${newDoc.documentType || newDoc.type} Saved`,
+        description: `Document ${newDoc.documentId || newDoc.id} processed and isolated in Document Vault.`,
         category: 'Document',
         timestamp: 'Just now',
         read: false
@@ -570,7 +572,10 @@ export const App: React.FC = () => {
         reducedMotion={reducedMotion}
         setReducedMotion={setReducedMotion}
         user={user}
-        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAuth={(mode?: 'login' | 'register') => {
+          setAuthMode(mode || 'login');
+          setIsAuthOpen(true);
+        }}
         onLogout={() => setLogoutConfirmOpen(true)}
         unreadCount={notifications.filter(n => !n.read).length}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
@@ -723,6 +728,7 @@ export const App: React.FC = () => {
             }}
             onNavigateTab={setActiveTab}
             eligibleSchemesCount={eligibleSchemesCount}
+            schemes={schemes}
           />
         )}
 
@@ -763,13 +769,14 @@ export const App: React.FC = () => {
       <OCRScanner
         isOpen={ocrModalOpen}
         onClose={() => setOcrModalOpen(false)}
-        expectedType={ocrTargetDocType}
+        expectedType={ocrTargetDocType || 'Aadhaar'}
         onSaveDocument={handleSaveDocument}
       />
 
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthOpen}
+        initialMode={authMode}
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={async (loggedInUser) => {
           setUser(loggedInUser);

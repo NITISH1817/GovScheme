@@ -26,6 +26,8 @@ export const initialUserProfile: UserProfile = {
   documents: [
     {
       id: "doc-aadhaar-1",
+      documentId: "doc-aadhaar-1",
+      documentType: "aadhaar",
       type: "Aadhaar",
       docNumber: "5489 3201 9845",
       status: "Verified",
@@ -40,6 +42,8 @@ export const initialUserProfile: UserProfile = {
     },
     {
       id: "doc-pan-1",
+      documentId: "doc-pan-1",
+      documentType: "pan",
       type: "PAN",
       docNumber: "ABCDE1234F",
       status: "Verified",
@@ -52,6 +56,8 @@ export const initialUserProfile: UserProfile = {
     },
     {
       id: "doc-inc-1",
+      documentId: "doc-inc-1",
+      documentType: "income_certificate",
       type: "Income Certificate",
       docNumber: "TN-INC-2026-98124",
       status: "Verified",

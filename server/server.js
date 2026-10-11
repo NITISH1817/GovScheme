@@ -152,6 +152,7 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static('uploads'));
 
 import schemeRoutes from './routes/schemeRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
