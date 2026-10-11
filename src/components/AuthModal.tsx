@@ -142,32 +142,52 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const createProfileFromAuthData = (data: any, fallbackName = '', fallbackEmail = ''): UserProfile => {
     const u = data.user || data;
+    const p = (u.profile && typeof u.profile === 'object') ? u.profile : {};
     const fullName = u.fullName || u.name || fallbackName || 'Citizen User';
     const rawRole = String(u.role || '').toLowerCase();
     const normalizedRole: 'citizen' | 'admin' | 'superadmin' = 
       rawRole.includes('super') ? 'superadmin' :
       rawRole.includes('admin') || fallbackEmail === 'admin@govscheme.in' ? 'admin' : 'citizen';
 
+    const rawAge = u.age !== undefined && u.age !== null ? u.age : p.age;
+    const rawIncome = u.annualIncome !== undefined && u.annualIncome !== null ? u.annualIncome : p.annualIncome;
+    const rawState = u.state !== undefined && u.state !== null ? u.state : (p.state !== undefined && p.state !== null ? p.state : '');
+    const rawDistrict = u.district !== undefined && u.district !== null ? u.district : (p.district !== undefined && p.district !== null ? p.district : '');
+    const rawGender = u.gender || p.gender || 'Male';
+    const rawCategory = u.category || p.category || 'General';
+    const rawOccupation = u.occupation !== undefined && u.occupation !== null ? u.occupation : (p.occupation !== undefined && p.occupation !== null ? p.occupation : '');
+    const rawLandHolding = u.landHoldingAcres !== undefined && u.landHoldingAcres !== null ? u.landHoldingAcres : (p.landHoldingAcres ?? 0);
+    const rawEdu = u.educationLevel !== undefined && u.educationLevel !== null ? u.educationLevel : (p.educationLevel || '');
+    const rawFamilyCount = u.familyMembersCount !== undefined && u.familyMembersCount !== null ? u.familyMembersCount : (p.familyMembersCount ?? 1);
+    const rawDisability = u.hasDisability !== undefined ? Boolean(u.hasDisability) : (p.hasDisability !== undefined ? Boolean(p.hasDisability) : false);
+    const rawDisabilityPct = u.disabilityPercentage !== undefined && u.disabilityPercentage !== null ? u.disabilityPercentage : (p.disabilityPercentage ?? 0);
+    const rawRegWorker = u.isRegisteredWorker !== undefined ? Boolean(u.isRegisteredWorker) : (p.isRegisteredWorker !== undefined ? Boolean(p.isRegisteredWorker) : false);
+    const rawBadge = u.verificationBadge !== undefined ? Boolean(u.verificationBadge) : (p.verificationBadge !== undefined ? Boolean(p.verificationBadge) : false);
+
     const profile: UserProfile = {
       id: u._id || u.id || `user-${Date.now()}`,
       fullName,
-      mobile: u.mobile || '',
+      mobile: u.mobile || p.mobile || '',
       email: u.email || fallbackEmail,
-      age: u.age || 35,
-      gender: (u.gender || 'Female') as TargetGender,
-      state: u.state || 'Maharashtra',
-      district: u.district || 'Pune',
-      category: (u.category || 'General') as CategorySocial,
-      occupation: u.occupation || 'Employed',
-      annualIncome: u.annualIncome || 250000,
-      landHoldingAcres: u.landHoldingAcres || 0,
-      educationLevel: u.educationLevel || '',
-      familyMembersCount: u.familyMembersCount || 1,
-      hasDisability: u.hasDisability || false,
-      verificationBadge: u.verificationBadge || false,
-      profileCompletionScore: u.profileCompletionScore || 85,
-      savedSchemeIds: u.savedSchemeIds || [],
-      documents: u.documents || [],
+      age: rawAge !== undefined && rawAge !== null ? Number(rawAge) : 25,
+      gender: rawGender as TargetGender,
+      maritalStatus: u.maritalStatus || p.maritalStatus || 'Single',
+      state: rawState,
+      district: rawDistrict,
+      category: rawCategory as CategorySocial,
+      occupation: rawOccupation,
+      annualIncome: rawIncome !== undefined && rawIncome !== null ? Number(rawIncome) : 0,
+      landHoldingAcres: Number(rawLandHolding),
+      educationLevel: rawEdu,
+      familyMembersCount: Number(rawFamilyCount),
+      hasDisability: rawDisability,
+      disabilityPercentage: Number(rawDisabilityPct),
+      isRegisteredWorker: rawRegWorker,
+      verificationBadge: rawBadge,
+      profileCompletionScore: u.profileCompletionScore !== undefined ? u.profileCompletionScore : (p.profileCompletionScore ?? 0),
+      interests: Array.isArray(u.interests) ? u.interests : (Array.isArray(p.interests) ? p.interests : []),
+      savedSchemeIds: u.savedSchemeIds || p.savedSchemeIds || [],
+      documents: u.documents || p.documents || [],
       avatarUrl: u.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=0369a1`,
       role: normalizedRole,
     };

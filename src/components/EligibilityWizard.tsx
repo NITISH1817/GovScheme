@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserProfile } from '../types';
@@ -26,6 +26,15 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
     occupation: '',
     interests: []
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        ...user
+      }));
+    }
+  }, [user]);
 
   const updateForm = useCallback((key: keyof UserProfile, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));

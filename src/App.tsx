@@ -32,6 +32,8 @@ import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
 import { GovSchemeLogoAnimated } from './components/brand';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const App: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState<LanguageCode>(
@@ -259,11 +261,20 @@ export const App: React.FC = () => {
           if (data.success && (data.user || data.profile)) {
             const u = data.user || data.profile;
             setUser(prev => {
-              const merged = { ...(prev || {}), ...u };
+              const merged: UserProfile = {
+                ...(prev || {} as UserProfile),
+                ...u,
+                id: u.id || u._id || (prev ? prev.id : `user-${Date.now()}`),
+                profileCompletionScore: calculateProfileCompletion(u)
+              };
               localStorage.setItem('govscheme_user', JSON.stringify(merged));
               return merged;
             });
           }
+        } else if (response.status === 401) {
+          localStorage.removeItem('govscheme_token');
+          localStorage.removeItem('govscheme_user');
+          setUser(null);
         }
       } catch (err) {
         console.warn('Could not sync profile from cloud backend on launch:', err);
@@ -343,6 +354,9 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('govscheme_user');
     localStorage.removeItem('govscheme_token');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('adminUser');
     setUser(null);
     setActiveTab('home');
   };
@@ -685,7 +699,7 @@ export const App: React.FC = () => {
               if (token) {
                 try {
                   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                  await fetch(`${API_URL}/api/users/profile`, {
+                  const res = await fetch(`${API_URL}/api/users/profile`, {
                     method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',
@@ -693,6 +707,15 @@ export const App: React.FC = () => {
                     },
                     body: JSON.stringify(updated)
                   });
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && (data.user || data.profile)) {
+                      const serverUser = data.user || data.profile;
+                      const merged = { ...updated, ...serverUser };
+                      setUser(merged);
+                      localStorage.setItem('govscheme_user', JSON.stringify(merged));
+                    }
+                  }
                 } catch (err) {
                   console.warn('Could not persist profile update to backend:', err);
                 }
@@ -748,9 +771,34 @@ export const App: React.FC = () => {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={(loggedInUser) => {
+        onLoginSuccess={async (loggedInUser) => {
           setUser(loggedInUser);
           localStorage.setItem('govscheme_user', JSON.stringify(loggedInUser));
+
+          const token = localStorage.getItem('govscheme_token');
+          if (token) {
+            try {
+              const res = await fetch(`${API_URL}/api/users/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (res.ok) {
+                const fresh = await res.json();
+                if (fresh.success && (fresh.user || fresh.profile)) {
+                  const u = fresh.user || fresh.profile;
+                  const finalUser: UserProfile = {
+                    ...loggedInUser,
+                    ...u,
+                    profileCompletionScore: calculateProfileCompletion(u)
+                  };
+                  setUser(finalUser);
+                  localStorage.setItem('govscheme_user', JSON.stringify(finalUser));
+                }
+              }
+            } catch (e) {
+              console.warn('Post-login authoritative profile sync error:', e);
+            }
+          }
+
           if (loggedInUser.role === 'admin' || loggedInUser.role === 'superadmin' || loggedInUser.email === 'admin@govscheme.in') {
             setActiveTab('admin');
           } else if ((loggedInUser.profileCompletionScore || 0) < 50) {

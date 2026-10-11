@@ -79,6 +79,43 @@ export const updateUserStatus = async (req, res) => {
   }
 };
 
+export const formatUserProfile = (user) => {
+  if (!user) return null;
+  const p = user.profile || {};
+  const profileDetails = {
+    age: p.age !== undefined && p.age !== null ? Number(p.age) : 25,
+    gender: p.gender || 'Male',
+    maritalStatus: p.maritalStatus || 'Single',
+    state: p.state || '',
+    district: p.district || '',
+    annualIncome: p.annualIncome !== undefined && p.annualIncome !== null ? Number(p.annualIncome) : 0,
+    category: p.category || 'General',
+    occupation: p.occupation || '',
+    educationLevel: p.educationLevel || '',
+    landHoldingAcres: p.landHoldingAcres !== undefined && p.landHoldingAcres !== null ? Number(p.landHoldingAcres) : 0,
+    familyMembersCount: p.familyMembersCount !== undefined && p.familyMembersCount !== null ? Number(p.familyMembersCount) : 1,
+    hasDisability: Boolean(p.hasDisability),
+    disabilityPercentage: p.disabilityPercentage !== undefined && p.disabilityPercentage !== null ? Number(p.disabilityPercentage) : 0,
+    isRegisteredWorker: Boolean(p.isRegisteredWorker),
+    verificationBadge: Boolean(p.verificationBadge),
+    profileCompletionScore: p.profileCompletionScore !== undefined && p.profileCompletionScore !== null ? Number(p.profileCompletionScore) : 0,
+    interests: Array.isArray(p.interests) ? p.interests : []
+  };
+
+  return {
+    id: user._id.toString(),
+    _id: user._id,
+    fullName: user.fullName || '',
+    email: user.email || '',
+    mobile: user.mobile || '',
+    avatarUrl: user.avatarUrl || '',
+    role: user.role || 'Citizen',
+    savedSchemeIds: user.savedSchemeIds || [],
+    ...profileDetails,
+    profile: profileDetails
+  };
+};
+
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
@@ -86,35 +123,13 @@ export const getUserProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const profileData = {
-      id: user._id.toString(),
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      mobile: user.mobile || '',
-      avatarUrl: user.avatarUrl || '',
-      role: user.role,
-      savedSchemeIds: user.savedSchemeIds || [],
-      age: user.profile?.age ?? 25,
-      gender: user.profile?.gender || 'Male',
-      maritalStatus: user.profile?.maritalStatus || 'Single',
-      state: user.profile?.state || '',
-      district: user.profile?.district || '',
-      annualIncome: user.profile?.annualIncome ?? 0,
-      category: user.profile?.category || 'General',
-      occupation: user.profile?.occupation || '',
-      educationLevel: user.profile?.educationLevel || '',
-      landHoldingAcres: user.profile?.landHoldingAcres ?? 0,
-      familyMembersCount: user.profile?.familyMembersCount ?? 1,
-      hasDisability: user.profile?.hasDisability || false,
-      disabilityPercentage: user.profile?.disabilityPercentage ?? 0,
-      isRegisteredWorker: user.profile?.isRegisteredWorker || false,
-      verificationBadge: user.profile?.verificationBadge || false,
-      profileCompletionScore: user.profile?.profileCompletionScore ?? 0,
-      interests: user.profile?.interests || []
-    };
-
-    res.json({ success: true, user: profileData, profile: profileData });
+    const formatted = formatUserProfile(user);
+    res.json({
+      success: true,
+      ...formatted,
+      user: formatted,
+      profile: formatted
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -137,65 +152,41 @@ export const updateUserProfile = async (req, res) => {
 
     // Merge profile fields whether provided flat or nested under profile
     const p = req.body.profile || req.body;
-    user.profile = {
-      ...user.profile,
-      age: p.age !== undefined && p.age !== '' ? Number(p.age) : user.profile?.age,
-      gender: p.gender || user.profile?.gender,
-      maritalStatus: p.maritalStatus || user.profile?.maritalStatus,
-      state: p.state !== undefined ? p.state : user.profile?.state,
-      district: p.district !== undefined ? p.district : user.profile?.district,
-      annualIncome: p.annualIncome !== undefined && p.annualIncome !== '' ? Number(p.annualIncome) : user.profile?.annualIncome,
-      category: p.category || user.profile?.category,
-      occupation: p.occupation !== undefined ? p.occupation : user.profile?.occupation,
-      educationLevel: p.educationLevel !== undefined ? p.educationLevel : user.profile?.educationLevel,
-      landHoldingAcres: p.landHoldingAcres !== undefined && p.landHoldingAcres !== '' ? Number(p.landHoldingAcres) : user.profile?.landHoldingAcres,
-      familyMembersCount: p.familyMembersCount !== undefined ? Number(p.familyMembersCount) : user.profile?.familyMembersCount,
-      hasDisability: p.hasDisability !== undefined ? Boolean(p.hasDisability) : user.profile?.hasDisability,
-      disabilityPercentage: p.disabilityPercentage !== undefined ? Number(p.disabilityPercentage) : user.profile?.disabilityPercentage,
-      isRegisteredWorker: p.isRegisteredWorker !== undefined ? Boolean(p.isRegisteredWorker) : user.profile?.isRegisteredWorker,
-      verificationBadge: p.verificationBadge !== undefined ? Boolean(p.verificationBadge) : user.profile?.verificationBadge,
-      profileCompletionScore: p.profileCompletionScore !== undefined ? Number(p.profileCompletionScore) : user.profile?.profileCompletionScore,
-      interests: Array.isArray(p.interests) ? p.interests : user.profile?.interests
-    };
+    if (!user.profile) {
+      user.profile = {};
+    }
+
+    if (p.age !== undefined && p.age !== '') user.profile.age = Number(p.age);
+    if (p.gender !== undefined) user.profile.gender = p.gender;
+    if (p.maritalStatus !== undefined) user.profile.maritalStatus = p.maritalStatus;
+    if (p.state !== undefined) user.profile.state = p.state;
+    if (p.district !== undefined) user.profile.district = p.district;
+    if (p.annualIncome !== undefined && p.annualIncome !== '') user.profile.annualIncome = Number(p.annualIncome);
+    if (p.category !== undefined) user.profile.category = p.category;
+    if (p.occupation !== undefined) user.profile.occupation = p.occupation;
+    if (p.educationLevel !== undefined) user.profile.educationLevel = p.educationLevel;
+    if (p.landHoldingAcres !== undefined && p.landHoldingAcres !== '') user.profile.landHoldingAcres = Number(p.landHoldingAcres);
+    if (p.familyMembersCount !== undefined && p.familyMembersCount !== '') user.profile.familyMembersCount = Number(p.familyMembersCount);
+    if (p.hasDisability !== undefined) user.profile.hasDisability = Boolean(p.hasDisability);
+    if (p.disabilityPercentage !== undefined && p.disabilityPercentage !== '') user.profile.disabilityPercentage = Number(p.disabilityPercentage);
+    if (p.isRegisteredWorker !== undefined) user.profile.isRegisteredWorker = Boolean(p.isRegisteredWorker);
+    if (p.verificationBadge !== undefined) user.profile.verificationBadge = Boolean(p.verificationBadge);
+    if (p.profileCompletionScore !== undefined && p.profileCompletionScore !== '') user.profile.profileCompletionScore = Number(p.profileCompletionScore);
+    if (Array.isArray(p.interests)) user.profile.interests = p.interests;
 
     if (req.body.password) {
       user.password = req.body.password;
     }
 
+    user.markModified('profile');
     const updatedUser = await user.save();
-
-    const flatProfile = {
-      id: updatedUser._id.toString(),
-      _id: updatedUser._id,
-      fullName: updatedUser.fullName,
-      email: updatedUser.email,
-      mobile: updatedUser.mobile || '',
-      avatarUrl: updatedUser.avatarUrl || '',
-      role: updatedUser.role,
-      savedSchemeIds: updatedUser.savedSchemeIds || [],
-      age: updatedUser.profile?.age ?? 25,
-      gender: updatedUser.profile?.gender || 'Male',
-      maritalStatus: updatedUser.profile?.maritalStatus || 'Single',
-      state: updatedUser.profile?.state || '',
-      district: updatedUser.profile?.district || '',
-      annualIncome: updatedUser.profile?.annualIncome ?? 0,
-      category: updatedUser.profile?.category || 'General',
-      occupation: updatedUser.profile?.occupation || '',
-      educationLevel: updatedUser.profile?.educationLevel || '',
-      landHoldingAcres: updatedUser.profile?.landHoldingAcres ?? 0,
-      familyMembersCount: updatedUser.profile?.familyMembersCount ?? 1,
-      hasDisability: updatedUser.profile?.hasDisability || false,
-      disabilityPercentage: updatedUser.profile?.disabilityPercentage ?? 0,
-      isRegisteredWorker: updatedUser.profile?.isRegisteredWorker || false,
-      verificationBadge: updatedUser.profile?.verificationBadge || false,
-      profileCompletionScore: updatedUser.profile?.profileCompletionScore ?? 0,
-      interests: updatedUser.profile?.interests || []
-    };
+    const formatted = formatUserProfile(updatedUser);
 
     res.json({
       success: true,
-      user: flatProfile,
-      profile: flatProfile
+      ...formatted,
+      user: formatted,
+      profile: formatted
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

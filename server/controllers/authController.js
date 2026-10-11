@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { formatUserProfile } from './userController.js';
 
 const generateToken = (id, name, role) => {
   return jwt.sign({ id, name, role }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -34,25 +35,13 @@ export const registerUser = async (req, res) => {
     });
 
     if (user) {
-      const userPayload = {
-        _id: user._id,
-        id: user._id.toString(),
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        age: user.profile?.age || 25,
-        gender: user.profile?.gender || 'Female',
-        state: user.profile?.state || 'Maharashtra',
-        annualIncome: user.profile?.annualIncome || 200000,
-        occupation: user.profile?.occupation || 'Employed',
-        category: user.profile?.category || 'General',
-        profileCompletionScore: user.profile?.profileCompletionScore || 60,
-      };
+      const userPayload = formatUserProfile(user);
 
       res.status(201).json({
         success: true,
         ...userPayload,
         user: userPayload,
+        profile: userPayload.profile,
         token: generateToken(user._id, user.fullName, user.role),
       });
     } else {
@@ -77,8 +66,8 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const ipAddress = req.ip || req.connection.remoteAddress;
-    const device = req.headers['user-agent'] || 'Unknown';
+    const ipAddress = req.ip || req.connection?.remoteAddress || '127.0.0.1';
+    const device = req.headers?.['user-agent'] || 'Unknown';
 
     const normalizedEmail = (email || '').trim().toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
@@ -103,25 +92,13 @@ export const loginUser = async (req, res) => {
       
       await user.save();
 
-      const userPayload = {
-        _id: user._id,
-        id: user._id.toString(),
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        age: user.age || 35,
-        gender: user.gender || 'Female',
-        state: user.state || 'Maharashtra',
-        annualIncome: user.annualIncome || 250000,
-        occupation: user.occupation || 'Employed',
-        category: user.category || 'General',
-        profileCompletionScore: 100,
-      };
+      const userPayload = formatUserProfile(user);
 
       res.json({
         success: true,
         ...userPayload,
         user: userPayload,
+        profile: userPayload.profile,
         token: generateToken(user._id, user.fullName, user.role),
       });
     } else {
@@ -300,19 +277,14 @@ export const googleAuth = async (req, res) => {
     }
 
     const token = generateToken(user._id, user.fullName, user.role);
+    const userPayload = formatUserProfile(user);
 
     res.json({
       success: true,
-      _id: user._id,
-      id: user._id.toString(),
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      avatarUrl: user.avatarUrl,
-      savedSchemeIds: user.savedSchemeIds || [],
-      profile: user.profile || {},
-      token,
-      user
+      ...userPayload,
+      user: userPayload,
+      profile: userPayload.profile,
+      token
     });
   } catch (error) {
     console.error('[Google Auth Error]:', error);
