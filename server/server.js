@@ -5,8 +5,10 @@ import { connectDB } from './db.js';
 import User from './models/User.js';
 import bcrypt from 'bcryptjs';
 import Scheme from './models/Scheme.js';
+import Document from './models/Document.js';
 import { schemesData } from '../src/data/schemes.js';
 import authRoutes from './routes/authRoutes.js';
+import documentRoutes from './routes/documentRoutes.js';
 
 const seedAdmin = async () => {
   try {
@@ -52,12 +54,48 @@ const seedMockData = async () => {
 
       const schemes = await Scheme.find().limit(3);
       
-      await Application.create([
-        { userId: mockCitizen._id, schemeId: schemes[0]?._id?.toString() || '1', status: 'Submitted' },
-        { userId: mockCitizen._id, schemeId: schemes[1]?._id?.toString() || '2', status: 'Approved' },
-        { userId: mockCitizen2._id, schemeId: schemes[2]?._id?.toString() || '3', status: 'Submitted' }
-      ]);
-      console.log('Mock citizens and applications seeded');
+      const app1 = await Application.create({ userId: mockCitizen._id, schemeId: schemes[0]?._id?.toString() || '1', status: 'Submitted' });
+      const app2 = await Application.create({ userId: mockCitizen._id, schemeId: schemes[1]?._id?.toString() || '2', status: 'Approved' });
+      const app3 = await Application.create({ userId: mockCitizen2._id, schemeId: schemes[2]?._id?.toString() || '3', status: 'Under Review' });
+
+      // Seed mock documents for verification queue
+      const docCount = await Document.countDocuments();
+      if (docCount === 0) {
+        await Document.create([
+          {
+            userId: mockCitizen._id,
+            type: 'Income Certificate',
+            cloudinaryUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=60',
+            ocrStatus: 'Completed',
+            extractedData: { fullName: 'John Doe', annualIncome: 120000, state: 'Maharashtra', docNumber: 'INC/MH/2026/0942' },
+            confidenceScore: 94,
+            status: 'Pending',
+            docNumber: 'INC/MH/2026/0942'
+          },
+          {
+            userId: mockCitizen._id,
+            type: 'Aadhaar',
+            cloudinaryUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&auto=format&fit=crop&q=60',
+            ocrStatus: 'Completed',
+            extractedData: { fullName: 'John Doe', dob: '1990-05-15', gender: 'Male', state: 'Maharashtra' },
+            confidenceScore: 97,
+            status: 'Verified',
+            docNumber: 'XXXX-XXXX-4829',
+            verified: true
+          },
+          {
+            userId: mockCitizen2._id,
+            type: 'Community Certificate',
+            cloudinaryUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=800&auto=format&fit=crop&q=60',
+            ocrStatus: 'Completed',
+            extractedData: { fullName: 'Jane Smith', category: 'General', state: 'Karnataka' },
+            confidenceScore: 88,
+            status: 'Pending',
+            docNumber: 'CC/KA/2026/1844'
+          }
+        ]);
+      }
+      console.log('Mock citizens, applications, and documents seeded');
     }
   } catch (error) {
     console.error('Failed to seed mock data', error);
@@ -117,6 +155,17 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/documents', documentRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    services: { database: 'connected', server: 'online' }
+  });
+});
 
 import http from 'http';
 import { Server } from 'socket.io';

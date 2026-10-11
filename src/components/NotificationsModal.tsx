@@ -101,12 +101,12 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
                     <div className="flex-1">
                       <div className="flex justify-between items-start gap-2 mb-1">
                         <span className={`font-bold ${notif.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-white'}`}>
-                          {t('notifTitle_' + notif.id, notif.title)}
+                          {t('notifTitle_' + notif.id, t(notif.title, notif.title))}
                         </span>
                         <span className="text-[10px] text-gray-500 font-semibold">{t('notifTime_' + notif.id, notif.timestamp)}</span>
                       </div>
                       <p className={`text-xs mb-3 ${notif.read ? 'text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                        {t('notifDesc_' + notif.id, notif.description)}
+                        {t('notifDesc_' + notif.id, t(notif.description, notif.description))}
                       </p>
                       
                       {/* Action Required States */}

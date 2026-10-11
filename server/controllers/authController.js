@@ -25,12 +25,25 @@ export const registerUser = async (req, res) => {
     });
 
     if (user) {
-      res.status(201).json({
-        success: true,
+      const userPayload = {
         _id: user._id,
+        id: user._id.toString(),
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        age: user.age || 25,
+        gender: user.gender || 'Female',
+        state: user.state || 'Maharashtra',
+        annualIncome: user.annualIncome || 200000,
+        occupation: user.occupation || 'Employed',
+        category: user.category || 'General',
+        profileCompletionScore: 60,
+      };
+
+      res.status(201).json({
+        success: true,
+        ...userPayload,
+        user: userPayload,
         token: generateToken(user._id, user.fullName, user.role),
       });
     } else {
@@ -69,12 +82,25 @@ export const loginUser = async (req, res) => {
       
       await user.save();
 
-      res.json({
-        success: true,
+      const userPayload = {
         _id: user._id,
+        id: user._id.toString(),
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        age: user.age || 35,
+        gender: user.gender || 'Female',
+        state: user.state || 'Maharashtra',
+        annualIncome: user.annualIncome || 250000,
+        occupation: user.occupation || 'Employed',
+        category: user.category || 'General',
+        profileCompletionScore: 100,
+      };
+
+      res.json({
+        success: true,
+        ...userPayload,
+        user: userPayload,
         token: generateToken(user._id, user.fullName, user.role),
       });
     } else {
@@ -160,6 +186,37 @@ export const verifyOTP = async (req, res) => {
       success: true, 
       message: 'OTP verified successfully',
       token: generateToken(user._id, user.fullName, user.role)
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { email, name, picture } = req.body;
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        fullName: name,
+        email,
+        password: Math.random().toString(36).slice(-8), // random password for google users
+        role: 'Citizen',
+        avatarUrl: picture
+      });
+    }
+
+    res.json({
+      success: true,
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+      profileCompletionScore: user.profileCompletionScore || 0,
+      token: generateToken(user._id, user.fullName, user.role),
+      user
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

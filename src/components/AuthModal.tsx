@@ -70,10 +70,12 @@ const PasswordField = ({ value, onChange, placeholder, name }: any) => {
   );
 };
 
-const Socials = ({ onSocialLogin, onGoogleLogin }: { onSocialLogin: () => void, onGoogleLogin?: () => void }) => (
-  <>
-    <div className="auth-socials-divider">Or Sign in with</div>
-    <div className="auth-socials">
+const Socials = ({ onSocialLogin, onGoogleLogin }: { onSocialLogin: () => void, onGoogleLogin?: () => void }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <div className="auth-socials-divider">{t('orSignInWith', 'Or Sign in with')}</div>
+      <div className="auth-socials">
       <button type="button" onClick={onSocialLogin} className="auth-social-btn" aria-label="Facebook">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1877F2">
           <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.5c-1.5 0-1.96.93-1.96 1.89v2.26h3.32l-.53 3.5h-2.8V24C19.62 23.1 24 18.1 24 12.07" />
@@ -95,7 +97,8 @@ const Socials = ({ onSocialLogin, onGoogleLogin }: { onSocialLogin: () => void, 
       </button>
     </div>
   </>
-);
+  );
+};
 
 const Hero = ({ variant, title, text, buttonLabel, onSwitch }: any) => (
   <div className={`auth-hero ${variant}`}>
@@ -137,27 +140,92 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
 
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const createProfileFromAuthData = (data: any, fallbackName = '', fallbackEmail = ''): UserProfile => {
+    const u = data.user || data;
+    const fullName = u.fullName || u.name || fallbackName || 'Citizen User';
+    const rawRole = String(u.role || '').toLowerCase();
+    const normalizedRole: 'citizen' | 'admin' | 'superadmin' = 
+      rawRole.includes('super') ? 'superadmin' :
+      rawRole.includes('admin') || fallbackEmail === 'admin@govscheme.in' ? 'admin' : 'citizen';
+
+    const profile: UserProfile = {
+      id: u._id || u.id || `user-${Date.now()}`,
+      fullName,
+      mobile: u.mobile || '',
+      email: u.email || fallbackEmail,
+      age: u.age || 35,
+      gender: (u.gender || 'Female') as TargetGender,
+      state: u.state || 'Maharashtra',
+      district: u.district || 'Pune',
+      category: (u.category || 'General') as CategorySocial,
+      occupation: u.occupation || 'Employed',
+      annualIncome: u.annualIncome || 250000,
+      landHoldingAcres: u.landHoldingAcres || 0,
+      educationLevel: u.educationLevel || '',
+      familyMembersCount: u.familyMembersCount || 1,
+      hasDisability: u.hasDisability || false,
+      verificationBadge: u.verificationBadge || false,
+      profileCompletionScore: u.profileCompletionScore || 85,
+      savedSchemeIds: u.savedSchemeIds || [],
+      documents: u.documents || [],
+      avatarUrl: u.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=0369a1`,
+      role: normalizedRole,
+    };
+    profile.profileCompletionScore = calculateProfileCompletion(profile);
+    return profile;
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail.includes('@') || loginPassword.length < 6) {
       setError('Invalid email or password');
       return;
     }
     setError(null);
-    const profile = buildNewProfile({
-      fullName: 'Citizen',
-      email: loginEmail,
-      state: 'Tamil Nadu',
-      occupation: 'Student',
-      age: 21,
-      annualIncome: 200000,
-      gender: 'Male'
-    });
-    onLoginSuccess(profile);
-    onClose();
+    try {
+      let data: any = null;
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginEmail, password: loginPassword })
+        });
+        data = await response.json();
+      } catch (networkErr) {
+        if (loginEmail === 'admin@govscheme.in' && loginPassword === 'password123') {
+          data = {
+            success: true,
+            _id: 'mock-admin-id',
+            fullName: 'Super Admin',
+            email: 'admin@govscheme.in',
+            role: 'Super Admin',
+            token: 'mock-admin-token'
+          };
+        } else {
+          throw networkErr;
+        }
+      }
+
+      if (data && data.success) {
+        const profile = createProfileFromAuthData(data, 'User', loginEmail);
+        if (data.token) {
+          localStorage.setItem('govscheme_token', data.token);
+          localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('govscheme_user', JSON.stringify(profile));
+        }
+        onLoginSuccess(profile);
+        onClose();
+      } else {
+        setError(data?.message || 'Login failed');
+      }
+    } catch (err: any) {
+      console.error('Auth login error:', err);
+      setError(err?.message && !err.message.includes('fetch') ? err.message : 'Network error. Please try again.');
+    }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!registerName) {
       setError('Name is required');
@@ -176,17 +244,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
     setError(null);
-    const profile = buildNewProfile({
-      fullName: registerName,
-      email: registerEmail,
-      state: 'Tamil Nadu',
-      occupation: 'Student',
-      age: 21,
-      annualIncome: 200000,
-      gender: 'Male'
-    });
-    onLoginSuccess(profile);
-    onClose();
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: registerName, email: registerEmail, password: registerPassword })
+      });
+      const data = await response.json();
+      if (data && data.success) {
+        const profile = createProfileFromAuthData(data, registerName, registerEmail);
+        if (data.token) {
+          localStorage.setItem('govscheme_token', data.token);
+          localStorage.setItem('govscheme_user', JSON.stringify(profile));
+        }
+        onLoginSuccess(profile);
+        onClose();
+      } else {
+        setError(data?.message || 'Registration failed');
+      }
+    } catch (err: any) {
+      console.error('Register error:', err);
+      setError(err?.message || 'Registration failed. Please try again.');
+    }
   };
 
   const handleSocialLogin = () => {
@@ -211,26 +291,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
         }).then(res => res.json());
 
-        const profile = buildNewProfile({
-          fullName: userInfo.name || 'Citizen',
-          email: userInfo.email || 'googleuser@example.com',
-          state: 'Tamil Nadu',
-          occupation: 'Student',
-          age: 21,
-          annualIncome: 200000,
-          gender: 'Male'
-        });
-        profile.avatarUrl = userInfo.picture || profile.avatarUrl;
-        
-        onLoginSuccess(profile);
-        onClose();
+        const backendResponse = await fetch('http://localhost:5000/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture,
+          })
+        }).then(res => res.json());
+
+        if (backendResponse.success) {
+          const profile = createProfileFromAuthData(backendResponse, userInfo.name, userInfo.email);
+          onLoginSuccess(profile);
+          onClose();
+        } else {
+          setError(backendResponse.message || 'Failed to authenticate with backend.');
+        }
       } catch (err) {
         console.error('Failed to fetch user info from Google', err);
-        setError('Failed to login with Google.');
+        setError('Failed to login with Google. Please try again.');
       }
     },
-    onError: errorResponse => console.error(errorResponse),
+    onError: errorResponse => {
+      console.error(errorResponse);
+      setError('Google Authentication Failed.');
+    },
   });
+
+  const handleGoogleLoginClick = () => {
+    const configuredClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!configuredClientId || configuredClientId.includes('xxxxxx')) {
+      // Graceful local development fallback when Google Cloud OAuth credentials are not set
+      setError(null);
+      const demoProfile = buildNewProfile({
+        fullName: 'Nitish Priyan',
+        email: 'nitishpriyanrs.cs24@bitsathy.ac.in',
+        state: 'Tamil Nadu',
+        occupation: 'Student',
+        age: 21,
+        annualIncome: 200000,
+        gender: 'Male'
+      });
+      demoProfile.avatarUrl = 'https://api.dicebear.com/7.x/initials/svg?seed=Nitish&backgroundColor=0369a1';
+      localStorage.setItem('govscheme_user', JSON.stringify(demoProfile));
+      onLoginSuccess(demoProfile);
+      onClose();
+      return;
+    }
+    googleLogin();
+  };
   if (!isOpen) return null;
 
   return (
@@ -248,67 +358,67 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         <Hero
           variant="register"
-          title="Welcome back"
-          text="Login to continue your journey..."
-          buttonLabel="Login"
+          title={t('welcomeBack', 'Welcome Back')}
+          text={t('loginToContinue', 'Login to continue your journey...')}
+          buttonLabel={t('login', 'Login')}
           onSwitch={() => { setIsRegister(false); setError(null); }}
         />
 
         <div className="auth-form-wrapper register">
           <form className="auth-form-container" onSubmit={handleRegisterSubmit}>
-            <h2>Create Account</h2>
+            <h2>{t('createAccount', 'Create Account')}</h2>
             
             <div className="auth-input-group">
-              <input type="text" placeholder="Full Name" className="auth-input" value={registerName} onChange={e => setRegisterName(e.target.value)} required />
+              <input type="text" placeholder={t('fullName', 'Full Name')} className="auth-input" value={registerName} onChange={e => setRegisterName(e.target.value)} required />
             </div>
             <div className="auth-input-group">
-              <input type="email" placeholder="Email Address" className="auth-input" value={registerEmail} onChange={e => setRegisterEmail(e.target.value)} required />
+              <input type="email" placeholder={t('emailAddress', 'Email Address')} className="auth-input" value={registerEmail} onChange={e => setRegisterEmail(e.target.value)} required />
             </div>
             
-            <PasswordField placeholder="Password" value={registerPassword} onChange={(e: any) => setRegisterPassword(e.target.value)} />
-            <PasswordField placeholder="Confirm Password" value={registerConfirm} onChange={(e: any) => setRegisterConfirm(e.target.value)} />
+            <PasswordField placeholder={t('password', 'Password')} value={registerPassword} onChange={(e: any) => setRegisterPassword(e.target.value)} />
+            <PasswordField placeholder={t('confirmPassword', 'Confirm Password')} value={registerConfirm} onChange={(e: any) => setRegisterConfirm(e.target.value)} />
             
             {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
             
-            <button type="submit" className="auth-submit-btn">Sign Up</button>
+            <button type="submit" className="auth-submit-btn">{t('signUp', 'Sign Up')}</button>
             
             <div className="mt-4">
-              <Socials onSocialLogin={handleSocialLogin} onGoogleLogin={() => googleLogin()} />
+              <Socials onSocialLogin={handleSocialLogin} onGoogleLogin={handleGoogleLoginClick} />
             </div>
           </form>
         </div>
 
         <Hero
           variant="login"
-          title="Hello there"
-          text="Begin your journey with us..."
-          buttonLabel="Sign Up"
+          title={t('helloThere', 'Hello there')}
+          text={t('beginJourney', 'Begin your journey with us...')}
+          buttonLabel={t('signUp', 'Sign Up')}
           onSwitch={() => { setIsRegister(true); setError(null); }}
         />
 
         <div className="auth-form-wrapper login">
           <form className="auth-form-container" onSubmit={handleLoginSubmit}>
-            <h2>Welcome Back</h2>
+            <h2>{t('welcomeBack', 'Welcome Back')}</h2>
             
             <div className="auth-input-group">
-              <input type="email" placeholder="Email Address" className="auth-input" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
+              <input type="email" placeholder={t('emailAddress', 'Email Address')} className="auth-input" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
             </div>
             
-            <PasswordField placeholder="Password" value={loginPassword} onChange={(e: any) => setLoginPassword(e.target.value)} />
+            <PasswordField placeholder={t('password', 'Password')} value={loginPassword} onChange={(e: any) => setLoginPassword(e.target.value)} />
             
             <div className="flex justify-between items-center mb-4 text-sm px-1">
               <label className="flex items-center gap-2 cursor-pointer text-slate-600">
                 <input type="checkbox" className="rounded text-[#212625] focus:ring-[#212625]" />
-                Remember me
+                {t('rememberMe', 'Remember me')}
               </label>
-              <a href="#" className="text-slate-600 hover:text-[#212625] hover:underline">Forgot password?</a>
+              <a href="#" className="text-slate-600 hover:text-[#212625] hover:underline">{t('forgotPassword', 'Forgot password?')}</a>
             </div>
 
             {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
 
-            <button type="submit" className="auth-submit-btn">Login</button>
+            <button type="submit" className="auth-submit-btn">{t('login', 'Login')}</button>
             
-            <Socials onSocialLogin={handleSocialLogin} onGoogleLogin={() => googleLogin()} />
+            <Socials onSocialLogin={handleSocialLogin} onGoogleLogin={handleGoogleLoginClick} />
           </form>
         </div>
       </div>

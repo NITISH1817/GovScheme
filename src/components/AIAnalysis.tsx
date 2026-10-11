@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { GovSchemeLogoLoader } from './brand';
 
 interface AIAnalysisProps {
@@ -8,16 +9,17 @@ interface AIAnalysisProps {
 }
 
 export const AIAnalysis: React.FC<AIAnalysisProps> = ({ onComplete }) => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [schemesFound, setSchemesFound] = useState(0);
 
   const steps = [
-    { label: "YOUR PROFILE", text: "Profile analyzed" },
-    { label: "ELIGIBILITY RULES", text: "Location & Income checked" },
-    { label: "SCHEME DATABASE", text: "State & Central schemes verified" },
-    { label: "MATCHING ENGINE", text: "Requirements crossed-checked" },
-    { label: "RECOMMENDATIONS", text: "Matches ranked by relevance" }
+    { label: t("YOUR PROFILE", "YOUR PROFILE"), text: t("Profile analyzed", "Profile analyzed") },
+    { label: t("ELIGIBILITY RULES", "ELIGIBILITY RULES"), text: t("Location & Income checked", "Location & Income checked") },
+    { label: t("SCHEME DATABASE", "SCHEME DATABASE"), text: t("State & Central schemes verified", "State & Central schemes verified") },
+    { label: t("MATCHING ENGINE", "MATCHING ENGINE"), text: t("Requirements crossed-checked", "Requirements crossed-checked") },
+    { label: t("RECOMMENDATIONS", "RECOMMENDATIONS"), text: t("Matches ranked by relevance", "Matches ranked by relevance") }
   ];
 
   useEffect(() => {
@@ -126,19 +128,19 @@ export const AIAnalysis: React.FC<AIAnalysisProps> = ({ onComplete }) => {
             </div>
 
             <h2 className="text-2xl font-bold text-gov-navy dark:text-white font-sans tracking-tight mb-2">
-              Analysis Complete
+              {t('analysisComplete', 'Analysis Complete')}
             </h2>
             
             <div className="flex items-baseline justify-center gap-2 mb-8">
               <span className="text-5xl font-black text-gov-navy dark:text-white tabular-nums">{schemesFound}</span>
-              <span className="text-sm font-medium text-gov-textMuted dark:text-gray-400">schemes found</span>
+              <span className="text-sm font-medium text-gov-textMuted dark:text-gray-400">{t('schemesFound', 'schemes found')}</span>
             </div>
 
             <button
               onClick={onComplete}
               className="w-full rounded bg-gov-blue text-white font-bold py-3 px-4 flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"
             >
-              View My Recommendations
+              {t('viewMyRecommendations', 'View My Recommendations')}
               <ArrowRight className="w-4 h-4" />
             </button>
           </motion.div>

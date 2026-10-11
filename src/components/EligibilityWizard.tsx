@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserProfile } from '../types';
@@ -15,50 +15,49 @@ interface EligibilityWizardProps {
 export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode = 'wizard', onComplete, onCancel }) => {
   const { t } = useTranslation();
   const [[page, direction], setPage] = useState([1, 0]);
-  const [formData, setFormData] = useState<Partial<UserProfile>>(
-    user || {
-      age: 25,
-      gender: 'Male',
-      maritalStatus: 'Single',
-      state: '',
-      district: '',
-      annualIncome: 0,
-      occupation: '',
-      interests: []
-    }
-  );
-
-  const updateForm = (key: keyof UserProfile, value: any) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
-  };
-
-  const nextStep = () => {
-    if (page < 5) setPage([page + 1, 1]);
-  };
   
-  const prevStep = () => {
-    if (page > 1) setPage([page - 1, -1]);
-  };
+  const [formData, setFormData] = useState<Partial<UserProfile>>(() => user || {
+    age: 25,
+    gender: 'Male',
+    maritalStatus: 'Single',
+    state: '',
+    district: '',
+    annualIncome: 0,
+    occupation: '',
+    interests: []
+  });
+
+  const updateForm = useCallback((key: keyof UserProfile, value: any) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const nextStep = useCallback(() => {
+    setPage(prev => (prev[0] < 5 ? [prev[0] + 1, 1] : prev));
+  }, []);
+  
+  const prevStep = useCallback(() => {
+    setPage(prev => (prev[0] > 1 ? [prev[0] - 1, -1] : prev));
+  }, []);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
       setSubmitSuccess(true);
       setTimeout(() => onComplete(formData), 800);
     }, 1000);
-  };
+  }, [formData, onComplete]);
 
-  const steps = [
+  const steps = useMemo(() => [
     { id: 1, title: t('wizardPersonal', 'Personal') },
     { id: 2, title: t('wizardLocation', 'Location') },
     { id: 3, title: t('wizardIncome', 'Income') },
     { id: 4, title: t('wizardOccupation', 'Occupation') },
     { id: 5, title: t('wizardNeeds', 'Needs') },
-  ];
+  ], [t]);
 
   const variants = {
     enter: (direction: number) => ({
@@ -78,16 +77,29 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
   const isWhatCanIGet = mode === 'what-can-i-get';
   const isLifeEvent = mode === 'life-event';
   
-  // If in quick modes, skip standard steps
-  const displaySteps = isWhatCanIGet 
+  const displaySteps = useMemo(() => isWhatCanIGet 
     ? [{ id: 1, title: t('whatDoYouNeed', 'What do you need?') }] 
     : isLifeEvent 
     ? [{ id: 1, title: t('lifeEvent', 'Life Event') }]
-    : steps;
+    : steps, [isWhatCanIGet, isLifeEvent, steps, t]);
+
+  const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    updateForm('age', val === '' ? '' : parseInt(val, 10));
+  };
+
+  const handleIncomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    updateForm('annualIncome', val === '' ? '' : parseInt(val, 10));
+  };
+  
+  const handleLandChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    updateForm('landHoldingAcres', val === '' ? '' : parseFloat(val));
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F] flex flex-col">
-      {/* Header / Stepper */}
       <div className="bg-white dark:bg-[#0F1B2D] border-b border-gray-200 dark:border-gray-800 px-6 py-6 sm:px-12">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between relative">
@@ -98,7 +110,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
               animate={{ width: `${((page - 1) / (steps.length - 1)) * 100}%` }}
               transition={{ duration: 0.4 }}
             />
-            {displaySteps.map((s, i) => {
+            {displaySteps.map((s) => {
               const isActive = s.id === page;
               const isCompleted = s.id < page;
               return (
@@ -116,7 +128,6 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col items-center p-6 sm:p-12 overflow-x-hidden">
         <div className="w-full max-w-2xl relative min-h-[400px]">
           <AnimatePresence custom={direction} mode="wait">
@@ -140,6 +151,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                     {['Education', 'Job', 'Business', 'Farming', 'Healthcare', 'Housing', 'Financial Support', 'Women & Child Welfare', 'Skill Development', 'Pension', 'Disability Support'].map(need => (
                       <button 
                         key={need}
+                        type="button"
                         onClick={() => {
                           const current = formData.interests || [];
                           if(current.includes(need)) updateForm('interests', current.filter(n => n !== need));
@@ -173,6 +185,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                     ].map(event => (
                       <button 
                         key={event.label}
+                        type="button"
                         onClick={() => {
                           setFormData(prev => ({
                             ...prev,
@@ -198,12 +211,12 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('age', 'Age')}</label>
-                      <input type="number" value={formData.age || ''} onChange={e => updateForm('age', parseInt(e.target.value))} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] focus:border-transparent outline-none transition-all" placeholder="e.g. 25" />
+                      <input type="number" name="age" value={formData.age ?? ''} onChange={handleAgeChange} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] focus:border-transparent outline-none transition-all" placeholder="e.g. 25" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('gender', 'Gender')}</label>
-                        <select value={formData.gender || ''} onChange={e => updateForm('gender', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
+                        <select name="gender" value={formData.gender || ''} onChange={e => updateForm('gender', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
                           <option value="">{t('select', 'Select')}</option>
                           <option value="Male">{t('Male', 'Male')}</option>
                           <option value="Female">{t('Female', 'Female')}</option>
@@ -212,7 +225,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('maritalStatus', 'Marital Status')}</label>
-                        <select value={formData.maritalStatus || ''} onChange={e => updateForm('maritalStatus', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
+                        <select name="maritalStatus" value={formData.maritalStatus || ''} onChange={e => updateForm('maritalStatus', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
                           <option value="">{t('select', 'Select')}</option>
                           <option value="Single">{t('Single', 'Single')}</option>
                           <option value="Married">{t('Married', 'Married')}</option>
@@ -251,11 +264,11 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('annualHouseholdIncome', 'Annual Household Income (₹)')}</label>
-                      <input type="number" value={formData.annualIncome || ''} onChange={e => updateForm('annualIncome', parseInt(e.target.value))} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none transition-all" placeholder={t('egIncome', 'e.g. 150000')} />
+                      <input type="number" name="annualIncome" value={formData.annualIncome ?? ''} onChange={handleIncomeChange} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none transition-all" placeholder={t('egIncome', 'e.g. 150000')} />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('socialCategory', 'Social Category')}</label>
-                      <select value={formData.category || ''} onChange={e => updateForm('category', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
+                      <select name="category" value={formData.category || ''} onChange={e => updateForm('category', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
                         <option value="">{t('selectCategory', 'Select Category')}</option>
                         <option value="General">General</option>
                         <option value="OBC">OBC</option>
@@ -278,6 +291,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                     {['Student', 'Farmer', 'Worker', 'Entrepreneur', 'Government', 'Private Sector', 'Unemployed', 'Retired'].map(occ => (
                       <button 
                         key={occ} 
+                        type="button"
                         onClick={() => updateForm('occupation', occ)}
                         className={`p-4 rounded border text-left text-sm font-medium transition-colors ${formData.occupation === occ ? 'border-[#1769FF] bg-[#1769FF]/5 text-[#1769FF]' : 'border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-[#1769FF]/50'}`}
                       >
@@ -289,7 +303,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                   {formData.occupation === 'Student' && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-4">
                       <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('educationLevel', 'Education Level')}</label>
-                      <select value={formData.educationLevel || ''} onChange={e => updateForm('educationLevel', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
+                      <select name="educationLevel" value={formData.educationLevel || ''} onChange={e => updateForm('educationLevel', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
                         <option value="">{t('selectLevel', 'Select Level')}</option>
                         <option value="High School">{t('HighSchool', 'High School')}</option>
                         <option value="Undergraduate">{t('Undergraduate', 'Undergraduate')}</option>
@@ -301,7 +315,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                   {formData.occupation === 'Farmer' && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-4">
                       <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('landHolding', 'Land Holding (in Acres)')}</label>
-                      <input type="number" value={formData.landHoldingAcres || ''} onChange={e => updateForm('landHoldingAcres', parseFloat(e.target.value))} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none" placeholder={t('egLand', 'e.g. 2.5')} />
+                      <input type="number" name="landHoldingAcres" value={formData.landHoldingAcres ?? ''} onChange={handleLandChange} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none" placeholder={t('egLand', 'e.g. 2.5')} />
                     </motion.div>
                   )}
                 </div>
@@ -317,6 +331,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                     {['Education', 'Employment', 'Agriculture', 'Healthcare', 'Housing', 'Women & Child', 'Financial'].map(need => (
                       <button 
                         key={need}
+                        type="button"
                         onClick={() => {
                           const current = formData.interests || [];
                           if(current.includes(need)) {
@@ -338,20 +353,20 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
         </div>
       </div>
 
-      {/* Footer Navigation */}
       <div className="bg-white dark:bg-[#0F1B2D] border-t border-gray-200 dark:border-gray-800 p-6 flex justify-between items-center max-w-5xl mx-auto w-full">
         {page > 1 ? (
-          <button onClick={prevStep} className="px-6 py-3 rounded text-gray-600 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2">
+          <button type="button" onClick={prevStep} className="px-6 py-3 rounded text-gray-600 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2">
             <ChevronLeft className="w-5 h-5" /> {t('back', 'Back')}
           </button>
         ) : (
-          <button onClick={onCancel} className="px-6 py-3 rounded text-gray-500 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <button type="button" onClick={onCancel} className="px-6 py-3 rounded text-gray-500 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             {t('cancel', 'Cancel')}
           </button>
         )}
 
         {(isWhatCanIGet || isLifeEvent || page < 5) ? (
           <button 
+            type="button"
             onClick={isWhatCanIGet || isLifeEvent ? handleSubmit : nextStep} 
             disabled={isSubmitting || submitSuccess}
             className="px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-70"
@@ -366,6 +381,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
           </button>
         ) : (
           <button 
+            type="button"
             onClick={handleSubmit} 
             disabled={isSubmitting || submitSuccess}
             className={`px-8 py-3 rounded text-white font-semibold transition-colors flex items-center gap-2 disabled:opacity-70 ${submitSuccess ? 'bg-green-600' : 'bg-[#15803D] hover:bg-green-700'}`}
@@ -383,3 +399,4 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
     </div>
   );
 };
+

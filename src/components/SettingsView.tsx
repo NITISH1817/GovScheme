@@ -244,24 +244,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="space-y-10 animate-in fade-in duration-300">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-200 dark:border-gray-800 pb-2">
-                      {t('account', 'Account Preferences')}
+                      {t('accountPreferences', 'Account Preferences')}
                     </h2>
                     
                     <div className="space-y-6 max-w-lg">
                       <div>
-                        <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">Full Name</label>
+                        <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">{t('fullName', 'Full Name')}</label>
                         <input type="text" readOnly value={user.fullName} className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white opacity-70 cursor-not-allowed" />
-                        <p className="text-xs text-gray-500 mt-1">To change your name, please update your profile via Aadhaar KYC.</p>
+                        <p className="text-xs text-gray-500 mt-1">{t('nameAadhaarHint', 'To change your name, please update your profile via Aadhaar KYC.')}</p>
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">Email Address</label>
-                        <input type="email" readOnly value={user.email || ''} placeholder="Not provided" className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white opacity-70 cursor-not-allowed" />
+                        <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">{t('emailAddress', 'Email Address')}</label>
+                        <input type="email" readOnly value={user.email || ''} placeholder={t('notProvided', 'Not provided')} className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white opacity-70 cursor-not-allowed" />
                       </div>
 
                       <div className="pt-4">
-                        <button onClick={() => showToast('Password reset link sent to your phone/email.')} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                          Change Password
+                        <button onClick={() => showToast(t('passwordResetSent', 'Password reset link sent to your phone/email.'))} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                          {t('changePassword', 'Change Password')}
                         </button>
                       </div>
                     </div>
@@ -299,48 +299,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               )}
 
-              {/* Data Settings */}
-              {activeTab === 'data' && (
-                <div className="space-y-10 animate-in fade-in duration-300">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-200 dark:border-gray-800 pb-2">
-                      {t('data', 'Data & Privacy')}
-                    </h2>
-                    
-                    <div className="space-y-6">
-                      <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                          <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Download className="w-4 h-4" /> Download Personal Data
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Get a copy of your profile, saved schemes, and applications.</p>
-                        </div>
-                        <button onClick={() => showToast('Data export started. You will receive an email shortly.')} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-bold hover:bg-white dark:hover:bg-gray-800 transition-colors shrink-0">
-                          Request Archive
-                        </button>
-                      </div>
-
-                      <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded border border-red-200 dark:border-red-900/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-8">
-                        <div>
-                          <h3 className="font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
-                            <Trash2 className="w-4 h-4" /> Delete Account
-                          </h3>
-                          <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">Permanently remove your GovScheme account and data.</p>
-                        </div>
-                        <button onClick={() => {
-                          if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                            onLogout();
-                          }
-                        }} className="px-4 py-2 bg-red-600 text-white rounded text-sm font-bold hover:bg-red-700 transition-colors shrink-0">
-                          Delete Account
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notifications Setting placeholder */}
+              {/* Notifications Setting */}
               {activeTab === 'notifications' && (
                 <div className="space-y-10 animate-in fade-in duration-300">
                   <div>
@@ -348,9 +307,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       {t('notifications', 'Notifications')}
                     </h2>
                     <div className="space-y-6">
-                      {['Recommendations', 'Scheme updates', 'Application updates', 'Document reminders', 'Deadline notifications', 'System notifications'].map(notif => (
-                        <div key={notif} className="flex items-center justify-between">
-                          <p className="font-bold text-gray-900 dark:text-white">{notif}</p>
+                      {[
+                        { key: 'Recommendations', label: t('Recommendations', 'Recommendations') },
+                        { key: 'Scheme updates', label: t('Scheme updates', 'Scheme updates') },
+                        { key: 'Application updates', label: t('Application updates', 'Application updates') },
+                        { key: 'Document reminders', label: t('Document reminders', 'Document reminders') },
+                        { key: 'Deadline notifications', label: t('Deadline notifications', 'Deadline notifications') },
+                        { key: 'System notifications', label: t('System notifications', 'System notifications') }
+                      ].map(notif => (
+                        <div key={notif.key} className="flex items-center justify-between">
+                          <p className="font-bold text-gray-900 dark:text-white">{notif.label}</p>
                           <label className="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" className="sr-only peer" defaultChecked onChange={() => showToast(t('preferenceSaved', 'Preference saved'))} />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#1769FF]"></div>
@@ -362,7 +328,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               )}
               
-              {/* Privacy Setting placeholder */}
+              {/* Privacy Setting */}
               {activeTab === 'privacy' && (
                 <div className="space-y-10 animate-in fade-in duration-300">
                   <div>
@@ -372,8 +338,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-gray-900 dark:text-white">Data usage information</p>
-                          <p className="text-sm text-gray-500">Allow GovScheme to use your profile data to improve recommendations.</p>
+                          <p className="font-bold text-gray-900 dark:text-white">{t('dataUsageInfo', 'Data usage information')}</p>
+                          <p className="text-sm text-gray-500">{t('dataUsageDesc', 'Allow GovScheme to use your profile data to improve recommendations.')}</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer shrink-0">
                           <input type="checkbox" className="sr-only peer" defaultChecked onChange={() => showToast(t('preferenceSaved', 'Preference saved'))} />
@@ -382,8 +348,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-gray-900 dark:text-white">Personalization controls</p>
-                          <p className="text-sm text-gray-500">Receive personalized scheme alerts based on life events.</p>
+                          <p className="font-bold text-gray-900 dark:text-white">{t('personalizationControls', 'Personalization controls')}</p>
+                          <p className="text-sm text-gray-500">{t('personalizationDesc', 'Receive personalized scheme alerts based on life events.')}</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer shrink-0">
                           <input type="checkbox" className="sr-only peer" defaultChecked onChange={() => showToast(t('preferenceSaved', 'Preference saved'))} />
@@ -405,8 +371,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     
                     <div className="bg-white dark:bg-[#16243A] border border-gray-200 dark:border-gray-800 rounded-xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
-                        <h3 className="font-bold text-gray-900 dark:text-white">{t('downloadData', 'Download My Data')}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Get a copy of all your saved profile information and bookmarks in JSON format.</p>
+                        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                          <Download className="w-4 h-4" /> {t('downloadData', 'Download My Data')}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('downloadDataDesc', 'Get a copy of all your saved profile information and bookmarks in JSON format.')}</p>
                       </div>
                       <button 
                         onClick={() => {
@@ -415,7 +383,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           dlAnchorElem.setAttribute("href", dataStr);
                           dlAnchorElem.setAttribute("download", "govscheme_profile.json");
                           dlAnchorElem.click();
-                          showToast("Data downloaded successfully");
+                          showToast(t('downloadSuccess', "Data downloaded successfully"));
                         }}
                         className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold flex items-center gap-2 transition"
                       >
@@ -426,7 +394,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 rounded-xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h3 className="font-bold text-orange-800 dark:text-orange-400">{t('clearInformation', 'Clear Form Information')}</h3>
-                        <p className="text-sm text-orange-700 dark:text-orange-300/70 mt-1">Reset your profile data (age, income, location) without deleting your account.</p>
+                        <p className="text-sm text-orange-700 dark:text-orange-300/70 mt-1">{t('clearInfoDesc', 'Reset your profile data (age, income, location) without deleting your account.')}</p>
                       </div>
                       <button 
                         onClick={() => setShowResetModal(true)}
@@ -438,8 +406,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                     <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
-                        <h3 className="font-bold text-red-700 dark:text-red-400">{t('deleteAccount', 'Delete Account')}</h3>
-                        <p className="text-sm text-red-600 dark:text-red-300/70 mt-1">Permanently remove your account and all associated data from GovScheme.</p>
+                        <h3 className="font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
+                          <Trash2 className="w-4 h-4" /> {t('deleteAccount', 'Delete Account')}
+                        </h3>
+                        <p className="text-sm text-red-600 dark:text-red-300/70 mt-1">{t('deleteAccountDesc', 'Permanently remove your account and all associated data from GovScheme.')}</p>
                       </div>
                       <button 
                         onClick={() => setShowDeleteModal(true)}

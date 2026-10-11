@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const localesDir = path.join(__dirname, '../public/locales');
-const langs = ['en', 'hi', 'ml', 'ta', 'te'];
+const langs = ['en', 'hi', 'ml', 'ta', 'te', 'mr', 'gu'];
 
 const missingKeys = {
   en: {
@@ -89,6 +89,40 @@ const missingKeys = {
     "civicTechOverview": "ఈ రోజు మీ సివిక్-టెక్ అవలోకనం ఇక్కడ ఉంది.",
     "postMatricScholarship": "పోస్ట్ మెట్రిక్ స్కాలర్‌షిప్",
     "underReviewNodal": "రాష్ట్ర నోడల్ అధికారి సమీక్షలో"
+  },
+  mr: {
+    "manageProfile": "प्रोफाइल व्यवस्थापित करा",
+    "settings": "सेटिंग्ज",
+    "yourSchemeDiscovery": "तुमचा योजना शोध",
+    "recommended": "शिफारस केलेले",
+    "saved": "जतन केले",
+    "applications": "अर्ज",
+    "actionRequired": "कृती आवश्यक",
+    "activeApplications": "सक्रिय अर्ज",
+    "trackAllApplications": "सर्व अर्जांचा मागोवा घ्या",
+    "profileCompleteDesc": "तुमची प्रोफाइल {{score}}% पूर्ण झाली आहे. DBT योजनांसाठी त्वरित अर्ज करण्यासाठी तुमचे बँकिंग तपशील जोडा.",
+    "almostEligible": "जवळपास पात्र",
+    "ruleAlmostEligible": "जवळपास पात्र! तुमची एक अट अपूर्ण आहे: {{criteria}}",
+    "civicTechOverview": "येथे आजसाठी तुमचा सिव्हिक-टेक आढावा आहे.",
+    "postMatricScholarship": "पोस्ट मॅट्रिक शिष्यवृत्ती",
+    "underReviewNodal": "राज्य नोडल अधिकाऱ्याकडून पुनरावलोकनाधीन"
+  },
+  gu: {
+    "manageProfile": "પ્રોફાઇલ મેનેજ કરો",
+    "settings": "સેટિંગ્સ",
+    "yourSchemeDiscovery": "તમારી યોજના શોધ",
+    "recommended": "ભલામણ કરેલ",
+    "saved": "સાચવેલ",
+    "applications": "અરજીઓ",
+    "actionRequired": "કાર્યવાહી જરૂરી",
+    "activeApplications": "સક્રિય અરજીઓ",
+    "trackAllApplications": "તમામ અરજીઓને ટ્રેક કરો",
+    "profileCompleteDesc": "તમારી પ્રોફાઇલ {{score}}% પૂર્ણ છે. ડીબીટી યોજનાઓ માટે તરત જ અરજી કરવા માટે તમારી બેંકિંગ વિગતો ઉમેરો.",
+    "almostEligible": "લગભગ લાયક",
+    "ruleAlmostEligible": "લગભગ લાયક! તમારે એક આવશ્યકતા બાકી છે: {{criteria}}",
+    "civicTechOverview": "આજે તમારું સિવિક-ટેક ઓવરવ્યુ અહીં છે.",
+    "postMatricScholarship": "પોસ્ટ મેટ્રિક સ્કોલરશિપ",
+    "underReviewNodal": "સ્ટેટ નોડલ ઓફિસર દ્વારા સમીક્ષા હેઠળ"
   }
 };
 

@@ -68,7 +68,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({ is
                   <td className="p-4 font-semibold text-gray-500 text-sm">{t('govtLevel', 'Government Level')}</td>
                   {schemes.map(s => (
                     <td key={s.id} className="p-4 text-sm text-gray-900 dark:text-white font-medium">
-                      {s.state === 'Central' ? t('centralGovt', 'Central Government') : `${t('stateGovt', 'State')} (${s.state})`}
+                      {s.state === 'Central' ? t('centralGovt', 'Central Government') : `${t('stateGovt', 'State')} (${t(s.state, s.state)})`}
                     </td>
                   ))}
                 </tr>
@@ -77,7 +77,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({ is
                   {schemes.map(s => (
                     <td key={s.id} className="p-4">
                       {s.financialBenefitAmount ? (
-                        <span className="text-sm font-bold text-[#15803D]">₹{s.financialBenefitAmount.toLocaleString('en-IN')}/{t('year', 'year')}</span>
+                        <span className="text-sm font-bold text-[#15803D]">₹{(s.financialBenefitAmount || 0).toLocaleString('en-IN')}/{t('year', 'year')}</span>
                       ) : (
                         <span className="text-sm text-gray-500 italic">{t('variesNonFin', 'Varies / Non-financial')}</span>
                       )}

@@ -11,7 +11,13 @@ const DocumentSchema = new mongoose.Schema({
   ocrStatus: { type: String, enum: ['Pending', 'Completed', 'Failed'], default: 'Pending' },
   extractedData: { type: mongoose.Schema.Types.Mixed },
   confidenceScore: { type: Number },
-  verified: { type: Boolean, default: false }
+  verified: { type: Boolean, default: false },
+  status: { type: String, enum: ['Pending', 'Verified', 'Rejected', 'Resubmission Requested'], default: 'Pending' },
+  docNumber: { type: String },
+  rejectionReason: { type: String },
+  internalNotes: { type: String },
+  verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  verifiedAt: { type: Date }
 }, { timestamps: true });
 
 export default mongoose.model('Document', DocumentSchema);

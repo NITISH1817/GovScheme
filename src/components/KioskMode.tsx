@@ -2,15 +2,25 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, FileText, ChevronRight, ShieldCheck, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { UserProfile } from '../types';
+import { UserProfile, LanguageCode } from '../types';
+import { languages } from '../data/translations';
+import { Globe } from 'lucide-react';
 
 interface KioskModeProps {
   onGenerateReport: (profile: Partial<UserProfile>) => void;
   onExit: () => void;
+  currentLang?: LanguageCode;
+  onLanguageChange?: (lang: LanguageCode) => void;
 }
 
-export const KioskMode: React.FC<KioskModeProps> = ({ onGenerateReport, onExit }) => {
-  const { t } = useTranslation();
+export const KioskMode: React.FC<KioskModeProps> = ({ 
+  onGenerateReport, 
+  onExit,
+  currentLang,
+  onLanguageChange
+}) => {
+  const { t, i18n } = useTranslation();
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     age: '',
@@ -47,9 +57,46 @@ export const KioskMode: React.FC<KioskModeProps> = ({ onGenerateReport, onExit }
               <p className="text-xs text-blue-200">{t('cscOperator', 'Authorized Common Service Centre Operator')}</p>
             </div>
           </div>
-          <button onClick={onExit} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-sm font-bold transition-colors">
-            {t('exitKiosk', 'Exit Kiosk')}
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLangMenuOpen(!langMenuOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-white transition-colors"
+              >
+                <Globe className="w-4 h-4 text-amber-400" />
+                <span>{languages.find(l => l.code === (currentLang || i18n.language))?.nativeName || 'Language'}</span>
+              </button>
+
+              {langMenuOpen && (
+                <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-50">
+                  {languages.map(lang => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => {
+                        i18n.changeLanguage(lang.code);
+                        if (onLanguageChange) onLanguageChange(lang.code);
+                        setLangMenuOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${
+                        (currentLang || i18n.language) === lang.code
+                          ? 'bg-[#1769FF] text-white'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {lang.nativeName} ({lang.name})
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button onClick={onExit} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-sm font-bold transition-colors">
+              {t('exitKiosk', 'Exit Kiosk')}
+            </button>
+          </div>
         </div>
       </header>
 

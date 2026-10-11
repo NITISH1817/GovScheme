@@ -335,12 +335,12 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     )}
 
                     <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">{t('whyYouMatch', 'Why you match')}</span>
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">{t('whyYouMatch', 'WHY YOU MATCH')}</span>
                       <ul className="space-y-1">
                         {ruleResult.matchedCriteria.slice(0, 2).map((factor, i) => (
                           <li key={i} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
                             <Check className="w-3 h-3 text-[#15803D] shrink-0" />
-                            <span className="line-clamp-1">{factor}</span>
+                            <span className="line-clamp-1">{t(factor, factor)}</span>
                           </li>
                         ))}
                       </ul>

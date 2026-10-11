@@ -32,15 +32,24 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
   }, [isOpen, onClose]);
 
   const recentCommands = [
-    { id: 'schemes', label: 'Search Schemes', icon: FileText, view: 'schemes' },
-    { id: 'analytics', label: 'Open Analytics', icon: Activity, view: 'analytics' },
-    { id: 'data-quality', label: 'Data Health', icon: Database, view: 'data-quality' },
+    { id: 'schemes', label: 'Scheme Management', icon: FileText, view: 'schemes' },
+    { id: 'document-verification', label: 'Document Verification Queue', icon: CheckSquare, view: 'document-verification' },
+    { id: 'applications', label: 'Citizen Applications', icon: FileText, view: 'applications' },
+    { id: 'analytics', label: 'Platform Analytics', icon: Activity, view: 'analytics' },
   ];
 
   const navigationCommands = [
     { id: 'nav-overview', label: 'Dashboard', view: 'overview' },
-    { id: 'nav-schemes', label: 'Schemes', view: 'schemes' },
-    { id: 'nav-users', label: 'Users', view: 'users' },
+    { id: 'nav-schemes', label: 'Scheme Management', view: 'schemes' },
+    { id: 'nav-rules', label: 'Eligibility Rules Builder', view: 'rule-builder' },
+    { id: 'nav-apps', label: 'Application Management', view: 'applications' },
+    { id: 'nav-users', label: 'Citizens & Beneficiaries', view: 'users' },
+    { id: 'nav-docs', label: 'Document Verification Queue', view: 'document-verification' },
+    { id: 'nav-analytics', label: 'Analytics & Reports', view: 'analytics' },
+    { id: 'nav-notifs', label: 'Notification Center', view: 'notifications' },
+    { id: 'nav-content', label: 'Content Management (FAQs)', view: 'content' },
+    { id: 'nav-audit', label: 'Audit & Security Logs', view: 'audit' },
+    { id: 'nav-settings', label: 'Admin Settings', view: 'settings' },
   ];
 
   if (!isOpen) return null;

@@ -145,7 +145,6 @@ export const GovSchemeLogo3D: React.FC<Logo3DProps> = ({
         ) : (
           <LogoGeometry />
         )}
-        <Environment preset="city" />
       </Canvas>
     </div>
   );

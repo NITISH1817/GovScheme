@@ -46,7 +46,27 @@ export const App: React.FC = () => {
   const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
     return localStorage.getItem('reducedMotion') === 'true';
   });
-  const [activeTab, setActiveTab] = useState<string>('home');
+  const [activeTab, setActiveTabState] = useState<string>(() => {
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'home';
+  });
+
+  const setActiveTab = (tab: string) => {
+    if (window.location.hash !== `#${tab}`) {
+      window.location.hash = tab;
+    }
+    setActiveTabState(tab);
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      setActiveTabState(hash || 'home');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const [wizardMode, setWizardMode] = useState<'wizard' | 'life-event' | 'what-can-i-get' | 'ai-interview'>('wizard');
   const [kioskProfile, setKioskProfile] = useState<Partial<UserProfile> | null>(null);
 
@@ -115,6 +135,15 @@ export const App: React.FC = () => {
       localStorage.setItem('govscheme_user', JSON.stringify(user));
     }
   }, [user]);
+
+  // Protected Routes Logic
+  useEffect(() => {
+    const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'tracker'];
+    if (!isBooting && protectedTabs.includes(activeTab) && !user) {
+      setActiveTab('home');
+      setIsAuthOpen(true);
+    }
+  }, [activeTab, user, isBooting]);
 
   // Dynamic Page Titles & Meta Descriptions
   useEffect(() => {
@@ -305,10 +334,11 @@ export const App: React.FC = () => {
 
     setUser(prev => {
       if (!prev) return prev;
-      const isSaved = prev.savedSchemeIds.includes(schemeId);
+      const saved = prev.savedSchemeIds || [];
+      const isSaved = saved.includes(schemeId);
       const updatedSaved = isSaved
-        ? prev.savedSchemeIds.filter(id => id !== schemeId)
-        : [...prev.savedSchemeIds, schemeId];
+        ? saved.filter(id => id !== schemeId)
+        : [...saved, schemeId];
       return {
         ...prev,
         savedSchemeIds: updatedSaved
@@ -317,7 +347,7 @@ export const App: React.FC = () => {
   };
 
   const isBookmarked = (schemeId: string) => {
-    return user ? user.savedSchemeIds.includes(schemeId) : false;
+    return user ? (user.savedSchemeIds || []).includes(schemeId) : false;
   };
 
   const handleOpenOCRForDoc = (docType: DocumentRecord['type']) => {
@@ -329,7 +359,7 @@ export const App: React.FC = () => {
     if (!user) return;
     setUser(prev => {
       if (!prev) return prev;
-      const existingFiltered = prev.documents.filter(d => d.type !== newDoc.type);
+      const existingFiltered = (prev.documents || []).filter(d => d.type !== newDoc.type);
       return {
         ...prev,
         ...autoFillFields,
@@ -396,6 +426,12 @@ export const App: React.FC = () => {
   if (activeTab === 'kiosk') {
     return (
       <KioskMode
+        key={currentLang}
+        currentLang={currentLang}
+        onLanguageChange={(lang) => {
+          i18n.changeLanguage(lang);
+          setCurrentLang(lang);
+        }}
         onGenerateReport={(profile) => {
           setKioskProfile(profile);
           setActiveTab('kiosk-report');
@@ -409,6 +445,12 @@ export const App: React.FC = () => {
   if (activeTab === 'kiosk-report' && kioskProfile) {
     return (
       <KioskReport 
+        key={currentLang}
+        currentLang={currentLang}
+        onLanguageChange={(lang) => {
+          i18n.changeLanguage(lang);
+          setCurrentLang(lang);
+        }}
         profile={kioskProfile} 
         schemes={schemes} 
         onBack={() => setActiveTab('kiosk')} 
@@ -418,7 +460,7 @@ export const App: React.FC = () => {
 
   // If Admin Mode
   if (activeTab === 'admin') {
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin' && user.email !== 'admin@govscheme.in')) {
       return (
         <AdminLogin 
           onLoginSuccess={(u) => {
@@ -534,6 +576,7 @@ export const App: React.FC = () => {
 
         {activeTab === 'assistant' && user && (
           <AIAssistant
+            key={currentLang}
             user={user}
             schemes={schemes}
             currentLang={currentLang}
@@ -616,6 +659,13 @@ export const App: React.FC = () => {
         onLoginSuccess={(loggedInUser) => {
           setUser(loggedInUser);
           localStorage.setItem('govscheme_user', JSON.stringify(loggedInUser));
+          if (loggedInUser.role === 'admin' || loggedInUser.role === 'superadmin' || loggedInUser.email === 'admin@govscheme.in') {
+            setActiveTab('admin');
+          } else if ((loggedInUser.profileCompletionScore || 0) < 50) {
+            setActiveTab('profile');
+          } else {
+            setActiveTab('schemes');
+          }
         }}
         onContinueGuest={() => setUser(null)}
         currentLang={currentLang}

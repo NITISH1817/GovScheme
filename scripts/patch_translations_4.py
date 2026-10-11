@@ -1,0 +1,153 @@
+import json
+import os
+
+mr_translations = {
+    "Agriculture & Farmers": "कृषी आणि शेतकरी",
+    "Housing & Shelter": "गृहनिर्माण आणि निवारा",
+    "Health & Healthcare": "आरोग्य आणि आरोग्यसेवा",
+    "Women & Child Welfare": "महिला आणि बाल कल्याण",
+    "Pensions & Senior Care": "पेन्शन आणि ज्येष्ठ नागरिक काळजी",
+    "Employment & Micro Enterprises": "रोजगार आणि सूक्ष्म उद्योग",
+    "Financial Inclusion & Credit": "आर्थिक समावेश आणि कर्ज",
+    "Education & Skill": "शिक्षण आणि कौशल्य",
+    "Disability Empowerment": "अपंग सक्षमीकरण",
+    "lastUpdatedLabel": "शेवटचे अपडेट:",
+    "govtOfIndia": "भारत सरकार",
+    "overview": "आढावा",
+    "benefits": "फायदे",
+    "financialAssistance": "आर्थिक मदत",
+    "whyRecommended": "ही योजना का सुचवली गेली",
+    "matchScore": "जुळणी स्कोअर",
+    "demographic": "लोकसांख्यिकी",
+    "priorityWeighting": "प्राधान्य वेटिंग",
+    "priorityWeightingDesc": "कठोर नियम वि. सॉफ्ट जुळणी.",
+    "highPriority": "उच्च प्राधान्य",
+    "tier1Rec": "टियर 1 शिफारस",
+    "eligibilityAnalysis": "पात्रता विश्लेषण",
+    "matched": "जुळले",
+    "unmet": "अपूर्ण",
+    "missingInfo": "अपूर्ण माहिती",
+    "officialEligibility": "अधिकृत पात्रता",
+    "documentsRequired": "स्मार्ट कागदपत्र चेकलिस्ट",
+    "applicationProcess": "अर्ज प्रक्रिया",
+    "processStep1": "कागदपत्रे तयार करा",
+    "processStep2": "ऑनलाइन अर्ज करा",
+    "processStep3": "पडताळणी सबमिट करा",
+    "processStep4": "विभागीय पुनरावलोकन",
+    "processStep5": "निर्णय",
+    "frequentlyAskedQuestions": "वारंवार विचारले जाणारे प्रश्न",
+    "govtPortal": "सरकारी पोर्टल",
+    "applyOnOfficialPortal": "अधिकृत पोर्टलवर अर्ज करा",
+    "pm-kisan_benefits": "प्रत्येकी ४ महिन्यांनी ₹२,००० च्या ३ समान हप्त्यांमध्ये बँक खात्यात ₹६,००० जमा केले जातात.",
+    "pmay-g_benefits": "मैदानी भागात ₹१,२०,००० आणि डोंगराळ राज्यांमध्ये ₹१,३०,००० चे आर्थिक अनुदान.",
+    "pmjay-ayushman_benefits": "२७,००० हून अधिक मान्यताप्राप्त रुग्णालयांमध्ये वैद्यकीय उपचारांसाठी प्रति कुटुंब प्रति वर्ष ₹५,००,००० पर्यंत कॅशलेस आरोग्य कव्हर.",
+    "pm-ujjwala_name": "प्रधानमंत्री उज्वला योजना २.० (PMUY)",
+    "pm-ujjwala_desc": "कमी उत्पन्न असलेल्या ग्रामीण कुटुंबातील प्रौढ महिलांसाठी मोफत एलपीजी गॅस जोडणी आणि शेगडी.",
+    "pm-ujjwala_benefits": "मोफत एलपीजी कनेक्शन + मोफत शेगडी + पहिली १४.२ किलोची एलपीजी सिलेंडर रिफिल + ₹३०० सबसिडी.",
+    "sukanya-samriddhi_name": "सुकन्या समृद्धी योजना (SSY)",
+    "sukanya-samriddhi_desc": "मुलींसाठी कर सवलत आणि हमी परतावा देणारी उच्च-व्याज सरकारी बचत योजना.",
+    "sukanya-samriddhi_benefits": "कलम 80C अंतर्गत ८.२% वार्षिक करमुक्त व्याज दर.",
+    "nsap-old-age-pension_name": "इंदिरा गांधी राष्ट्रीय वृद्धापकाळ पेन्शन योजना (IGNOAPS)",
+    "nsap-old-age-pension_desc": "ग्रामीण आणि शहरी भारतात दारिद्र्यरेषेखालील ६०+ वयाच्या ज्येष्ठ नागरिकांसाठी मासिक पेन्शन.",
+    "nsap-old-age-pension_benefits": "₹१,००० ते ₹३,००० प्रति महिना पेन्शन.",
+    "pm-mudra_name": "प्रधानमंत्री मुद्रा योजना (PMMY)",
+    "pm-mudra_desc": "सूक्ष्म-उद्योग, छोटे व्यवसाय आणि स्वयंरोजगार असलेल्यांसाठी ₹10 लाखांपर्यंतचे तारणमुक्त कर्ज.",
+    "pm-mudra_benefits": "शिशू, किशोर आणि तरुण या ३ श्रेणींतर्गत व्यवसाय कर्जे.",
+    "pm-svanidhi_name": "PM स्वनिधी (PM SVANidhi)",
+    "pm-svanidhi_desc": "शहरी आणि निमशहरी पथविक्रेत्यांसाठी परवडणारे तारणमुक्त खेळत्या भांडवलाचे कर्ज.",
+    "pm-svanidhi_benefits": "₹१०,००० ते ₹५०,००० पर्यंत खेळत्या भांडवलाचे कर्ज.",
+    "mgnrega_name": "मनरेगा (MGNREGA)",
+    "mgnrega_desc": "अकुशल शारीरिक काम करण्यास इच्छुक असलेल्या प्रत्येक ग्रामीण कुटुंबाला १०० दिवसांच्या रोजगाराची हमी.",
+    "mgnrega_benefits": "ग्रामीण कुटुंबाला वर्षभरात १०० दिवसांच्या रोजगाराची हमी.",
+    "pm-jan-dhan_name": "प्रधानमंत्री जन धन योजना (PMJDY)",
+    "pm-jan-dhan_desc": "मूलभूत बँकिंग सुविधा, पत, विमा आणि पेन्शनसाठी आर्थिक समावेशाची मोहीम.",
+    "pm-jan-dhan_benefits": "झिरो बॅलन्स बँक खाते + रुपे डेबिट कार्ड + ₹२ लाख अपघात विमा.",
+    "atal-pension-yojana_name": "अटल पेन्शन योजना (APY)",
+    "atal-pension-yojana_desc": "असंघटित क्षेत्रातील कामगारांसाठी पेन्शन योजना.",
+    "atal-pension-yojana_benefits": "वयाच्या ६० वर्षांनंतर ₹१,००० ते ₹५,००० ची निश्चित मासिक पेन्शन."
+}
+
+gu_translations = {
+    "Agriculture & Farmers": "કૃષિ અને ખેડૂતો",
+    "Housing & Shelter": "આવાસ અને આશ્રય",
+    "Health & Healthcare": "આરોગ્ય અને આરોગ્યસંભાળ",
+    "Women & Child Welfare": "મહિલા અને બાળ કલ્યાણ",
+    "Pensions & Senior Care": "પેન્શન અને વરિષ્ઠ નાગરિક સંભાળ",
+    "Employment & Micro Enterprises": "રોજગાર અને સૂક્ષ્મ ઉદ્યોગો",
+    "Financial Inclusion & Credit": "આર્થિક સમાવેશ અને ધિરાણ",
+    "Education & Skill": "શિક્ષણ અને કૌશલ્ય",
+    "Disability Empowerment": "વિકલાંગ સશક્તિકરણ",
+    "lastUpdatedLabel": "છેલ્લે અપડેટ:",
+    "govtOfIndia": "ભારત સરકાર",
+    "overview": "ઝાંખી",
+    "benefits": "લાભો",
+    "financialAssistance": "આર્થિક સહાય",
+    "whyRecommended": "આ યોજનાની ભલામણ શા માટે કરવામાં આવી",
+    "matchScore": "મેચ સ્કોર",
+    "demographic": "વસ્તી વિષયક",
+    "priorityWeighting": "પ્રાધાન્ય વેઇટિંગ",
+    "priorityWeightingDesc": "કઠોર નિયમો વિ. સોફ્ટ મેચિંગ.",
+    "highPriority": "ઉચ્ચ પ્રાથમિકતા",
+    "tier1Rec": "ટાયર 1 ભલામણ",
+    "eligibilityAnalysis": "પાત્રતા વિશ્લેષણ",
+    "matched": "મેચ થયેલ",
+    "unmet": "અપૂર્ણ",
+    "missingInfo": "અપૂર્ણ માહિતી",
+    "officialEligibility": "સત્તાવાર પાત્રતા",
+    "documentsRequired": "સ્માર્ટ દસ્તાવેજ ચેકલિસ્ટ",
+    "applicationProcess": "અરજી પ્રક્રિયા",
+    "processStep1": "દસ્તાવેજો તૈયાર કરો",
+    "processStep2": "ઓનલાઈન અરજી કરો",
+    "processStep3": "ચકાસણી સબમિટ કરો",
+    "processStep4": "વિભાગ સમીક્ષા",
+    "processStep5": "નિર્ણય",
+    "frequentlyAskedQuestions": "વારંવાર પૂછાતા પ્રશ્નો",
+    "govtPortal": "સરકારી પોર્ટલ",
+    "applyOnOfficialPortal": "સત્તાવાર પોર્ટલ પર અરજી કરો",
+    "pm-kisan_benefits": "દર 4 મહિને ₹2,000 ના 3 સમાન હપ્તામાં સીધા બેંક ખાતામાં ₹6,000 જમા થાય છે.",
+    "pmay-g_benefits": "મેદાની વિસ્તારોમાં ₹1,20,000 અને પહાડી રાજ્યોમાં ₹1,30,000 ની આર્થિક ગ્રાન્ટ.",
+    "pmjay-ayushman_benefits": "27,000+ માન્યતાપ્રાપ્ત હોસ્પિટલોમાં તબીબી સારવાર માટે કુટુંબ દીઠ વાર્ષિક ₹5,00,000 સુધીનું કેશલેસ હેલ્થ કવર.",
+    "pm-ujjwala_name": "પ્રધાનમંત્રી ઉજ્જવલા યોજના 2.0 (PMUY)",
+    "pm-ujjwala_desc": "ઓછી આવક ધરાવતા ગ્રામીણ પરિવારોની પુખ્ત વયની મહિલાઓ માટે મફત LPG ગેસ કનેક્શન અને સ્ટવ.",
+    "pm-ujjwala_benefits": "ડિપોઝિટ-ફ્રી LPG કનેક્શન + મફત સ્ટવ + પહેલી 14.2 કિલો LPG સિલિન્ડર રિફિલ + ₹300 સબસિડી.",
+    "sukanya-samriddhi_name": "સુકન્યા સમૃદ્ધિ યોજના (SSY)",
+    "sukanya-samriddhi_desc": "કન્યાઓ માટે કર લાભો અને બાંયધરીકૃત વળતર આપતી ઉચ્ચ વ્યાજની સરકારી બચત યોજના.",
+    "sukanya-samriddhi_benefits": "કલમ 80C હેઠળ 8.2% p.a. કરમુક્ત વ્યાજ દર.",
+    "nsap-old-age-pension_name": "ઇન્દિરા ગાંધી રાષ્ટ્રીય વૃદ્ધાવસ્થા પેન્શન યોજના (IGNOAPS)",
+    "nsap-old-age-pension_desc": "ગ્રામીણ અને શહેરી ભારતમાં ગરીબી રેખા હેઠળ જીવતા 60+ વયના વરિષ્ઠ નાગરિકો માટે માસિક પેન્શન.",
+    "nsap-old-age-pension_benefits": "દર મહિને ₹1,000 થી ₹3,000 પેન્શન.",
+    "pm-mudra_name": "પ્રધાનમંત્રી મુદ્રા યોજના (PMMY)",
+    "pm-mudra_desc": "સૂક્ષ્મ ઉદ્યોગો અને નાના વ્યવસાયો માટે ₹10 લાખ સુધીની કોલેટરલ-ફ્રી લોન.",
+    "pm-mudra_benefits": "શિશુ, કિશોર અને તરુણ 3 શ્રેણીઓ હેઠળ કોલેટરલ-મુક્ત વ્યવસાય લોન.",
+    "pm-svanidhi_name": "PM સ્વનિધિ (PM SVANidhi)",
+    "pm-svanidhi_desc": "શહેરી શેરી વિક્રેતાઓ માટે પરવડે તેવી કોલેટરલ-ફ્રી વર્કિંગ કેપિટલ લોન.",
+    "pm-svanidhi_benefits": "₹10,000 થી ₹50,000 સુધીની વર્કિંગ કેપિટલ લોન.",
+    "mgnrega_name": "મનરેગા (MGNREGA)",
+    "mgnrega_desc": "ગ્રામીણ પરિવારોને નાણાકીય વર્ષમાં ઓછામાં ઓછા 100 દિવસની વેતન રોજગારીની ખાતરી આપે છે.",
+    "mgnrega_benefits": "ગ્રામીણ પરિવાર દીઠ વાર્ષિક 100 દિવસની ખાતરીપૂર્વકની રોજગારી.",
+    "pm-jan-dhan_name": "પ્રધાનમંત્રી જન ધન યોજના (PMJDY)",
+    "pm-jan-dhan_desc": "બેંકિંગ, વીમા અને પેન્શન સુવિધાઓ પ્રદાન કરવા માટે નાણાકીય સમાવેશ મિશન.",
+    "pm-jan-dhan_benefits": "મફત શૂન્ય-બેલેન્સ બચત ખાતું + રૂપે ડેબિટ કાર્ડ + ₹2 લાખ અકસ્માત વીમો.",
+    "atal-pension-yojana_name": "અટલ પેન્શન યોજના (APY)",
+    "atal-pension-yojana_desc": "અસંગઠિત ક્ષેત્રના કામદારો માટે 60 વર્ષની ઉંમર પછી નિશ્ચિત માસિક પેન્શન યોજના.",
+    "atal-pension-yojana_benefits": "દર મહિને ₹1,000 થી ₹5,000 ની ખાતરીપૂર્વકની માસિક પેન્શન."
+}
+
+def update_locale(lang_code, translations_dict):
+    path = f'public/locales/{lang_code}/translation.json'
+    if not os.path.exists(path):
+        print(f"File not found: {path}")
+        return
+        
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        
+    for k, v in translations_dict.items():
+        data[k] = v
+        
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    print(f"Updated {lang_code} with {len(translations_dict)} MORE translations for Schemes.")
+
+update_locale('mr', mr_translations)
+update_locale('gu', gu_translations)

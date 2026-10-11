@@ -137,7 +137,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {t('goodMorningCitizen', 'Good morning, Citizen').replace('Citizen', user.fullName.split(' ')[0] || 'Citizen')}
               </h1>
               <p className="text-gov-textMuted dark:text-gray-400 text-lg">
-                {t('basedOnProfileIn', 'Based on your profile in')} <span className="font-bold text-gov-navy dark:text-white">{user.state ? t(`state_${user.state.replace(/\\s+/g, '')}`, user.state) : 'India'}</span> {t('andYourInterests', 'and your interests:')}
+                {t('basedOnProfileIn', 'Based on your profile in')} <span className="font-bold text-gov-navy dark:text-white">{user.state ? (t(user.state, t(`state_${user.state.replace(/\s+/g, '')}`, user.state))) : t('India', 'India')}</span> {t('andYourInterests', 'and your interests:')}
               </p>
               <div className="mt-4 flex items-center gap-3">
                 <span className="px-4 py-1.5 bg-gov-green/10 text-gov-green font-bold text-sm rounded-full border border-gov-green/20">

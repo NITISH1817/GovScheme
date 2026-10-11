@@ -26,7 +26,7 @@ export function computeMLRecommendation(
   }
 
   // 2. Category & Occupation Affinity Boost
-  if (user.occupation.toLowerCase().includes('farmer') && scheme.category.includes('Agriculture')) {
+  if (user.occupation?.toLowerCase().includes('farmer') && scheme.category.includes('Agriculture')) {
     score += 10;
   }
   if (user.hasDisability && scheme.category.includes('Disability')) {
@@ -49,7 +49,7 @@ export function computeMLRecommendation(
   }
 
   // 4. Popularity & State Preference
-  if (scheme.state.toLowerCase() === user.state.toLowerCase()) {
+  if (scheme.state.toLowerCase() === user.state?.toLowerCase()) {
     score += 5;
   }
   score += Math.round((scheme.popularityScore ?? 80) * 0.05);

@@ -11,8 +11,15 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3004,
+    host: true,
+    port: 5173,
     open: false,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     chunkSizeWarningLimit: 2000,

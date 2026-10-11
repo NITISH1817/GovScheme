@@ -1,18 +1,30 @@
 import User from '../models/User.js';
+import Application from '../models/Application.js';
+import Document from '../models/Document.js';
 
 // @desc    Get all users (citizens)
 // @route   GET /api/users
 // @access  Private (Admin)
 export const getUsers = async (req, res) => {
   try {
-    const { role = 'Citizen', page = 1, limit = 20, q } = req.query;
+    const { role = 'Citizen', state, isActive, page = 1, limit = 20, q } = req.query;
     
-    let filter = { role };
+    let filter = {};
+    if (role && role !== 'All') {
+      filter.role = role;
+    }
+    if (state && state !== 'All') {
+      filter['profile.state'] = state;
+    }
+    if (isActive !== undefined && isActive !== 'All' && isActive !== '') {
+      filter.isActive = isActive === 'true' || isActive === true;
+    }
     
     if (q) {
       filter.$or = [
         { fullName: { $regex: q, $options: 'i' } },
-        { email: { $regex: q, $options: 'i' } }
+        { email: { $regex: q, $options: 'i' } },
+        { mobile: { $regex: q, $options: 'i' } }
       ];
     }
 
@@ -115,3 +127,30 @@ export const updateUserProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Get detailed citizen profile with their applications and documents
+// @route   GET /api/users/:id/details
+// @access  Private (Admin)
+export const getCitizenDetails = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Citizen not found' });
+    }
+
+    const [applications, documents] = await Promise.all([
+      Application.find({ userId: user._id }).populate('schemeId', 'name department category'),
+      Document.find({ userId: user._id })
+    ]);
+
+    res.json({
+      success: true,
+      user,
+      applications,
+      documents
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

@@ -34,7 +34,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               {t('myProfile', 'My Profile')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
-              Manage your information to improve your government scheme recommendations.
+              {t('manageProfileDesc', 'Manage your information to improve your government scheme recommendations.')}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -62,12 +62,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
                 
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user.fullName}</h2>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{user.email || 'No email provided'} • +91 {user.mobile}</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t(user.fullName, user.fullName)}</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{user.email || t('notProvided', 'No email provided')} • +91 {user.mobile}</p>
                   
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Profile Completeness: {user.profileCompletionScore}%</span>
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{t('profileCompleteness', 'Profile Completeness')}: {user.profileCompletionScore}%</span>
                     </div>
                     <div className="w-48 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                       <div className="bg-[#15803D] h-1.5 rounded-full" style={{ width: `${user.profileCompletionScore}%` }}></div>
@@ -78,7 +78,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
               <div className="z-10 w-full md:w-auto">
                 <button onClick={() => onNavigateTab('wizard')} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#1769FF] text-white font-bold hover:bg-blue-700 transition-colors">
-                  <Edit3 className="w-4 h-4" /> Edit Profile
+                  <Edit3 className="w-4 h-4" /> {t('editProfile', 'Edit Profile')}
                 </button>
               </div>
             </motion.div>
@@ -87,7 +87,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
               <div className="flex items-center gap-2 mb-4">
                 <LayoutDashboard className="w-5 h-5 text-[#1769FF]" />
-                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">Your Eligibility Snapshot</h2>
+                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">{t('eligibilitySnapshot', 'Your Eligibility Snapshot')}</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-4">
@@ -95,8 +95,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Location</p>
-                    <p className="font-semibold text-gray-900 dark:text-white mt-1">{user.state || 'Not specified'}{user.district ? ` • ${user.district}` : ''}</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('location', 'Location')}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white mt-1">{t(user.state, user.state || 'Not specified')}{user.district ? ` • ${t(user.district, user.district)}` : ''}</p>
                   </div>
                 </div>
                 
@@ -105,9 +105,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     <Briefcase className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Occupation</p>
-                    <p className="font-semibold text-gray-900 dark:text-white mt-1">{user.occupation || 'Not specified'}</p>
-                    {user.educationLevel && <p className="text-sm text-gray-600 dark:text-gray-400">{user.educationLevel}</p>}
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('occupation', 'Occupation')}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white mt-1">{t(user.occupation, user.occupation || 'Not specified')}</p>
+                    {user.educationLevel && <p className="text-sm text-gray-600 dark:text-gray-400">{t(user.educationLevel, user.educationLevel)}</p>}
                   </div>
                 </div>
 
@@ -116,9 +116,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     <IndianRupee className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Financial</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('financial', 'Financial')}</p>
                     <p className="font-semibold text-gray-900 dark:text-white mt-1">
-                      {user.annualIncome !== undefined ? `₹${user.annualIncome.toLocaleString()}/year` : 'Income not specified'}
+                      {user.annualIncome != null ? `₹${user.annualIncome.toLocaleString()}/${t('year', 'year')}` : t('incomeNotSpecified', 'Income not specified')}
                     </p>
                   </div>
                 </div>
@@ -128,14 +128,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     <Bookmark className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Preferences</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('preferences', 'Preferences')}</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {(user.interests || []).length > 0 ? (
                         user.interests?.map((interest, i) => (
-                          <span key={i} className="text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">{interest}</span>
+                          <span key={i} className="text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">{t(interest, interest)}</span>
                         ))
                       ) : (
-                        <span className="text-sm text-gray-500">No specific needs selected</span>
+                        <span className="text-sm text-gray-500">{t('noNeedsSelected', 'No specific needs selected')}</span>
                       )}
                     </div>
                   </div>
@@ -150,16 +150,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <div className="flex items-start gap-4">
                     <AlertCircle className="w-6 h-6 text-blue-300 shrink-0 mt-1" />
                     <div>
-                      <h3 className="font-bold text-lg">Profile Insight</h3>
+                      <h3 className="font-bold text-lg">{t('profileInsight', 'Profile Insight')}</h3>
                       <p className="text-blue-100 text-sm mt-1 max-w-md">
                         {user.educationLevel === undefined && user.occupation === 'Student' 
-                          ? "Adding your education level could help identify additional scholarship schemes."
-                          : "Adding your missing information could help identify additional schemes."}
+                          ? t('missingEduInsight', 'Adding your education level could help identify additional scholarship schemes.')
+                          : t('missingInfoInsight', 'Adding your missing information could help identify additional schemes.')}
                       </p>
                     </div>
                   </div>
                   <button onClick={() => onNavigateTab('wizard')} className="w-full md:w-auto px-6 py-2 bg-white text-[#123C69] text-sm font-bold rounded-lg shadow hover:bg-gray-50 transition-colors whitespace-nowrap">
-                    Complete Profile
+                    {t('completeProfile', 'Complete Profile')}
                   </button>
                 </div>
               </motion.section>
@@ -169,32 +169,32 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="w-5 h-5 text-[#1769FF]" />
-                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">Recent Activity</h2>
+                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">{t('recentActivity', 'Recent Activity')}</h2>
               </div>
               <div className="bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-2">
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
                   <div className="p-4 flex items-center gap-4">
                     <div className="w-2 h-2 rounded-full bg-[#1769FF]" />
                     <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">Logged into GovScheme platform</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Just now</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('loggedIntoPlatform', 'Logged into GovScheme platform')}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t('justNow', 'Just now')}</p>
                     </div>
                   </div>
-                  {user.savedSchemeIds.length > 0 && (
+                  {(user.savedSchemeIds || []).length > 0 && (
                     <div className="p-4 flex items-center gap-4">
                       <div className="w-2 h-2 rounded-full bg-[#15803D]" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Saved a new scheme to profile</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Recently</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('savedSchemeToProfile', 'Saved a new scheme to profile')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('recently', 'Recently')}</p>
                       </div>
                     </div>
                   )}
-                  {user.documents.length > 0 && (
+                  {(user.documents || []).length > 0 && (
                     <div className="p-4 flex items-center gap-4">
                       <div className="w-2 h-2 rounded-full bg-purple-500" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Added {user.documents[0].type} to Document Vault</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Recently</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('addedDocToVault', 'Added document to Document Vault')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('recently', 'Recently')}</p>
                       </div>
                     </div>
                   )}
@@ -212,36 +212,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center">
                 <CheckCircle2 className="w-6 h-6 text-[#15803D] mb-2" />
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{eligibleSchemesCount}</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">Eligible</div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('eligible', 'Eligible')}</div>
               </div>
               <div onClick={() => onNavigateTab('schemes')} className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-colors">
                 <Bookmark className="w-6 h-6 text-[#1769FF] mb-2" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.savedSchemeIds.length}</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">Saved</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{(user.savedSchemeIds || []).length}</div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('saved', 'Saved')}</div>
               </div>
               <div onClick={() => onNavigateTab('tracker')} className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-colors">
                 <FileText className="w-6 h-6 text-gray-700 dark:text-gray-300 mb-2" />
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">0</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">Applications</div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('applications', 'Applications')}</div>
               </div>
               <div onClick={() => onNavigateTab('vault')} className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-colors">
                 <AlertCircle className="w-6 h-6 text-[#D97706] mb-2" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.documents.length}</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">Documents</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{(user.documents || []).length}</div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('documents', 'Documents')}</div>
               </div>
             </div>
 
             {/* Empty Applications State */}
             <section>
-              <h2 className="text-lg font-bold text-[#123C69] dark:text-white mb-4">My Applications</h2>
+              <h2 className="text-lg font-bold text-[#123C69] dark:text-white mb-4">{t('myApplications', 'My Applications')}</h2>
               <div className="bg-white dark:bg-[#0F1B2D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 text-center flex flex-col items-center">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                   <FileText className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="font-bold text-gray-900 dark:text-white">No applications yet</h3>
-                <p className="text-sm text-gray-500 mt-2 max-w-xs">Once you start an application, you'll be able to track it here.</p>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t('noAppsYet', 'No applications yet')}</h3>
+                <p className="text-sm text-gray-500 mt-2 max-w-xs">{t('noAppsDesc', "Once you start an application, you'll be able to track it here.")}</p>
                 <button onClick={() => onNavigateTab('schemes')} className="mt-6 px-6 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold rounded hover:bg-gray-200 transition-colors">
-                  Explore Schemes
+                  {t('exploreSchemes', 'Explore Schemes')}
                 </button>
               </div>
             </section>

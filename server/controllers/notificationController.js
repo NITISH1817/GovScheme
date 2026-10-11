@@ -6,8 +6,60 @@ import User from '../models/User.js';
 // @access  Private (Admin)
 export const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find().sort({ createdAt: -1 }).limit(50);
+    let notifications = await Notification.find().sort({ createdAt: -1 }).limit(50);
+    if (notifications.length === 0) {
+      await Notification.insertMany([
+        {
+          title: 'System Security Audit Completed',
+          message: 'Automated vulnerability scanning verified all scheme endpoints.',
+          type: 'System',
+          read: false
+        },
+        {
+          title: 'New Citizen Application Pending',
+          message: 'A new application for PM Kisan Samman Nidhi requires verification.',
+          type: 'ApplicationUpdate',
+          read: false
+        },
+        {
+          title: 'Scheme Rules Updated',
+          message: 'Post Matric Scholarship income ceiling was calibrated to ₹2,50,000.',
+          type: 'SchemeAlert',
+          read: true
+        }
+      ]);
+      notifications = await Notification.find().sort({ createdAt: -1 }).limit(50);
+    }
     res.json({ success: true, notifications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Mark a notification as read
+// @route   PUT /api/notifications/:id/read
+// @access  Private (Admin)
+export const markNotificationRead = async (req, res) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+    notification.read = true;
+    await notification.save();
+    res.json({ success: true, notification });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Mark all notifications as read
+// @route   PUT /api/notifications/read-all
+// @access  Private (Admin)
+export const markAllNotificationsRead = async (req, res) => {
+  try {
+    await Notification.updateMany({ read: false }, { $set: { read: true } });
+    res.json({ success: true, message: 'All notifications marked as read' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

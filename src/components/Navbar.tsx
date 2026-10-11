@@ -265,7 +265,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={onOpenAuth}
                 className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-105 transition-transform"
               >
-                Sign In
+                {t('signIn', 'Sign In')}
               </button>
             )}
 

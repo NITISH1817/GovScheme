@@ -29,18 +29,30 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   onNavigateTab
 }) => {
   const { t } = useTranslation();
+
+  const getLocalizedGreeting = () => {
+    const firstName = user.fullName.split(' ')[0] || '';
+    let greeting = t('aiGreeting', 'Hello Citizen. I am your Official AI Scheme Assistant. Based on your profile, I can help you discover welfare schemes, analyze eligibility, compare programs, and guide your official application. How can I help you today?');
+    if (firstName) {
+      greeting = greeting.replace(/Citizen|નાગરિક|नागरिक|குடிமகனே|పౌరుడా|പൗരൻ/, firstName);
+    }
+    return greeting;
+  };
+
+  const getSuggestedPrompts = () => [
+    t('qRelevantToStudents', 'Which schemes are relevant to students?'),
+    t('qSchemesForFarmers', 'What schemes can farmers apply for?'),
+    t('qWhyRecommended', 'Why was a scheme recommended?'),
+    t('qWhatDocs', 'What documents do I need?')
+  ];
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-init',
       sender: 'assistant',
-      text: t('aiGreeting', 'Hello Citizen. I am your Official AI Scheme Assistant. Based on your profile, I can help you discover welfare schemes, analyze eligibility, compare programs, and guide your official application. How can I help you today?').replace('Citizen', user.fullName.split(' ')[0] || 'Citizen'),
+      text: getLocalizedGreeting(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      suggestedPrompts: [
-        t('qRelevantToStudents', 'Which schemes are relevant to students?'),
-        t('qSchemesForFarmers', 'What schemes can farmers apply for?'),
-        t('qWhyRecommended', 'Why was a scheme recommended?'),
-        t('qWhatDocs', 'What documents do I need?')
-      ]
+      suggestedPrompts: getSuggestedPrompts()
     }
   ]);
 
@@ -50,13 +62,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       if (newMsgs.length > 0 && newMsgs[0].id === 'msg-init') {
         newMsgs[0] = {
           ...newMsgs[0],
-          text: t('aiGreeting', 'Hello Citizen. I am your Official AI Scheme Assistant...').replace('Citizen', user.fullName.split(' ')[0] || 'Citizen'),
-          suggestedPrompts: [
-            t('qRelevantToStudents', 'Which schemes are relevant to students?'),
-            t('qSchemesForFarmers', 'What schemes can farmers apply for?'),
-            t('qWhyRecommended', 'Why was a scheme recommended?'),
-            t('qWhatDocs', 'What documents do I need?')
-          ]
+          text: getLocalizedGreeting(),
+          suggestedPrompts: getSuggestedPrompts()
         };
       }
       return newMsgs;
@@ -251,12 +258,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               </div>
               <div>
                 <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  Ask Scheme Assistant
+                  {t('askSchemeAssistant', 'Ask Scheme Assistant')}
                   <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Online
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> {t('online', 'Online')}
                   </span>
                 </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Natural language semantic analysis enabled</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('nlSemanticEnabled', 'Natural language semantic analysis enabled')}</p>
               </div>
             </div>
 
@@ -269,7 +276,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               title="Toggle Voice Output"
             >
               {voicePlaybackEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              <span className="hidden sm:inline">{voicePlaybackEnabled ? 'Voice On' : 'Voice Off'}</span>
+              <span className="hidden sm:inline">{voicePlaybackEnabled ? t('voiceOn', 'Voice On') : t('voiceOff', 'Voice Off')}</span>
             </button>
           </div>
 

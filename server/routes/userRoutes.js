@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUsers, updateUserStatus, getUserProfile, updateUserProfile } from '../controllers/userController.js';
+import { getUsers, updateUserStatus, getUserProfile, updateUserProfile, getCitizenDetails } from '../controllers/userController.js';
 import { protect, adminOnly } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -10,6 +10,9 @@ router.route('/profile')
 
 router.route('/')
   .get(protect, adminOnly, getUsers);
+
+router.route('/:id/details')
+  .get(protect, adminOnly, getCitizenDetails);
 
 router.route('/:id/status')
   .put(protect, adminOnly, updateUserStatus);

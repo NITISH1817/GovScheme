@@ -153,7 +153,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                       </div>
                     ) : (
                       <p className="text-sm text-gov-textMuted dark:text-gray-400 font-medium">
-                        {t('uploadOrScan', 'Scan this document to unlock restricted schemes requiring {t(docType, docType)} verification.').replace('{t(docType, docType)}', docType)}
+                        {t('uploadOrScanDocPrompt', 'Upload or scan this document to unlock schemes requiring {doc} verification.').replace('{doc}', t(docType, docType))}
                       </p>
                     )}
                   </div>
@@ -182,7 +182,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                         className="w-full group/btn relative overflow-hidden rounded-full bg-white dark:bg-[#111827] border border-gov-border dark:border-white/10 p-1.5 flex items-center justify-between shadow-sm hover:shadow-md transition-all"
                       >
                         <span className="text-gov-navy dark:text-white font-bold text-xs pl-4 pr-3 flex-1 text-center">
-                          {t('scanWithOCR', 'Scan Document')}
+                          {t('scanWithOCR', 'Scan with AI OCR')}
                         </span>
                         <div className="w-8 h-8 rounded-full bg-gov-background dark:bg-white/5 flex items-center justify-center transition-transform group-hover/btn:scale-105">
                           <ScanLine className="w-3.5 h-3.5 text-gov-navy dark:text-white" />

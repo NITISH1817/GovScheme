@@ -89,6 +89,8 @@ export const languages: { code: LanguageCode; name: string; nativeName: string }
   { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
   { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
   { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' }
 ];
 
 export const translations: Record<LanguageCode, TranslationDict> = {

@@ -14,7 +14,7 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     const finalMin = minAge ?? 0;
     const finalMax = maxAge ?? 120;
     if (user.age >= finalMin && user.age <= finalMax) {
-      matchedCriteria.push(`${i18n.t('Age Requirement Met', 'Age Requirement Met')} (${user.age} yrs within ${finalMin}-${finalMax} range)`);
+      matchedCriteria.push(i18n.t('ruleAgeMetDetail', { userAge: user.age, minAge: finalMin, maxAge: finalMax, defaultValue: `${i18n.t('Age Requirement Met', 'Age Requirement Met')} (${user.age} yrs within ${finalMin}-${finalMax} range)` }));
     } else {
       failedCriteria.push(i18n.t('ruleAgeFailed', { userAge: user.age, minAge: finalMin, maxAge: finalMax, defaultValue: `Age ${user.age} yrs does not satisfy required range (${finalMin}-${finalMax} yrs)` }));
     }
@@ -29,11 +29,11 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
   }
 
   if (scheme.state !== 'Central' && rules.allowedStates && rules.allowedStates.length > 0) {
-    const stateMatched = rules.allowedStates.some((s: string) => s.toLowerCase() === user.state.toLowerCase());
+    const stateMatched = rules.allowedStates.some((s: string) => s.toLowerCase() === user.state?.toLowerCase());
     if (stateMatched) {
-      matchedCriteria.push(`${i18n.t('Resident of', 'Resident of')} ${i18n.t(user.state, user.state)}`);
+      matchedCriteria.push(`${i18n.t('Resident of', 'Resident of')} ${i18n.t(user.state || 'Unknown', user.state || 'Unknown')}`);
     } else {
-      failedCriteria.push(`Scheme restricted to ${rules.allowedStates.map((s: string) => i18n.t(s, s)).join(', ')} (User in ${i18n.t(user.state, user.state)})`);
+      failedCriteria.push(`Scheme restricted to ${rules.allowedStates.map((s: string) => i18n.t(s, s)).join(', ')} (User in ${i18n.t(user.state || 'Unknown', user.state || 'Unknown')})`);
     }
   } else if (scheme.state === 'Central') {
     matchedCriteria.push(i18n.t('Central Scheme open across India', 'Central Scheme open across India'));
@@ -41,17 +41,18 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
 
   const maxIncome = rules.maxAnnualIncome ?? (rules as any).incomeLimit;
   if (maxIncome !== undefined && maxIncome > 0) {
-    if (user.annualIncome <= maxIncome) {
-      matchedCriteria.push(`${i18n.t('Income', 'Income')} ₹${user.annualIncome.toLocaleString('en-IN')}/yr below limit of ₹${maxIncome.toLocaleString('en-IN')}/yr`);
+    const userIncome = user.annualIncome || 0;
+    if (userIncome <= maxIncome) {
+      matchedCriteria.push(i18n.t('ruleIncomeBelowLimit', { userIncome: userIncome.toLocaleString('en-IN'), maxIncome: maxIncome.toLocaleString('en-IN'), defaultValue: `Income ₹${userIncome.toLocaleString('en-IN')}/yr below limit of ₹${maxIncome.toLocaleString('en-IN')}/yr` }));
     } else {
-      failedCriteria.push(`${i18n.t('Income', 'Income')} ₹${user.annualIncome.toLocaleString('en-IN')}/yr exceeds upper threshold of ₹${maxIncome.toLocaleString('en-IN')}/yr`);
+      failedCriteria.push(i18n.t('ruleIncomeExceedsLimit', { userIncome: userIncome.toLocaleString('en-IN'), maxIncome: maxIncome.toLocaleString('en-IN'), defaultValue: `Income ₹${userIncome.toLocaleString('en-IN')}/yr exceeds upper threshold of ₹${maxIncome.toLocaleString('en-IN')}/yr` }));
     }
   }
 
   if (rules.allowedOccupations && rules.allowedOccupations.length > 0) {
     const occupationMatched = rules.allowedOccupations.some((occ: string) => 
-      occ.toLowerCase().includes(user.occupation.toLowerCase()) || 
-      user.occupation.toLowerCase().includes(occ.toLowerCase())
+      occ.toLowerCase().includes(user.occupation?.toLowerCase() || '') || 
+      (user.occupation?.toLowerCase() || '').includes(occ.toLowerCase())
     );
     if (occupationMatched) {
       matchedCriteria.push(`${i18n.t('Occupation matches', 'Occupation matches')} (${i18n.t(user.occupation, user.occupation)})`);
@@ -90,7 +91,7 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     }
   }
 
-  const uploadedDocTypes = user.documents.map(d => d.type);
+  const uploadedDocTypes = (user.documents || []).map(d => d.type);
   const docsList = scheme.requiredDocuments || (scheme as any).documentsRequired || [];
   
   docsList.forEach((reqDoc: string) => {
