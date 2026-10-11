@@ -423,8 +423,10 @@ export const App: React.FC = () => {
     if (!user) return;
     setUser(prev => {
       if (!prev) return prev;
-      // Do not overwrite other documents; match strictly by documentId if existing
-      const existingFiltered = (prev.documents || []).filter(d => (d.documentId || d.id) !== (newDoc.documentId || newDoc.id));
+      // Replace existing document slot of the same type or matching documentId
+      const existingFiltered = (prev.documents || []).filter(
+        d => (d.documentId || d.id) !== (newDoc.documentId || newDoc.id) && d.type !== newDoc.type
+      );
       return {
         ...prev,
         ...autoFillFields,
