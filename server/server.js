@@ -6,7 +6,7 @@ import User from './models/User.js';
 import bcrypt from 'bcryptjs';
 import Scheme from './models/Scheme.js';
 import Document from './models/Document.js';
-import { schemesData } from '../src/data/schemes.js';
+import { schemesData } from '../src/data/schemes.ts';
 import authRoutes from './routes/authRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 

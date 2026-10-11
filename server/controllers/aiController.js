@@ -1,7 +1,7 @@
 import ChatHistory from '../models/ChatHistory.js';
 import Scheme from '../models/Scheme.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { schemesData } from '../../src/data/schemes.js';
+import { schemesData } from '../../src/data/schemes.ts';
 
 export const chatWithAI = async (req, res) => {
   try {
