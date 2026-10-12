@@ -5,6 +5,7 @@ import { UserProfile, Scheme, LanguageCode } from '../types';
 import { languages } from '../data/translations';
 import { ThermalReceiptPrinter, CitizenReportData } from './ThermalReceiptPrinter';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
+import { initialUserProfile } from '../data/initialUserData';
 
 interface KioskReportProps {
   profile: Partial<UserProfile>;
@@ -32,7 +33,9 @@ export const KioskReport: React.FC<KioskReportProps> = ({
   // Rule-based and demographic eligibility evaluation
   const eligibleSchemes = useMemo(() => {
     const mockUser: UserProfile = {
-      id: 'kiosk-user',
+      ...initialUserProfile,
+      ...profile,
+      id: profile.id || 'kiosk-user',
       fullName: profile.fullName || 'Citizen',
       age: profile.age || 25,
       gender: profile.gender || 'Male',
@@ -42,9 +45,9 @@ export const KioskReport: React.FC<KioskReportProps> = ({
       annualIncome: profile.annualIncome !== undefined ? profile.annualIncome : 120000,
       category: profile.category || 'General',
       occupation: profile.occupation || 'Farmer',
-      documents: [],
-      savedSchemeIds: [],
-      profileCompletionScore: 85
+      documents: profile.documents || [],
+      savedSchemeIds: profile.savedSchemeIds || [],
+      profileCompletionScore: profile.profileCompletionScore || 85
     };
 
     return schemes.filter(s => {
