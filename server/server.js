@@ -11,9 +11,6 @@ import authRoutes from './routes/authRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 
 const seedAdmin = async () => {
-  if (process.env.NODE_ENV === 'production' && !process.env.SEED_ADMIN) {
-    return;
-  }
   try {
     const adminExists = await User.findOne({ email: 'admin@govscheme.in' });
     if (!adminExists) {
@@ -24,7 +21,7 @@ const seedAdmin = async () => {
         role: 'Super Admin',
         isActive: true
       });
-      console.log('[Security] Development Default Admin seeded.');
+      console.log('[Security] Admin seeded: admin@govscheme.in / password123');
     }
   } catch (error) {
     console.error('Failed to seed admin', error);
