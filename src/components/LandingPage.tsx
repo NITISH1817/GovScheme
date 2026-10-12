@@ -28,6 +28,7 @@ interface LandingPageProps {
   onGetStarted: (mode: 'wizard' | 'life-event' | 'what-can-i-get') => void;
   onTalkToAI: () => void;
   onNavigateTab: (tab: string) => void;
+  onSelectCategory?: (category: string) => void;
   topSchemes: Scheme[];
   user: UserProfile | null;
 }
@@ -86,6 +87,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted,
   onTalkToAI,
   onNavigateTab,
+  onSelectCategory,
   topSchemes,
   user
 }) => {
@@ -106,14 +108,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   const categories = [
-    { icon: GraduationCap, label: t('Education'), color: 'from-blue-500 to-gov-blue' },
-    { icon: Tractor, label: t('Agriculture'), color: 'from-green-500 to-gov-green' },
-    { icon: HeartPulse, label: t('Healthcare'), color: 'from-red-400 to-gov-red' },
-    { icon: Home, label: t('Housing'), color: 'from-purple-500 to-purple-700' },
-    { icon: Briefcase, label: t('Employment'), color: 'from-gov-saffron to-orange-600' },
-    { icon: Baby, label: t('Women & Child'), color: 'from-pink-500 to-pink-700' },
-    { icon: Rocket, label: t('Entrepreneurship'), color: 'from-teal-500 to-teal-700' },
-    { icon: IndianRupee, label: t('Financial Help'), color: 'from-yellow-500 to-yellow-700' },
+    { key: 'Education', icon: GraduationCap, label: t('Education'), color: 'from-blue-500 to-gov-blue' },
+    { key: 'Agriculture', icon: Tractor, label: t('Agriculture'), color: 'from-green-500 to-gov-green' },
+    { key: 'Healthcare', icon: HeartPulse, label: t('Healthcare'), color: 'from-red-400 to-gov-red' },
+    { key: 'Housing', icon: Home, label: t('Housing'), color: 'from-purple-500 to-purple-700' },
+    { key: 'Employment', icon: Briefcase, label: t('Employment'), color: 'from-gov-saffron to-orange-600' },
+    { key: 'Women & Child', icon: Baby, label: t('Women & Child'), color: 'from-pink-500 to-pink-700' },
+    { key: 'Entrepreneurship', icon: Rocket, label: t('Entrepreneurship'), color: 'from-teal-500 to-teal-700' },
+    { key: 'Financial Help', icon: IndianRupee, label: t('Financial Help'), color: 'from-yellow-500 to-yellow-700' },
   ];
 
   return (
@@ -332,13 +334,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className="group cursor-pointer bg-white border border-gov-border p-6 rounded-2xl flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                onClick={() => {
+                  if (onSelectCategory) {
+                    onSelectCategory(cat.key);
+                  } else {
+                    onNavigateTab('schemes');
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    if (onSelectCategory) onSelectCategory(cat.key);
+                    else onNavigateTab('schemes');
+                  }
+                }}
+                className="group cursor-pointer bg-white dark:bg-[#0B1220]/70 border border-gov-border dark:border-white/10 p-6 rounded-2xl flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden select-none active:scale-[0.98]"
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+                <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold bg-gradient-to-br ${cat.color} text-white shadow-md group-hover:scale-110 transition-transform duration-300`}>
                   <cat.icon className="w-7 h-7" />
                 </div>
-                <h4 className="text-sm font-bold text-gov-navy font-sans group-hover:text-gov-blue transition-colors">
+                <h4 className="text-sm font-bold text-gov-navy dark:text-white font-sans group-hover:text-gov-blue dark:group-hover:text-blue-400 transition-colors">
                   {cat.label}
                 </h4>
               </motion.div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Scheme, UserProfile, CombinedSchemeAnalysis } from '../types';
 import { useTranslation } from 'react-i18next';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
@@ -12,6 +12,7 @@ interface SchemeDiscoveryProps {
   schemes: Scheme[];
   user: UserProfile;
   currentLang: string;
+  initialCategory?: string;
   onSelectScheme: (analysis: CombinedSchemeAnalysis) => void;
   onToggleBookmark: (schemeId: string) => void;
   isBookmarked: (schemeId: string) => boolean;
@@ -21,6 +22,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   schemes,
   user,
   currentLang,
+  initialCategory,
   onSelectScheme,
   onToggleBookmark,
   isBookmarked
@@ -36,7 +38,15 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   
   // Filters
   const [selectedGovtLevel, setSelectedGovtLevel] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    return initialCategory ? [initialCategory] : [];
+  });
+
+  useEffect(() => {
+    if (initialCategory) {
+      setSelectedCategories([initialCategory]);
+    }
+  }, [initialCategory]);
   const [selectedEligibility, setSelectedEligibility] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('');
@@ -88,7 +98,38 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
     // Categories
     if (selectedCategories.length > 0) {
-      const matchCat = selectedCategories.some(cat => a.scheme.category.includes(cat));
+      const matchCat = selectedCategories.some(cat => {
+        const catLower = cat.toLowerCase();
+        const schemeCatLower = a.scheme.category.toLowerCase();
+        const tags = (a.scheme.tags || []).map(t => t.toLowerCase());
+
+        if (cat === 'Education') {
+          return schemeCatLower.includes('education') || tags.includes('scholarship') || tags.includes('student');
+        }
+        if (cat === 'Agriculture') {
+          return schemeCatLower.includes('agriculture') || schemeCatLower.includes('farmer') || tags.includes('farmer') || tags.includes('agriculture');
+        }
+        if (cat === 'Healthcare') {
+          return schemeCatLower.includes('health') || tags.includes('health') || tags.includes('medical');
+        }
+        if (cat === 'Housing') {
+          return schemeCatLower.includes('housing') || schemeCatLower.includes('shelter') || tags.includes('housing');
+        }
+        if (cat === 'Employment') {
+          return schemeCatLower.includes('employment') || schemeCatLower.includes('enterprise') || tags.includes('employment') || tags.includes('job card');
+        }
+        if (cat === 'Women & Child') {
+          return schemeCatLower.includes('women') || schemeCatLower.includes('child') || tags.includes('women') || tags.includes('girl child');
+        }
+        if (cat === 'Entrepreneurship') {
+          return schemeCatLower.includes('enterprise') || schemeCatLower.includes('credit') || tags.includes('entrepreneurship') || tags.includes('startup') || tags.includes('msme') || tags.includes('mudra');
+        }
+        if (cat === 'Financial Help') {
+          return schemeCatLower.includes('credit') || schemeCatLower.includes('financial') || schemeCatLower.includes('pension') || schemeCatLower.includes('food') || tags.includes('loan') || tags.includes('dbt');
+        }
+
+        return schemeCatLower.includes(catLower);
+      });
       if (!matchCat) return false;
     }
 
@@ -186,7 +227,16 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t('category', 'Category')}</h3>
                   <div className="space-y-2">
-                    {['Education', 'Agriculture', 'Healthcare', 'Employment', 'Housing', 'Business'].map(cat => (
+                    {[
+                      'Education',
+                      'Agriculture',
+                      'Healthcare',
+                      'Housing',
+                      'Employment',
+                      'Women & Child',
+                      'Entrepreneurship',
+                      'Financial Help'
+                    ].map(cat => (
                       <label key={cat} className="flex items-center gap-2 cursor-pointer group">
                         <input 
                           type="checkbox" 

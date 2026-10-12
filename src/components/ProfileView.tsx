@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, Clock, Bookmark, FileText, AlertCircle, ChevronRight,
@@ -16,6 +16,7 @@ interface ProfileViewProps {
   onNavigateTab: (tab: string) => void;
   eligibleSchemesCount: number;
   schemes?: Scheme[];
+  initialSubTab?: 'overview' | 'report';
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -23,10 +24,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onUpdateProfile,
   onNavigateTab,
   eligibleSchemesCount,
-  schemes = []
+  schemes = [],
+  initialSubTab
 }) => {
   const { t } = useTranslation();
-  const [profileTab, setProfileTab] = useState<'overview' | 'report'>('overview');
+  const [profileTab, setProfileTab] = useState<'overview' | 'report'>(() => {
+    if (initialSubTab) return initialSubTab;
+    if (typeof window !== 'undefined' && window.location.hash === '#report') return 'report';
+    return 'overview';
+  });
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setProfileTab(initialSubTab);
+    }
+  }, [initialSubTab]);
 
   // Compute actual report snapshot from verified profile, isolated documents, and schemes
   const reportData: CitizenReportData = useMemo(() => {
@@ -71,9 +83,43 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
     const isComplete = Boolean(user.fullName && user.state && user.age);
     const missingSteps: string[] = [];
+    if (!user.fullName) missingSteps.push("Citizen Full Name");
     if (!user.state) missingSteps.push("Confirm State of Residence");
-    if (!user.annualIncome) missingSteps.push("Specify Annual Household Income");
+    if (!user.age) missingSteps.push("Specify Citizen Age");
+    if (user.annualIncome === undefined) missingSteps.push("Specify Annual Household Income");
     if (uploadedCount === 0) missingSteps.push("Upload at least one government document proof in Document Vault");
+
+    // Safe demonstration documents if user has not yet uploaded any
+    const displayDocuments = docs.length > 0 
+      ? docs.map(d => ({
+          documentId: d.documentId || d.id || 'DOC-GEN',
+          documentType: (d.documentType || d.type || 'Document').replace('_', ' ').toUpperCase(),
+          ocrStatus: d.ocrStatus || 'COMPLETED',
+          verificationStatus: d.verificationStatus || (d.status === 'Verified' ? 'CHECKS_PASSED' : 'PENDING'),
+          maskedIdentifier: d.docNumber ? `•••• •••• ${d.docNumber.slice(-4)}` : '•••• 8821'
+        }))
+      : [
+          {
+            documentId: 'SAMPLE-AADHAAR',
+            documentType: 'AADHAAR (SAMPLE PREVIEW)',
+            ocrStatus: 'COMPLETED',
+            verificationStatus: 'CHECKS_PASSED',
+            maskedIdentifier: '•••• •••• 9281'
+          }
+        ];
+
+    // Safe demonstration schemes if user has no matching schemes yet
+    const displaySchemes = evaluatedSchemes.length > 0 
+      ? evaluatedSchemes.slice(0, 8)
+      : schemes.slice(0, 3).map(s => ({
+          schemeId: s.id,
+          schemeName: s.name,
+          category: s.category,
+          benefitSummary: s.shortDescription || 'Welfare grant assistance (Sample preview)',
+          matchStatus: 'Eligible (Preview)',
+          officialWebsite: (s as any).officialWebsite || s.officialApplyUrl,
+          requiredDocuments: s.requiredDocuments || []
+        }));
 
     return {
       reportId: `RPT-${new Date().getFullYear()}-${user.id ? user.id.slice(-4).toUpperCase() : '8429'}`,
@@ -84,31 +130,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         hour: '2-digit',
         minute: '2-digit'
       }),
-      citizenName: user.fullName || 'Citizen User',
+      citizenName: user.fullName || 'Citizen User (Preview)',
       age: user.age || 25,
       gender: user.gender || 'Male',
       state: user.state || 'Tamil Nadu',
       district: user.district || 'Chennai',
       occupation: user.occupation || 'Self-Employed',
-      annualIncome: user.annualIncome,
+      annualIncome: user.annualIncome !== undefined ? user.annualIncome : 180000,
       socialCategory: user.category || 'General',
       studentStatus: user.occupation === 'Student' ? 'Active Student' : 'No',
       farmerStatus: user.occupation === 'Farmer' ? 'Registered Cultivator' : 'No',
       disabilityStatus: user.hasDisability ? 'Differently Abled' : 'Not Applicable',
-      uploadedDocumentsCount: uploadedCount,
-      ocrCompletedCount: ocrCompleted,
+      uploadedDocumentsCount: uploadedCount > 0 ? uploadedCount : 1,
+      ocrCompletedCount: uploadedCount > 0 ? ocrCompleted : 1,
       needsReviewCount: needsReview,
-      verificationOutcome: ocrCompleted > 0 ? (needsReview > 0 ? 'NEEDS_REVIEW' : 'CHECKS_PASSED') : 'PENDING_DOCS',
-      documents: docs.map(d => ({
-        documentId: d.documentId || d.id || 'DOC-GEN',
-        documentType: (d.documentType || d.type || 'Document').replace('_', ' ').toUpperCase(),
-        ocrStatus: d.ocrStatus || 'COMPLETED',
-        verificationStatus: d.verificationStatus || (d.status === 'Verified' ? 'CHECKS_PASSED' : 'PENDING'),
-        maskedIdentifier: d.docNumber ? `•••• •••• ${d.docNumber.slice(-4)}` : '•••• 8821'
-      })),
-      recommendedSchemes: evaluatedSchemes.slice(0, 8),
+      verificationOutcome: ocrCompleted > 0 ? (needsReview > 0 ? 'NEEDS_REVIEW' : 'CHECKS_PASSED') : (isComplete ? 'PENDING_DOCS' : 'SAMPLE_PREVIEW'),
+      documents: displayDocuments,
+      recommendedSchemes: displaySchemes,
       missingDocumentsChecklist: Array.from(missingDocsSet).slice(0, 5),
       isComplete,
+      isPreview: !isComplete,
       missingSteps
     };
   }, [user, schemes]);
@@ -170,40 +211,40 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         {/* PROFILE TAB 2: AI REPORT PRINTER VIEW */}
         {profileTab === 'report' ? (
-          <div>
-            {!reportData.isComplete ? (
-              <div className="p-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-4">
-                <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Report Generation Incomplete</h3>
-                <p className="text-sm text-slate-500 max-w-md mx-auto">
-                  Please complete the following essential profile steps before your official eligibility assessment can be generated:
-                </p>
-                <ul className="inline-block text-left text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-4 rounded-xl space-y-1">
-                  {reportData.missingSteps.map((st, i) => (
-                    <li key={i}>• {st}</li>
-                  ))}
-                </ul>
-                <div>
-                  <button
-                    onClick={() => setProfileTab('overview')}
-                    className="px-6 py-2.5 rounded-xl bg-[#1769FF] text-white font-bold text-xs"
-                  >
-                    Return to Profile & Fill Details
-                  </button>
+          <div className="space-y-6">
+            {!reportData.isComplete && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-amber-900 dark:text-amber-200 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">
+                      Demonstration Preview Mode Active
+                    </span>
+                    <p className="text-amber-700 dark:text-amber-300">
+                      Your profile has pending information ({reportData.missingSteps.join(', ')}). The AI printer below is displaying a <strong>safe demonstration preview</strong> with working mechanical controls (RE-PRINT, FEED, TEAR, RESET, AUDIO). Complete your profile details in Profile Overview to generate an official assessment.
+                    </p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setProfileTab('overview')}
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 transition-colors shadow-sm"
+                >
+                  Complete Profile in Overview →
+                </button>
               </div>
-            ) : (
-              <ThermalReceiptPrinter
-                reportData={reportData}
-                onReprint={() => {
-                  console.log("Re-printing thermal report...");
-                }}
-                onRegenerateReport={() => {
-                  setProfileTab('overview');
-                  setTimeout(() => setProfileTab('report'), 50);
-                }}
-              />
             )}
+
+            <ThermalReceiptPrinter
+              reportData={reportData}
+              onReprint={() => {
+                console.log("Re-printing thermal report...");
+              }}
+              onRegenerateReport={() => {
+                setProfileTab('overview');
+                setTimeout(() => setProfileTab('report'), 50);
+              }}
+            />
           </div>
         ) : (
 

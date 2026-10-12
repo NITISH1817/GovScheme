@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Languages, Sun, Moon, Eye, Bell, User as UserIcon, Mic, Monitor, Sparkles, LogOut, ChevronDown, Menu, X, Settings2
+  Languages, Sun, Moon, Eye, Bell, User as UserIcon, Mic, Monitor, Sparkles, LogOut, ChevronDown, Menu, X, Settings2, Printer
 } from 'lucide-react';
 import { GovSchemeLogo } from './brand';
 import { useTranslation } from 'react-i18next';
@@ -241,8 +241,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <button onClick={() => { setActiveTab('tracker'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
                         <Monitor className="w-4 h-4" /> {t('myApplications', 'My Applications')}
                       </button>
-                      <button onClick={() => { setActiveTab('kiosk'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
-                        <Eye className="w-4 h-4" /> {t('reports', 'Reports')}
+                      <button onClick={() => { setActiveTab('report'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 text-text-primary">
+                        <Printer className="w-4 h-4 text-primary" /> {t('reports', 'Reports (AI Printer)')}
                       </button>
                       
                       {(user.role === 'admin' || user.role === 'superadmin') && (

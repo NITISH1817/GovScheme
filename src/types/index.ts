@@ -28,8 +28,8 @@ export type VerificationStatusType =
 export interface DocumentRecord {
   _id?: string;
   id?: string;
-  documentId: string;
-  documentType: string;
+  documentId?: string;
+  documentType?: string;
   type?: string;
   originalFileName?: string;
   fileMimeType?: string;

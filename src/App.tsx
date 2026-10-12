@@ -85,6 +85,7 @@ export const App: React.FC = () => {
 
   // Modal Controls
   const [selectedSchemeAnalysis, setSelectedSchemeAnalysis] = useState<CombinedSchemeAnalysis | null>(null);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | undefined>(undefined);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -141,7 +142,7 @@ export const App: React.FC = () => {
 
   // Protected Routes Logic
   useEffect(() => {
-    const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'tracker'];
+    const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'report', 'tracker'];
     if (!isBooting && protectedTabs.includes(activeTab) && !user) {
       setActiveTab('home');
       setIsAuthOpen(true);
@@ -175,6 +176,10 @@ export const App: React.FC = () => {
         break;
       case 'profile':
         title = 'My Profile | GovScheme AI';
+        break;
+      case 'report':
+        title = 'Citizen Assessment & AI Report Printer | GovScheme AI';
+        metaDesc = 'Interactive thermal receipt report printer for verified welfare benefits.';
         break;
       case 'kiosk':
         title = 'Kiosk Mode | GovScheme AI';
@@ -414,8 +419,8 @@ export const App: React.FC = () => {
     return user ? (user.savedSchemeIds || []).includes(schemeId) : false;
   };
 
-  const handleOpenOCRForDoc = (docType: string) => {
-    setOcrTargetDocType(docType as any);
+  const handleOpenOCRForDoc = (docType?: string) => {
+    setOcrTargetDocType((docType || 'Aadhaar') as any);
     setOcrModalOpen(true);
   };
 
@@ -606,6 +611,14 @@ export const App: React.FC = () => {
                 setActiveTab(tab);
               }
             }}
+            onSelectCategory={(category) => {
+              setSelectedCategoryFilter(category);
+              if (!user) {
+                setIsAuthOpen(true);
+              } else {
+                setActiveTab('schemes');
+              }
+            }}
             topSchemes={schemes}
             user={user}
           />
@@ -663,6 +676,7 @@ export const App: React.FC = () => {
             schemes={schemes}
             user={user}
             currentLang={currentLang}
+            initialCategory={selectedCategoryFilter}
             onSelectScheme={setSelectedSchemeAnalysis}
             onToggleBookmark={handleToggleBookmark}
             isBookmarked={isBookmarked}
@@ -694,9 +708,10 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'profile' && user && (
+        {(activeTab === 'profile' || activeTab === 'report') && user && (
           <ProfileView
             user={user}
+            initialSubTab={activeTab === 'report' ? 'report' : 'overview'}
             onUpdateProfile={async (updated) => {
               updated.profileCompletionScore = calculateProfileCompletion(updated);
               setUser(updated);

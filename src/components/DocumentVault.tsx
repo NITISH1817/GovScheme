@@ -116,7 +116,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                   <div className="space-y-6">
                     <div className="flex justify-between items-start gap-4">
                       <h3 className="font-extrabold text-xl text-gov-navy dark:text-white font-sans tracking-tight">
-                        {t(docType, docType)}
+                        {t(docType || 'Document', docType || 'Document')}
                       </h3>
                       {existingDoc ? (
                         <div className="w-10 h-10 rounded-full bg-gov-green/10 text-gov-green flex items-center justify-center shrink-0 border border-gov-green/20 shadow-sm">
@@ -153,7 +153,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                       </div>
                     ) : (
                       <p className="text-sm text-gov-textMuted dark:text-gray-400 font-medium">
-                        {t('uploadOrScanDocPrompt', 'Upload or scan this document to unlock schemes requiring {doc} verification.').replace('{doc}', t(docType, docType))}
+                        {t('uploadOrScanDocPrompt', 'Upload or scan this document to unlock schemes requiring {doc} verification.').replace('{doc}', t(docType || 'Document', docType || 'Document'))}
                       </p>
                     )}
                   </div>
@@ -169,7 +169,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                           <RefreshCw className="w-3.5 h-3.5" />{t('replaceRescan', 'Rescan')}
                         </button>
                         <button
-                          onClick={() => onDeleteDoc(existingDoc.id)}
+                          onClick={() => onDeleteDoc(existingDoc.id || existingDoc.documentId || '')}
                           className="w-12 h-12 rounded-full border border-red-200 dark:border-red-900/50 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center justify-center transition-colors shrink-0"
                           title="Delete Document"
                         >
