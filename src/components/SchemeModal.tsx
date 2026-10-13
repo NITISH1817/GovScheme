@@ -3,6 +3,8 @@ import { CombinedSchemeAnalysis, UserProfile, DocumentRecord } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Bookmark, BookmarkCheck, Check, FileText, AlertCircle, HelpCircle, Activity, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { evaluateSchemeEligibility } from '../engine/ruleEngine';
+import { computeMLRecommendation } from '../engine/mlEngine';
 
 interface SchemeModalProps {
   user: UserProfile | null;
@@ -23,8 +25,19 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
   isBookmarked,
   onNavigateTab
 }) => {
-  const { scheme, mlResult, ruleResult } = analysis;
+  const { scheme } = analysis;
   const { t } = useTranslation();
+
+  const effectiveRuleResult = React.useMemo(() => {
+    if (!user) return analysis.ruleResult;
+    return evaluateSchemeEligibility(user, scheme);
+  }, [user, scheme, currentLang, analysis.ruleResult]);
+
+  const effectiveMlResult = React.useMemo(() => {
+    if (!user) return analysis.mlResult;
+    return computeMLRecommendation(user, scheme, effectiveRuleResult, [scheme]);
+  }, [user, scheme, effectiveRuleResult, currentLang, analysis.mlResult]);
+
   const [copied, setCopied] = React.useState(false);
   const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(null);
 
@@ -149,22 +162,22 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                       <span className="text-sm text-gray-700 dark:text-gray-300">{t('matchDesc', 'AI-driven confidence based on profile factors.')}</span>
                     </div>
                     <div className="text-3xl font-bold text-[#1769FF]">
-                      {Math.round(mlResult.confidenceScore)}%
+                      {Math.round(effectiveMlResult.confidenceScore)}%
                     </div>
                   </div>
-                  {mlResult.scoreBreakdown && (
+                  {effectiveMlResult.scoreBreakdown && (
                     <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-blue-100 dark:border-blue-900/50">
                       <div className="text-center">
                         <span className="block text-[10px] uppercase font-bold text-gray-500">{t('demographic', 'Demographic')}</span>
-                        <span className="font-semibold text-blue-700 dark:text-blue-300">{mlResult.scoreBreakdown.demographic}%</span>
+                        <span className="font-semibold text-blue-700 dark:text-blue-300">{effectiveMlResult.scoreBreakdown.demographic}%</span>
                       </div>
                       <div className="text-center border-l border-r border-blue-100 dark:border-blue-900/50">
                         <span className="block text-[10px] uppercase font-bold text-gray-500">{t('needAffinity', 'Need/Affinity')}</span>
-                        <span className="font-semibold text-blue-700 dark:text-blue-300">{mlResult.scoreBreakdown.need}%</span>
+                        <span className="font-semibold text-blue-700 dark:text-blue-300">{effectiveMlResult.scoreBreakdown.need}%</span>
                       </div>
                       <div className="text-center">
                         <span className="block text-[10px] uppercase font-bold text-gray-500">{t('financial', 'Financial')}</span>
-                        <span className="font-semibold text-blue-700 dark:text-blue-300">{mlResult.scoreBreakdown.financial}%</span>
+                        <span className="font-semibold text-blue-700 dark:text-blue-300">{effectiveMlResult.scoreBreakdown.financial}%</span>
                       </div>
                     </div>
                   )}
@@ -192,7 +205,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <table className="w-full text-left text-sm">
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#07111F]">
                     {/* Matched Criteria */}
-                    {ruleResult.matchedCriteria.map((factor, idx) => (
+                    {effectiveRuleResult.matchedCriteria.map((factor, idx) => (
                       <tr key={`match-${idx}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="px-6 py-4">
                           <span className="text-gray-700 dark:text-gray-300 font-medium">{t(factor, factor)}</span>
@@ -206,7 +219,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                     ))}
 
                     {/* Failed Criteria */}
-                    {ruleResult.failedCriteria.map((factor, idx) => (
+                    {effectiveRuleResult.failedCriteria.map((factor, idx) => (
                       <tr key={`failed-${idx}`} className="hover:bg-red-50 dark:hover:bg-red-900/10">
                         <td className="px-6 py-4">
                           <span className="text-gray-700 dark:text-gray-300 font-medium">{t(factor, factor)}</span>
@@ -220,7 +233,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                     ))}
 
                     {/* Missing Info / Documents */}
-                    {ruleResult.missingDocuments.map((doc, idx) => (
+                    {effectiveRuleResult.missingDocuments.map((doc, idx) => (
                       <tr key={`missing-${idx}`} className="hover:bg-yellow-50 dark:hover:bg-yellow-900/10">
                         <td className="px-6 py-4">
                           <span className="text-gray-700 dark:text-gray-300 font-medium">{t('missingDoc', 'Missing Document:')} {t(doc, doc)}</span>
@@ -243,10 +256,33 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('officialEligibility', 'Official Eligibility')}</h3>
               <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
                 {Object.entries(scheme.eligibilityRules).map(([key, val], idx) => {
-                  if (!val || (Array.isArray(val) && val.length === 0)) return null;
+                  if (val === undefined || val === null || (Array.isArray(val) && val.length === 0)) return null;
+
+                  const renderValue = () => {
+                    if (typeof val === 'boolean') {
+                      return val ? t('yes', 'Yes') : t('no', 'No');
+                    }
+                    if (key === 'minAge' || key === 'maxAge') {
+                      return `${val} ${t('yearsUnit', 'years')}`;
+                    }
+                    if (key === 'minDisabilityPercentage') {
+                      return `${val}%`;
+                    }
+                    if (key === 'maxAnnualIncome' && typeof val === 'number') {
+                      return `₹${val.toLocaleString('en-IN')}`;
+                    }
+                    if (key === 'maxLandHoldingAcres') {
+                      return `${val} ${t('acresUnit', 'acres')}`;
+                    }
+                    if (Array.isArray(val)) {
+                      return val.map(v => t(String(v), String(v))).join(', ');
+                    }
+                    return t(String(val), String(val));
+                  };
+
                   return (
                     <li key={idx}>
-                      <span className="font-semibold capitalize">{t(key, key.replace(/([A-Z])/g, ' $1'))}:</span> {Array.isArray(val) ? val.map(v => t(String(v), String(v))).join(', ') : t(String(val), String(val))}
+                      <span className="font-semibold">{t(key, key.replace(/([A-Z])/g, ' $1'))}:</span> {renderValue()}
                     </li>
                   );
                 })}

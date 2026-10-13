@@ -14,26 +14,54 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
     const finalMin = minAge ?? 0;
     const finalMax = maxAge ?? 120;
     if (user.age >= finalMin && user.age <= finalMax) {
-      matchedCriteria.push(i18n.t('ruleAgeMetDetail', { userAge: user.age, minAge: finalMin, maxAge: finalMax, defaultValue: `${i18n.t('Age Requirement Met', 'Age Requirement Met')} (${user.age} yrs within ${finalMin}-${finalMax} range)` }));
+      matchedCriteria.push(i18n.t('ruleAgeMetDetail', {
+        userAge: user.age,
+        minAge: finalMin,
+        maxAge: finalMax,
+        defaultValue: `Age Requirement Met (${user.age} yrs within ${finalMin}-${finalMax} range)`
+      }));
     } else {
-      failedCriteria.push(i18n.t('ruleAgeFailed', { userAge: user.age, minAge: finalMin, maxAge: finalMax, defaultValue: `Age ${user.age} yrs does not satisfy required range (${finalMin}-${finalMax} yrs)` }));
+      failedCriteria.push(i18n.t('ruleAgeFailed', {
+        userAge: user.age,
+        minAge: finalMin,
+        maxAge: finalMax,
+        defaultValue: `Age ${user.age} yrs does not satisfy required range (${finalMin}-${finalMax} yrs)`
+      }));
     }
   }
 
   if (rules.allowedGenders && rules.allowedGenders.length > 0 && !rules.allowedGenders.includes('All')) {
     if (rules.allowedGenders.includes(user.gender)) {
-      matchedCriteria.push(`${i18n.t('Gender requirement met', 'Gender requirement met')} (${i18n.t(user.gender, user.gender)})`);
+      matchedCriteria.push(i18n.t('ruleGenderMet', {
+        gender: i18n.t(user.gender, user.gender),
+        defaultValue: `Gender requirement met (${i18n.t(user.gender, user.gender)})`
+      }));
     } else {
-      failedCriteria.push(`Targeted for ${rules.allowedGenders.map((g: string) => i18n.t(g, g)).join(', ')} (User is ${i18n.t(user.gender, user.gender)})`);
+      const targetGender = rules.allowedGenders.map((g: string) => i18n.t(g, g)).join(', ');
+      const userGender = i18n.t(user.gender, user.gender);
+      failedCriteria.push(i18n.t('ruleGenderFailed', {
+        target: targetGender,
+        userGender: userGender,
+        defaultValue: `Targeted for ${targetGender} (User is ${userGender})`
+      }));
     }
   }
 
   if (scheme.state !== 'Central' && rules.allowedStates && rules.allowedStates.length > 0) {
     const stateMatched = rules.allowedStates.some((s: string) => s.toLowerCase() === user.state?.toLowerCase());
+    const userState = i18n.t(user.state || 'Unknown', user.state || 'Unknown');
     if (stateMatched) {
-      matchedCriteria.push(`${i18n.t('Resident of', 'Resident of')} ${i18n.t(user.state || 'Unknown', user.state || 'Unknown')}`);
+      matchedCriteria.push(i18n.t('ruleResidentOf', {
+        state: userState,
+        defaultValue: `Resident of ${userState}`
+      }));
     } else {
-      failedCriteria.push(`Scheme restricted to ${rules.allowedStates.map((s: string) => i18n.t(s, s)).join(', ')} (User in ${i18n.t(user.state || 'Unknown', user.state || 'Unknown')})`);
+      const allowedStates = rules.allowedStates.map((s: string) => i18n.t(s, s)).join(', ');
+      failedCriteria.push(i18n.t('ruleStateFailed', {
+        allowedStates: allowedStates,
+        userState: userState,
+        defaultValue: `Scheme restricted to ${allowedStates} (User in ${userState})`
+      }));
     }
   } else if (scheme.state === 'Central') {
     matchedCriteria.push(i18n.t('Central Scheme open across India', 'Central Scheme open across India'));
@@ -43,9 +71,17 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
   if (maxIncome !== undefined && maxIncome > 0) {
     const userIncome = user.annualIncome || 0;
     if (userIncome <= maxIncome) {
-      matchedCriteria.push(i18n.t('ruleIncomeBelowLimit', { userIncome: userIncome.toLocaleString('en-IN'), maxIncome: maxIncome.toLocaleString('en-IN'), defaultValue: `Income ₹${userIncome.toLocaleString('en-IN')}/yr below limit of ₹${maxIncome.toLocaleString('en-IN')}/yr` }));
+      matchedCriteria.push(i18n.t('ruleIncomeBelowLimit', {
+        userIncome: userIncome.toLocaleString('en-IN'),
+        maxIncome: maxIncome.toLocaleString('en-IN'),
+        defaultValue: `Annual income ₹${userIncome.toLocaleString('en-IN')} within limit of ₹${maxIncome.toLocaleString('en-IN')}`
+      }));
     } else {
-      failedCriteria.push(i18n.t('ruleIncomeExceedsLimit', { userIncome: userIncome.toLocaleString('en-IN'), maxIncome: maxIncome.toLocaleString('en-IN'), defaultValue: `Income ₹${userIncome.toLocaleString('en-IN')}/yr exceeds upper threshold of ₹${maxIncome.toLocaleString('en-IN')}/yr` }));
+      failedCriteria.push(i18n.t('ruleIncomeExceedsLimit', {
+        userIncome: userIncome.toLocaleString('en-IN'),
+        maxIncome: maxIncome.toLocaleString('en-IN'),
+        defaultValue: `Annual income ₹${userIncome.toLocaleString('en-IN')} exceeds limit of ₹${maxIncome.toLocaleString('en-IN')}`
+      }));
     }
   }
 
@@ -54,26 +90,52 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
       occ.toLowerCase().includes(user.occupation?.toLowerCase() || '') || 
       (user.occupation?.toLowerCase() || '').includes(occ.toLowerCase())
     );
+    const userOcc = i18n.t(user.occupation, user.occupation);
     if (occupationMatched) {
-      matchedCriteria.push(`${i18n.t('Occupation matches', 'Occupation matches')} (${i18n.t(user.occupation, user.occupation)})`);
+      matchedCriteria.push(i18n.t('ruleOccupationMet', {
+        occupation: userOcc,
+        defaultValue: `Occupation matches (${userOcc})`
+      }));
     } else {
-      failedCriteria.push(`Requires occupation like ${rules.allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ')} (User is ${i18n.t(user.occupation, user.occupation)})`);
+      const requiredOccupations = rules.allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
+      failedCriteria.push(i18n.t('ruleOccupationFailed', {
+        requiredOccupation: requiredOccupations,
+        userOccupation: userOcc,
+        defaultValue: `Requires occupation like ${requiredOccupations} (User is ${userOcc})`
+      }));
     }
   }
 
   if (rules.maxLandHoldingAcres !== undefined) {
     if (user.landHoldingAcres <= rules.maxLandHoldingAcres) {
-      matchedCriteria.push(i18n.t('ruleLandMet', { userLand: user.landHoldingAcres, maxLand: rules.maxLandHoldingAcres, defaultValue: `Land holding ${user.landHoldingAcres} acres within ceiling of ${rules.maxLandHoldingAcres} acres` }));
+      matchedCriteria.push(i18n.t('ruleLandMet', {
+        userLand: user.landHoldingAcres,
+        maxLand: rules.maxLandHoldingAcres,
+        defaultValue: `Land holding ${user.landHoldingAcres} acres within ceiling of ${rules.maxLandHoldingAcres} acres`
+      }));
     } else {
-      failedCriteria.push(i18n.t('ruleLandFailed', { userLand: user.landHoldingAcres, maxLand: rules.maxLandHoldingAcres, defaultValue: `Land holding ${user.landHoldingAcres} acres exceeds limit of ${rules.maxLandHoldingAcres} acres` }));
+      failedCriteria.push(i18n.t('ruleLandFailed', {
+        userLand: user.landHoldingAcres,
+        maxLand: rules.maxLandHoldingAcres,
+        defaultValue: `Land holding ${user.landHoldingAcres} acres exceeds limit of ${rules.maxLandHoldingAcres} acres`
+      }));
     }
   }
 
   if (rules.allowedCategories && rules.allowedCategories.length > 0 && !rules.allowedCategories.includes('All')) {
+    const userCategory = i18n.t(user.category, user.category);
     if (rules.allowedCategories.includes(user.category)) {
-      matchedCriteria.push(`${i18n.t('Social Category requirement met', 'Social Category requirement met')} (${i18n.t(user.category, user.category)})`);
+      matchedCriteria.push(i18n.t('ruleCategoryMet', {
+        category: userCategory,
+        defaultValue: `Social Category requirement met (${userCategory})`
+      }));
     } else {
-      failedCriteria.push(`Restricted to ${rules.allowedCategories.map((c: string) => i18n.t(c, c)).join(', ')} (User category: ${i18n.t(user.category, user.category)})`);
+      const allowedCategories = rules.allowedCategories.map((c: string) => i18n.t(c, c)).join(', ');
+      failedCriteria.push(i18n.t('ruleCategoryFailed', {
+        allowedCategories: allowedCategories,
+        userCategory: userCategory,
+        defaultValue: `Restricted to ${allowedCategories} (User category: ${userCategory})`
+      }));
     }
   }
 
@@ -82,12 +144,22 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
       const minPerc = rules.minDisabilityPercentage ?? 40;
       const userPerc = user.disabilityPercentage ?? 40;
       if (userPerc >= minPerc) {
-        matchedCriteria.push(`Disability criteria met (${userPerc}% >= ${minPerc}%)`);
+        matchedCriteria.push(i18n.t('ruleDisabilityPercMet', {
+          userPerc,
+          minPerc,
+          defaultValue: `Disability criteria met (${userPerc}% >= ${minPerc}%)`
+        }));
       } else {
-        failedCriteria.push(`Requires at least ${minPerc}% disability (User certified at ${userPerc}%)`);
+        failedCriteria.push(i18n.t('ruleDisabilityPercFailed', {
+          minPerc,
+          userPerc,
+          defaultValue: `Requires at least ${minPerc}% disability (User certified at ${userPerc}%)`
+        }));
       }
     } else {
-      failedCriteria.push(i18n.t('ruleDisabilityFailedCert', 'Requires disability certificate'));
+      failedCriteria.push(i18n.t('ruleDisabilityFailedCert', {
+        defaultValue: 'Requires disability certificate'
+      }));
     }
   }
 
@@ -108,18 +180,31 @@ export function evaluateSchemeEligibility(user: UserProfile, scheme: Scheme): Ru
 
   if (failedCriteria.length === 0 && missingDocuments.length === 0) {
     status = 'Eligible';
-    overallReason = i18n.t('ruleEligible', { count: matchedCriteria.length, defaultValue: `Full eligibility verified! All ${matchedCriteria.length} criteria met and all required documents present in Document Vault.` });
+    overallReason = i18n.t('ruleEligible', {
+      count: matchedCriteria.length,
+      defaultValue: `Full eligibility verified! All ${matchedCriteria.length} criteria met and all required documents present in Document Vault.`
+    });
   } else if (failedCriteria.length === 0 && missingDocuments.length > 0) {
     status = 'Conditionally Eligible';
     const docsStr = missingDocuments.map(d => i18n.t(d, d)).join(', ');
-    overallReason = i18n.t('ruleConditional', { count: missingDocuments.length, docs: docsStr, defaultValue: `Eligible based on profile criteria, but missing ${missingDocuments.length} document(s) in Document Vault (${docsStr}). Upload before applying on official portal.` });
+    overallReason = i18n.t('ruleConditional', {
+      count: missingDocuments.length,
+      docs: docsStr,
+      defaultValue: `Eligible based on profile criteria, but missing ${missingDocuments.length} document(s) in Document Vault (${docsStr}). Upload before applying on official portal.`
+    });
   } else if (failedCriteria.length === 1) {
     status = 'Almost Eligible';
-    overallReason = i18n.t('ruleAlmostEligible', { criteria: i18n.t(failedCriteria[0], failedCriteria[0]), defaultValue: `Almost eligible! You are missing one requirement: ${failedCriteria[0]}` });
+    overallReason = i18n.t('ruleAlmostEligible', {
+      criteria: failedCriteria[0],
+      defaultValue: `Almost eligible! You are missing one requirement: ${failedCriteria[0]}`
+    });
   } else {
     status = 'Not Eligible';
-    const critStr = failedCriteria.map(c => i18n.t(c, c)).join('; ');
-    overallReason = i18n.t('ruleNotEligible', { criteria: critStr, defaultValue: `Does not meet core requirements: ${critStr}` });
+    const critStr = failedCriteria.join('; ');
+    overallReason = i18n.t('ruleNotEligible', {
+      criteria: critStr,
+      defaultValue: `Does not meet core requirements: ${critStr}`
+    });
   }
 
   return {
