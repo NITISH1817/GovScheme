@@ -278,7 +278,7 @@ export const googleAuth = async (req, res) => {
           maritalStatus: '',
           state: '',
           district: '',
-          annualIncome: 0,
+          annualIncome: undefined,
           category: '',
           occupation: '',
           educationLevel: '',

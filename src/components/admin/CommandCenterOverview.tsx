@@ -22,16 +22,25 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
   // Live telemetry metrics from API
   const [telemetry, setTelemetry] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/analytics/dashboard', { timeRange: '6M' });
+      setError(null);
+      let res: any = null;
+      try {
+        res = await apiClient.get('/admin/analytics', { timeRange: '6M' });
+      } catch (adminErr) {
+        res = await apiClient.get('/analytics/dashboard', { timeRange: '6M' });
+      }
+
       if (res && res.metrics) {
         setTelemetry(res);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to load dashboard telemetry', e);
+      setError(e?.message || 'Failed to load platform analytics from backend.');
     } finally {
       setLoading(false);
     }
@@ -41,14 +50,15 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
     fetchDashboardData();
   }, []);
 
-  const metrics = telemetry?.metrics || {
-    totalSchemes: stats.total || 142,
-    publishedSchemes: stats.published || 118,
-    totalCitizens: 24500,
-    totalApplications: 15400,
-    pendingApps: 5100,
-    apiHealth: 99.9,
-    storageUsed: '4.2 GB'
+  const metrics = {
+    totalSchemes: telemetry?.metrics?.totalSchemes ?? (stats?.total || 0),
+    publishedSchemes: telemetry?.metrics?.publishedSchemes ?? (stats?.published || 0),
+    totalCitizens: telemetry?.metrics?.totalCitizens ?? 0,
+    totalApplications: telemetry?.metrics?.totalApplications ?? 0,
+    pendingApps: telemetry?.metrics?.pendingApps ?? 0,
+    apiHealth: telemetry?.metrics?.apiHealth ?? 100,
+    storageUsed: telemetry?.metrics?.storageUsed || '0 MB',
+    todayRegistrations: telemetry?.metrics?.todayRegistrations ?? 0
   };
 
   const kpis = [
@@ -77,19 +87,19 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
     { 
       id: 'citizens', 
       label: 'Registered Citizens', 
-      value: metrics.totalCitizens?.toLocaleString() || '24,500', 
-      trend: '+124 today', 
+      value: (metrics.totalCitizens ?? 0).toLocaleString(), 
+      trend: `+${metrics.todayRegistrations || 0} today`, 
       icon: Users, 
       color: 'text-purple-500', 
       bg: 'bg-purple-50 dark:bg-purple-900/20', 
-      details: 'Beneficiaries across 28 states and union territories.',
+      details: 'Verified citizen beneficiaries in database.',
       targetView: 'users'
     },
     { 
       id: 'applications', 
       label: 'Applications Submitted', 
-      value: metrics.totalApplications?.toLocaleString() || '15,400', 
-      trend: `${metrics.pendingApps || 51} pending review`, 
+      value: (metrics.totalApplications ?? 0).toLocaleString(), 
+      trend: `${metrics.pendingApps || 0} pending review`, 
       icon: Clock, 
       color: 'text-amber-500', 
       bg: 'bg-amber-50 dark:bg-amber-900/20', 
@@ -145,6 +155,26 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
       animate={{ opacity: 1 }}
       className="space-y-8 pb-12"
     >
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: -8 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 font-medium text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={fetchDashboardData} 
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry Analytics
+          </button>
+        </motion.div>
+      )}
+
       {/* Hero Panel */}
       <div className="bg-gradient-to-br from-[#123C69] to-[#0A2645] dark:from-[#101D31] dark:to-[#0B1424] rounded-2xl p-8 shadow-xl text-white relative overflow-hidden border border-blue-800/30">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -167,7 +197,7 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
             </div>
             <div>
               <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Active Citizens</div>
-              <div className="text-2xl font-bold">{metrics.totalCitizens ? metrics.totalCitizens.toLocaleString() : '24,500'}</div>
+              <div className="text-2xl font-bold">{(metrics.totalCitizens ?? 0).toLocaleString()}</div>
             </div>
             <div>
               <div className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Data Health</div>

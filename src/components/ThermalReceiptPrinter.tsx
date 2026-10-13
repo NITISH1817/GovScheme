@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useId } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Printer,
   RotateCcw,
@@ -16,9 +16,14 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  FileText
+  FileText,
+  Building2,
+  Award,
+  QrCode
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import { useTranslation } from 'react-i18next';
 import { UserProfile, Scheme } from '../types';
 
 export interface CitizenReportData {
@@ -74,6 +79,8 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
   onRegenerateReport,
   autoStartPrint = false
 }) => {
+  const { t, i18n } = useTranslation();
+
   // Animation states
   const [paperProgress, setPaperProgress] = useState<number>(0); // 0 to 100%
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
@@ -81,6 +88,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
   const [isTorn, setIsTorn] = useState<boolean>(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
   const [feedOffset, setFeedOffset] = useState<number>(0);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
 
   // Audio synthesis ref
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -227,228 +235,207 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
     playMechanicalSound(340, 0.05);
   };
 
-  // Helper to generate formatted plain-text thermal receipt file for download
-  const generateReceiptText = (): string => {
-    const divider = '================================================';
-    const subDivider = '------------------------------------------------';
-    const lines: string[] = [];
-
-    lines.push(divider);
-    lines.push('          GOVSCHEME CITIZEN REPORT              ');
-    lines.push('       AI THERMAL PRINTER ASSESSMENT            ');
-    lines.push(divider);
-    lines.push(`Report ID   : ${reportData.reportId}`);
-    lines.push(`Date        : ${reportData.generatedDate}`);
-    lines.push(`Citizen     : ${reportData.citizenName}`);
-    lines.push(`Age / Gender: ${reportData.age} Years / ${reportData.gender}`);
-    lines.push(`State       : ${reportData.state}${reportData.district ? ` (${reportData.district})` : ''}`);
-    lines.push(`Occupation  : ${reportData.occupation}`);
-    if (reportData.annualIncome !== undefined) {
-      lines.push(`Income      : Rs. ${reportData.annualIncome.toLocaleString('en-IN')}`);
-    }
-    if (reportData.socialCategory) {
-      lines.push(`Category    : ${reportData.socialCategory}`);
-    }
-    lines.push(subDivider);
-    lines.push(`Status      : ${reportData.verificationOutcome}`);
-    lines.push(`Docs Tracked: ${reportData.uploadedDocumentsCount} uploaded, ${reportData.ocrCompletedCount} verified`);
-    lines.push(subDivider);
-
-    lines.push('RECOMMENDED SCHEMES:');
-    if (reportData.recommendedSchemes.length === 0) {
-      lines.push('  No matched schemes at this time.');
-    } else {
-      reportData.recommendedSchemes.forEach((sch, i) => {
-        lines.push(`\n[${i + 1}] ${sch.schemeName}`);
-        lines.push(`    Category : ${sch.category}`);
-        lines.push(`    Benefit  : ${sch.benefitSummary}`);
-        if (sch.officialWebsite) {
-          lines.push(`    Portal   : ${sch.officialWebsite}`);
-        }
-      });
-    }
-
-    if (reportData.missingDocumentsChecklist.length > 0 || reportData.missingSteps.length > 0) {
-      lines.push('\n' + subDivider);
-      lines.push('ACTION REQUIRED / NEXT STEPS:');
-      reportData.missingSteps.forEach(s => lines.push(`  - ${s}`));
-      reportData.missingDocumentsChecklist.forEach(d => lines.push(`  - Upload verified ${d}`));
-    }
-
-    lines.push('\n' + divider);
-    lines.push('Notice: Advisory assessment. Final sanction is subject');
-    lines.push('to government departmental verification.');
-    lines.push(`*${reportData.reportId}*`);
-    lines.push(divider);
-
-    return lines.join('\n');
-  };
-
-  // Helper to generate and download authentic PDF receipt
-  const downloadReceipt = () => {
+  // Direct jsPDF fallback that guarantees an A4 PDF output
+  const fallbackDownloadA4Pdf = () => {
     try {
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [80, 260] // Realistic 80mm thermal receipt roll dimensions
+        format: 'a4' // 210 x 297 mm
       });
 
-      const pageWidth = 80;
-      let y = 10;
+      const pageWidth = 210;
+      let y = 16;
 
       // Header Banner
-      doc.setFillColor(20, 45, 95);
-      doc.rect(4, y, pageWidth - 8, 14, 'F');
-      
+      doc.setFillColor(18, 60, 105);
+      doc.rect(14, y, pageWidth - 28, 20, 'F');
+
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.text('GOVSCHEME CITIZEN REPORT', pageWidth / 2, y + 6, { align: 'center' });
-      doc.setFontSize(6.5);
-      doc.setFont('helvetica', 'normal');
-      doc.text(reportData.isPreview ? 'SAMPLE ASSESSMENT PREVIEW' : 'OFFICIAL WELFARE ADVISORY ENGINE', pageWidth / 2, y + 10.5, { align: 'center' });
-      
-      y += 18;
-
-      // Title & Meta
-      doc.setTextColor(20, 30, 45);
-      doc.setFont('courier', 'bold');
+      doc.setFontSize(13);
+      doc.text('GOVERNMENT OF INDIA • WELFARE ELIGIBILITY CERTIFICATE', pageWidth / 2, y + 8, { align: 'center' });
       doc.setFontSize(8.5);
-      doc.text('CITIZEN ELIGIBILITY ASSESSMENT', pageWidth / 2, y, { align: 'center' });
-      y += 4;
-      doc.setFontSize(7);
-      doc.setFont('courier', 'normal');
-      doc.text(`Report ID: ${reportData.reportId}`, pageWidth / 2, y, { align: 'center' });
-      y += 3.5;
-      doc.text(`Date: ${reportData.generatedDate}`, pageWidth / 2, y, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('CSC DIGITAL SEVA • OFFICIAL CITIZEN WELFARE ASSESSMENT (A4)', pageWidth / 2, y + 15, { align: 'center' });
+
+      y += 26;
+
+      // Report Meta
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text(`Report ID: ${reportData.reportId}`, 16, y);
+      doc.text(`Date of Issue: ${reportData.generatedDate}`, pageWidth - 16, y, { align: 'right' });
       y += 5;
 
-      // Divider Line
-      doc.setDrawColor(180, 180, 180);
-      doc.setLineDashPattern([1.5, 1.5], 0);
-      doc.line(5, y, pageWidth - 5, y);
+      doc.setDrawColor(203, 213, 225);
+      doc.line(14, y, pageWidth - 14, y);
+      y += 7;
+
+      // Beneficiary Demographic Profile
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('BENEFICIARY DEMOGRAPHIC PROFILE', 16, y);
       y += 5;
 
-      // Profile Table
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(7.5);
-      doc.text('CITIZEN PROFILE DETAILS', 6, y);
-      y += 4;
-      doc.setFont('courier', 'normal');
-      doc.setFontSize(6.5);
-
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
       const addRow = (label: string, val: string) => {
-        doc.text(label, 6, y);
-        doc.text(val, pageWidth - 6, y, { align: 'right' });
-        y += 3.8;
+        doc.text(label, 16, y);
+        doc.setFont('helvetica', 'bold');
+        doc.text(val, 80, y);
+        doc.setFont('helvetica', 'normal');
+        y += 5;
       };
 
-      addRow('Name:', reportData.citizenName);
-      addRow('Age / Gender:', `${reportData.age} Yrs / ${reportData.gender}`);
-      addRow('State:', `${reportData.state}${reportData.district ? ` (${reportData.district})` : ''}`);
+      addRow('Full Name:', reportData.citizenName);
+      addRow('Age / Gender:', `${reportData.age} Years / ${reportData.gender}`);
+      addRow('State / District:', `${reportData.state}${reportData.district ? ` (${reportData.district})` : ''}`);
       addRow('Occupation:', reportData.occupation);
       if (reportData.annualIncome !== undefined) {
-        addRow('Income:', `Rs. ${reportData.annualIncome.toLocaleString('en-IN')}`);
+        addRow('Annual Household Income:', `Rs. ${reportData.annualIncome.toLocaleString('en-IN')}`);
       }
-      if (reportData.socialCategory) {
-        addRow('Social Category:', reportData.socialCategory);
-      }
-      addRow('Verification:', reportData.verificationOutcome);
-      addRow('Vault Docs:', `${reportData.uploadedDocumentsCount} uploaded, ${reportData.ocrCompletedCount} verified`);
+      addRow('Social Category:', reportData.socialCategory || 'General');
+      addRow('Verification Status:', reportData.verificationOutcome);
+      addRow('Vault Document Proofs:', `${reportData.uploadedDocumentsCount} uploaded, ${reportData.ocrCompletedCount} verified`);
 
-      y += 2;
-      doc.line(5, y, pageWidth - 5, y);
-      y += 5;
+      y += 3;
+      doc.line(14, y, pageWidth - 14, y);
+      y += 7;
 
-      // Recommended Schemes Section
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(7.5);
-      doc.text(`RECOMMENDED SCHEMES (${reportData.recommendedSchemes.length})`, 6, y);
-      y += 4;
+      // Recommended Schemes
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(`RECOMMENDED GOVERNMENT SCHEMES (${reportData.recommendedSchemes.length})`, 16, y);
+      y += 6;
 
       if (reportData.recommendedSchemes.length === 0) {
-        doc.setFont('courier', 'italic');
-        doc.setFontSize(6.5);
-        doc.text('No matching schemes identified.', 6, y);
-        y += 4;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.text('No matching schemes identified at this time.', 16, y);
+        y += 6;
       } else {
-        reportData.recommendedSchemes.forEach((sch, i) => {
-          doc.setFont('courier', 'bold');
-          doc.setFontSize(7);
-          const title = `${i + 1}. ${sch.schemeName}`;
-          const splitTitle = doc.splitTextToSize(title, pageWidth - 12);
-          doc.text(splitTitle, 6, y);
-          y += (splitTitle.length * 3.2);
+        reportData.recommendedSchemes.slice(0, 5).forEach((sch, i) => {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
+          const title = `${i + 1}. ${sch.schemeName} [${sch.category}]`;
+          doc.text(title, 16, y);
+          y += 4.5;
 
-          doc.setFont('courier', 'normal');
-          doc.setFontSize(6.2);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
           const ben = `Benefit: ${sch.benefitSummary}`;
-          const splitBen = doc.splitTextToSize(ben, pageWidth - 12);
-          doc.text(splitBen, 6, y);
-          y += (splitBen.length * 3.1);
+          const splitBen = doc.splitTextToSize(ben, pageWidth - 32);
+          doc.text(splitBen, 16, y);
+          y += (splitBen.length * 3.8);
 
           if (sch.officialWebsite) {
-            doc.setTextColor(20, 80, 180);
-            doc.text(`Portal: ${sch.officialWebsite}`, 6, y);
-            doc.setTextColor(20, 30, 45);
-            y += 3.2;
+            doc.setTextColor(23, 105, 255);
+            doc.text(`Official Portal: ${sch.officialWebsite}`, 16, y);
+            doc.setTextColor(30, 41, 59);
+            y += 4;
           }
-          y += 1.5;
+          y += 2;
         });
       }
 
-      // Next Steps Checklist
+      // Mandatory Next Steps
       if (reportData.missingSteps.length > 0 || reportData.missingDocumentsChecklist.length > 0) {
-        y += 1;
-        doc.line(5, y, pageWidth - 5, y);
-        y += 4.5;
-        doc.setFont('courier', 'bold');
-        doc.setFontSize(7.5);
-        doc.text('ACTION REQUIRED BEFORE APPLYING', 6, y);
-        y += 4;
-        doc.setFont('courier', 'normal');
-        doc.setFontSize(6.2);
+        y += 2;
+        doc.line(14, y, pageWidth - 14, y);
+        y += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.text('MANDATORY REQUIREMENTS & NEXT STEPS', 16, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
 
         reportData.missingSteps.forEach(step => {
-          const stepText = `* ${step}`;
-          const splitStep = doc.splitTextToSize(stepText, pageWidth - 12);
-          doc.text(splitStep, 6, y);
-          y += (splitStep.length * 3);
+          doc.text(`* ${step}`, 16, y);
+          y += 4;
         });
-
         reportData.missingDocumentsChecklist.forEach(docName => {
-          const docText = `* Upload verified ${docName}`;
-          const splitDoc = doc.splitTextToSize(docText, pageWidth - 12);
-          doc.text(splitDoc, 6, y);
-          y += (splitDoc.length * 3);
+          doc.text(`* Present verified original ${docName}`, 16, y);
+          y += 4;
         });
       }
 
       // Footer Disclaimer
-      y += 2;
-      doc.line(5, y, pageWidth - 5, y);
+      y = Math.max(y + 6, 264);
+      doc.setDrawColor(203, 213, 225);
+      doc.line(14, y, pageWidth - 14, y);
+      y += 5;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      const disclaimer = 'Notice: Official advisory eligibility certificate. Final sanction and DBT disbursement remain subject to government departmental verification.';
+      doc.text(disclaimer, pageWidth / 2, y, { align: 'center' });
       y += 4;
-      doc.setFont('courier', 'normal');
-      doc.setFontSize(5.8);
-      const disclaimer = 'Notice: Advisory assessment. Final sanction is subject to government departmental verification.';
-      const splitDisc = doc.splitTextToSize(disclaimer, pageWidth - 12);
-      doc.text(splitDisc, pageWidth / 2, y, { align: 'center' });
-      y += (splitDisc.length * 2.8) + 2;
+      doc.setFont('helvetica', 'bold');
+      doc.text(`*${reportData.reportId}* • CSC DIGITAL SEVA VERIFIED`, pageWidth / 2, y, { align: 'center' });
 
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(7.5);
-      doc.text(`*${reportData.reportId}*`, pageWidth / 2, y, { align: 'center' });
-      y += 3.5;
-      doc.text('====================================', pageWidth / 2, y, { align: 'center' });
-
-      doc.save(`GovScheme_Report_${reportData.reportId || 'Assessment'}.pdf`);
+      doc.save(`GovScheme_A4_Eligibility_Report_${reportData.reportId || 'Assessment'}.pdf`);
     } catch (err) {
-      console.error('Failed to generate PDF receipt with jsPDF, falling back to print:', err);
+      console.error('Fallback PDF generation error:', err);
       window.print();
     }
   };
 
-  // Tear button: detaches receipt with air gap, plays sound, and triggers download
+  // Helper to generate and download authentic A4 PDF sheet (with full multi-language Unicode rendering via html2canvas)
+  const downloadReceipt = async () => {
+    setIsDownloadingPdf(true);
+    try {
+      const a4Element = document.getElementById('formal-a4-pdf-document');
+      if (a4Element) {
+        // High-resolution canvas capture of the localized A4 template
+        const canvas = await html2canvas(a4Element, {
+          scale: 2, // 2x for high resolution 300dpi clarity
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4' // Standard A4: 210mm x 297mm
+        });
+
+        const pdfWidth = 210;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        if (pdfHeight <= 297) {
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        } else {
+          let heightLeft = pdfHeight;
+          let position = 0;
+          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, Math.min(297, pdfHeight));
+          heightLeft -= 297;
+          while (heightLeft > 5) {
+            position -= 297;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= 297;
+          }
+        }
+
+        pdf.save(`GovScheme_A4_Eligibility_Report_${reportData.reportId || 'Assessment'}.pdf`);
+        setIsDownloadingPdf(false);
+        return;
+      }
+    } catch (err) {
+      console.error('Error generating A4 PDF via html2canvas, trying fallback:', err);
+    }
+
+    fallbackDownloadA4Pdf();
+    setIsDownloadingPdf(false);
+  };
+
+  // Tear button: detaches receipt with air gap, plays sound, and triggers download of A4 sheet PDF
   const handleTear = () => {
     if (isPrinting) return;
     setIsTorn(true);
@@ -497,15 +484,15 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 text-xs font-bold border border-blue-300/40">
-            <Printer className="w-3.5 h-3.5" /> AI Report Printer
+            <Printer className="w-3.5 h-3.5" /> {t('aiReportPrinter', 'AI Report Printer')}
           </div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Thermal Citizen Eligibility Report
+            {t('thermalCitizenReport', 'Thermal Citizen Eligibility Report')}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {reportData.isPreview 
-              ? 'Demonstration Preview Mode • Safe sample data rendered so you can test all printer animation controls.'
-              : 'Deterministic assessment generated from verified citizen OCR attributes and scheme criteria.'}
+              ? t('demoPreviewNotice', 'Demonstration Preview Mode • Safe sample data rendered so you can test all printer animation controls.')
+              : t('deterministicAssessmentDesc', 'Deterministic assessment generated from verified citizen OCR attributes and scheme criteria.')}
           </p>
         </div>
 
@@ -518,22 +505,27 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
             title="Generate live assessment report and start thermal printing animation"
           >
             <FileText className="w-4 h-4" />
-            <span>{hasGenerated ? 'Re-generate Assessment' : 'Generate Assessment Report'}</span>
+            <span>{hasGenerated ? t('reGenerateAssessment', 'Re-generate Assessment') : t('generateAssessmentReport', 'Generate Assessment Report')}</span>
           </button>
 
           <button
+            type="button"
             onClick={handlePrintPdf}
-            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors"
-            title="Download PDF or Print Browser View"
+            disabled={isDownloadingPdf}
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Download authentic A4 Sheet PDF"
           >
-            <Download className="w-4 h-4" /> Download / Print PDF
+            <Download className="w-4 h-4" />
+            <span>{isDownloadingPdf ? 'Generating A4 PDF...' : t('downloadPrintPdf', 'Download / Print PDF')}</span>
           </button>
+
           {onRegenerateReport && (
             <button
+              type="button"
               onClick={onRegenerateReport}
               className="px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold text-xs flex items-center gap-1.5 transition-colors"
             >
-              <RotateCcw className="w-4 h-4" /> Refresh Report
+              <RotateCcw className="w-4 h-4" /> {t('refreshReport', 'Refresh Report')}
             </button>
           )}
         </div>
@@ -555,7 +547,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
             <div className="text-center mb-4 z-10">
               <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-1.5 justify-center">
                 <Printer className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                AI Thermal Receipt Dispenser
+                {t('aiThermalDispenser', 'AI Thermal Receipt Dispenser')}
               </span>
             </div>
 
@@ -593,14 +585,16 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                       }`} />
                     </span>
                     <span className="text-[10px] font-mono font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                      {isPrinting ? `PRINTING... ${paperProgress}%` : (hasGenerated && paperProgress === 100 ? 'PRINT COMPLETE' : 'READY')}
+                      {isPrinting 
+                        ? `${t('printingStatus', 'PRINTING...')} ${paperProgress}%` 
+                        : (hasGenerated && paperProgress === 100 ? t('printComplete', 'PRINT COMPLETE') : t('printerReady', 'READY'))}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {reportData.isPreview && (
                       <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300/40">
-                        DEMO PREVIEW
+                        {t('demoPreview', 'DEMO PREVIEW')}
                       </span>
                     )}
                     <span className="font-mono text-[9px] text-slate-500 dark:text-slate-400 font-semibold">
@@ -619,7 +613,6 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
               </div>
 
               {/* 2. RECEIPT PAPER VIEWPORT CONTAINER */}
-              {/* The paper realistically emerges directly from the slot slit */}
               <div 
                 className="w-full flex flex-col items-center justify-start relative z-10 transition-all duration-300"
                 style={{ 
@@ -634,10 +627,10 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                     </div>
                     <div className="space-y-1">
                       <h3 className="font-black text-slate-900 dark:text-white text-base">
-                        Ready to Generate Assessment
+                        {t('readyToGenerate', 'Ready to Generate Assessment')}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
-                        Click below to run scheme eligibility rules and trigger the physical thermal receipt dispensing animation.
+                        {t('clickToRunRules', 'Click below to run scheme eligibility rules and trigger the physical thermal receipt dispensing animation.')}
                       </p>
                     </div>
                     <button
@@ -646,7 +639,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                       className="w-full py-3.5 px-6 rounded-xl bg-[#15803D] hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-700/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <FileText className="w-5 h-5" />
-                      <span>Generate Assessment Report</span>
+                      <span>{t('generateAssessmentReport', 'Generate Assessment Report')}</span>
                     </button>
                   </div>
                 ) : (
@@ -676,10 +669,10 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                     {/* Header Banner on Receipt */}
                     <div className="mx-2 mt-1 mb-2 p-2.5 bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 text-white rounded text-center shadow-inner">
                       <span className="text-[10px] font-black uppercase tracking-widest block">
-                        ★ GOVSCHEME CITIZEN REPORT ★
+                        ★ {t('govSchemeCitizenReport', 'GOVSCHEME CITIZEN REPORT')} ★
                       </span>
                       <span className="text-[8px] opacity-90 uppercase tracking-wider block">
-                        {reportData.isPreview ? 'SAMPLE ASSESSMENT PREVIEW' : 'OFFICIAL WELFARE ADVISORY ENGINE'}
+                        {reportData.isPreview ? t('demoPreview', 'SAMPLE ASSESSMENT PREVIEW') : t('officialWelfareEngine', 'OFFICIAL WELFARE ADVISORY ENGINE')}
                       </span>
                     </div>
 
@@ -689,52 +682,52 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                       {/* Header ID & Timestamp */}
                       <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2.5">
                         <div className="font-black text-xs uppercase tracking-wide">
-                          CITIZEN ELIGIBILITY ASSESSMENT
+                          {t('citizenEligibilityAssessment', 'CITIZEN ELIGIBILITY ASSESSMENT')}
                         </div>
                         <div className="text-[9px] text-slate-600 font-semibold">
-                          {reportData.isPreview ? 'DEMO VERIFICATION PREVIEW' : 'OFFICIAL CITIZEN REPORT'}
+                          {reportData.isPreview ? t('demoPreview', 'DEMO VERIFICATION PREVIEW') : t('officialCitizenReport', 'OFFICIAL CITIZEN REPORT')}
                         </div>
                         <div className="text-[9px] text-slate-700 pt-1">
-                          Report ID: <strong className="font-bold">{reportData.reportId}</strong>
+                          {t('reportId', 'Report ID')}: <strong className="font-bold">{reportData.reportId}</strong>
                         </div>
                         <div className="text-[9px] text-slate-600">
-                          Date: {reportData.generatedDate}
+                          {t('reportDate', 'Date')}: {reportData.generatedDate}
                         </div>
                       </div>
 
                       {/* Citizen Profile Snapshot */}
                       <div className="space-y-1 text-[10px] border-b border-dashed border-slate-300 pb-2">
                         <div className="flex justify-between">
-                          <span className="text-slate-600">CITIZEN:</span>
+                          <span className="text-slate-600">{t('citizenLabel', 'CITIZEN')}:</span>
                           <span className="font-bold truncate max-w-[170px]">{reportData.citizenName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">STATE:</span>
+                          <span className="text-slate-600">{t('stateLabel', 'STATE')}:</span>
                           <span className="font-bold">{reportData.state}</span>
                         </div>
                         {reportData.district && (
                           <div className="flex justify-between">
-                            <span className="text-slate-600">DISTRICT:</span>
+                            <span className="text-slate-600">{t('districtLabel', 'DISTRICT')}:</span>
                             <span className="font-bold">{reportData.district}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
-                          <span className="text-slate-600">AGE / GENDER:</span>
-                          <span className="font-bold">{reportData.age} YRS • {reportData.gender}</span>
+                          <span className="text-slate-600">{t('ageGenderLabel', 'AGE / GENDER')}:</span>
+                          <span className="font-bold">{reportData.age} {t('yearsUnit', 'YRS')} • {reportData.gender}</span>
                         </div>
                         {reportData.annualIncome !== undefined && (
                           <div className="flex justify-between">
-                            <span className="text-slate-600">ANNUAL INCOME:</span>
+                            <span className="text-slate-600">{t('incomeLabel', 'ANNUAL INCOME')}:</span>
                             <span className="font-bold">₹{reportData.annualIncome.toLocaleString('en-IN')}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
-                          <span className="text-slate-600">OCCUPATION:</span>
+                          <span className="text-slate-600">{t('occupationLabel', 'OCCUPATION')}:</span>
                           <span className="font-bold">{reportData.occupation}</span>
                         </div>
                         {reportData.socialCategory && (
                           <div className="flex justify-between">
-                            <span className="text-slate-600">CATEGORY:</span>
+                            <span className="text-slate-600">{t('categoryLabel', 'CATEGORY')}:</span>
                             <span className="font-bold">{reportData.socialCategory}</span>
                           </div>
                         )}
@@ -743,18 +736,18 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                       {/* Document Processing & Verification Summary */}
                       <div className="space-y-1 text-[10px] border-b border-dashed border-slate-300 pb-2">
                         <div className="font-bold text-[10px] text-slate-800 tracking-wider">
-                          DOCUMENT PROCESSING SUMMARY
+                          {t('docProcessingSummary', 'DOCUMENT PROCESSING SUMMARY')}
                         </div>
                         <div className="flex justify-between">
-                          <span>Documents Uploaded:</span>
+                          <span>{t('docsUploaded', 'Documents Uploaded')}:</span>
                           <span className="font-bold">{reportData.uploadedDocumentsCount}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>OCR Extracted:</span>
+                          <span>{t('ocrExtracted', 'OCR Extracted')}:</span>
                           <span className="font-bold">{reportData.ocrCompletedCount}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Verification Outcome:</span>
+                          <span>{t('verificationOutcome', 'Verification Outcome')}:</span>
                           <span className={`font-bold ${
                             reportData.verificationOutcome === 'CHECKS_PASSED' 
                               ? 'text-emerald-700' 
@@ -778,58 +771,39 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                       </div>
 
                       {/* Recommended Schemes */}
-                      <div className="space-y-1.5 border-b border-dashed border-slate-300 pb-2">
-                        <div className="font-bold text-[10px] text-slate-800 tracking-wider flex justify-between">
-                          <span>RECOMMENDED SCHEMES</span>
-                          <span>({reportData.recommendedSchemes.length} Matches)</span>
+                      <div className="space-y-2 border-b border-dashed border-slate-300 pb-2">
+                        <div className="font-bold text-[10px] text-slate-800 tracking-wider">
+                          {t('recommendedSchemesUpper', 'RECOMMENDED SCHEMES')} ({reportData.recommendedSchemes.length})
                         </div>
-
-                        {reportData.recommendedSchemes.length === 0 ? (
-                          <div className="text-[10px] text-slate-500 italic py-1">
-                            No matching welfare schemes for current profile criteria.
-                          </div>
-                        ) : (
-                          <div className="space-y-2 pt-1">
-                            {reportData.recommendedSchemes.slice(0, 4).map((scheme, idx) => (
-                              <div key={idx} className="text-[9px] space-y-0.5">
-                                <div className="font-bold text-slate-900 flex items-start justify-between gap-1">
-                                  <span>{idx + 1}. {scheme.schemeName}</span>
-                                  <span className="text-[8px] px-1 py-0.2 rounded bg-slate-200 text-slate-700 shrink-0">
-                                    {scheme.category}
-                                  </span>
-                                </div>
-                                <div className="text-slate-600 pl-3">
-                                  • {scheme.benefitSummary}
-                                </div>
-                              </div>
-                            ))}
-                            {reportData.recommendedSchemes.length > 4 && (
-                              <div className="text-[9px] text-slate-500 text-center italic pt-1">
-                                + {reportData.recommendedSchemes.length - 4} more matching schemes in portal
-                              </div>
+                        {reportData.recommendedSchemes.map((sch, i) => (
+                          <div key={i} className="text-[10px] space-y-0.5 bg-slate-50/80 p-1.5 rounded border border-slate-200">
+                            <div className="font-bold text-slate-900">{i + 1}. {sch.schemeName}</div>
+                            <div className="text-[9px] text-slate-600">{t('benefitLabel', 'Benefit')}: {sch.benefitSummary}</div>
+                            {sch.officialWebsite && (
+                              <div className="text-[8px] text-blue-700 font-semibold">{t('portalLabel', 'Portal')}: {sch.officialWebsite}</div>
                             )}
                           </div>
-                        )}
+                        ))}
                       </div>
 
-                      {/* Missing Steps / Required Documents */}
+                      {/* Action Required Before Applying */}
                       {(reportData.missingSteps.length > 0 || reportData.missingDocumentsChecklist.length > 0) && (
                         <div className="space-y-1 text-[9px] border-b border-dashed border-slate-300 pb-2">
-                          <div className="font-bold text-slate-800">NEXT STEPS & REQUIREMENTS:</div>
-                          <ul className="list-disc pl-4 space-y-0.5 text-slate-600">
-                            {reportData.missingSteps.map((step, idx) => (
-                              <li key={`step-${idx}`}>{step}</li>
-                            ))}
-                            {reportData.missingDocumentsChecklist.slice(0, 3).map((doc, idx) => (
-                              <li key={`doc-${idx}`}>Verify {doc}</li>
-                            ))}
-                          </ul>
+                          <div className="font-bold text-[9px] text-amber-800 tracking-wider">
+                            {t('actionRequiredUpper', 'ACTION REQUIRED BEFORE APPLYING')}
+                          </div>
+                          {reportData.missingSteps.map((step, idx) => (
+                            <div key={`st-${idx}`} className="text-slate-700 font-mono">• {step}</div>
+                          ))}
+                          {reportData.missingDocumentsChecklist.map((doc, idx) => (
+                            <div key={`dc-${idx}`} className="text-slate-700 font-mono">• Upload verified {doc}</div>
+                          ))}
                         </div>
                       )}
 
                       {/* Transparency Disclaimer */}
                       <div className="text-[8px] text-slate-500 leading-tight border-b border-dashed border-slate-300 pb-2">
-                        <strong>Notice:</strong> Advisory assessment. Final sanction subject to government departmental verification.
+                        {t('thermalNotice', 'Notice: Advisory assessment. Final sanction subject to government departmental verification.')}
                       </div>
 
                       {/* Barcode Simulation & End of Receipt */}
@@ -838,7 +812,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                           ================================
                         </div>
                         <div className="text-[9px] font-bold uppercase tracking-wider">
-                          END OF ASSESSMENT RECEIPT
+                          {t('endOfReceipt', 'END OF ASSESSMENT RECEIPT')}
                         </div>
                         
                         {/* Barcode lines */}
@@ -876,7 +850,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                 title={hasGenerated ? "Restart receipt printing animation from beginning" : "Start receipt printing animation"}
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>{hasGenerated ? 'RE-PRINT' : 'PRINT'}</span>
+                <span>{hasGenerated ? t('reprintBtn', 'RE-PRINT') : t('printBtn', 'PRINT')}</span>
               </button>
 
               {/* 2. FEED */}
@@ -888,19 +862,19 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                 title="Advance receipt paper downward"
               >
                 <ArrowDown className="w-3.5 h-3.5" />
-                <span>FEED</span>
+                <span>{t('feedBtn', 'FEED')}</span>
               </button>
 
-              {/* 3. TEAR & DOWNLOAD */}
+              {/* 3. TEAR & DOWNLOAD (Directly downloads A4 Sheet PDF) */}
               <button
                 type="button"
                 onClick={handleTear}
-                disabled={isPrinting}
+                disabled={isPrinting || isDownloadingPdf}
                 className="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-transform active:scale-95 disabled:opacity-40 shadow-sm"
-                title={isTorn ? "Download receipt file again" : "Tear receipt paper and download report"}
+                title={isTorn ? "Download formal A4 sheet PDF again" : "Tear receipt and download formal A4 sheet PDF"}
               >
                 <Scissors className="w-3.5 h-3.5" />
-                <span>{isTorn ? "DOWNLOAD" : "TEAR"}</span>
+                <span>{isDownloadingPdf ? 'PDF...' : (isTorn ? t('downloadBtn', 'DOWNLOAD') : t('tearBtn', 'TEAR'))}</span>
               </button>
 
               {/* 4. RESET */}
@@ -911,7 +885,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                 title="Reset printer to initial state"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>RESET</span>
+                <span>{t('resetBtn', 'RESET')}</span>
               </button>
 
               {/* 5. AUDIO */}
@@ -945,34 +919,34 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-emerald-600" />
-                Extracted Information & Verification
+                {t('extractedInfoVerification', 'Extracted Information & Verification')}
               </h3>
               <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                {reportData.uploadedDocumentsCount} Docs
+                {reportData.uploadedDocumentsCount} {t('docsCount', 'Docs')}
               </span>
             </div>
 
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">Citizen Profile:</span>
+                <span className="text-slate-500">{t('citizenProfileLabel', 'Citizen Profile:')}</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">{reportData.citizenName}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">State / Nativity:</span>
+                <span className="text-slate-500">{t('stateNativityLabel', 'State / Nativity:')}</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">{reportData.state}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">Age:</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">{reportData.age} Years</span>
+                <span className="text-slate-500">{t('ageLabel', 'Age:')}</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{reportData.age} {t('yearsUnit', 'Years')}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">Annual Family Income:</span>
+                <span className="text-slate-500">{t('annualFamilyIncome', 'Annual Family Income:')}</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
                   {reportData.annualIncome !== undefined ? `₹${reportData.annualIncome.toLocaleString('en-IN')}` : 'Not specified'}
                 </span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-slate-500">Authenticity Status:</span>
+                <span className="text-slate-500">{t('authenticityStatus', 'Authenticity Status:')}</span>
                 <span className={`font-bold ${
                   reportData.verificationOutcome === 'CHECKS_PASSED' 
                     ? 'text-emerald-600 dark:text-emerald-400' 
@@ -986,7 +960,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
             {/* Uploaded Documents List */}
             {reportData.documents.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="text-[11px] font-bold text-slate-400 uppercase">Tracked Vault Documents:</div>
+                <div className="text-[11px] font-bold text-slate-400 uppercase">{t('trackedVaultDocs', 'Tracked Vault Documents:')}</div>
                 <div className="space-y-1.5">
                   {reportData.documents.map((doc, idx) => (
                     <div key={idx} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
@@ -1009,10 +983,10 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                Recommended Government Schemes
+                {t('recommendedGovSchemes', 'Recommended Government Schemes')}
               </h3>
               <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
-                {reportData.recommendedSchemes.length} Matches
+                {reportData.recommendedSchemes.length} {t('matchesUnit', 'Matches')}
               </span>
             </div>
 
@@ -1040,7 +1014,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline pt-1"
                     >
-                      Official Portal <ExternalLink className="w-3 h-3" />
+                      {t('officialPortalLink', 'Official Portal')} <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
                 </div>
@@ -1053,7 +1027,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
             <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 space-y-2">
               <div className="font-bold flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                Action Required Before Applying:
+                {t('actionRequiredBeforeApply', 'Action Required Before Applying:')}
               </div>
               <ul className="list-disc pl-5 space-y-0.5 text-[11px]">
                 {reportData.missingSteps.map((step, idx) => (
@@ -1069,6 +1043,245 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* FORMAL A4 SHEET PDF TEMPLATE (Captured by html2canvas for Download on TEAR) */}
+      {/* ========================================================================= */}
+      <div
+        id="formal-a4-pdf-document"
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: '0px',
+          width: '794px',
+          minHeight: '1123px',
+          backgroundColor: '#ffffff',
+          color: '#0f172a',
+          padding: '40px 48px',
+          fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          boxSizing: 'border-box',
+          zIndex: -100
+        }}
+      >
+        {/* 1. Indian Government Tricolor Bar Header Accent */}
+        <div style={{ display: 'flex', height: '6px', width: '100%', marginBottom: '24px', borderRadius: '3px', overflow: 'hidden' }}>
+          <div style={{ flex: 1, backgroundColor: '#FF9933' }} />
+          <div style={{ flex: 1, backgroundColor: '#FFFFFF', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }} />
+          <div style={{ flex: 1, backgroundColor: '#138808' }} />
+        </div>
+
+        {/* 2. Official Header with National Branding and Reference IDs */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '20px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* Republic of India / GovScheme Crest Simulation */}
+            <div style={{ width: '56px', height: '56px', borderRadius: '12px', backgroundColor: '#0f2942', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+              <Building2 style={{ width: '32px', height: '32px', color: '#38bdf8' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#0369a1', textTransform: 'uppercase' }}>
+                {t('formalA4ReportTitle', 'GOVERNMENT OF INDIA • WELFARE ELIGIBILITY CERTIFICATE')}
+              </div>
+              <h1 style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a', margin: '2px 0 4px', letterSpacing: '-0.02em' }}>
+                GovScheme AI • Citizen Assessment
+              </h1>
+              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                {t('cscKioskAssessmentA4', 'CSC Digital Seva • Official Citizen Welfare Assessment (A4)')}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right', fontSize: '11px', color: '#475569', lineHeight: 1.5 }}>
+            <div><strong>{t('reportId', 'Ref ID')}:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0284c7' }}>{reportData.reportId}</span></div>
+            <div><strong>{t('dateOfIssue', 'Date of Issue')}:</strong> {reportData.generatedDate}</div>
+            <div><strong>{t('issuingAuthority', 'Issuing Authority')}:</strong> CSC Digital Seva</div>
+            <div style={{ marginTop: '4px' }}>
+              <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac' }}>
+                {reportData.verificationOutcome === 'CHECKS_PASSED' ? 'VERIFIED • ELIGIBLE' : 'ASSESSMENT COMPLETED'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Beneficiary Demographic Profile Grid */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f2942', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Award style={{ width: '16px', height: '16px', color: '#0284c7' }} />
+            {t('beneficiaryDetails', 'Beneficiary Demographic Profile')}
+          </div>
+          
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <tbody>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b', width: '22%' }}>{t('citizenLabel', 'Citizen Name')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#0f172a', width: '28%' }}>{reportData.citizenName}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b', width: '22%' }}>{t('ageGenderLabel', 'Age / Gender')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#0f172a', width: '28%' }}>{reportData.age} {t('yearsUnit', 'Years')} / {reportData.gender}</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b' }}>{t('stateLabel', 'State / Nativity')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#0f172a' }}>{reportData.state}{reportData.district ? ` (${reportData.district})` : ''}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b' }}>{t('occupationLabel', 'Occupation')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#0f172a' }}>{reportData.occupation}</td>
+              </tr>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b' }}>{t('incomeLabel', 'Annual Household Income')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#0f172a' }}>
+                  {reportData.annualIncome !== undefined ? `₹${reportData.annualIncome.toLocaleString('en-IN')}` : 'N/A'}
+                </td>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b' }}>{t('categoryLabel', 'Social Category')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#0f172a' }}>{reportData.socialCategory || 'General'}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b' }}>{t('authenticityStatus', 'Verification Status')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#16a34a' }}>{reportData.verificationOutcome}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 700, color: '#64748b' }}>{t('docsUploaded', 'Tracked Vault Documents')}</td>
+                <td style={{ padding: '8px 12px', fontWeight: 800, color: '#0f172a' }}>{reportData.uploadedDocumentsCount} uploaded ({reportData.ocrCompletedCount} OCR verified)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* 4. Verified Government Documents Table */}
+        {reportData.documents.length > 0 && (
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f2942', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ShieldCheck style={{ width: '14px', height: '14px', color: '#16a34a' }} />
+              {t('verifiedVaultRecords', 'Verified Vault & Identification Records')}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #cbd5e1', textAlign: 'left' }}>
+                  <th style={{ padding: '6px 10px', color: '#475569' }}>Document Type</th>
+                  <th style={{ padding: '6px 10px', color: '#475569' }}>Identification ID</th>
+                  <th style={{ padding: '6px 10px', color: '#475569' }}>OCR Extraction</th>
+                  <th style={{ padding: '6px 10px', color: '#475569' }}>Security Audit Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportData.documents.map((doc, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                    <td style={{ padding: '6px 10px', fontWeight: 700, textTransform: 'uppercase' }}>{doc.documentType.replace('_', ' ')}</td>
+                    <td style={{ padding: '6px 10px', fontFamily: 'monospace' }}>{doc.maskedIdentifier}</td>
+                    <td style={{ padding: '6px 10px', color: '#0284c7', fontWeight: 600 }}>{doc.ocrStatus}</td>
+                    <td style={{ padding: '6px 10px', color: '#16a34a', fontWeight: 700 }}>{doc.verificationStatus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 5. Recommended Government Schemes Table */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f2942', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles style={{ width: '16px', height: '16px', color: '#d97706' }} />
+            {t('eligibleSchemesEntitlements', 'Eligible Government Schemes & Entitlements')} ({reportData.recommendedSchemes.length} Matches)
+          </div>
+
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#0f2942', color: '#ffffff', textAlign: 'left' }}>
+                <th style={{ padding: '8px 10px', width: '5%' }}>#</th>
+                <th style={{ padding: '8px 10px', width: '30%' }}>Scheme Name</th>
+                <th style={{ padding: '8px 10px', width: '20%' }}>Category</th>
+                <th style={{ padding: '8px 10px', width: '30%' }}>Entitled Welfare Benefit</th>
+                <th style={{ padding: '8px 10px', width: '15%' }}>Official Portal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportData.recommendedSchemes.slice(0, 6).map((sch, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                  <td style={{ padding: '8px 10px', fontWeight: 700, color: '#64748b' }}>{i + 1}</td>
+                  <td style={{ padding: '8px 10px', fontWeight: 800, color: '#0f172a' }}>{sch.schemeName}</td>
+                  <td style={{ padding: '8px 10px' }}>
+                    <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, backgroundColor: '#e0f2fe', color: '#0369a1' }}>
+                      {sch.category}
+                    </span>
+                  </td>
+                  <td style={{ padding: '8px 10px', color: '#334155', lineHeight: 1.4 }}>{sch.benefitSummary}</td>
+                  <td style={{ padding: '8px 10px', color: '#0284c7', fontWeight: 600, wordBreak: 'break-all' }}>
+                    {sch.officialWebsite ? sch.officialWebsite.replace('https://', '').replace('http://', '').slice(0, 20) : 'Gov Portal'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 6. Mandatory Requirements & Next Steps Checklist */}
+        {(reportData.missingSteps.length > 0 || reportData.missingDocumentsChecklist.length > 0) && (
+          <div style={{ marginBottom: '24px', padding: '12px 16px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '10px' }}>
+            <div style={{ fontWeight: 800, color: '#92400e', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle style={{ width: '14px', height: '14px' }} />
+              {t('mandatoryRequirementsChecklist', 'Mandatory Requirements & Next Steps Checklist')}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', color: '#78350f' }}>
+              {reportData.missingSteps.map((st, i) => (
+                <div key={`ms-${i}`}>☑ {st}</div>
+              ))}
+              {reportData.missingDocumentsChecklist.map((dc, i) => (
+                <div key={`md-${i}`}>☑ Present verified physical copy of {dc} at CSC Block Office</div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 7. Official Legal Disclaimer & Notice */}
+        <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginBottom: '24px', fontSize: '9px', color: '#64748b', lineHeight: 1.4 }}>
+          <strong>{t('disclaimer', 'Official Notice / Disclaimer')}:</strong> {t('kioskDisclaimer', 'This report is automatically generated based on user input and rule verification. Final approval is subject to document verification by the respective government department.')}
+        </div>
+
+        {/* 8. Authorized Signatures, Digital Seal & Security Barcode */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '2px solid #0f172a', paddingTop: '16px' }}>
+          {/* CSC Digital Seva Official Stamp Seal */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '2px dashed #0284c7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '4px' }}>
+              <div style={{ fontSize: '7px', fontWeight: 900, color: '#0284c7', textTransform: 'uppercase' }}>CSC SEVA</div>
+              <div style={{ fontSize: '6px', color: '#64748b' }}>VERIFIED</div>
+              <div style={{ fontSize: '6px', fontWeight: 700, color: '#16a34a' }}>CERTIFIED</div>
+            </div>
+            <div style={{ fontSize: '9px', color: '#475569' }}>
+              <div style={{ fontWeight: 800, color: '#0f172a' }}>{t('cscSevaCertified', 'CSC Digital Seva Certified Output')}</div>
+              <div>E-Governance Services India Limited</div>
+              <div>Unique Verification Hash: <span style={{ fontFamily: 'monospace' }}>GS-{reportData.reportId.slice(-4)}-VERIFIED</span></div>
+            </div>
+          </div>
+
+          {/* Barcode Simulation */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ display: 'flex', height: '24px', alignItems: 'center', justifyContent: 'center', gap: '1px' }}>
+              {Array.from({ length: 42 }).map((_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    backgroundColor: '#000000',
+                    display: 'inline-block',
+                    height: '100%',
+                    width: i % 4 === 0 ? '2.5px' : i % 2 === 0 ? '1.5px' : '1px'
+                  }}
+                />
+              ))}
+            </div>
+            <div style={{ fontSize: '8px', fontFamily: 'monospace', color: '#475569', marginTop: '3px' }}>
+              *{reportData.reportId}*
+            </div>
+          </div>
+
+          {/* Authorized Signature Block */}
+          <div style={{ textAlign: 'right', minWidth: '180px' }}>
+            <div style={{ borderBottom: '1px solid #0f172a', paddingBottom: '4px', marginBottom: '4px', fontStyle: 'italic', color: '#0369a1', fontWeight: 700, fontSize: '11px' }}>
+              GovScheme AI / Verification Authority
+            </div>
+            <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#0f172a' }}>
+              {t('authorizedSignature', 'Authorized Officer Signature')}
+            </div>
+            <div style={{ fontSize: '8.5px', color: '#64748b' }}>Digital Advisory Sanction & Review</div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 };

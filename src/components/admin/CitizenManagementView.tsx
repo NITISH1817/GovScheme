@@ -35,31 +35,49 @@ export const CitizenManagementView: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Selected profile drawer
   const [selectedCitizen, setSelectedCitizen] = useState<CitizenUser | null>(null);
   const [citizenDetails, setCitizenDetails] = useState<{ applications: any[]; documents: any[] } | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/users', {
-        role: 'Citizen',
-        q: searchQuery,
-        state: stateFilter !== 'All' ? stateFilter : undefined,
-        isActive: statusFilter !== 'All' ? (statusFilter === 'Active') : undefined,
-        page,
-        limit: 10
-      });
-
-      if (res && res.users) {
-        setUsers(res.users);
-        setTotalPages(res.pages || 1);
-        setTotalCount(res.total || res.users.length);
+      setError(null);
+      let res: any = null;
+      try {
+        res = await apiClient.get('/admin/citizens', {
+          role: 'Citizen',
+          q: searchQuery,
+          state: stateFilter !== 'All' ? stateFilter : undefined,
+          isActive: statusFilter !== 'All' ? (statusFilter === 'Active') : undefined,
+          page,
+          limit: 10
+        });
+      } catch (adminErr: any) {
+        // Fallback to /users endpoint if /admin/citizens is unavailable
+        res = await apiClient.get('/users', {
+          role: 'Citizen',
+          q: searchQuery,
+          state: stateFilter !== 'All' ? stateFilter : undefined,
+          isActive: statusFilter !== 'All' ? (statusFilter === 'Active') : undefined,
+          page,
+          limit: 10
+        });
       }
-    } catch (e) {
+
+      if (res) {
+        const citizenList = res.citizens || res.users || [];
+        setUsers(citizenList);
+        setTotalPages(res.pages || 1);
+        setTotalCount(res.total !== undefined ? res.total : citizenList.length);
+      }
+    } catch (e: any) {
       console.error('Error fetching citizens', e);
+      setError(e?.message || 'Failed to fetch registered citizens from database.');
+      setUsers([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -79,7 +97,13 @@ export const CitizenManagementView: React.FC = () => {
     setSelectedCitizen(citizen);
     setLoadingDetails(true);
     try {
-      const res = await apiClient.get(`/users/${citizen._id}/details`);
+      let res: any = null;
+      try {
+        res = await apiClient.get(`/admin/citizens/${citizen._id}`);
+      } catch {
+        res = await apiClient.get(`/users/${citizen._id}/details`);
+      }
+
       if (res && res.success) {
         setCitizenDetails({
           applications: res.applications || [],
@@ -154,6 +178,26 @@ export const CitizenManagementView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: -8 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 font-medium text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={fetchUsers} 
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry Request
+          </button>
+        </motion.div>
+      )}
 
       {actionSuccess && (
         <motion.div 
@@ -231,7 +275,17 @@ export const CitizenManagementView: React.FC = () => {
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-[#64748B] dark:text-[#94A3B8]">
-                    No citizens match the selected filter criteria.
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <Users className="w-8 h-8 text-gray-400 dark:text-gray-600" />
+                      <span className="font-semibold text-sm text-gray-700 dark:text-gray-300">
+                        {totalCount === 0 && !searchQuery && stateFilter === 'All' && statusFilter === 'All'
+                          ? 'No registered citizens in database yet.'
+                          : 'No citizens match the selected filter criteria.'}
+                      </span>
+                      <p className="text-xs text-gray-500">
+                        Total database citizen count: {totalCount}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (

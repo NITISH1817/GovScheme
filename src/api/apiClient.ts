@@ -346,7 +346,7 @@ const handleResponse = async (response: Response) => {
 
 
 export const apiClient = {
-  get: async (endpoint: string, params: Record<string, any> = {}) => {
+  get: async (endpoint: string, params: Record<string, any> = {}, options: { fallbackToMock?: boolean } = {}) => {
     try {
       const url = new URL(`${API_BASE_URL}${endpoint}`);
       Object.keys(params).forEach(key => {
@@ -360,8 +360,11 @@ export const apiClient = {
       });
       return await handleResponse(response);
     } catch (e) {
-      console.warn("Offline mock fallback for GET", endpoint);
-      return getMockData(endpoint);
+      if (options.fallbackToMock) {
+        console.warn("Offline mock fallback for GET", endpoint);
+        return getMockData(endpoint);
+      }
+      throw e;
     }
   },
 

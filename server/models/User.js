@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
     age: { type: Number },
     gender: { type: String, default: '' },
     maritalStatus: { type: String, default: '' },
-    annualIncome: { type: Number, default: 0 },
+    annualIncome: { type: Number },
     category: { type: String, default: '' },
     state: { type: String, default: '' },
     district: { type: String, default: '' },

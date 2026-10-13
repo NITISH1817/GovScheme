@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Application from '../models/Application.js';
 import Scheme from '../models/Scheme.js';
 
@@ -79,9 +80,13 @@ export const getApplications = async (req, res) => {
 
 export const updateApplicationStatus = async (req, res) => {
   try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid application ID format' });
+    }
+
     const { status, remarks } = req.body;
-    
-    const application = await Application.findById(req.params.id);
+    const application = await Application.findById(id);
     
     if (!application) {
       return res.status(404).json({ success: false, message: 'Application not found' });

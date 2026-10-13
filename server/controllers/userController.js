@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Application from '../models/Application.js';
 import Document from '../models/Document.js';
@@ -20,20 +21,21 @@ export const getUsers = async (req, res) => {
       filter.isActive = isActive === 'true' || isActive === true;
     }
     
-    if (q) {
+    if (q && typeof q === 'string' && q.trim()) {
+      const safeQ = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { fullName: { $regex: q, $options: 'i' } },
-        { email: { $regex: q, $options: 'i' } },
-        { mobile: { $regex: q, $options: 'i' } }
+        { fullName: { $regex: safeQ, $options: 'i' } },
+        { email: { $regex: safeQ, $options: 'i' } },
+        { mobile: { $regex: safeQ, $options: 'i' } }
       ];
     }
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(Math.max(1, parseInt(limit, 10) || 20), 100);
     const skip = (pageNum - 1) * limitNum;
 
     const users = await User.find(filter)
-      .select('-password')
+      .select('-password -twoFactorSecret -resetPasswordToken -otpTokens -__v')
       .sort('-createdAt')
       .skip(skip)
       .limit(limitNum);
@@ -45,6 +47,7 @@ export const getUsers = async (req, res) => {
       total,
       page: pageNum,
       pages: Math.ceil(total / limitNum),
+      citizens: users,
       users
     });
   } catch (error) {
@@ -57,9 +60,13 @@ export const getUsers = async (req, res) => {
 // @access  Private (Admin)
 export const updateUserStatus = async (req, res) => {
   try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID format' });
+    }
+
     const { isActive } = req.body;
-    
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(id);
     
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -88,7 +95,7 @@ export const formatUserProfile = (user) => {
     maritalStatus: p.maritalStatus || '',
     state: p.state || '',
     district: p.district || '',
-    annualIncome: p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? Number(p.annualIncome) : 0,
+    annualIncome: p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? Number(p.annualIncome) : undefined,
     category: p.category || '',
     occupation: p.occupation || '',
     educationLevel: p.educationLevel || '',
@@ -262,18 +269,24 @@ export const updateUserProfile = async (req, res) => {
 // @access  Private (Admin)
 export const getCitizenDetails = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid citizen ID format' });
+    }
+
+    const user = await User.findById(id).select('-password -twoFactorSecret -resetPasswordToken -otpTokens -__v');
     if (!user) {
       return res.status(404).json({ success: false, message: 'Citizen not found' });
     }
 
     const [applications, documents] = await Promise.all([
       Application.find({ userId: user._id }).populate('schemeId', 'name department category'),
-      Document.find({ userId: user._id })
+      Document.find({ userId: user._id }).select('-extractedData.rawText')
     ]);
 
     res.json({
       success: true,
+      citizen: user,
       user,
       applications,
       documents

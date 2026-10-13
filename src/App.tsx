@@ -626,7 +626,16 @@ export const App: React.FC = () => {
   }
 
   // If Kiosk Report Mode
-  if (activeTab === 'kiosk-report' && kioskProfile) {
+  if (activeTab === 'kiosk-report') {
+    const activeKioskProfile = kioskProfile || user || {
+      fullName: 'Citizen Beneficiary',
+      state: 'Tamil Nadu',
+      age: 28,
+      gender: 'Male',
+      annualIncome: 120000,
+      occupation: 'Farmer',
+      category: 'General'
+    };
     return (
       <KioskReport 
         key={currentLang}
@@ -635,7 +644,7 @@ export const App: React.FC = () => {
           i18n.changeLanguage(lang);
           setCurrentLang(lang);
         }}
-        profile={kioskProfile} 
+        profile={activeKioskProfile} 
         schemes={schemes} 
         onBack={() => setActiveTab('kiosk')} 
       />
@@ -862,10 +871,9 @@ export const App: React.FC = () => {
           />
         )}
 
-        {(activeTab === 'profile' || activeTab === 'report') && user && (
+        {activeTab === 'profile' && user && (
           <ProfileView
             user={user}
-            initialSubTab={activeTab === 'report' ? 'report' : 'overview'}
             onUpdateProfile={async (updated) => {
               updated.profileCompletionScore = calculateProfileCompletion(updated);
               setUser(updated);
@@ -903,8 +911,22 @@ export const App: React.FC = () => {
           />
         )}
 
+        {activeTab === 'report' && user && (
+          <KioskReport
+            key={currentLang}
+            currentLang={currentLang}
+            onLanguageChange={(lang) => {
+              i18n.changeLanguage(lang);
+              setCurrentLang(lang);
+            }}
+            profile={user}
+            schemes={schemes}
+            onBack={() => setActiveTab('profile')}
+          />
+        )}
+
         {/* 404 Not Found Page */}
-        {!['home', 'wizard', 'analyzing', 'schemes', 'assistant', 'vault', 'tracker', 'profile'].includes(activeTab) && (
+        {!['home', 'wizard', 'analyzing', 'schemes', 'assistant', 'vault', 'tracker', 'profile', 'report', 'kiosk', 'kiosk-report', 'admin'].includes(activeTab) && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
             <div className="text-9xl font-bold text-gray-200 dark:text-gray-800 mb-4">404</div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Page Not Found</h2>

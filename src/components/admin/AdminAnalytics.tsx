@@ -8,16 +8,25 @@ export const AdminAnalytics: React.FC = () => {
   const [timeRange, setTimeRange] = useState('6M');
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/analytics/dashboard', { timeRange });
+      setError(null);
+      let res: any = null;
+      try {
+        res = await apiClient.get('/admin/analytics', { timeRange });
+      } catch (adminErr) {
+        res = await apiClient.get('/analytics/dashboard', { timeRange });
+      }
+
       if (res && res.metrics) {
         setAnalyticsData(res);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to load analytics', e);
+      setError(e?.message || 'Failed to load platform analytics.');
     } finally {
       setLoading(false);
     }
@@ -27,29 +36,15 @@ export const AdminAnalytics: React.FC = () => {
     fetchAnalytics();
   }, [timeRange]);
 
-  const metrics = analyticsData?.metrics || {
-    totalCitizens: 24500,
-    totalApplications: 15400,
-    approvedApps: 9200,
-    apiHealth: 99.9
+  const metrics = {
+    totalCitizens: analyticsData?.metrics?.totalCitizens ?? 0,
+    totalApplications: analyticsData?.metrics?.totalApplications ?? 0,
+    approvedApps: analyticsData?.metrics?.approvedApps ?? 0,
+    apiHealth: analyticsData?.metrics?.apiHealth ?? 100
   };
 
-  const areaData = analyticsData?.charts?.userGrowth || [
-    { name: 'May', users: 3100, applications: 1800 },
-    { name: 'Jun', users: 3800, applications: 2200 },
-    { name: 'Jul', users: 4400, applications: 2750 },
-    { name: 'Aug', users: 5100, applications: 3400 },
-    { name: 'Sep', users: 6200, applications: 4100 },
-    { name: 'Oct', users: 7400, applications: 4900 },
-  ];
-
-  const barData = analyticsData?.charts?.schemesByCategory || [
-    { name: 'Agriculture', value: 42 },
-    { name: 'Education', value: 38 },
-    { name: 'Financial', value: 31 },
-    { name: 'Housing', value: 24 },
-    { name: 'Health', value: 19 },
-  ];
+  const areaData = analyticsData?.charts?.userGrowth || [];
+  const barData = analyticsData?.charts?.schemesByCategory || [];
 
   const handleExportCSV = () => {
     const headers = ['Category / Month', 'Citizens', 'Applications'];
@@ -97,17 +92,30 @@ export const AdminAnalytics: React.FC = () => {
         </div>
       </div>
 
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 font-medium text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <span>{error}</span>
+          <button 
+            type="button" 
+            onClick={fetchAnalytics} 
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[#FFFFFF] dark:bg-[#0B1424] border border-[#E2E8F0] dark:border-[#243449] rounded-xl p-6 shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-4">
             <div className="p-3 bg-[#1769FF]/10 dark:bg-[#60A5FA]/10 rounded-lg">
               <Users className="w-6 h-6 text-[#1769FF] dark:text-[#60A5FA]" />
             </div>
-            <span className="text-xs font-bold text-[#15803D] dark:text-[#4ADE80] bg-[#15803D]/10 dark:bg-[#4ADE80]/10 px-2 py-1 rounded-full">+12.5%</span>
+            <span className="text-xs font-bold text-[#15803D] dark:text-[#4ADE80] bg-[#15803D]/10 dark:bg-[#4ADE80]/10 px-2 py-1 rounded-full">Live</span>
           </div>
           <div>
             <div className="text-3xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-1">
-              {metrics.totalCitizens?.toLocaleString() || '24,500'}
+              {(metrics.totalCitizens ?? 0).toLocaleString()}
             </div>
             <div className="text-sm font-semibold text-[#64748B] dark:text-[#94A3B8]">Registered Citizens</div>
           </div>
@@ -118,11 +126,11 @@ export const AdminAnalytics: React.FC = () => {
             <div className="p-3 bg-[#D97706]/10 dark:bg-[#FBBF24]/10 rounded-lg">
               <Activity className="w-6 h-6 text-[#D97706] dark:text-[#FBBF24]" />
             </div>
-            <span className="text-xs font-bold text-[#15803D] dark:text-[#4ADE80] bg-[#15803D]/10 dark:bg-[#4ADE80]/10 px-2 py-1 rounded-full">+8.2%</span>
+            <span className="text-xs font-bold text-[#15803D] dark:text-[#4ADE80] bg-[#15803D]/10 dark:bg-[#4ADE80]/10 px-2 py-1 rounded-full">Live</span>
           </div>
           <div>
             <div className="text-3xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-1">
-              {metrics.totalApplications?.toLocaleString() || '15,400'}
+              {(metrics.totalApplications ?? 0).toLocaleString()}
             </div>
             <div className="text-sm font-semibold text-[#64748B] dark:text-[#94A3B8]">Applications Submitted</div>
           </div>
@@ -133,11 +141,11 @@ export const AdminAnalytics: React.FC = () => {
             <div className="p-3 bg-[#8B5CF6]/10 dark:bg-[#A78BFA]/10 rounded-lg">
               <TrendingUp className="w-6 h-6 text-[#8B5CF6] dark:text-[#A78BFA]" />
             </div>
-            <span className="text-xs font-bold text-[#15803D] dark:text-[#4ADE80] bg-[#15803D]/10 dark:bg-[#4ADE80]/10 px-2 py-1 rounded-full">+99.9%</span>
+            <span className="text-xs font-bold text-[#15803D] dark:text-[#4ADE80] bg-[#15803D]/10 dark:bg-[#4ADE80]/10 px-2 py-1 rounded-full">Live</span>
           </div>
           <div>
             <div className="text-3xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-1">
-              {metrics.approvedApps ? metrics.approvedApps.toLocaleString() : '9,200'}
+              {(metrics.approvedApps ?? 0).toLocaleString()}
             </div>
             <div className="text-sm font-semibold text-[#64748B] dark:text-[#94A3B8]">Applications Sanctioned</div>
           </div>

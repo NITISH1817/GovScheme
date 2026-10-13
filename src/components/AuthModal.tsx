@@ -9,24 +9,24 @@ import './Auth/AuthModal.css';
 function buildNewProfile(opts: {
   fullName: string;
   email: string;
-  state: string;
-  occupation: string;
-  age: number;
-  annualIncome: number;
-  gender: TargetGender;
+  state?: string;
+  occupation?: string;
+  age?: number;
+  annualIncome?: number;
+  gender?: TargetGender;
 }): UserProfile {
   const profile: UserProfile = {
     id: `user-${Date.now()}`,
     fullName: opts.fullName,
     mobile: '',
     email: opts.email,
-    age: opts.age,
-    gender: opts.gender,
-    state: opts.state,
+    age: opts.age !== undefined ? opts.age : (undefined as any),
+    gender: (opts.gender || '') as TargetGender,
+    state: opts.state || '',
     district: '',
-    category: 'General' as CategorySocial,
-    occupation: opts.occupation,
-    annualIncome: opts.annualIncome,
+    category: '' as CategorySocial,
+    occupation: opts.occupation || '',
+    annualIncome: opts.annualIncome !== undefined ? opts.annualIncome : (undefined as any),
     landHoldingAcres: 0,
     educationLevel: '',
     familyMembersCount: 1,
@@ -344,15 +344,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleSocialLogin = () => {
     setError(null);
     const profile = buildNewProfile({
-      fullName: 'Citizen',
-      email: 'citizen@example.com',
-      state: 'Tamil Nadu',
-      occupation: 'Student',
-      age: 21,
-      annualIncome: 200000,
-      gender: 'Male'
+      fullName: 'Citizen User',
+      email: 'citizen@example.com'
     });
-    onLoginSuccess(profile, false);
+    onLoginSuccess(profile, true);
     onClose();
   };
 
@@ -399,16 +394,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError(null);
       const demoProfile = buildNewProfile({
         fullName: 'Nitish Priyan',
-        email: 'nitishpriyanrs.cs24@bitsathy.ac.in',
-        state: 'Tamil Nadu',
-        occupation: 'Student',
-        age: 21,
-        annualIncome: 200000,
-        gender: 'Male'
+        email: 'nitishpriyanrs.cs24@bitsathy.ac.in'
       });
       demoProfile.avatarUrl = 'https://api.dicebear.com/7.x/initials/svg?seed=Nitish&backgroundColor=0369a1';
       localStorage.setItem('govscheme_user', JSON.stringify(demoProfile));
-      onLoginSuccess(demoProfile);
+      onLoginSuccess(demoProfile, true);
       onClose();
       return;
     }

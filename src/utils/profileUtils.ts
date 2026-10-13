@@ -74,7 +74,7 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
       district: '',
       category: '' as CategorySocial,
       occupation: '',
-      annualIncome: 0,
+      annualIncome: undefined as any,
       landHoldingAcres: 0,
       educationLevel: '',
       familyMembersCount: 1,
@@ -116,8 +116,8 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   const occupation = String(u.occupation || p.occupation || '').trim();
   const educationLevel = String(u.educationLevel || p.educationLevel || '').trim();
 
-  const rawIncome = u.annualIncome !== undefined && u.annualIncome !== null && u.annualIncome !== '' ? u.annualIncome : (p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? p.annualIncome : 0);
-  const annualIncome = !isNaN(Number(rawIncome)) ? Number(rawIncome) : 0;
+  const rawIncome = u.annualIncome !== undefined && u.annualIncome !== null && u.annualIncome !== '' ? u.annualIncome : (p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? p.annualIncome : undefined);
+  const annualIncome = rawIncome !== undefined && rawIncome !== null && !isNaN(Number(rawIncome)) ? Number(rawIncome) : (undefined as any);
 
   const rawLand = u.landHoldingAcres !== undefined && u.landHoldingAcres !== null && u.landHoldingAcres !== '' ? u.landHoldingAcres : (p.landHoldingAcres !== undefined && p.landHoldingAcres !== null && p.landHoldingAcres !== '' ? p.landHoldingAcres : 0);
   const landHoldingAcres = !isNaN(Number(rawLand)) ? Number(rawLand) : 0;
