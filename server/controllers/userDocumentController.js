@@ -328,3 +328,118 @@ export const deleteUserDocument = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * GET /api/documents/:documentId/file
+ * Authenticated document file retrieval with strict ownership checks (SEC-02).
+ * Verifies that the requester is either the document owner or an authorized administrator.
+ * Anonymous users or unauthorized citizens cannot access or download the file.
+ */
+export const downloadUserDocumentFile = async (req, res) => {
+  try {
+    const docParam = req.params.documentId;
+    const isAdmin = req.user && ['Super Admin', 'Ministry Admin', 'State Admin'].includes(req.user.role);
+
+    const filter = isAdmin
+      ? { $or: [{ documentId: docParam }, { _id: docParam.match(/^[0-9a-fA-F]{24}$/) ? docParam : null }] }
+      : {
+          userId: req.user._id,
+          $or: [{ documentId: docParam }, { _id: docParam.match(/^[0-9a-fA-F]{24}$/) ? docParam : null }]
+        };
+
+    const document = await Document.findOne(filter);
+
+    if (!document) {
+      return res.status(404).json({ success: false, message: 'Document not found or access denied.' });
+    }
+
+    if (!document.fileUrl) {
+      return res.status(404).json({ success: false, message: 'No file associated with this document record.' });
+    }
+
+    // Securely extract the file's base name and resolve against the designated uploads directory
+    const fileName = path.basename(document.fileUrl);
+    const physicalPath = path.resolve('uploads', fileName);
+
+    // Defense in depth: prevent directory traversal
+    const uploadsDir = path.resolve('uploads');
+    if (!physicalPath.startsWith(uploadsDir)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: invalid file path.' });
+    }
+
+    if (!fs.existsSync(physicalPath)) {
+      return res.status(404).json({ success: false, message: 'Physical document file not found on server.' });
+    }
+
+    res.setHeader('Content-Type', document.fileMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(document.originalFileName || fileName)}"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
+    const readStream = fs.createReadStream(physicalPath);
+    readStream.pipe(res);
+  } catch (error) {
+    console.error('[Download Document File Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve document file.' });
+  }
+};
+
+/**
+ * POST /api/documents/manual
+ * Creates an authenticated document record for manual entry workflow (DATA-01).
+ * Persists directly into MongoDB Document collection.
+ */
+export const createManualDocument = async (req, res) => {
+  try {
+    const { documentType, type, docNumber, extractedFields } = req.body;
+    const docType = documentType || type;
+    if (!docType) {
+      return res.status(400).json({ success: false, message: 'documentType parameter is required.' });
+    }
+
+    const documentId = `DOC-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+
+    // Create a physical record placeholder file on disk for consistency
+    const safeFileName = `doc_manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.json`;
+    const uploadsDir = path.resolve('uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    const physicalPath = path.join(uploadsDir, safeFileName);
+    fs.writeFileSync(physicalPath, JSON.stringify({
+      documentId,
+      userId: req.user._id,
+      documentType: docType,
+      docNumber: docNumber || '',
+      extractedFields: extractedFields || {},
+      createdAt: new Date()
+    }, null, 2), 'utf8');
+
+    const document = await Document.create({
+      documentId,
+      userId: req.user._id,
+      documentType: docType,
+      type: docType,
+      originalFileName: `${docType}_manual_record.json`,
+      fileMimeType: 'application/json',
+      fileSize: fs.statSync(physicalPath).size,
+      fileUrl: `/uploads/${safeFileName}`,
+      ocrStatus: 'COMPLETED',
+      extractedFields: {
+        documentNumber: docNumber,
+        ...(extractedFields || {})
+      },
+      verificationStatus: 'PENDING',
+      isUserConfirmed: true,
+      userConfirmedAt: new Date()
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Manual document created and persisted successfully.',
+      document
+    });
+  } catch (error) {
+    console.error('[Create Manual Document Error]:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

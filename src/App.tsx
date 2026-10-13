@@ -254,30 +254,66 @@ export const App: React.FC = () => {
       }
     };
 
-    // If citizen has stored token, fetch latest persistent profile from cloud backend
+    // If citizen has stored token, fetch latest persistent profile & documents from cloud backend
     const syncCloudProfile = async () => {
       const token = localStorage.getItem('govscheme_token');
       if (!token) return;
       try {
-        const response = await fetch(`${API_URL}/api/users/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && (data.user || data.profile)) {
-            const u = data.user || data.profile;
+        const [profileRes, docsRes] = await Promise.all([
+          fetch(`${API_URL}/api/users/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(`${API_URL}/api/documents`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          let backendDocs: DocumentRecord[] = [];
+
+          if (docsRes.ok) {
+            const docsData = await docsRes.json();
+            if (docsData.success && Array.isArray(docsData.documents)) {
+              backendDocs = docsData.documents.map((d: any) => ({
+                _id: d._id,
+                id: d._id,
+                documentId: d.documentId,
+                documentType: d.documentType,
+                type: d.documentType || d.type,
+                docNumber: d.extractedFields?.documentNumber || d.extractedFields?.aadhaarNumber || d.extractedFields?.panNumber || d.originalFileName || d.documentId,
+                status: d.verificationStatus === 'CHECKS_PASSED' ? 'Verified' : 'Pending',
+                ocrExtracted: d.extractedFields || {},
+                fileUrl: `/api/documents/${d.documentId}/file`,
+                uploadedAt: d.createdAt ? new Date(d.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+              }));
+            }
+          }
+
+          if (profileData.success && (profileData.user || profileData.profile)) {
+            const u = profileData.user || profileData.profile;
             setUser(prev => {
+              // Combine backend persisted documents with any local docs
+              const existingDocs = prev?.documents || [];
+              const mergedDocs = [...backendDocs];
+              existingDocs.forEach(ed => {
+                if (!mergedDocs.some(bd => bd.type === ed.type || (bd.documentId && bd.documentId === ed.documentId))) {
+                  mergedDocs.push(ed);
+                }
+              });
+
               const merged: UserProfile = {
                 ...(prev || {} as UserProfile),
                 ...u,
                 id: u.id || u._id || (prev ? prev.id : `user-${Date.now()}`),
+                documents: mergedDocs,
                 profileCompletionScore: calculateProfileCompletion(u)
               };
               localStorage.setItem('govscheme_user', JSON.stringify(merged));
               return merged;
             });
           }
-        } else if (response.status === 401) {
+        } else if (profileRes.status === 401) {
           localStorage.removeItem('govscheme_token');
           localStorage.removeItem('govscheme_user');
           setUser(null);
@@ -424,13 +460,19 @@ export const App: React.FC = () => {
     setOcrModalOpen(true);
   };
 
-  const handleSaveDocument = (newDoc: DocumentRecord, autoFillFields?: Partial<UserProfile>) => {
+  const handleSaveDocument = async (
+    newDoc: DocumentRecord, 
+    autoFillFields?: Partial<UserProfile>,
+    file?: File | null
+  ) => {
     if (!user) return;
+    
+    // 1. Immediately update local state
     setUser(prev => {
       if (!prev) return prev;
       // Replace existing document slot of the same type or matching documentId
       const existingFiltered = (prev.documents || []).filter(
-        d => (d.documentId || d.id) !== (newDoc.documentId || newDoc.id) && d.type !== newDoc.type
+        d => (d.documentId || d.id || d._id) !== (newDoc.documentId || newDoc.id || newDoc._id) && d.type !== newDoc.type
       );
       return {
         ...prev,
@@ -440,12 +482,81 @@ export const App: React.FC = () => {
       };
     });
 
+    // 2. Persist to MongoDB backend if authenticated
+    const token = localStorage.getItem('govscheme_token');
+    if (token) {
+      try {
+        const docType = newDoc.documentType || newDoc.type || 'Aadhaar';
+        let res: Response;
+
+        if (file) {
+          const formData = new FormData();
+          formData.append('document', file);
+          formData.append('documentType', docType);
+
+          res = await fetch(`${API_URL}/api/documents/upload`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`
+            },
+            body: formData
+          });
+        } else {
+          res = await fetch(`${API_URL}/api/documents/manual`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              documentType: docType,
+              type: docType,
+              docNumber: newDoc.docNumber,
+              extractedFields: newDoc.ocrExtracted || {}
+            })
+          });
+        }
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.document) {
+            const savedDoc = data.document;
+            const mappedDoc: DocumentRecord = {
+              _id: savedDoc._id,
+              id: savedDoc._id,
+              documentId: savedDoc.documentId,
+              documentType: savedDoc.documentType,
+              type: savedDoc.documentType || savedDoc.type,
+              docNumber: savedDoc.extractedFields?.documentNumber || newDoc.docNumber,
+              status: savedDoc.verificationStatus === 'CHECKS_PASSED' ? 'Verified' : 'Pending',
+              ocrExtracted: savedDoc.extractedFields || newDoc.ocrExtracted,
+              fileUrl: `/api/documents/${savedDoc.documentId}/file`,
+              uploadedAt: savedDoc.createdAt ? new Date(savedDoc.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            };
+
+            setUser(prev => {
+              if (!prev) return prev;
+              const existingFiltered = (prev.documents || []).filter(
+                d => (d.documentId || d.id || d._id) !== (mappedDoc.documentId || mappedDoc.id || mappedDoc._id) && d.type !== mappedDoc.type
+              );
+              return {
+                ...prev,
+                documents: [...existingFiltered, mappedDoc]
+              };
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to persist document to backend:', err);
+      }
+    }
+
     // Add Notification
     setNotifications(prev => [
       {
         id: `notif-${Date.now()}`,
         title: `${newDoc.documentType || newDoc.type} Saved`,
-        description: `Document ${newDoc.documentId || newDoc.id} processed and isolated in Document Vault.`,
+        description: `Document ${newDoc.documentId || newDoc.id} processed and persisted in Document Vault.`,
         category: 'Document',
         timestamp: 'Just now',
         read: false
@@ -454,15 +565,27 @@ export const App: React.FC = () => {
     ]);
   };
 
-  const handleDeleteDocument = (docId: string) => {
+  const handleDeleteDocument = async (docId: string) => {
     if (!user) return;
     setUser(prev => {
       if (!prev) return prev;
       return {
         ...prev,
-        documents: prev.documents.filter(d => d.id !== docId)
+        documents: prev.documents.filter(d => d.id !== docId && d._id !== docId && d.documentId !== docId)
       };
     });
+
+    const token = localStorage.getItem('govscheme_token');
+    if (token) {
+      try {
+        await fetch(`${API_URL}/api/documents/${docId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error('Failed to delete document from backend:', err);
+      }
+    }
   };
 
   const handleStartVoiceCommand = () => {

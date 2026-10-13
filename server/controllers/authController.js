@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Document from '../models/Document.js';
 import { formatUserProfile } from './userController.js';
 
 const generateToken = (id, name, role) => {
@@ -10,7 +11,7 @@ const generateToken = (id, name, role) => {
 
 export const registerUser = async (req, res) => {
   try {
-    const { fullName, email, password, role } = req.body;
+    const { fullName, email, password } = req.body;
 
     if (!email || !password || !fullName) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -27,21 +28,28 @@ export const registerUser = async (req, res) => {
       });
     }
 
+    // Security Hardening (SEC-01): Public registration must unconditionally assign the 'Citizen' role.
+    // Any user-supplied role is strictly ignored to prevent privilege escalation.
     const user = await User.create({
       fullName: (fullName || '').trim(),
       email: normalizedEmail,
       password,
-      role: role || 'Citizen'
+      role: 'Citizen'
     });
 
     if (user) {
       const userPayload = formatUserProfile(user);
+      userPayload.documents = [];
+      if (userPayload.profile) {
+        userPayload.profile.documents = [];
+      }
 
       res.status(201).json({
         success: true,
         ...userPayload,
         user: userPayload,
         profile: userPayload.profile,
+        documents: [],
         token: generateToken(user._id, user.fullName, user.role),
       });
     } else {
@@ -93,12 +101,18 @@ export const loginUser = async (req, res) => {
       await user.save();
 
       const userPayload = formatUserProfile(user);
+      const userDocs = await Document.find({ userId: user._id }).sort({ createdAt: -1 });
+      userPayload.documents = userDocs;
+      if (userPayload.profile) {
+        userPayload.profile.documents = userDocs;
+      }
 
       res.json({
         success: true,
         ...userPayload,
         user: userPayload,
         profile: userPayload.profile,
+        documents: userDocs,
         token: generateToken(user._id, user.fullName, user.role),
       });
     } else {
@@ -278,12 +292,18 @@ export const googleAuth = async (req, res) => {
 
     const token = generateToken(user._id, user.fullName, user.role);
     const userPayload = formatUserProfile(user);
+    const userDocs = await Document.find({ userId: user._id }).sort({ createdAt: -1 });
+    userPayload.documents = userDocs;
+    if (userPayload.profile) {
+      userPayload.profile.documents = userDocs;
+    }
 
     res.json({
       success: true,
       ...userPayload,
       user: userPayload,
       profile: userPayload.profile,
+      documents: userDocs,
       token
     });
   } catch (error) {

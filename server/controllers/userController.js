@@ -124,11 +124,18 @@ export const getUserProfile = async (req, res) => {
     }
 
     const formatted = formatUserProfile(user);
+    const documents = await Document.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    formatted.documents = documents;
+    if (formatted.profile) {
+      formatted.profile.documents = documents;
+    }
+
     res.json({
       success: true,
       ...formatted,
       user: formatted,
-      profile: formatted
+      profile: formatted,
+      documents
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

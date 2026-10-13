@@ -6,6 +6,8 @@ import {
   uploadAndProcessDocument,
   getUserDocuments,
   getDocumentById,
+  downloadUserDocumentFile,
+  createManualDocument,
   reprocessDocumentOCR,
   updateDocumentFields,
   verifyDocumentOnDemand,
@@ -65,6 +67,7 @@ const handleMulterUpload = (req, res, next) => {
 
 // MODULE 11: Document Endpoints for Citizens (authenticated & strictly isolated)
 router.post('/upload', protect, handleMulterUpload, uploadAndProcessDocument);
+router.post('/manual', protect, createManualDocument);
 router.get('/', protect, (req, res, next) => {
   // If admin query with specific status and role is admin, allow admin view; otherwise return authenticated user's documents
   if (req.user && ['Super Admin', 'Ministry Admin', 'State Admin'].includes(req.user.role) && req.query.adminView === 'true') {
@@ -74,6 +77,7 @@ router.get('/', protect, (req, res, next) => {
 });
 
 router.get('/:documentId', protect, getDocumentById);
+router.get('/:documentId/file', protect, downloadUserDocumentFile);
 router.post('/:documentId/reprocess', protect, reprocessDocumentOCR);
 router.patch('/:documentId/fields', protect, updateDocumentFields);
 router.post('/:documentId/verify', protect, verifyDocumentOnDemand);

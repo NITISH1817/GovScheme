@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import { connectDB } from './db.js';
@@ -149,7 +151,15 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 app.use(express.json({ limit: '10mb' }));
-app.use('/uploads', express.static('uploads'));
+
+// Security Hardening (SEC-02): Remove unauthenticated public access to the uploads directory.
+// Direct access to /uploads is strictly forbidden. Authenticated retrieval must go through /api/documents/:documentId/file.
+app.use('/uploads', (req, res) => {
+  res.status(403).json({
+    success: false,
+    message: 'Direct access to uploaded documents is forbidden. Use authenticated document endpoints.'
+  });
+});
 
 import schemeRoutes from './routes/schemeRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
@@ -235,4 +245,14 @@ const startServer = async () => {
   });
 };
 
-startServer();
+const isMainModule = process.argv[1] && (
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) ||
+  process.argv[1].endsWith('server.js')
+);
+
+if (isMainModule) {
+  startServer();
+}
+
+export { app, server, startServer };
+export default app;

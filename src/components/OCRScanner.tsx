@@ -20,7 +20,7 @@ interface OCRScannerProps {
   isOpen: boolean;
   onClose: () => void;
   expectedType: DocumentRecord['type'] | 'Unknown';
-  onSaveDocument: (doc: DocumentRecord, autoFillFields?: Partial<UserProfile>) => void;
+  onSaveDocument: (doc: DocumentRecord, autoFillFields?: Partial<UserProfile>, file?: File | null) => void;
 }
 
 export const OCRScanner: React.FC<OCRScannerProps> = ({
@@ -98,7 +98,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     if (editableName) autoFill.fullName = editableName;
     if (editableIncome !== undefined) autoFill.annualIncome = editableIncome;
 
-    onSaveDocument(newDoc, autoFill);
+    onSaveDocument(newDoc, autoFill, selectedFile);
     onClose();
   };
 
@@ -120,7 +120,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     if (editableName) autoFill.fullName = editableName;
     if (editableIncome !== undefined) autoFill.annualIncome = editableIncome;
 
-    onSaveDocument(newDoc, autoFill);
+    onSaveDocument(newDoc, autoFill, selectedFile || null);
     onClose();
   };
 
