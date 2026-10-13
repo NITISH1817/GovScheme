@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
 import { performSemanticSearch } from '../engine/semanticSearch';
-import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SchemeComparisonModal } from './SchemeComparisonModal';
+import { getMissingProfileFields } from '../utils/profileUtils';
 
 interface SchemeDiscoveryProps {
   schemes: Scheme[];
@@ -16,6 +17,7 @@ interface SchemeDiscoveryProps {
   onSelectScheme: (analysis: CombinedSchemeAnalysis) => void;
   onToggleBookmark: (schemeId: string) => void;
   isBookmarked: (schemeId: string) => boolean;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
@@ -25,7 +27,8 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   initialCategory,
   onSelectScheme,
   onToggleBookmark,
-  isBookmarked
+  isBookmarked,
+  onNavigateTab
 }) => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,6 +62,8 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       return { scheme, ruleResult: ruleRes, mlResult: mlRes };
     }).sort((a, b) => b.mlResult.confidenceScore - a.mlResult.confidenceScore);
   }, [schemes, user, currentLang]);
+
+  const missingFields = useMemo(() => getMissingProfileFields(user), [user]);
 
   const handleSemanticSearch = async (val: string) => {
     setSearchTerm(val);
@@ -178,6 +183,31 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
             {t('basedOnInfo', 'Based on the information you provided. We found')} <strong className="text-gray-900 dark:text-white">{analyzedSchemes.length}</strong> {t('matchingSchemes', 'matching schemes.')}
           </p>
         </div>
+
+        {missingFields.length > 0 && (
+          <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                  {t('profileIncompleteNotice', 'Your citizen profile is missing required information')}
+                </h4>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                  {t('missingFieldsExplanation', 'Recommendations require full demographic verification. Missing:')} <strong>{missingFields.join(', ')}</strong>.
+                </p>
+              </div>
+            </div>
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab('wizard')}
+                className="shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition"
+              >
+                {t('completeProfileNow', 'Complete Profile Now')}
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-8">
           

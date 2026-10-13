@@ -47,6 +47,7 @@ export const registerUser = async (req, res) => {
 
       res.status(201).json({
         success: true,
+        isNewUser: true,
         ...userPayload,
         user: userPayload,
         profile: userPayload.profile,
@@ -259,8 +260,10 @@ export const googleAuth = async (req, res) => {
 
     verifiedEmail = verifiedEmail.trim().toLowerCase();
     let user = await User.findOne({ email: verifiedEmail });
+    let isNewUser = false;
 
     if (!user) {
+      isNewUser = true;
       const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
       user = await User.create({
         fullName: verifiedName,
@@ -270,14 +273,15 @@ export const googleAuth = async (req, res) => {
         password: randomPassword,
         role: 'Citizen',
         profile: {
-          age: 25,
-          gender: 'Male',
-          maritalStatus: 'Single',
+          age: null,
+          gender: '',
+          maritalStatus: '',
           state: '',
           district: '',
           annualIncome: 0,
-          category: 'General',
+          category: '',
           occupation: '',
+          educationLevel: '',
           profileCompletionScore: 0
         }
       });
@@ -301,6 +305,7 @@ export const googleAuth = async (req, res) => {
 
     res.json({
       success: true,
+      isNewUser,
       ...userPayload,
       user: userPayload,
       profile: userPayload.profile,

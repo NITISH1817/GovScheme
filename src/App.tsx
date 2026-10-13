@@ -8,7 +8,7 @@ import { schemesData } from './data/schemes';
 import { initialUserProfile, initialApplications, initialNotifications } from './data/initialUserData';
 import { evaluateSchemeEligibility } from './engine/ruleEngine';
 import { computeMLRecommendation } from './engine/mlEngine';
-import { calculateProfileCompletion } from './utils/profileUtils';
+import { calculateProfileCompletion, normalizeUserProfile, isProfileComplete } from './utils/profileUtils';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LandingPage } from './components/LandingPage';
@@ -290,28 +290,17 @@ export const App: React.FC = () => {
             }
           }
 
-          if (profileData.success && (profileData.user || profileData.profile)) {
-            const u = profileData.user || profileData.profile;
-            setUser(prev => {
-              // Combine backend persisted documents with any local docs
-              const existingDocs = prev?.documents || [];
-              const mergedDocs = [...backendDocs];
-              existingDocs.forEach(ed => {
-                if (!mergedDocs.some(bd => bd.type === ed.type || (bd.documentId && bd.documentId === ed.documentId))) {
-                  mergedDocs.push(ed);
-                }
-              });
-
-              const merged: UserProfile = {
-                ...(prev || {} as UserProfile),
-                ...u,
-                id: u.id || u._id || (prev ? prev.id : `user-${Date.now()}`),
-                documents: mergedDocs,
-                profileCompletionScore: calculateProfileCompletion(u)
-              };
-              localStorage.setItem('govscheme_user', JSON.stringify(merged));
-              return merged;
-            });
+          if (profileData.success && (profileData.user || profileData.profile || profileData.fullName)) {
+            const rawUser = profileData.user || profileData.profile || profileData;
+            const normalized = normalizeUserProfile(rawUser);
+            if (backendDocs.length > 0) {
+              normalized.documents = backendDocs;
+            }
+            if (token && !normalized.token) {
+              normalized.token = token;
+            }
+            setUser(normalized);
+            localStorage.setItem('govscheme_user', JSON.stringify(normalized));
           }
         } else if (profileRes.status === 401) {
           localStorage.removeItem('govscheme_token');
@@ -773,39 +762,59 @@ export const App: React.FC = () => {
             user={user}
             mode={wizardMode}
             onComplete={async (profileData) => {
-              const updated = user ? { ...user, ...profileData } : { ...initialUserProfile, ...profileData };
-              updated.profileCompletionScore = calculateProfileCompletion(updated);
-              setUser(updated);
-              localStorage.setItem('govscheme_user', JSON.stringify(updated));
-
-              // Persist to backend if token exists
               const token = localStorage.getItem('govscheme_token');
+              const mergedPayload = {
+                ...(user || {}),
+                ...profileData
+              };
+
+              let savedUser: UserProfile;
+
               if (token) {
-                try {
-                  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                  const res = await fetch(`${API_URL}/api/users/profile`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify(updated)
-                  });
-                  if (res.ok) {
-                    const data = await res.json();
-                    if (data.success && data.user) {
-                      setUser(prev => ({ ...prev, ...data.user }));
-                      localStorage.setItem('govscheme_user', JSON.stringify({ ...updated, ...data.user }));
-                    }
-                  }
-                } catch (err) {
-                  console.warn('Could not persist wizard completion to backend:', err);
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                const res = await fetch(`${API_URL}/api/users/profile`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                  },
+                  body: JSON.stringify(mergedPayload)
+                });
+
+                if (!res.ok) {
+                  const errData = await res.json().catch(() => null);
+                  const msg = errData?.message || `Failed to save profile (HTTP ${res.status})`;
+                  throw new Error(msg);
                 }
+
+                const data = await res.json();
+                if (!data.success) {
+                  throw new Error(data.message || 'Profile persistence failed on server');
+                }
+
+                savedUser = normalizeUserProfile(data.user || data.profile || data);
+                if (token && !savedUser.token) savedUser.token = token;
+                if (user?.documents && (!savedUser.documents || savedUser.documents.length === 0)) {
+                  savedUser.documents = user.documents;
+                }
+              } else {
+                savedUser = normalizeUserProfile(mergedPayload);
               }
 
+              // Update React state and localStorage only after successful save
+              setUser(savedUser);
+              localStorage.setItem('govscheme_user', JSON.stringify(savedUser));
+
+              // Navigate to recommendations via analysis
               setActiveTab('analyzing');
             }}
-            onCancel={() => setActiveTab('home')}
+            onCancel={() => {
+              if (user && isProfileComplete(user)) {
+                setActiveTab('schemes');
+              } else {
+                setActiveTab('home');
+              }
+            }}
           />
         )}
 
@@ -824,6 +833,7 @@ export const App: React.FC = () => {
             onSelectScheme={setSelectedSchemeAnalysis}
             onToggleBookmark={handleToggleBookmark}
             isBookmarked={isBookmarked}
+            onNavigateTab={setActiveTab}
           />
         )}
 
@@ -939,10 +949,8 @@ export const App: React.FC = () => {
         isOpen={isAuthOpen}
         initialMode={authMode}
         onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={async (loggedInUser) => {
-          setUser(loggedInUser);
-          localStorage.setItem('govscheme_user', JSON.stringify(loggedInUser));
-
+        onLoginSuccess={async (loggedInUser, isNewRegistration = false) => {
+          let authoritativeUser = loggedInUser;
           const token = localStorage.getItem('govscheme_token');
           if (token) {
             try {
@@ -951,15 +959,9 @@ export const App: React.FC = () => {
               });
               if (res.ok) {
                 const fresh = await res.json();
-                if (fresh.success && (fresh.user || fresh.profile)) {
-                  const u = fresh.user || fresh.profile;
-                  const finalUser: UserProfile = {
-                    ...loggedInUser,
-                    ...u,
-                    profileCompletionScore: calculateProfileCompletion(u)
-                  };
-                  setUser(finalUser);
-                  localStorage.setItem('govscheme_user', JSON.stringify(finalUser));
+                if (fresh.success && (fresh.user || fresh.profile || fresh.fullName)) {
+                  authoritativeUser = normalizeUserProfile(fresh.user || fresh.profile || fresh);
+                  if (token && !authoritativeUser.token) authoritativeUser.token = token;
                 }
               }
             } catch (e) {
@@ -967,10 +969,14 @@ export const App: React.FC = () => {
             }
           }
 
-          if (loggedInUser.role === 'admin' || loggedInUser.role === 'superadmin' || loggedInUser.email === 'admin@govscheme.in') {
+          setUser(authoritativeUser);
+          localStorage.setItem('govscheme_user', JSON.stringify(authoritativeUser));
+
+          if (authoritativeUser.role === 'admin' || authoritativeUser.role === 'superadmin' || authoritativeUser.email === 'admin@govscheme.in') {
             setActiveTab('admin');
-          } else if ((loggedInUser.profileCompletionScore || 0) < 50) {
-            setActiveTab('profile');
+          } else if (isNewRegistration || !isProfileComplete(authoritativeUser)) {
+            setWizardMode('wizard');
+            setActiveTab('wizard');
           } else {
             setActiveTab('schemes');
           }

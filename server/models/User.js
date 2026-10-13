@@ -24,11 +24,11 @@ const UserSchema = new mongoose.Schema({
   
   // Detailed Citizen Profile for AI & Eligibility Engine
   profile: {
-    age: { type: Number, default: 25 },
-    gender: { type: String, default: 'Male' },
-    maritalStatus: { type: String, default: 'Single' },
+    age: { type: Number },
+    gender: { type: String, default: '' },
+    maritalStatus: { type: String, default: '' },
     annualIncome: { type: Number, default: 0 },
-    category: { type: String, default: 'General' },
+    category: { type: String, default: '' },
     state: { type: String, default: '' },
     district: { type: String, default: '' },
     educationLevel: { type: String, default: '' },

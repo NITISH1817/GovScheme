@@ -83,19 +83,19 @@ export const formatUserProfile = (user) => {
   if (!user) return null;
   const p = user.profile || {};
   const profileDetails = {
-    age: p.age !== undefined && p.age !== null ? Number(p.age) : 25,
-    gender: p.gender || 'Male',
-    maritalStatus: p.maritalStatus || 'Single',
+    age: p.age !== undefined && p.age !== null && p.age !== '' ? Number(p.age) : undefined,
+    gender: p.gender || '',
+    maritalStatus: p.maritalStatus || '',
     state: p.state || '',
     district: p.district || '',
-    annualIncome: p.annualIncome !== undefined && p.annualIncome !== null ? Number(p.annualIncome) : 0,
-    category: p.category || 'General',
+    annualIncome: p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? Number(p.annualIncome) : 0,
+    category: p.category || '',
     occupation: p.occupation || '',
     educationLevel: p.educationLevel || '',
-    landHoldingAcres: p.landHoldingAcres !== undefined && p.landHoldingAcres !== null ? Number(p.landHoldingAcres) : 0,
-    familyMembersCount: p.familyMembersCount !== undefined && p.familyMembersCount !== null ? Number(p.familyMembersCount) : 1,
+    landHoldingAcres: p.landHoldingAcres !== undefined && p.landHoldingAcres !== null && p.landHoldingAcres !== '' ? Number(p.landHoldingAcres) : 0,
+    familyMembersCount: p.familyMembersCount !== undefined && p.familyMembersCount !== null && p.familyMembersCount !== '' ? Number(p.familyMembersCount) : 1,
     hasDisability: Boolean(p.hasDisability),
-    disabilityPercentage: p.disabilityPercentage !== undefined && p.disabilityPercentage !== null ? Number(p.disabilityPercentage) : 0,
+    disabilityPercentage: p.disabilityPercentage !== undefined && p.disabilityPercentage !== null && p.disabilityPercentage !== '' ? Number(p.disabilityPercentage) : 0,
     isRegisteredWorker: Boolean(p.isRegisteredWorker),
     verificationBadge: Boolean(p.verificationBadge),
     profileCompletionScore: p.profileCompletionScore !== undefined && p.profileCompletionScore !== null ? Number(p.profileCompletionScore) : 0,
@@ -103,14 +103,14 @@ export const formatUserProfile = (user) => {
   };
 
   return {
-    id: user._id.toString(),
+    id: user._id ? user._id.toString() : (user.id || ''),
     _id: user._id,
     fullName: user.fullName || '',
     email: user.email || '',
     mobile: user.mobile || '',
     avatarUrl: user.avatarUrl || '',
     role: user.role || 'Citizen',
-    savedSchemeIds: user.savedSchemeIds || [],
+    savedSchemeIds: Array.isArray(user.savedSchemeIds) ? user.savedSchemeIds : [],
     ...profileDetails,
     profile: profileDetails
   };
@@ -150,38 +150,94 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (req.body.fullName) user.fullName = req.body.fullName.trim();
-    if (req.body.mobile !== undefined) user.mobile = req.body.mobile;
-    if (req.body.avatarUrl) user.avatarUrl = req.body.avatarUrl;
+    if (req.body.fullName !== undefined) {
+      if (typeof req.body.fullName !== 'string' || !req.body.fullName.trim()) {
+        return res.status(400).json({ success: false, message: 'Full name cannot be empty' });
+      }
+      user.fullName = req.body.fullName.trim();
+    }
+
+    if (req.body.mobile !== undefined) user.mobile = String(req.body.mobile).trim();
+    if (req.body.avatarUrl !== undefined) user.avatarUrl = String(req.body.avatarUrl).trim();
     if (Array.isArray(req.body.savedSchemeIds)) {
       user.savedSchemeIds = req.body.savedSchemeIds;
     }
 
     // Merge profile fields whether provided flat or nested under profile
-    const p = req.body.profile || req.body;
+    const p = req.body.profile && typeof req.body.profile === 'object' ? req.body.profile : req.body;
     if (!user.profile) {
       user.profile = {};
     }
 
-    if (p.age !== undefined && p.age !== '') user.profile.age = Number(p.age);
-    if (p.gender !== undefined) user.profile.gender = p.gender;
-    if (p.maritalStatus !== undefined) user.profile.maritalStatus = p.maritalStatus;
-    if (p.state !== undefined) user.profile.state = p.state;
-    if (p.district !== undefined) user.profile.district = p.district;
-    if (p.annualIncome !== undefined && p.annualIncome !== '') user.profile.annualIncome = Number(p.annualIncome);
-    if (p.category !== undefined) user.profile.category = p.category;
-    if (p.occupation !== undefined) user.profile.occupation = p.occupation;
-    if (p.educationLevel !== undefined) user.profile.educationLevel = p.educationLevel;
-    if (p.landHoldingAcres !== undefined && p.landHoldingAcres !== '') user.profile.landHoldingAcres = Number(p.landHoldingAcres);
-    if (p.familyMembersCount !== undefined && p.familyMembersCount !== '') user.profile.familyMembersCount = Number(p.familyMembersCount);
+    if (p.age !== undefined && p.age !== null && p.age !== '') {
+      const ageNum = Number(p.age);
+      if (isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
+        return res.status(400).json({ success: false, message: 'Invalid age: must be a number between 1 and 120' });
+      }
+      user.profile.age = ageNum;
+    }
+
+    if (p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '') {
+      const incomeNum = Number(p.annualIncome);
+      if (isNaN(incomeNum) || incomeNum < 0) {
+        return res.status(400).json({ success: false, message: 'Invalid annual income: must be non-negative' });
+      }
+      user.profile.annualIncome = incomeNum;
+    }
+
+    if (p.landHoldingAcres !== undefined && p.landHoldingAcres !== null && p.landHoldingAcres !== '') {
+      const landNum = Number(p.landHoldingAcres);
+      if (isNaN(landNum) || landNum < 0) {
+        return res.status(400).json({ success: false, message: 'Invalid land holding acres: must be non-negative' });
+      }
+      user.profile.landHoldingAcres = landNum;
+    }
+
+    if (p.disabilityPercentage !== undefined && p.disabilityPercentage !== null && p.disabilityPercentage !== '') {
+      const disNum = Number(p.disabilityPercentage);
+      if (isNaN(disNum) || disNum < 0 || disNum > 100) {
+        return res.status(400).json({ success: false, message: 'Invalid disability percentage: must be between 0 and 100' });
+      }
+      user.profile.disabilityPercentage = disNum;
+    }
+
+    if (p.familyMembersCount !== undefined && p.familyMembersCount !== null && p.familyMembersCount !== '') {
+      const famNum = Number(p.familyMembersCount);
+      if (isNaN(famNum) || famNum < 1) {
+        return res.status(400).json({ success: false, message: 'Family members count must be at least 1' });
+      }
+      user.profile.familyMembersCount = famNum;
+    }
+
+    if (p.gender !== undefined) user.profile.gender = String(p.gender).trim();
+    if (p.maritalStatus !== undefined) user.profile.maritalStatus = String(p.maritalStatus).trim();
+    if (p.state !== undefined) user.profile.state = String(p.state).trim();
+    if (p.district !== undefined) user.profile.district = String(p.district).trim();
+    if (p.category !== undefined) user.profile.category = String(p.category).trim();
+    if (p.occupation !== undefined) user.profile.occupation = String(p.occupation).trim();
+    if (p.educationLevel !== undefined) user.profile.educationLevel = String(p.educationLevel).trim();
     if (p.hasDisability !== undefined) user.profile.hasDisability = Boolean(p.hasDisability);
-    if (p.disabilityPercentage !== undefined && p.disabilityPercentage !== '') user.profile.disabilityPercentage = Number(p.disabilityPercentage);
     if (p.isRegisteredWorker !== undefined) user.profile.isRegisteredWorker = Boolean(p.isRegisteredWorker);
     if (p.verificationBadge !== undefined) user.profile.verificationBadge = Boolean(p.verificationBadge);
-    if (p.profileCompletionScore !== undefined && p.profileCompletionScore !== '') user.profile.profileCompletionScore = Number(p.profileCompletionScore);
     if (Array.isArray(p.interests)) user.profile.interests = p.interests;
 
-    if (req.body.password) {
+    // Calculate authoritative profile completion score on backend
+    let score = 0;
+    if (user.fullName && user.fullName.trim()) score += 10;
+    if (user.mobile && user.mobile.trim()) score += 10;
+    if (typeof user.profile.age === 'number' && user.profile.age > 0) score += 10;
+    if (user.profile.gender && user.profile.gender.trim()) score += 10;
+    if (user.profile.state && user.profile.state.trim()) score += 10;
+    if (user.profile.district && user.profile.district.trim()) score += 10;
+    if (user.profile.occupation && user.profile.occupation.trim()) score += 15;
+    if (user.profile.annualIncome !== undefined && user.profile.annualIncome !== null) score += 15;
+    if (user.profile.educationLevel && user.profile.educationLevel.trim()) score += 10;
+    user.profile.profileCompletionScore = Math.min(100, score);
+
+    // Security: Never allow a user to alter their role via profile updates
+    // Any req.body.role or p.role is strictly ignored.
+
+    if (req.body.password && typeof req.body.password === 'string' && req.body.password.length >= 6) {
       user.password = req.body.password;
     }
 

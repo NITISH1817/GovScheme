@@ -3,7 +3,7 @@ import { Eye, EyeOff, X, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGoogleLogin } from '@react-oauth/google';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
-import { calculateProfileCompletion } from '../utils/profileUtils';
+import { calculateProfileCompletion, normalizeUserProfile } from '../utils/profileUtils';
 import './Auth/AuthModal.css';
 
 function buildNewProfile(opts: {
@@ -117,7 +117,7 @@ const Hero = ({ variant, title, text, buttonLabel, onSwitch }: any) => (
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (user: UserProfile) => void;
+  onLoginSuccess: (user: UserProfile, isNewRegistration?: boolean) => void;
   onContinueGuest: () => void;
   currentLang: LanguageCode;
   initialMode?: 'login' | 'register';
@@ -149,58 +149,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   }, [isOpen, initialMode]);
 
   const createProfileFromAuthData = (data: any, fallbackName = '', fallbackEmail = ''): UserProfile => {
-    const u = data.user || data;
-    const p = (u.profile && typeof u.profile === 'object') ? u.profile : {};
-    const fullName = u.fullName || u.name || fallbackName || 'Citizen User';
-    const rawRole = String(u.role || '').toLowerCase();
-    const normalizedRole: 'citizen' | 'admin' | 'superadmin' = 
-      rawRole.includes('super') ? 'superadmin' :
-      rawRole.includes('admin') || fallbackEmail === 'admin@govscheme.in' ? 'admin' : 'citizen';
-
-    const rawAge = u.age !== undefined && u.age !== null ? u.age : p.age;
-    const rawIncome = u.annualIncome !== undefined && u.annualIncome !== null ? u.annualIncome : p.annualIncome;
-    const rawState = u.state !== undefined && u.state !== null ? u.state : (p.state !== undefined && p.state !== null ? p.state : '');
-    const rawDistrict = u.district !== undefined && u.district !== null ? u.district : (p.district !== undefined && p.district !== null ? p.district : '');
-    const rawGender = u.gender || p.gender || 'Male';
-    const rawCategory = u.category || p.category || 'General';
-    const rawOccupation = u.occupation !== undefined && u.occupation !== null ? u.occupation : (p.occupation !== undefined && p.occupation !== null ? p.occupation : '');
-    const rawLandHolding = u.landHoldingAcres !== undefined && u.landHoldingAcres !== null ? u.landHoldingAcres : (p.landHoldingAcres ?? 0);
-    const rawEdu = u.educationLevel !== undefined && u.educationLevel !== null ? u.educationLevel : (p.educationLevel || '');
-    const rawFamilyCount = u.familyMembersCount !== undefined && u.familyMembersCount !== null ? u.familyMembersCount : (p.familyMembersCount ?? 1);
-    const rawDisability = u.hasDisability !== undefined ? Boolean(u.hasDisability) : (p.hasDisability !== undefined ? Boolean(p.hasDisability) : false);
-    const rawDisabilityPct = u.disabilityPercentage !== undefined && u.disabilityPercentage !== null ? u.disabilityPercentage : (p.disabilityPercentage ?? 0);
-    const rawRegWorker = u.isRegisteredWorker !== undefined ? Boolean(u.isRegisteredWorker) : (p.isRegisteredWorker !== undefined ? Boolean(p.isRegisteredWorker) : false);
-    const rawBadge = u.verificationBadge !== undefined ? Boolean(u.verificationBadge) : (p.verificationBadge !== undefined ? Boolean(p.verificationBadge) : false);
-
-    const profile: UserProfile = {
-      id: u._id || u.id || `user-${Date.now()}`,
-      fullName,
-      mobile: u.mobile || p.mobile || '',
-      email: u.email || fallbackEmail,
-      age: rawAge !== undefined && rawAge !== null ? Number(rawAge) : 25,
-      gender: rawGender as TargetGender,
-      maritalStatus: u.maritalStatus || p.maritalStatus || 'Single',
-      state: rawState,
-      district: rawDistrict,
-      category: rawCategory as CategorySocial,
-      occupation: rawOccupation,
-      annualIncome: rawIncome !== undefined && rawIncome !== null ? Number(rawIncome) : 0,
-      landHoldingAcres: Number(rawLandHolding),
-      educationLevel: rawEdu,
-      familyMembersCount: Number(rawFamilyCount),
-      hasDisability: rawDisability,
-      disabilityPercentage: Number(rawDisabilityPct),
-      isRegisteredWorker: rawRegWorker,
-      verificationBadge: rawBadge,
-      profileCompletionScore: u.profileCompletionScore !== undefined ? u.profileCompletionScore : (p.profileCompletionScore ?? 0),
-      interests: Array.isArray(u.interests) ? u.interests : (Array.isArray(p.interests) ? p.interests : []),
-      savedSchemeIds: u.savedSchemeIds || p.savedSchemeIds || [],
-      documents: u.documents || p.documents || [],
-      avatarUrl: u.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=0369a1`,
-      role: normalizedRole,
-    };
-    profile.profileCompletionScore = calculateProfileCompletion(profile);
-    return profile;
+    return normalizeUserProfile(data, fallbackName, fallbackEmail);
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -279,7 +228,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           }
           localStorage.setItem('govscheme_user', JSON.stringify(profile));
         }
-        onLoginSuccess(profile);
+        onLoginSuccess(profile, false);
         onClose();
       } else {
         setError(data?.message || t('loginFailed', 'Login failed'));
@@ -370,7 +319,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           localStorage.setItem('govscheme_token', data.token);
           localStorage.setItem('govscheme_user', JSON.stringify(profile));
         }
-        onLoginSuccess(profile);
+        onLoginSuccess(profile, true);
         onClose();
       } else {
         const rawMsg = data?.message || '';
@@ -403,7 +352,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       annualIncome: 200000,
       gender: 'Male'
     });
-    onLoginSuccess(profile);
+    onLoginSuccess(profile, false);
     onClose();
   };
 
@@ -422,12 +371,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const data = await response.json();
 
         if (response.ok && data.success) {
-          const profile = createProfileFromAuthData(data, data.fullName, data.email);
+          const isNew = Boolean(data.isNewUser || !data.user?.profile?.state || !data.user?.profile?.age);
+          const profile = createProfileFromAuthData(data, data.fullName || data.user?.fullName, data.email || data.user?.email);
           if (data.token) {
             localStorage.setItem('govscheme_token', data.token);
             localStorage.setItem('govscheme_user', JSON.stringify(profile));
           }
-          onLoginSuccess(profile);
+          onLoginSuccess(profile, isNew);
           onClose();
         } else {
           setError(data.message || t('authFailed', 'Failed to authenticate with backend.'));
