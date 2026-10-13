@@ -16,7 +16,9 @@ import {
   Briefcase,
   Baby,
   Rocket,
-  IndianRupee
+  IndianRupee,
+  Monitor,
+  Shield
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, useAnimation, useMotionValue, useSpring } from 'framer-motion';
@@ -161,7 +163,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </motion.div>
 
           {/* Quick Action Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-gov-border dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onNavigateTab('profile')}>
               <div className="w-12 h-12 bg-gov-saffron/10 rounded-full flex items-center justify-center mb-4">
                 <UserCheck className="w-6 h-6 text-gov-saffron" />
@@ -187,6 +189,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
               <h3 className="font-bold text-gov-navy dark:text-white mb-2">{t('aiDocAssistant', 'AI Document Assistant (Auto-Detect)')}</h3>
               <p className="text-sm text-gov-textMuted dark:text-gray-400">{t('needHelpIdentifyingDoc', 'Need help identifying or verifying a government document? Ask AI.')}</p>
+            </div>
+
+            <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-gov-border dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onNavigateTab('kiosk')}>
+              <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mb-4">
+                <Monitor className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="font-bold text-gov-navy dark:text-white mb-2">{t('cscKioskMode', 'CSC Kiosk Mode')}</h3>
+              <p className="text-sm text-gov-textMuted dark:text-gray-400">{t('kioskCardDesc', 'Assisted mode for operators to generate instant printable beneficiary reports.')}</p>
             </div>
           </div>
 
@@ -282,10 +292,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                   <MagneticButton
                     onClick={() => onGetStarted('life-event')}
-                    className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[240px]"
+                    className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[200px]"
                   >
-                    <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-8 w-full text-center">
+                    <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-6 w-full text-center">
                       {t('lifeEventMode', 'Life Event Mode')}
+                    </span>
+                  </MagneticButton>
+
+                  <MagneticButton
+                    onClick={() => onNavigateTab('kiosk')}
+                    className="group relative overflow-hidden rounded-full bg-amber-500/10 dark:bg-amber-400/10 hover:bg-amber-500/20 p-2 flex items-center justify-between shadow-lg border border-amber-500/30 w-full sm:w-auto min-w-[200px]"
+                  >
+                    <span className="text-amber-800 dark:text-amber-300 font-bold text-lg pl-6 pr-6 w-full text-center flex items-center justify-center gap-2">
+                      <Monitor className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      {t('navKiosk', 'CSC Kiosk Mode')}
                     </span>
                   </MagneticButton>
                 </motion.div>

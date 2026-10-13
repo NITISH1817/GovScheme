@@ -57,8 +57,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ user, theme, setThem
 
     try {
       // Call profile update on server
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch('http://localhost:5000/api/users/profile', {
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('govscheme_token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_URL}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

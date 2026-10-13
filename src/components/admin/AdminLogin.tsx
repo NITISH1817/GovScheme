@@ -35,15 +35,16 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
 
         if (response.ok && data.success) {
           localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('govscheme_token', data.token);
           const adminUser: UserProfile = {
-            id: data._id || 'admin_1',
+            id: data._id || data.id || 'admin_1',
             fullName: data.fullName || 'Super Admin',
             email: data.email || email,
-            mobile: '9999999999',
+            mobile: data.mobile || '9999999999',
             age: 40,
             gender: 'Male',
-            state: 'Central',
-            district: 'New Delhi',
+            state: data.state || 'Central',
+            district: data.district || 'New Delhi',
             category: 'General',
             occupation: 'Government Official',
             annualIncome: 1200000,
@@ -54,9 +55,12 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
             verificationBadge: true,
             profileCompletionScore: 100,
             savedSchemeIds: [],
-            documents: [],
-            role: 'admin'
+            documents: data.documents || [],
+            role: data.role || 'Super Admin',
+            token: data.token
           };
+          localStorage.setItem('adminUser', JSON.stringify(adminUser));
+          localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
           setLoginState('loading');
           setTimeout(() => onLoginSuccess(adminUser), 400);
           return;

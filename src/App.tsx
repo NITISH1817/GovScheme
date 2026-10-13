@@ -653,14 +653,35 @@ export const App: React.FC = () => {
     );
   }
 
+  const isAdminUser = (u: UserProfile | null | undefined): u is UserProfile => {
+    if (!u) return false;
+    if (u.email === 'admin@govscheme.in') return true;
+    const role = (u.role || '').toLowerCase();
+    return (
+      role.includes('admin') ||
+      role === 'super admin' ||
+      role === 'superadmin' ||
+      role === 'state admin' ||
+      role === 'ministry admin' ||
+      role === 'district officer' ||
+      role === 'nodal officer' ||
+      role === 'data entry operator'
+    );
+  };
+
   // If Admin Mode
   if (activeTab === 'admin') {
-    if (!user || (user.role !== 'admin' && user.role !== 'superadmin' && user.email !== 'admin@govscheme.in')) {
+    if (!isAdminUser(user)) {
       return (
         <AdminLogin 
           onLoginSuccess={(u) => {
             setUser(u);
             localStorage.setItem('govscheme_user', JSON.stringify(u));
+            localStorage.setItem('adminUser', JSON.stringify(u));
+            if (u.token) {
+              localStorage.setItem('adminToken', u.token);
+              localStorage.setItem('govscheme_token', u.token);
+            }
           }} 
           onExit={() => setActiveTab('home')}
         />

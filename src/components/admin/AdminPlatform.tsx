@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, FileText, CheckSquare, BarChart3, Database, ShieldAlert,
   Users, Settings, Search, Bell, Sun, Moon, LogOut, Menu, X, Command,
-  FileCheck2, HelpCircle, Layers, CheckCircle2, ChevronRight, Globe
+  FileCheck2, HelpCircle, Layers, CheckCircle2, ChevronRight, Globe, Home, ExternalLink
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { UserProfile, Scheme } from '../../types';
@@ -259,6 +259,16 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
 
           {/* Action Icons & Profile */}
           <div className="flex items-center gap-3 shrink-0">
+            {/* Return to Citizen Portal */}
+            <button
+              onClick={onExit}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] dark:border-[#243449] bg-white dark:bg-[#101D31] hover:bg-gray-100 dark:hover:bg-[#16253B] text-xs font-bold text-[#07111F] dark:text-[#F8FAFC] transition-colors shadow-sm"
+              title="Return to Citizen Portal"
+            >
+              <Home className="w-3.5 h-3.5 text-[#1769FF]" />
+              <span className="hidden md:inline">Citizen Portal</span>
+            </button>
+
             {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -366,6 +376,18 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
                     <div className="border-t border-[#E2E8F0] dark:border-[#243449] pt-1" />
                     <button 
                       onClick={onExit}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-[#F8FAFC] dark:hover:bg-[#101D31] text-[#07111F] dark:text-[#F8FAFC] transition-colors flex items-center gap-2"
+                    >
+                      <Home className="w-3.5 h-3.5 text-[#1769FF]" /> Back to Citizen Website
+                    </button>
+                    <button 
+                      onClick={() => {
+                        localStorage.removeItem('adminToken');
+                        localStorage.removeItem('adminUser');
+                        localStorage.removeItem('govscheme_token');
+                        localStorage.removeItem('govscheme_user');
+                        window.location.href = '/';
+                      }}
                       className="w-full text-left px-3 py-2 rounded-lg text-[#B91C1C] hover:bg-[#B91C1C]/10 transition-colors flex items-center gap-2"
                     >
                       <LogOut className="w-3.5 h-3.5" /> Logout Session

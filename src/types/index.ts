@@ -85,7 +85,8 @@ export interface UserProfile {
   profileCompletionScore: number; // 0-100%
   savedSchemeIds: string[];
   documents: DocumentRecord[];
-  role?: 'citizen' | 'admin' | 'superadmin';
+  role?: string;
+  token?: string;
 }
 
 export interface EligibilityRules {
