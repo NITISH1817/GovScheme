@@ -33,6 +33,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     if (typeof window !== 'undefined' && window.location.hash === '#report') return 'report';
     return 'overview';
   });
+  const [shouldAutoStartReport, setShouldAutoStartReport] = useState<boolean>(false);
 
   useEffect(() => {
     if (initialSubTab) {
@@ -237,12 +238,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
             <ThermalReceiptPrinter
               reportData={reportData}
+              autoStartPrint={shouldAutoStartReport}
               onReprint={() => {
                 console.log("Re-printing thermal report...");
               }}
               onRegenerateReport={() => {
                 setProfileTab('overview');
-                setTimeout(() => setProfileTab('report'), 50);
+                setTimeout(() => {
+                  setShouldAutoStartReport(true);
+                  setProfileTab('report');
+                }, 50);
               }}
             />
           </div>
@@ -285,6 +290,39 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <Edit3 className="w-4 h-4" /> {t('editProfile', 'Edit Profile')}
                 </button>
               </div>
+            </motion.div>
+
+            {/* Direct Action: Generate Citizen Eligibility Assessment Report */}
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }} 
+              animate={{ y: 0, opacity: 1 }} 
+              transition={{ delay: 0.05 }}
+              className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl p-6 shadow-md text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden"
+            >
+              <div className="flex items-start gap-4 z-10">
+                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                  <Printer className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-white">
+                    {t('citizenAssessmentReport', 'Citizen Assessment & Eligibility Report')}
+                  </h3>
+                  <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl">
+                    {t('genReportDesc', 'Generate an instant deterministic assessment report with live physical thermal receipt printing evaluating all welfare schemes.')}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  setShouldAutoStartReport(true);
+                  setProfileTab('report');
+                }}
+                className="z-10 w-full md:w-auto px-6 py-3 bg-white text-emerald-800 hover:bg-emerald-50 text-sm font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap flex items-center justify-center gap-2"
+              >
+                <FileText className="w-4 h-4 text-emerald-700" />
+                <span>{t('genAssessmentReport', 'Generate Assessment Report')}</span>
+              </button>
             </motion.div>
 
             {/* Eligibility Snapshot */}

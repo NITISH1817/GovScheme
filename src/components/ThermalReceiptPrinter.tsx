@@ -15,7 +15,8 @@ import {
   ExternalLink,
   ShieldCheck,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  FileText
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { UserProfile, Scheme } from '../types';
@@ -64,16 +65,19 @@ interface ThermalReceiptPrinterProps {
   reportData: CitizenReportData;
   onReprint?: () => void;
   onRegenerateReport?: () => void;
+  autoStartPrint?: boolean;
 }
 
 export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
   reportData,
   onReprint,
-  onRegenerateReport
+  onRegenerateReport,
+  autoStartPrint = false
 }) => {
   // Animation states
   const [paperProgress, setPaperProgress] = useState<number>(0); // 0 to 100%
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
+  const [hasGenerated, setHasGenerated] = useState<boolean>(Boolean(autoStartPrint));
   const [isTorn, setIsTorn] = useState<boolean>(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
   const [feedOffset, setFeedOffset] = useState<number>(0);
@@ -162,6 +166,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
       printTimerRef.current = null;
     }
 
+    setHasGenerated(true);
     setIsPrinting(true);
     setIsTorn(false);
     setFeedOffset(0);
@@ -177,7 +182,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
     let progress = 0;
 
     printTimerRef.current = setInterval(() => {
-      progress += 2.5;
+      progress += 2.0;
       if (progress >= 100) {
         setPaperProgress(100);
         setIsPrinting(false);
@@ -191,12 +196,21 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
           playMechanicalSound(480 + Math.random() * 180, 0.04);
         }
       }
-    }, 45);
+    }, 40);
   };
 
-  // Initial print when component mounts or reportId changes
-  useEffect(() => {
+  // Explicit trigger to generate assessment report and start animation
+  const handleGenerateAssessment = () => {
+    setHasGenerated(true);
     startPrint();
+  };
+
+  // Print only when autoStartPrint is explicitly enabled or reportId updates while active
+  useEffect(() => {
+    if (autoStartPrint) {
+      setHasGenerated(true);
+      startPrint();
+    }
 
     return () => {
       if (printTimerRef.current) clearInterval(printTimerRef.current);
@@ -204,7 +218,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
         audioContextRef.current.close().catch(() => {});
       }
     };
-  }, [reportData.reportId]);
+  }, [reportData.reportId, autoStartPrint]);
 
   // Feed button: advances receipt downward
   const handleFeed = () => {
@@ -450,6 +464,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
     }
     setIsPrinting(false);
     setIsTorn(false);
+    setHasGenerated(false);
     setPaperProgress(0);
     setFeedOffset(0);
   };
@@ -457,6 +472,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
   // Re-print button: restarts animation from beginning
   const handleReprintClick = () => {
     if (onReprint) onReprint();
+    setHasGenerated(true);
     startPrint();
   };
 
@@ -493,7 +509,18 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleGenerateAssessment}
+            disabled={isPrinting}
+            className="px-4 py-2 rounded-xl bg-[#15803D] hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+            title="Generate live assessment report and start thermal printing animation"
+          >
+            <FileText className="w-4 h-4" />
+            <span>{hasGenerated ? 'Re-generate Assessment' : 'Generate Assessment Report'}</span>
+          </button>
+
           <button
             onClick={handlePrintPdf}
             className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors"
@@ -559,14 +586,14 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
                       <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                        isPrinting ? 'animate-ping bg-amber-400' : 'bg-emerald-400'
+                        isPrinting ? 'animate-ping bg-amber-400' : hasGenerated ? 'bg-emerald-400' : 'bg-blue-400'
                       }`} />
                       <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                        isPrinting ? 'bg-amber-500' : 'bg-emerald-500'
+                        isPrinting ? 'bg-amber-500' : hasGenerated ? 'bg-emerald-500' : 'bg-blue-500'
                       }`} />
                     </span>
                     <span className="text-[10px] font-mono font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                      {isPrinting ? 'PRINTING...' : (paperProgress === 100 ? 'PRINT COMPLETE' : 'READY')}
+                      {isPrinting ? `PRINTING... ${paperProgress}%` : (hasGenerated && paperProgress === 100 ? 'PRINT COMPLETE' : 'READY')}
                     </span>
                   </div>
 
@@ -594,24 +621,49 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
               {/* 2. RECEIPT PAPER VIEWPORT CONTAINER */}
               {/* The paper realistically emerges directly from the slot slit */}
               <div 
-                className="w-full flex justify-center relative z-10 transition-all duration-300"
+                className="w-full flex flex-col items-center justify-start relative z-10 transition-all duration-300"
                 style={{ 
                   marginTop: '-10px',
                   minHeight: '480px'
                 }}
               >
-                {/* Paper reveal mask: controls emergence from the slot */}
-                <div
-                  className="w-[92%] transition-all duration-200"
-                  style={{
-                    maxHeight: paperProgress === 0 && !isTorn 
-                      ? '14px' 
-                      : (isTorn ? 'none' : `${Math.max(16, (paperProgress / 100) * 820 + feedOffset)}px`),
-                    overflow: isTorn ? 'visible' : 'hidden',
-                    transform: isTorn ? 'translateY(32px) rotate(1.2deg)' : 'none',
-                    transition: 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
-                  }}
-                >
+                {!hasGenerated ? (
+                  <div className="w-[92%] mt-6 p-7 rounded-2xl bg-white/95 dark:bg-slate-900/95 border-2 border-dashed border-emerald-500/40 shadow-xl flex flex-col items-center text-center space-y-4 animate-fade-in z-20">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
+                      <FileText className="w-7 h-7" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-black text-slate-900 dark:text-white text-base">
+                        Ready to Generate Assessment
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+                        Click below to run scheme eligibility rules and trigger the physical thermal receipt dispensing animation.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGenerateAssessment}
+                      className="w-full py-3.5 px-6 rounded-xl bg-[#15803D] hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-700/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span>Generate Assessment Report</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* Paper reveal mask: controls emergence from the slot */
+                  <div
+                    className="w-[92%]"
+                    style={{
+                      maxHeight: paperProgress === 0 && !isTorn 
+                        ? '14px' 
+                        : (isTorn ? 'none' : `${Math.max(16, (paperProgress / 100) * 820 + feedOffset)}px`),
+                      overflow: isTorn ? 'visible' : 'hidden',
+                      transform: isTorn ? 'translateY(32px) rotate(1.2deg)' : 'none',
+                      transition: isTorn 
+                        ? 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' 
+                        : 'max-height 0.04s linear'
+                    }}
+                  >
                   {/* The Thermal Paper Sheet */}
                   <div
                     ref={receiptContentRef}
@@ -807,6 +859,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
                     </div>
                   </div>
                 </div>
+                )}
               </div>
 
             </div>
@@ -814,16 +867,16 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
             {/* MECHANICAL CONTROLLER BUTTONS (RE-PRINT, FEED, TEAR, RESET, AUDIO) */}
             <div className="w-full max-w-[440px] mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 shadow-xl flex items-center justify-between gap-1.5 z-30">
               
-              {/* 1. RE-PRINT */}
+              {/* 1. PRINT / RE-PRINT */}
               <button
                 type="button"
-                onClick={handleReprintClick}
+                onClick={hasGenerated ? handleReprintClick : handleGenerateAssessment}
                 disabled={isPrinting}
                 className="flex-1 py-2 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-[11px] flex items-center justify-center gap-1.5 transition-transform active:scale-95 disabled:opacity-50 shadow-sm"
-                title="Restart receipt printing animation from beginning"
+                title={hasGenerated ? "Restart receipt printing animation from beginning" : "Start receipt printing animation"}
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>RE-PRINT</span>
+                <span>{hasGenerated ? 'RE-PRINT' : 'PRINT'}</span>
               </button>
 
               {/* 2. FEED */}

@@ -29,17 +29,22 @@ export const KioskMode: React.FC<KioskModeProps> = ({
     income: '',
     occupation: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
-    onGenerateReport({
-      fullName: formData.fullName,
-      age: Number(formData.age),
-      mobile: formData.mobile,
-      state: formData.state,
-      annualIncome: Number(formData.income),
-      occupation: formData.occupation
-    });
+    setIsSubmitting(true);
+    setTimeout(() => {
+      onGenerateReport({
+        fullName: formData.fullName,
+        age: Number(formData.age),
+        mobile: formData.mobile,
+        state: formData.state,
+        annualIncome: Number(formData.income),
+        occupation: formData.occupation
+      });
+      setIsSubmitting(false);
+    }, 250);
   };
 
   return (
@@ -168,9 +173,11 @@ export const KioskMode: React.FC<KioskModeProps> = ({
             <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex gap-4">
               <button 
                 type="submit"
-                className="flex-1 py-4 bg-[#15803D] hover:bg-green-700 text-white font-bold rounded shadow-sm transition-colors flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="flex-1 py-4 bg-[#15803D] hover:bg-green-700 text-white font-bold rounded shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-75"
               >
-                <FileText className="w-5 h-5" /> {t('genAssessmentReport', 'Generate Assessment Report')}
+                <FileText className={`w-5 h-5 ${isSubmitting ? 'animate-spin' : ''}`} />
+                <span>{isSubmitting ? t('generatingAssessment', 'Generating Assessment Report...') : t('genAssessmentReport', 'Generate Assessment Report')}</span>
               </button>
             </div>
 

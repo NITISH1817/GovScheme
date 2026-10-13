@@ -194,6 +194,7 @@ export const KioskReport: React.FC<KioskReportProps> = ({
         <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
           <ThermalReceiptPrinter
             reportData={reportData}
+            autoStartPrint={true}
             onReprint={() => {
               console.log('Kiosk: Thermal receipt reprinting...');
             }}
