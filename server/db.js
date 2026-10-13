@@ -54,7 +54,7 @@ export const ensureDatabaseSync = async (conn, targetDbName) => {
 export const connectDB = async () => {
   const isProduction = process.env.NODE_ENV === 'production';
   const targetDbName = process.env.MONGO_DB_NAME || 'govscheme';
-  const mongoUri = process.env.MONGO_URI || (isProduction ? null : 'mongodb://127.0.0.1:27017/govscheme');
+  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || (isProduction ? null : 'mongodb://127.0.0.1:27017/govscheme');
 
   if (mongoUri) {
     try {

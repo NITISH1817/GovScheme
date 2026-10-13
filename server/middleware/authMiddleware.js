@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { getJwtSecret } from '../config/jwtConfig.js';
 
 export const protect = async (req, res, next) => {
   let token;
@@ -10,18 +11,25 @@ export const protect = async (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      if (!token) {
+        return res.status(401).json({ success: false, message: 'Not authorized, no token provided' });
+      }
+
+      const decoded = jwt.verify(token, getJwtSecret());
       req.user = await User.findById(decoded.id).select('-password');
-      next();
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: 'Not authorized, user account not found' });
+      }
+
+      return next();
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ success: false, message: 'Not authorized, token failed' });
+      console.warn('[Auth] Token verification rejected:', error.message);
+      return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
     }
   }
 
-  if (!token) {
-    res.status(401).json({ success: false, message: 'Not authorized, no token' });
-  }
+  return res.status(401).json({ success: false, message: 'Not authorized, no token' });
 };
 
 export const authorizeRoles = (...roles) => {
@@ -52,10 +60,12 @@ export const optionalAuth = async (req, res, next) => {
   ) {
     try {
       const token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-      req.user = await User.findById(decoded.id).select('-password');
+      if (token) {
+        const decoded = jwt.verify(token, getJwtSecret());
+        req.user = await User.findById(decoded.id).select('-password');
+      }
     } catch (error) {
-      // Ignore token errors for optional auth
+      // Ignore token errors for optional auth without throwing
     }
   }
   next();

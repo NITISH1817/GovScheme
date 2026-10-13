@@ -2,9 +2,10 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Document from '../models/Document.js';
 import { formatUserProfile } from './userController.js';
+import { getJwtSecret } from '../config/jwtConfig.js';
 
 const generateToken = (id, name, role) => {
-  return jwt.sign({ id, name, role }, process.env.JWT_SECRET || 'fallback_secret', {
+  return jwt.sign({ id, name, role }, getJwtSecret(), {
     expiresIn: '30d',
   });
 };

@@ -11,6 +11,8 @@ import Document from './models/Document.js';
 import { schemesData } from '../src/data/schemes.ts';
 import authRoutes from './routes/authRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
+import { validateJwtConfig } from './config/jwtConfig.js';
+import { corsOptionsDelegate, isOriginAllowed } from './config/corsConfig.js';
 
 const seedAdmin = async () => {
   try {
@@ -111,30 +113,8 @@ import rateLimit from 'express-rate-limit';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Dynamic CORS configuration allowing localhost, configured CLIENT_URL, and Vercel domains
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  process.env.CLIENT_URL,
-].filter(Boolean);
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, server-to-server)
-    if (!origin) return callback(null, true);
-    if (
-      allowedOrigins.includes(origin) ||
-      origin.endsWith('.vercel.app') ||
-      process.env.NODE_ENV !== 'production'
-    ) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS policy: Not allowed by Access-Control-Allow-Origin'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+// Production-hardened CORS configuration with strict origin allowlist
+app.use(cors(corsOptionsDelegate));
 
 
 // Security Middleware
@@ -199,6 +179,12 @@ app.get('/api/health', (req, res) => {
 
 // Global structured JSON error handler (avoids sending default Express HTML 500 pages)
 app.use((err, req, res, next) => {
+  if (err && err.message && err.message.includes('CORS policy')) {
+    return res.status(403).json({
+      success: false,
+      message: err.message
+    });
+  }
   console.error('[Global Server Error Caught]:', err.message || err);
   if (err.name === 'MulterError') {
     return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
@@ -215,8 +201,14 @@ import { Server } from 'socket.io';
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS policy: Not allowed by Access-Control-Allow-Origin for WebSocket'));
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -232,16 +224,23 @@ io.on('connection', (socket) => {
 });
 
 const startServer = async () => {
+  // Fail fast before accepting any network connections if JWT_SECRET is missing or empty
+  validateJwtConfig();
+
   try {
     await connectDB();
     await seedAdmin();
     await seedMockData();
   } catch (err) {
     console.error('[Critical Startup Error] Database initialization failed:', err);
+    throw err;
   }
 
-  server.listen(PORT, () => {
-    console.log(`GovScheme AI Express Backend running on port ${PORT}`);
+  return new Promise((resolve) => {
+    server.listen(PORT, () => {
+      console.log(`GovScheme AI Express Backend running on port ${PORT}`);
+      resolve(server);
+    });
   });
 };
 
