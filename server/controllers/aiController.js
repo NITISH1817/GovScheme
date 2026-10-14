@@ -38,7 +38,7 @@ export const chatWithAI = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-3.8-flash', 'gemini-1.5-flash'];
+    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-1.5-flash', 'gemini-2.0-flash'];
     
     let reply = '';
     let usedModel = '';
@@ -104,7 +104,7 @@ export const streamChatWithAI = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-3.8-flash', 'gemini-1.5-flash'];
+    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-1.5-flash', 'gemini-2.0-flash'];
     
     let streamSuccess = false;
     let fullResponse = "";

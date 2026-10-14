@@ -177,32 +177,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         if (response.ok) {
           data = await response.json();
         } else {
-          // If backend has not seeded admin or returns 401, fallback to built-in admin credentials
-          if (loginEmail.trim() === 'admin@govscheme.in' && (loginPassword === 'password123' || loginPassword === 'admin' || loginPassword.length >= 6)) {
-            data = {
-              success: true,
-              _id: 'mock-admin-id',
-              fullName: 'Super Admin',
-              email: 'admin@govscheme.in',
-              role: 'Super Admin',
-              token: 'mock-admin-token-govscheme-2026'
-            };
-          } else {
-            const errData = await response.json().catch(() => null);
-            data = errData || { success: false, message: t('invalidEmailOrPassword', 'Invalid email or password') };
-          }
+          const errData = await response.json().catch(() => null);
+          data = errData || { success: false, message: t('invalidEmailOrPassword', 'Invalid email or password') };
         }
       } catch (networkErr) {
         clearTimeout(timeoutId);
-        console.warn('Backend unavailable or network error, using client-side authentication mode for:', loginEmail);
-        if (loginEmail === 'admin@govscheme.in' && (loginPassword === 'password123' || loginPassword.length >= 6)) {
+        console.warn('Backend unavailable or network error, checking client-side authentication mode for:', loginEmail);
+        if (import.meta.env.DEV && loginEmail === 'admin@govscheme.in' && loginPassword === 'password123') {
           data = {
             success: true,
             _id: 'mock-admin-id',
-            fullName: 'Super Admin',
+            fullName: 'Super Admin (Dev Mode)',
             email: 'admin@govscheme.in',
             role: 'Super Admin',
-            token: 'mock-admin-token'
+            token: 'mock-admin-token-dev'
           };
         } else {
           const namePart = loginEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').trim();

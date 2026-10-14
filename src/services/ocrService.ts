@@ -33,7 +33,8 @@ function parseAadhaar(text: string): string {
   const match = digits.match(/(\d{12})/);
   if (match) {
     const d = match[1];
-    return `${d.slice(0, 4)} ${d.slice(4, 8)} ${d.slice(8, 12)}`;
+    // Mask first 8 digits for citizen privacy compliance (UIDAI guidelines)
+    return `XXXX XXXX ${d.slice(8, 12)}`;
   }
   return '';
 }

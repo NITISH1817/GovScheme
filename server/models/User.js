@@ -54,8 +54,8 @@ const UserSchema = new mongoose.Schema({
   
   // OTP Verification
   otpTokens: {
-    email: { token: String, expires: Date },
-    mobile: { token: String, expires: Date }
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   
   // Security & Authentication

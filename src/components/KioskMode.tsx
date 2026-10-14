@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Users, FileText, ChevronRight, ShieldCheck, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +30,45 @@ export const KioskMode: React.FC<KioskModeProps> = ({
     occupation: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const idleTimerRef = useRef<any>(null);
+
+  const resetFormData = () => {
+    setFormData({
+      fullName: '',
+      age: '',
+      mobile: '',
+      state: '',
+      income: '',
+      occupation: ''
+    });
+  };
+
+  const handleExitClean = () => {
+    resetFormData();
+    onExit();
+  };
+
+  useEffect(() => {
+    const KIOSK_IDLE_TIMEOUT_MS = 120000; // 2 minutes auto-reset
+
+    const resetIdleTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        resetFormData();
+        onExit();
+      }, KIOSK_IDLE_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    activityEvents.forEach(evt => window.addEventListener(evt, resetIdleTimer));
+    resetIdleTimer();
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      activityEvents.forEach(evt => window.removeEventListener(evt, resetIdleTimer));
+      resetFormData();
+    };
+  }, [onExit]);
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +83,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
         occupation: formData.occupation
       });
       setIsSubmitting(false);
+      resetFormData();
     }, 250);
   };
 
@@ -98,7 +138,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
               )}
             </div>
 
-            <button onClick={onExit} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-sm font-bold transition-colors">
+            <button onClick={handleExitClean} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-sm font-bold transition-colors">
               {t('exitKiosk', 'Exit Kiosk')}
             </button>
           </div>

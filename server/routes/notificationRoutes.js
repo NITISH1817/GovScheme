@@ -5,7 +5,7 @@ import { protect, adminOnly } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.route('/')
-  .get(getNotifications)
+  .get(protect, adminOnly, getNotifications)
   .post(protect, adminOnly, createNotification);
 
 router.put('/read-all', protect, adminOnly, markAllNotificationsRead);

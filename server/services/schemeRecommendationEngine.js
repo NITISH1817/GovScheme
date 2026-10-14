@@ -62,7 +62,15 @@ export function evaluateSchemeEligibility(scheme, profile) {
 
   if (isGenderRestricted) {
     if (profile.gender) {
-      const match = genderReqs.some(g => g.toLowerCase().includes(profile.gender.toLowerCase()) || profile.gender.toLowerCase().includes(g.toLowerCase()));
+      const match = genderReqs.some(g => {
+        const gNorm = g.trim().toLowerCase();
+        const pNorm = profile.gender.trim().toLowerCase();
+        return gNorm === pNorm || 
+          (gNorm === 'women' && pNorm === 'female') || 
+          (gNorm === 'female' && pNorm === 'women') ||
+          (gNorm === 'men' && pNorm === 'male') ||
+          (gNorm === 'male' && pNorm === 'men');
+      });
       if (match) {
         satisfiedConditions.push(`Gender requirement matched (${genderReqs.join(', ')})`);
       } else {
@@ -97,9 +105,16 @@ export function evaluateSchemeEligibility(scheme, profile) {
   if (isCatRestricted) {
     if (profile.socialCategory) {
       const catMatch = catReqs.some(c => {
-        const cLower = c.toLowerCase();
-        const pLower = profile.socialCategory.toLowerCase();
-        return cLower === pLower || cLower.includes(pLower) || pLower.includes(cLower);
+        const cLower = c.trim().toLowerCase();
+        const pLower = profile.socialCategory.trim().toLowerCase();
+        if (cLower === pLower) return true;
+        // Known aliases
+        if ((cLower === 'sc' && pLower === 'scheduled caste') || (cLower === 'scheduled caste' && pLower === 'sc')) return true;
+        if ((cLower === 'st' && pLower === 'scheduled tribe') || (cLower === 'scheduled tribe' && pLower === 'st')) return true;
+        if ((cLower === 'obc' && pLower === 'other backward class') || (cLower === 'other backward class' && pLower === 'obc')) return true;
+        if ((cLower === 'mbc' && pLower === 'most backward class') || (cLower === 'most backward class' && pLower === 'mbc')) return true;
+        if ((cLower === 'bc' && pLower === 'backward class') || (cLower === 'backward class' && pLower === 'bc')) return true;
+        return false;
       });
       if (catMatch) {
         satisfiedConditions.push(`Social category requirement matched (${profile.socialCategory})`);
@@ -114,11 +129,14 @@ export function evaluateSchemeEligibility(scheme, profile) {
   // 6. Student Requirement
   const studentReq = scheme.studentRequirements;
   const isStudentScheme = studentReq === "Yes" || (typeof studentReq === "object" && studentReq?.required === true) || scheme.category === 'Education';
+  const effectiveIsStudent = profile.isStudent !== undefined && profile.isStudent !== null
+    ? Boolean(profile.isStudent)
+    : (profile.occupation ? profile.occupation.toLowerCase().includes('student') : null);
 
   if (isStudentScheme) {
-    if (profile.isStudent === true) {
+    if (effectiveIsStudent === true) {
       satisfiedConditions.push(`Confirmed active student status`);
-    } else if (profile.isStudent === false) {
+    } else if (effectiveIsStudent === false) {
       failedConditions.push(`Scheme requires active student status`);
     } else {
       informationNeeded.push(`Student status needs to be confirmed`);
@@ -128,14 +146,44 @@ export function evaluateSchemeEligibility(scheme, profile) {
   // 7. Farmer Requirement
   const farmerReq = scheme.farmerRequirements;
   const isFarmerScheme = farmerReq === "Yes" || (typeof farmerReq === "object" && farmerReq?.required === true) || scheme.category === 'Agriculture';
+  const effectiveIsFarmer = profile.isFarmer !== undefined && profile.isFarmer !== null
+    ? Boolean(profile.isFarmer)
+    : (profile.occupation ? (profile.occupation.toLowerCase().includes('farmer') || profile.occupation.toLowerCase().includes('agriculture') || profile.occupation.toLowerCase().includes('cultivator')) : null);
 
   if (isFarmerScheme) {
-    if (profile.isFarmer === true) {
+    if (effectiveIsFarmer === true) {
       satisfiedConditions.push(`Confirmed farmer / agricultural status`);
-    } else if (profile.isFarmer === false) {
+    } else if (effectiveIsFarmer === false) {
       failedConditions.push(`Scheme requires farmer / cultivator status`);
     } else {
       informationNeeded.push(`Farmer / landholder status needs confirmation`);
+    }
+  }
+
+  // 8. Occupation Requirements (Canonical allowedOccupations / eligibleOccupations)
+  const rawOccupations = scheme.eligibleOccupations ?? scheme.eligibilityRules?.allowedOccupations ?? ['All'];
+  const occReqs = Array.isArray(rawOccupations) ? rawOccupations : [String(rawOccupations)];
+  const isOccRestricted = occReqs.length > 0 && !occReqs.some(o => ['all', 'any'].includes(String(o).toLowerCase()));
+
+  if (isOccRestricted) {
+    const studentMatchesOcc = (profile.isStudent === true || profile.occupation?.toLowerCase().includes('student')) && occReqs.some(o => String(o).toLowerCase().includes('student'));
+    const farmerMatchesOcc = (profile.isFarmer === true || profile.occupation?.toLowerCase().includes('farmer')) && occReqs.some(o => String(o).toLowerCase().includes('farmer') || String(o).toLowerCase().includes('cultivator'));
+
+    if (studentMatchesOcc || farmerMatchesOcc) {
+      satisfiedConditions.push(`Occupation requirement matched (${studentMatchesOcc ? 'Student' : 'Farmer'})`);
+    } else if (profile.occupation) {
+      const pOcc = profile.occupation.trim().toLowerCase();
+      const occMatch = occReqs.some(o => {
+        const oNorm = String(o).trim().toLowerCase();
+        return oNorm === pOcc || oNorm.includes(pOcc) || pOcc.includes(oNorm);
+      });
+      if (occMatch) {
+        satisfiedConditions.push(`Occupation requirement matched (${profile.occupation})`);
+      } else {
+        failedConditions.push(`Restricted to occupations: ${occReqs.join(', ')} (Profile indicates ${profile.occupation})`);
+      }
+    } else {
+      informationNeeded.push(`Occupation verification required (${occReqs.join(', ')})`);
     }
   }
 

@@ -135,7 +135,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     trending: "Trending Welfare",
     applyOfficial: "Apply on Official Portal",
     officialSourceDisclaimer: "Official Portal Source",
-    guaranteedDisclaimer: "You may be eligible based on the information provided. Final approval rests with official authorities.",
+    guaranteedDisclaimer: "GovScheme is an independent informational discovery platform and is not affiliated with any government ministry. Eligibility recommendations are advisory; citizens must confirm all details and apply via official government portals.",
     searchPlaceholder: "Search schemes by name, benefit, PM KISAN, pension...",
     filterByState: "Filter by State",
     filterByCategory: "Filter by Category",

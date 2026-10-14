@@ -65,12 +65,13 @@ const handleMulterUpload = (req, res, next) => {
   });
 };
 
-// MODULE 11: Document Endpoints for Citizens (authenticated & strictly isolated)
+// MODULE 11: Document Endpoints for Citizens & Admins
 router.post('/upload', protect, handleMulterUpload, uploadAndProcessDocument);
 router.post('/manual', protect, createManualDocument);
 router.get('/', protect, (req, res, next) => {
-  // If admin query with specific status and role is admin, allow admin view; otherwise return authenticated user's documents
-  if (req.user && ['Super Admin', 'Ministry Admin', 'State Admin'].includes(req.user.role) && req.query.adminView === 'true') {
+  const adminRoles = ['Super Admin', 'Ministry Admin', 'State Admin', 'District Officer', 'Nodal Officer', 'Data Entry Operator'];
+  // If user has an administrative role and requests admin view or filter parameters, return admin verification queue
+  if (req.user && adminRoles.includes(req.user.role) && (req.query.adminView === 'true' || req.query.status !== undefined || req.query.type !== undefined)) {
     return getAdminDocuments(req, res, next);
   }
   return getUserDocuments(req, res, next);
@@ -83,7 +84,8 @@ router.patch('/:documentId/fields', protect, updateDocumentFields);
 router.post('/:documentId/verify', protect, verifyDocumentOnDemand);
 router.delete('/:documentId', protect, deleteUserDocument);
 
-// Legacy admin verification route
+// Admin document verification routes (supports both /:id/verify and legacy /:id/admin-verify)
+router.put('/:id/verify', protect, adminOnly, auditLog('VERIFY_DOCUMENT'), updateAdminVerification);
 router.put('/:id/admin-verify', protect, adminOnly, auditLog('VERIFY_DOCUMENT'), updateAdminVerification);
 
 export default router;

@@ -22,6 +22,10 @@ export const protect = async (req, res, next) => {
         return res.status(401).json({ success: false, message: 'Not authorized, user account not found' });
       }
 
+      if (req.user.isActive === false) {
+        return res.status(403).json({ success: false, message: 'Your account has been suspended by an administrator. Please contact support.' });
+      }
+
       return next();
     } catch (error) {
       console.warn('[Auth] Token verification rejected:', error.message);

@@ -69,8 +69,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
         console.warn('Backend login endpoint unavailable, checking local fallback', networkErr);
       }
 
-      // Fallback for standard admin demo / offline mode
-      if (email.includes('admin') && (password === 'password123' || password === 'admin' || password.length >= 4)) {
+      // Fallback for standard admin demo / offline mode (DEV environment only)
+      if (import.meta.env.DEV && email.includes('admin') && (password === 'password123' || password === 'admin' || password.length >= 4)) {
         localStorage.setItem('adminToken', 'mock-admin-token-govscheme-2026');
         const adminUser: UserProfile = {
           id: 'admin_1',
@@ -97,7 +97,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
         setLoginState('loading');
         setTimeout(() => onLoginSuccess(adminUser), 400);
       } else {
-        setErrorMessage('Invalid credentials. Use admin@govscheme.in / password123');
+        setErrorMessage(import.meta.env.DEV ? 'Invalid credentials. Use admin@govscheme.in / password123 in development' : 'Invalid admin credentials or backend server unavailable.');
         setLoginState('error');
       }
     } catch (err: any) {

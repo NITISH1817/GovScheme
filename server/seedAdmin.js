@@ -18,17 +18,28 @@ const seedAdmin = async () => {
       process.exit(0);
     }
 
+    const isProduction = process.env.NODE_ENV === 'production';
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+    if (isProduction && !adminPassword) {
+      console.error('[Security Error] In production, ADMIN_SEED_PASSWORD must be explicitly provided in environment variables.');
+      process.exit(1);
+    }
+
     const admin = await User.create({
       fullName: 'Super Admin',
-      email: 'admin@govscheme.in',
-      password: 'password123',
+      email: process.env.ADMIN_EMAIL || 'admin@govscheme.in',
+      password: adminPassword || 'password123',
       role: 'SuperAdmin',
       isActive: true
     });
 
     console.log('Admin user created successfully!');
     console.log(`Email: ${admin.email}`);
-    console.log('Password: password123');
+    if (!isProduction) {
+      console.log('Password: password123 (development default)');
+    } else {
+      console.log('Password: [SECURE - configured via ADMIN_SEED_PASSWORD]');
+    }
     process.exit(0);
   } catch (error) {
     console.error('Error seeding admin:', error);

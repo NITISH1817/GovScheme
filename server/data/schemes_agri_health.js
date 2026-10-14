@@ -30,7 +30,8 @@ export const agricultureSchemes = [
     applicableSocialCategories: ["All"],
     disabilityRequirements: { required: false, minimumPercentage: 0 },
     studentRequirements: { required: false },
-    farmerRequirements: { required: true, maxLandHoldingAcres: 5.0 },
+    // Official Source: Union Cabinet Decision 31-May-2019 (PIB Release ID 1572996, checked Oct 2026).
+    farmerRequirements: { required: true, maxLandHoldingAcres: 999 },
     firstGraduateRequirements: { required: false },
     residenceRequirements: { states: ["All"] },
     requiredDocuments: ["Aadhaar", "Land Records (Patta/Chitta/Khasra)", "Bank Passbook Linked to Aadhaar"],

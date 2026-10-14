@@ -22,7 +22,7 @@ router.route('/')
 router.route('/:id')
   .get(optionalAuth, getSchemeById)
   .put(protect, adminOnly, auditLog('UPDATE_SCHEME'), updateScheme)
-  .delete(protect, adminOnly, auditLog('DELETE_SCHEME'), deleteScheme);
+  .delete(protect, authorizeRoles('Super Admin', 'Ministry Admin'), auditLog('DELETE_SCHEME'), deleteScheme);
 
 // Duplicate
 router.post('/:id/duplicate', protect, adminOnly, auditLog('DUPLICATE_SCHEME'), duplicateScheme);

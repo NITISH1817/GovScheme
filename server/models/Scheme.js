@@ -39,6 +39,7 @@ const SchemeSchema = new mongoose.Schema({
   subCategory: { type: String },
 
   benefits: { type: mongoose.Schema.Types.Mixed, required: true },
+  benefitsSummary: { type: String },
   benefitAmount: { type: mongoose.Schema.Types.Mixed, default: "" },
   financialBenefitAmount: { type: mongoose.Schema.Types.Mixed, default: "" },
   benefitFrequency: { 
@@ -95,6 +96,7 @@ const SchemeSchema = new mongoose.Schema({
 
   officialWebsite: { type: String },
   officialApplicationUrl: { type: String },
+  officialApplyUrl: { type: String },
   applyURL: { type: String },
   officialHelpline: { type: String },
   helpline: { type: String },

@@ -1,5 +1,7 @@
 import type { Scheme } from '../types';
 
+// Note on PM-KISAN eligibility: Per official GoI Union Cabinet Decision on 31-May-2019 (PIB Release ID 1572996, checked Oct 2026),
+// the original 2-hectare (5 acre) landholding limit was removed; all landholding farmer families across India are eligible.
 export const schemesData: Scheme[] = [
   {
     "id": "pm-kisan",
@@ -17,7 +19,6 @@ export const schemesData: Scheme[] = [
         "Agriculture Worker",
         "Self Employed Farmer"
       ],
-      "maxLandHoldingAcres": 5,
       "requiredDocuments": [
         "Aadhaar",
         "Land Record (Khata/Khasra)",

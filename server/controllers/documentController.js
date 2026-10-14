@@ -54,7 +54,16 @@ export const verifyDocument = async (req, res) => {
     }
 
     document.status = status || document.status;
-    document.verified = status === 'Verified';
+    if (status === 'Verified') {
+      document.verified = true;
+      document.verificationStatus = 'ADMIN_VERIFIED';
+    } else if (status === 'Rejected') {
+      document.verified = false;
+      document.verificationStatus = 'VERIFICATION_FAILED';
+    } else if (status === 'Resubmission Requested') {
+      document.verified = false;
+      document.verificationStatus = 'NEEDS_REVIEW';
+    }
     if (rejectionReason !== undefined) document.rejectionReason = rejectionReason;
     if (internalNotes !== undefined) document.internalNotes = internalNotes;
     document.verifiedBy = req.user._id;

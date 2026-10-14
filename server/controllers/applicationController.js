@@ -104,6 +104,15 @@ export const updateApplicationStatus = async (req, res) => {
     
     await application.save();
     
+    if (req.app.get('io')) {
+      req.app.get('io').emit('APPLICATION_STATUS_UPDATED', {
+        applicationId: application._id,
+        status: application.status,
+        remarks: application.remarks,
+        userId: application.userId
+      });
+    }
+
     res.json({ success: true, application });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

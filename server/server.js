@@ -16,16 +16,30 @@ import { corsOptionsDelegate, isOriginAllowed } from './config/corsConfig.js';
 
 const seedAdmin = async () => {
   try {
-    const adminExists = await User.findOne({ email: 'admin@govscheme.in' });
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@govscheme.in';
+    const adminExists = await User.findOne({ email: adminEmail });
     if (!adminExists) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+
+      if (isProduction && !adminPassword) {
+        console.warn('[Security Notice] ADMIN_SEED_PASSWORD is not set in production. Skipping default admin account creation to prevent insecure password fallback.');
+        return;
+      }
+
+      const seedPassword = adminPassword || 'password123';
       await User.create({
         fullName: 'Super Admin',
-        email: 'admin@govscheme.in',
-        password: process.env.ADMIN_SEED_PASSWORD || 'password123',
+        email: adminEmail,
+        password: seedPassword,
         role: 'Super Admin',
         isActive: true
       });
-      console.log('[Security] Admin seeded: admin@govscheme.in / password123');
+      if (!isProduction) {
+        console.log(`[Security] Admin seeded: ${adminEmail} (development default)`);
+      } else {
+        console.log(`[Security] Admin seeded: ${adminEmail} (custom production password)`);
+      }
     }
   } catch (error) {
     console.error('Failed to seed admin', error);

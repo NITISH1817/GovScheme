@@ -45,6 +45,7 @@ export const DocumentVerificationView: React.FC = () => {
     try {
       setLoading(true);
       const res = await apiClient.get('/documents', {
+        adminView: 'true',
         status: statusFilter !== 'All' ? statusFilter : undefined,
         type: typeFilter !== 'All' ? typeFilter : undefined,
         limit: 30

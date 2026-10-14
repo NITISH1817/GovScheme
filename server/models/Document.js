@@ -35,6 +35,7 @@ export const VERIFICATION_STATUSES = [
   'TEXT_EXTRACTED',
   'NEEDS_REVIEW',
   'CHECKS_PASSED',
+  'ADMIN_VERIFIED',
   'OFFICIALLY_VERIFIED',
   'VERIFICATION_FAILED',
   'INCONCLUSIVE'
@@ -171,7 +172,7 @@ DocumentSchema.pre('save', function() {
   if (effectiveNum && !this.docNumber) {
     this.docNumber = effectiveNum;
   }
-  this.verified = this.verificationStatus === 'OFFICIALLY_VERIFIED';
+  this.verified = this.status === 'Verified' || this.verificationStatus === 'ADMIN_VERIFIED' || this.verificationStatus === 'OFFICIALLY_VERIFIED' || this.verificationStatus === 'CHECKS_PASSED';
 });
 
 export default mongoose.model('Document', DocumentSchema);

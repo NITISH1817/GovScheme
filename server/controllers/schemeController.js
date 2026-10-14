@@ -71,9 +71,22 @@ export const createScheme = async (req, res) => {
 // @access  Private (Admin)
 export const updateScheme = async (req, res) => {
   try {
-    let updated = await Scheme.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).catch(() => null);
+    const updateData = { ...req.body };
+    if (updateData.benefitsSummary && !updateData.benefits) {
+      updateData.benefits = updateData.benefitsSummary;
+    } else if (updateData.benefits && !updateData.benefitsSummary) {
+      updateData.benefitsSummary = typeof updateData.benefits === 'string' ? updateData.benefits : String(updateData.benefits);
+    }
+    if (updateData.financialBenefitAmount !== undefined && updateData.benefitAmount === undefined) {
+      updateData.benefitAmount = updateData.financialBenefitAmount;
+    }
+    if (updateData.officialApplyUrl && !updateData.officialApplicationUrl) {
+      updateData.officialApplicationUrl = updateData.officialApplyUrl;
+    }
+
+    let updated = await Scheme.findByIdAndUpdate(req.params.id, updateData, { new: true, returnDocument: 'after', runValidators: true }).catch(() => null);
     if (!updated) {
-      updated = await Scheme.findOneAndUpdate({ id: req.params.id }, req.body, { new: true, runValidators: true });
+      updated = await Scheme.findOneAndUpdate({ $or: [{ id: req.params.id }, { schemeId: req.params.id }] }, updateData, { new: true, returnDocument: 'after', runValidators: true });
     }
     
     if (!updated) {
@@ -257,11 +270,33 @@ export const getSchemeById = async (req, res) => {
 // @access  Public or Authenticated Citizen
 export const recommendSchemes = async (req, res) => {
   try {
-    const profile = req.body.profile || {};
+    let profile = req.body.profile;
+    if ((!profile || Object.keys(profile).length === 0) && req.user) {
+      const p = req.user.profile || {};
+      profile = {
+        age: p.age,
+        gender: p.gender,
+        income: p.annualIncome,
+        annualIncome: p.annualIncome,
+        state: p.state,
+        district: p.district,
+        occupation: p.occupation,
+        socialCategory: p.category,
+        category: p.category,
+        education: p.educationLevel,
+        isStudent: p.occupation?.toLowerCase().includes('student'),
+        isFarmer: p.occupation?.toLowerCase().includes('farmer'),
+        isDifferentlyAbled: p.hasDisability,
+        landHoldingAcres: p.landHoldingAcres
+      };
+    }
+    profile = profile || {};
     const filters = req.body.filters || {};
 
     // Pull active published schemes
-    const schemes = await Scheme.find({ activeStatus: true });
+    const schemes = await Scheme.find({
+      $or: [{ activeStatus: true }, { status: 'Published' }]
+    });
 
     const results = recommendSchemesForProfile(schemes, profile, filters);
 

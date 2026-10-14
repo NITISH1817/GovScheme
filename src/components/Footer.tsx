@@ -122,7 +122,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
             </div>
 
             <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700 text-[11px] text-slate-400 leading-normal mt-4">
-              <span className="text-amber-400 font-bold block mb-1">{t('transparencyTitle', 'TRANSPARENCY DISCLAIMER')}</span>
+              <span className="text-amber-400 font-bold block mb-1">{t('transparencyTitle', 'INDEPENDENT SERVICE & TRANSPARENCY DISCLAIMER')}</span>
               {t('guaranteedDisclaimer')}
             </div>
           </div>

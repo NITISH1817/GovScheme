@@ -257,18 +257,21 @@ export const App: React.FC = () => {
       }
     };
 
-    // If citizen has stored token, fetch latest persistent profile & documents from cloud backend
+    // If citizen has stored token, fetch latest persistent profile, documents & applications from cloud backend
     const syncCloudProfile = async () => {
       const token = localStorage.getItem('govscheme_token');
       if (!token) return;
       try {
-        const [profileRes, docsRes] = await Promise.all([
+        const [profileRes, docsRes, appsRes] = await Promise.all([
           fetch(`${API_URL}/api/users/profile`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
           fetch(`${API_URL}/api/documents`, {
             headers: { Authorization: `Bearer ${token}` }
-          })
+          }),
+          fetch(`${API_URL}/api/applications/my-applications`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }).catch(() => null)
         ]);
 
         if (profileRes.ok) {
@@ -290,6 +293,44 @@ export const App: React.FC = () => {
                 fileUrl: `/api/documents/${d.documentId}/file`,
                 uploadedAt: d.createdAt ? new Date(d.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
               }));
+            }
+          }
+
+          if (appsRes && appsRes.ok) {
+            const appsData = await appsRes.json();
+            if (appsData.success && Array.isArray(appsData.applications) && appsData.applications.length > 0) {
+              const mappedApps: ApplicationTrackerRecord[] = appsData.applications.map((a: any) => {
+                const currentStatus = a.status || 'Submitted';
+                const stages = [
+                  'Application Started',
+                  'Documents Uploaded',
+                  'Submitted',
+                  'Under Review',
+                  'Approved',
+                  'Benefit Released'
+                ];
+                const statusIdx = stages.findIndex(s => s.toLowerCase() === currentStatus.toLowerCase());
+                const effectiveIdx = statusIdx >= 0 ? statusIdx : 2;
+
+                const timeline = stages.map((stg, i) => ({
+                  stage: stg,
+                  date: i <= effectiveIdx ? (a.updatedAt ? new Date(a.updatedAt).toISOString().split('T')[0] : 'Completed') : 'Pending',
+                  completed: i <= effectiveIdx,
+                  remarks: i === effectiveIdx ? (a.remarks || `Status: ${currentStatus}`) : undefined
+                }));
+
+                return {
+                  id: a._id,
+                  schemeId: a.schemeId?.id || a.schemeId?._id || a.schemeId,
+                  schemeName: a.schemeId?.name || 'Government Scheme',
+                  applicationNumber: `APP-${String(a._id).slice(-8).toUpperCase()}`,
+                  status: currentStatus as any,
+                  appliedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                  officialPortalLink: a.schemeId?.officialApplyUrl || a.schemeId?.officialWebsite || 'https://www.india.gov.in',
+                  statusTimeline: timeline
+                };
+              });
+              setApplications(mappedApps);
             }
           }
 
@@ -354,6 +395,37 @@ export const App: React.FC = () => {
       setSchemes(prev => prev.filter(s => s.id !== data.schemeId));
     };
 
+    const handleApplicationStatusUpdated = (data: { applicationId: string; status: string; remarks?: string }) => {
+      setApplications(prev => prev.map(app => {
+        if (app.id === data.applicationId || (app as any)._id === data.applicationId) {
+          const stages = [
+            'Application Started',
+            'Documents Uploaded',
+            'Submitted',
+            'Under Review',
+            'Approved',
+            'Benefit Released'
+          ];
+          const statusIdx = stages.findIndex(s => s.toLowerCase() === data.status.toLowerCase());
+          const effectiveIdx = statusIdx >= 0 ? statusIdx : 3;
+
+          const updatedTimeline = stages.map((stg, i) => ({
+            stage: stg,
+            date: i <= effectiveIdx ? new Date().toISOString().split('T')[0] : 'Pending',
+            completed: i <= effectiveIdx,
+            remarks: i === effectiveIdx ? (data.remarks || `Status updated to ${data.status} by Admin`) : undefined
+          }));
+
+          return {
+            ...app,
+            status: data.status as any,
+            statusTimeline: updatedTimeline
+          };
+        }
+        return app;
+      }));
+    };
+
     const handleNewNotification = (data: { notification: any }) => {
       setNotifications(prev => [
         {
@@ -371,7 +443,8 @@ export const App: React.FC = () => {
     socketService.on('SCHEME_PUBLISHED', handleSchemePublished);
     socketService.on('SCHEME_UPDATED', handleSchemeUpdated);
     socketService.on('SCHEME_DELETED', handleSchemeDeleted);
-    socketService.on('SCHEME_CREATED', handleSchemePublished); // Treat created as published for now in the demo
+    socketService.on('SCHEME_CREATED', handleSchemePublished);
+    socketService.on('APPLICATION_STATUS_UPDATED', handleApplicationStatusUpdated);
     socketService.on('NEW_NOTIFICATION', handleNewNotification);
 
     return () => {
@@ -379,6 +452,7 @@ export const App: React.FC = () => {
       socketService.off('SCHEME_UPDATED', handleSchemeUpdated);
       socketService.off('SCHEME_DELETED', handleSchemeDeleted);
       socketService.off('SCHEME_CREATED', handleSchemePublished);
+      socketService.off('APPLICATION_STATUS_UPDATED', handleApplicationStatusUpdated);
       socketService.off('NEW_NOTIFICATION', handleNewNotification);
       socketService.disconnect();
     };

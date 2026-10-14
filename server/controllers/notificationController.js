@@ -6,30 +6,7 @@ import User from '../models/User.js';
 // @access  Private (Admin)
 export const getNotifications = async (req, res) => {
   try {
-    let notifications = await Notification.find().sort({ createdAt: -1 }).limit(50);
-    if (notifications.length === 0) {
-      await Notification.insertMany([
-        {
-          title: 'System Security Audit Completed',
-          message: 'Automated vulnerability scanning verified all scheme endpoints.',
-          type: 'System',
-          read: false
-        },
-        {
-          title: 'New Citizen Application Pending',
-          message: 'A new application for PM Kisan Samman Nidhi requires verification.',
-          type: 'ApplicationUpdate',
-          read: false
-        },
-        {
-          title: 'Scheme Rules Updated',
-          message: 'Post Matric Scholarship income ceiling was calibrated to ₹2,50,000.',
-          type: 'SchemeAlert',
-          read: true
-        }
-      ]);
-      notifications = await Notification.find().sort({ createdAt: -1 }).limit(50);
-    }
+    const notifications = await Notification.find().sort({ createdAt: -1 }).limit(50);
     res.json({ success: true, notifications });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -5,7 +5,7 @@ import Application from '../models/Application.js';
 import Document from '../models/Document.js';
 import { getUsers, getCitizenDetails, updateUserStatus } from '../controllers/userController.js';
 import { getDashboardAnalytics } from '../controllers/analyticsController.js';
-import { protect, adminOnly } from '../middleware/authMiddleware.js';
+import { protect, adminOnly, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -26,9 +26,9 @@ router.get('/citizens/:id', getCitizenDetails);
 
 /**
  * PUT /api/admin/citizens/:id/status
- * Activate or suspend a citizen account
+ * Activate or suspend a citizen account (Excludes Data Entry Operators)
  */
-router.put('/citizens/:id/status', updateUserStatus);
+router.put('/citizens/:id/status', authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin', 'District Officer'), updateUserStatus);
 
 /**
  * GET /api/admin/analytics

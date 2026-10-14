@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/User.js';
 import Document from '../models/Document.js';
 import { formatUserProfile } from './userController.js';
@@ -16,6 +17,10 @@ export const registerUser = async (req, res) => {
 
     if (!email || !password || !fullName) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
     }
 
     const normalizedEmail = (email || '').trim().toLowerCase();
@@ -86,6 +91,10 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({ success: false, message: 'Your account has been suspended by an administrator. Please contact support.' });
+    }
+
     // Check Lockout
     if (user.lockUntil && user.lockUntil > Date.now()) {
       return res.status(423).json({ success: false, message: 'Account locked. Try again later.' });
@@ -152,20 +161,31 @@ export const generateOTP = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Generate 6 digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Cryptographically secure 6-digit OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
     const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
-    user.otpTokens = {
-      ...user.otpTokens,
-      email: { token: otp, expires }
-    };
+    if (!user.otpTokens) user.otpTokens = {};
+    user.otpTokens.email = { token: otp, expires, attempts: 0 };
+    user.markModified('otpTokens');
     await user.save();
 
-    // Mock sending email via Nodemailer
-    console.log(`[MOCK EMAIL] OTP for ${normalizedEmail} is ${otp}`);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const hasSmtpConfigured = !!(process.env.SMTP_HOST || process.env.SENDGRID_API_KEY);
 
-    res.json({ success: true, message: 'OTP sent successfully to email' });
+    if (isProduction && !hasSmtpConfigured) {
+      return res.status(503).json({
+        success: false,
+        message: 'OTP delivery provider is not configured for production. Please sign in with your password or contact support.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'OTP generated successfully',
+      isMockDelivery: !hasSmtpConfigured,
+      ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {})
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -187,15 +207,30 @@ export const verifyOTP = async (req, res) => {
     }
 
     if (new Date() > tokenObj.expires) {
+      delete user.otpTokens.email;
+      user.markModified('otpTokens');
+      await user.save();
       return res.status(400).json({ success: false, message: 'OTP has expired' });
     }
 
+    tokenObj.attempts = (tokenObj.attempts || 0) + 1;
+
+    if (tokenObj.attempts > 5) {
+      delete user.otpTokens.email;
+      user.markModified('otpTokens');
+      await user.save();
+      return res.status(429).json({ success: false, message: 'Too many invalid attempts. This OTP has been invalidated. Please generate a new one.' });
+    }
+
     if (tokenObj.token !== otp) {
-      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+      user.markModified('otpTokens');
+      await user.save();
+      return res.status(400).json({ success: false, message: `Invalid OTP. ${5 - tokenObj.attempts} attempts remaining.` });
     }
 
     // OTP Verified successfully
-    user.otpTokens.email = undefined;
+    delete user.otpTokens.email;
+    user.markModified('otpTokens');
     await user.save();
 
     res.json({ 
@@ -216,6 +251,13 @@ export const googleAuth = async (req, res) => {
     let verifiedPicture = '';
     let googleSub = '';
 
+    const configuredClientId = process.env.GOOGLE_CLIENT_ID;
+
+    // Fail closed in production if Google Auth is unconfigured
+    if (process.env.NODE_ENV === 'production' && !configuredClientId) {
+      return res.status(500).json({ success: false, message: 'Google authentication service is not configured on this server.' });
+    }
+
     // Verify token with Google's endpoint (supports id_token tokeninfo or userinfo via access_token)
     if (idToken) {
       const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
@@ -223,10 +265,26 @@ export const googleAuth = async (req, res) => {
         return res.status(401).json({ success: false, message: 'Invalid or expired Google ID token' });
       }
       const payload = await response.json();
-      
-      const configuredClientId = process.env.GOOGLE_CLIENT_ID;
-      if (configuredClientId && payload.aud && payload.aud !== configuredClientId) {
-        return res.status(401).json({ success: false, message: 'Google Token audience mismatch' });
+
+      // Issuer validation: Must be Google
+      const validIssuers = ['accounts.google.com', 'https://accounts.google.com'];
+      if (!payload.iss || !validIssuers.includes(payload.iss)) {
+        return res.status(401).json({ success: false, message: 'Invalid token issuer' });
+      }
+
+      // Audience validation: Fail closed
+      if (configuredClientId) {
+        if (!payload.aud || payload.aud !== configuredClientId) {
+          return res.status(401).json({ success: false, message: 'Google Token audience mismatch' });
+        }
+      } else if (process.env.NODE_ENV === 'production') {
+        return res.status(401).json({ success: false, message: 'Google Client ID validation required in production' });
+      }
+
+      // Email verification check
+      const isEmailVerified = payload.email_verified === true || payload.email_verified === 'true';
+      if (!isEmailVerified) {
+        return res.status(401).json({ success: false, message: 'Google email address is not verified' });
       }
 
       verifiedEmail = payload.email;
@@ -241,6 +299,12 @@ export const googleAuth = async (req, res) => {
         return res.status(401).json({ success: false, message: 'Invalid or expired Google Access token' });
       }
       const userInfo = await response.json();
+
+      const isEmailVerified = userInfo.email_verified === true || userInfo.email_verified === 'true';
+      if (!isEmailVerified) {
+        return res.status(401).json({ success: false, message: 'Google email address is not verified' });
+      }
+
       verifiedEmail = userInfo.email;
       verifiedName = userInfo.name || 'Citizen User';
       verifiedPicture = userInfo.picture || '';
