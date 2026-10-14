@@ -38,6 +38,8 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   const [editableIncome, setEditableIncome] = useState<number | undefined>(undefined);
   const [selectedRawText, setSelectedRawText] = useState('');
   const [manualMode, setManualMode] = useState(false);
+  const [applyNameToProfile, setApplyNameToProfile] = useState(true);
+  const [applyIncomeToProfile, setApplyIncomeToProfile] = useState(true);
 
   const handleRawTextSelection = () => {
     const text = window.getSelection()?.toString().trim() || '';
@@ -85,18 +87,20 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
       id: `doc-${Date.now()}`,
       type: scanResult.docType,
       docNumber: editableDocNumber || scanResult.docNumber,
-      status: scanResult.isValidDocType ? 'Verified' : 'Pending',
+      status: scanResult.isValidDocType ? 'Pending' : 'Pending', // Honest status: format checked, official verification pending
       ocrExtracted: {
         ...scanResult.extractedFields,
         fullName: editableName || scanResult.extractedFields.fullName,
-        annualIncome: editableIncome !== undefined ? editableIncome : scanResult.extractedFields.annualIncome
+        annualIncome: editableIncome !== undefined ? editableIncome : scanResult.extractedFields.annualIncome,
+        verificationStatus: scanResult.isValidDocType ? 'CHECKS_PASSED' : 'NEEDS_REVIEW',
+        authenticityNote: 'Format & Layout Checked • Official Authenticity Unverified (Direct Issuer API Access Required)'
       },
       uploadedAt: new Date().toISOString().split('T')[0]
     };
 
     const autoFill: Partial<UserProfile> = {};
-    if (editableName) autoFill.fullName = editableName;
-    if (editableIncome !== undefined) autoFill.annualIncome = editableIncome;
+    if (applyNameToProfile && editableName) autoFill.fullName = editableName;
+    if (applyIncomeToProfile && editableIncome !== undefined) autoFill.annualIncome = editableIncome;
 
     onSaveDocument(newDoc, autoFill, selectedFile);
     onClose();
@@ -111,14 +115,16 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
       ocrExtracted: {
         fullName: editableName,
         annualIncome: editableIncome,
-        confidenceScore: 0
+        confidenceScore: 0,
+        verificationStatus: 'MANUAL_ENTRY',
+        authenticityNote: 'Citizen Manual Entry • Authenticity Unverified'
       },
       uploadedAt: new Date().toISOString().split('T')[0]
     };
     
     const autoFill: Partial<UserProfile> = {};
-    if (editableName) autoFill.fullName = editableName;
-    if (editableIncome !== undefined) autoFill.annualIncome = editableIncome;
+    if (applyNameToProfile && editableName) autoFill.fullName = editableName;
+    if (applyIncomeToProfile && editableIncome !== undefined) autoFill.annualIncome = editableIncome;
 
     onSaveDocument(newDoc, autoFill, selectedFile || null);
     onClose();
@@ -203,22 +209,31 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
           {scanResult && !isScanning && (
             <div className="space-y-4">
               {/* Type Warning / Verification Badge */}
-              <div className={`p-4 rounded-xl border flex items-center gap-3 ${scanResult.isValidDocType
+              <div className={`p-4 rounded-xl border flex flex-col gap-2 ${scanResult.isValidDocType
                   ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
                   : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
                 }`}>
-                {scanResult.isValidDocType ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5 text-amber-600" />}
-                <div>
-                  <span className="font-bold block">{scanResult.detectedTypeLabel}</span>
-                  <span className="text-[11px]">Confidence Score: {scanResult.extractedFields.confidenceScore}%</span>
+                <div className="flex items-center gap-3">
+                  {scanResult.isValidDocType ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />}
+                  <div>
+                    <span className="font-bold block">{scanResult.detectedTypeLabel} (Format Checks Passed)</span>
+                    <span className="text-[11px]">OCR Extraction Confidence Score: {scanResult.extractedFields.confidenceScore}%</span>
+                  </div>
+                </div>
+                <div className="mt-1 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/50 text-[11px] text-slate-600 dark:text-slate-400">
+                  <span className="font-bold text-amber-700 dark:text-amber-400">⚠️ Authenticity Status: </span>
+                  Authenticity Unverified. Automated OCR verifies extracted text and pattern format only. Government-issued authenticity requires official DigiLocker / UIDAI API integration.
                 </div>
               </div>
 
-              {/* Edit Extracted Fields */}
-              <div className="space-y-3 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <span className="font-bold text-slate-900 dark:text-white block font-heading">
-                  Review & Verify Extracted Information
-                </span>
+              {/* Edit Extracted Fields & Citizen Selection */}
+              <div className="space-y-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white block font-heading">
+                    Review & Select Fields to Accept
+                  </span>
+                  <span className="text-[11px] text-slate-500">Only checked fields will update your profile</span>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -232,7 +247,18 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold mb-1">Name on Document</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-semibold">Name on Document</label>
+                      <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                        <input
+                          type="checkbox"
+                          checked={applyNameToProfile}
+                          onChange={(e) => setApplyNameToProfile(e.target.checked)}
+                          className="w-3.5 h-3.5 text-blue-600 rounded"
+                        />
+                        Apply to Profile
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={editableName}
@@ -243,7 +269,18 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
 
                   {expectedType === 'Income Certificate' && (
                     <div className="sm:col-span-2">
-                      <label className="block font-semibold mb-1">Extracted Annual Income (₹)</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-semibold">Extracted Annual Income (₹)</label>
+                        <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                          <input
+                            type="checkbox"
+                            checked={applyIncomeToProfile}
+                            onChange={(e) => setApplyIncomeToProfile(e.target.checked)}
+                            className="w-3.5 h-3.5 text-blue-600 rounded"
+                          />
+                          Apply to Profile
+                        </label>
+                      </div>
                       <input
                         type="number"
                         value={editableIncome || ''}

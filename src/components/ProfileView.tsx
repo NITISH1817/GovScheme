@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, Clock, Bookmark, FileText, AlertCircle, ChevronRight,
   User as UserIcon, Settings, Edit3, MapPin, Briefcase, IndianRupee,
-  Activity, GraduationCap, LayoutDashboard, Printer, Sparkles, ShieldCheck
+  Activity, GraduationCap, LayoutDashboard, Printer, Sparkles, ShieldCheck,
+  X, Loader2, Save
 } from 'lucide-react';
 import { UserProfile, Scheme } from '../types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LocationSelector } from './LocationSelector';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -25,6 +27,59 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   schemes = []
 }) => {
   const { t } = useTranslation();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState<UserProfile>({ ...user });
+
+  useEffect(() => {
+    setFormData({ ...user });
+  }, [user]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationError(null);
+
+    if (!formData.fullName || !formData.fullName.trim()) {
+      setValidationError(t('nameRequired', 'Full Name is required.'));
+      return;
+    }
+    if (formData.age === undefined || formData.age === null || isNaN(Number(formData.age)) || Number(formData.age) < 1 || Number(formData.age) > 120) {
+      setValidationError(t('validAgeRequired', 'Please enter a valid age between 1 and 120.'));
+      return;
+    }
+    if (!formData.state || !formData.district) {
+      setValidationError(t('locationRequired', 'Please select both State and District.'));
+      return;
+    }
+    if (formData.annualIncome === undefined || formData.annualIncome === null || isNaN(Number(formData.annualIncome)) || Number(formData.annualIncome) < 0) {
+      setValidationError(t('incomeRequired', 'Please enter a valid annual income (0 or above).'));
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onUpdateProfile({
+        ...formData,
+        age: Number(formData.age),
+        annualIncome: Number(formData.annualIncome),
+        familyMembersCount: Number(formData.familyMembersCount || 1),
+        landHoldingAcres: Number(formData.landHoldingAcres || 0),
+        disabilityPercentage: Number(formData.disabilityPercentage || 0)
+      });
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        setSubmitSuccess(false);
+        setIsEditModalOpen(false);
+      }, 1000);
+    } catch (err: any) {
+      setValidationError(err?.message || 'Failed to persist profile update.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F] pt-24 pb-20">
@@ -67,9 +122,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#1769FF]/5 to-transparent rounded-bl-full -z-10 pointer-events-none"></div>
               
               <div className="flex items-center gap-6 z-10">
-                <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 shrink-0 border-4 border-white dark:border-[#0F1B2D] shadow-md relative group">
+                <div 
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 shrink-0 border-4 border-white dark:border-[#0F1B2D] shadow-md relative group cursor-pointer"
+                  title={t('clickToEdit', 'Click to edit profile')}
+                >
                   <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Edit3 className="w-6 h-6 text-white" />
                   </div>
                 </div>
@@ -89,8 +148,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
               </div>
 
-              <div className="z-10 w-full md:w-auto">
-                <button onClick={() => onNavigateTab('wizard')} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#1769FF] text-white font-bold hover:bg-blue-700 transition-colors">
+              <div className="z-10 w-full md:w-auto flex flex-col sm:flex-row gap-2">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)} 
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#1769FF] text-white font-bold hover:bg-blue-700 transition-colors shadow-sm"
+                >
                   <Edit3 className="w-4 h-4" /> {t('editProfile', 'Edit Profile')}
                 </button>
               </div>
@@ -292,6 +355,267 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Interactive Edit Profile Modal */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-[#0B1424] border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full my-8 overflow-hidden"
+            >
+              <div className="bg-gradient-to-r from-[#123C69] to-[#1769FF] text-white p-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Edit3 className="w-5 h-5" /> {t('editProfile', 'Edit Profile')}
+                  </h2>
+                  <p className="text-xs text-blue-100 mt-1">
+                    {t('editProfileSub', 'Update your demographic details to calculate verified scheme eligibility.')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-1 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="p-6 space-y-5 text-sm">
+                {validationError && (
+                  <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{validationError}</span>
+                  </div>
+                )}
+
+                {submitSuccess && (
+                  <div className="p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{t('profileSavedSuccess', 'Profile saved successfully and synced with cloud database!')}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('fullName', 'Full Name')} *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    />
+                  </div>
+
+                  {/* Age */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('age', 'Age')} *</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={120}
+                      value={formData.age || ''}
+                      onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    />
+                  </div>
+
+                  {/* Gender */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('gender', 'Gender')}</label>
+                    <select
+                      value={formData.gender || ''}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    >
+                      <option value="">{t('selectGender', 'Select Gender')}</option>
+                      <option value="Male">{t('Male', 'Male')}</option>
+                      <option value="Female">{t('Female', 'Female')}</option>
+                      <option value="Transgender">{t('Transgender', 'Transgender')}</option>
+                      <option value="Other">{t('Other', 'Other')}</option>
+                    </select>
+                  </div>
+
+                  {/* Social Category */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('category', 'Social Category')}</label>
+                    <select
+                      value={formData.category || ''}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    >
+                      <option value="">{t('selectCategory', 'Select Category')}</option>
+                      <option value="General">General</option>
+                      <option value="OBC">OBC (Other Backward Class)</option>
+                      <option value="SC">SC (Scheduled Caste)</option>
+                      <option value="ST">ST (Scheduled Tribe)</option>
+                      <option value="EWS">EWS (Economically Weaker Section)</option>
+                    </select>
+                  </div>
+
+                  {/* Location Selector */}
+                  <div className="sm:col-span-2">
+                    <LocationSelector
+                      state={formData.state || ''}
+                      district={formData.district || ''}
+                      onStateChange={(st) => setFormData(prev => ({ ...prev, state: st, district: '' }))}
+                      onDistrictChange={(dt) => setFormData(prev => ({ ...prev, district: dt }))}
+                    />
+                  </div>
+
+                  {/* Occupation */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('occupation', 'Primary Occupation')}</label>
+                    <select
+                      value={formData.occupation || ''}
+                      onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    >
+                      <option value="">{t('selectOccupation', 'Select Occupation')}</option>
+                      <option value="Farmer">{t('Farmer', 'Farmer')}</option>
+                      <option value="Agriculture Worker">{t('Agriculture Worker', 'Agriculture Worker')}</option>
+                      <option value="Student">{t('Student', 'Student')}</option>
+                      <option value="Street Vendor">{t('Street Vendor', 'Street Vendor')}</option>
+                      <option value="Self Employed">{t('Self Employed', 'Self Employed')}</option>
+                      <option value="Daily Wage Worker">{t('Daily Wage Worker', 'Daily Wage Worker')}</option>
+                      <option value="Private Employee">{t('Private Employee', 'Private Employee')}</option>
+                      <option value="Government Employee">{t('Government Employee', 'Government Employee')}</option>
+                      <option value="Unemployed">{t('Unemployed', 'Unemployed')}</option>
+                      <option value="Retired">{t('Retired', 'Retired')}</option>
+                    </select>
+                  </div>
+
+                  {/* Annual Household Income */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('annualIncome', 'Annual Household Income (₹)')} *</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={formData.annualIncome !== undefined ? formData.annualIncome : ''}
+                      onChange={(e) => setFormData({ ...formData, annualIncome: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    />
+                  </div>
+
+                  {/* Education Level */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('educationLevel', 'Education Level')}</label>
+                    <select
+                      value={formData.educationLevel || ''}
+                      onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    >
+                      <option value="">Select Education Level</option>
+                      <option value="Below 10th">Below 10th Standard</option>
+                      <option value="10th Pass">10th Standard Pass (SSLC)</option>
+                      <option value="12th Pass">12th Standard Pass (HSC)</option>
+                      <option value="Diploma">Diploma / Polytechnic</option>
+                      <option value="Graduate">Graduate (Bachelor's Degree)</option>
+                      <option value="Post Graduate">Post Graduate (Master's Degree)</option>
+                      <option value="Doctorate">Doctorate / PhD</option>
+                    </select>
+                  </div>
+
+                  {/* Landholding */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('landHoldingAcres', 'Landholding (Acres)')}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.1"
+                      value={formData.landHoldingAcres ?? 0}
+                      onChange={(e) => setFormData({ ...formData, landHoldingAcres: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Additional Toggles */}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-gray-900 dark:text-white text-xs block">{t('hasDisability', 'Person with Disability (Divyangjan)')}</span>
+                      <span className="text-[11px] text-gray-500">Enable if certified with benchmark disability</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.hasDisability)}
+                      onChange={(e) => setFormData({ ...formData, hasDisability: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                  </div>
+
+                  {formData.hasDisability && (
+                    <div className="pl-4 border-l-2 border-blue-500">
+                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Disability Percentage (%)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={formData.disabilityPercentage ?? 40}
+                        onChange={(e) => setFormData({ ...formData, disabilityPercentage: Number(e.target.value) })}
+                        className="w-32 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white text-xs font-bold"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-gray-900 dark:text-white text-xs block">{t('isRegisteredWorker', 'Registered Construction / Unorganized Worker')}</span>
+                      <span className="text-[11px] text-gray-500">Eligible for e-Shram / BOCW welfare boards</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.isRegisteredWorker)}
+                      onChange={(e) => setFormData({ ...formData, isRegisteredWorker: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      onNavigateTab('wizard');
+                    }}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> {t('useGuidedWizard', 'Prefer Step-by-Step Guided Wizard? Click here')}
+                  </button>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditModalOpen(false)}
+                      className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-200 transition"
+                    >
+                      {t('cancel', 'Cancel')}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1 sm:flex-initial px-6 py-2 rounded-xl bg-[#1769FF] hover:bg-blue-700 text-white font-bold text-xs shadow flex items-center justify-center gap-2 transition disabled:opacity-50"
+                    >
+                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      <span>{isSubmitting ? t('saving', 'Saving...') : t('saveChanges', 'Save Changes')}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

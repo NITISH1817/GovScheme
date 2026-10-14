@@ -111,11 +111,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     setMessages(prev => [...prev, initialAiMsg]);
 
     try {
-      const response = await fetch('http://localhost:5000/api/ai/stream', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const authToken = localStorage.getItem('govscheme_token') || localStorage.getItem('token') || '';
+      const response = await fetch(`${API_URL}/api/ai/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
         },
         body: JSON.stringify({ message: text })
       }).catch(() => null); // Catch network errors and fallback
@@ -137,7 +139,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               try {
                 const data = JSON.parse(line.slice(6));
                 if (data.error) {
-                  fullText = "I encountered an error connecting to the AI.";
+                  fullText = `AI Provider Notice: ${data.error} (Using local verified scheme dataset).`;
                   break;
                 }
                 if (data.done) {
@@ -156,7 +158,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           }
         }
       } else {
-        // Fallback Local AI Generation Engine
+        // Fallback Grounded Scheme Knowledge Engine
         const lowerText = text.toLowerCase();
         let matchedSchemes = schemes.filter(s => lowerText.includes(s.category.toLowerCase().split(' ')[0]) || lowerText.includes(s.name.toLowerCase()));
         
@@ -170,7 +172,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           }
         }
 
-        const generatedResponse = `Based on your query, here is what I found:\n\n${matchedSchemes.length > 0 ? `I recommend looking into ${matchedSchemes[0].name}. ${matchedSchemes[0].shortDescription}` : 'I could not find a specific scheme for that, but I recommend checking the discovery portal for more categories.'}\n\nYou can also provide your specific requirements or documents, and I'll find more accurate matches.`;
+        const generatedResponse = `[Grounded Knowledge Engine • AI Provider Notice: Live AI service unavailable, grounded in verified local scheme database]\n\nBased on your query, here is what I found in the scheme records:\n\n${matchedSchemes.length > 0 ? `• ${matchedSchemes[0].name}: ${matchedSchemes[0].shortDescription}` : 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.'}\n\n*Note: Official scheme eligibility is always determined by deterministic rules.*`;
         
         // Stream effect simulation
         const words = generatedResponse.split(' ');
@@ -179,7 +181,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           setMessages(prev => prev.map(m => 
             m.id === aiMsgId ? { ...m, text: fullText } : m
           ));
-          await new Promise(r => setTimeout(r, 50));
+          await new Promise(r => setTimeout(r, 20));
         }
       }
 

@@ -18,7 +18,8 @@ import {
   Rocket,
   IndianRupee,
   Monitor,
-  Shield
+  Shield,
+  Sparkles
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, useAnimation, useMotionValue, useSpring } from 'framer-motion';
@@ -33,6 +34,7 @@ interface LandingPageProps {
   onSelectCategory?: (category: string) => void;
   topSchemes: Scheme[];
   user: UserProfile | null;
+  onLiveDemo?: () => void;
 }
 
 // Magnetic Button Component
@@ -91,7 +93,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateTab,
   onSelectCategory,
   topSchemes,
-  user
+  user,
+  onLiveDemo
 }) => {
   const { t } = useTranslation();
   
@@ -277,10 +280,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </motion.p>
 
                 {/* Primary Action Buttons */}
-                <motion.div variants={itemVariants} className="pt-6 flex flex-col sm:flex-row items-center gap-4 w-full md:justify-start justify-center">
+                <motion.div variants={itemVariants} className="pt-6 flex flex-wrap items-center gap-4 w-full md:justify-start justify-center">
                   <MagneticButton
                     onClick={() => onGetStarted('wizard')}
-                    className="group relative overflow-hidden rounded-full bg-gov-navy dark:bg-white p-2 flex items-center justify-between shadow-2xl w-full sm:w-auto min-w-[280px]"
+                    className="group relative overflow-hidden rounded-full bg-gov-navy dark:bg-white p-2 flex items-center justify-between shadow-2xl w-full sm:w-auto min-w-[260px]"
                   >
                     <span className="text-white dark:text-black font-bold text-lg pl-6 pr-4">
                       {t('getStarted', 'Check My Eligibility')}
@@ -292,7 +295,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                   <MagneticButton
                     onClick={() => onGetStarted('life-event')}
-                    className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[200px]"
+                    className="group relative overflow-hidden rounded-full bg-white dark:bg-[#111827] p-2 flex items-center justify-between shadow-lg border border-gov-border dark:border-white/10 w-full sm:w-auto min-w-[190px]"
                   >
                     <span className="text-gov-navy dark:text-white font-bold text-lg pl-6 pr-6 w-full text-center">
                       {t('lifeEventMode', 'Life Event Mode')}
@@ -301,11 +304,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                   <MagneticButton
                     onClick={() => onNavigateTab('kiosk')}
-                    className="group relative overflow-hidden rounded-full bg-amber-500/10 dark:bg-amber-400/10 hover:bg-amber-500/20 p-2 flex items-center justify-between shadow-lg border border-amber-500/30 w-full sm:w-auto min-w-[200px]"
+                    className="group relative overflow-hidden rounded-full bg-amber-500/10 dark:bg-amber-400/10 hover:bg-amber-500/20 p-2 flex items-center justify-between shadow-lg border border-amber-500/30 w-full sm:w-auto min-w-[190px]"
                   >
                     <span className="text-amber-800 dark:text-amber-300 font-bold text-lg pl-6 pr-6 w-full text-center flex items-center justify-center gap-2">
                       <Monitor className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       {t('navKiosk', 'CSC Kiosk Mode')}
+                    </span>
+                  </MagneticButton>
+
+                  <MagneticButton
+                    onClick={() => (onLiveDemo ? onLiveDemo() : onNavigateTab('schemes'))}
+                    className="group relative overflow-hidden rounded-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 flex items-center justify-between shadow-lg border border-emerald-500 w-full sm:w-auto min-w-[170px]"
+                  >
+                    <span className="font-bold text-lg pl-6 pr-6 w-full text-center flex items-center justify-center gap-2">
+                      <Sparkles className="w-5 h-5 text-amber-300" />
+                      {t('liveDemo', 'Live Demo')}
                     </span>
                   </MagneticButton>
                 </motion.div>

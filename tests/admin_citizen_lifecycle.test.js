@@ -474,10 +474,17 @@ async function runLifecycleTests() {
       Document.deleteMany({ documentId: { $in: [`DOC-${testStamp}`, `DOC-OTHER-${testStamp}`] } })
     ]);
     server.close();
+    try {
+      await mongoose.connection.close();
+    } catch {}
   }
 }
 
-runLifecycleTests().catch((err) => {
-  console.error('\n[LIFECYCLE TEST FAILURE]:', err);
-  process.exit(1);
-});
+runLifecycleTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('\n[LIFECYCLE TEST FAILURE]:', err);
+    process.exit(1);
+  });

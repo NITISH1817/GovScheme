@@ -96,6 +96,7 @@ export const App: React.FC = () => {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   
   const [isBooting, setIsBooting] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
 
   // Sync theme & accessibility font sizing onto html tag
   useEffect(() => {
@@ -107,8 +108,6 @@ export const App: React.FC = () => {
     } else if (theme === 'high-contrast') {
       root.classList.add('high-contrast');
     }
-
-    localStorage.setItem('theme', theme);
 
     localStorage.setItem('theme', theme);
     localStorage.setItem('textSize', textSize);
@@ -133,16 +132,16 @@ export const App: React.FC = () => {
     document.documentElement.lang = currentLang;
   }, [currentLang, i18n]);
 
-  // Save user to localStorage whenever it changes
+  // Save user to localStorage whenever it changes (safely skipped in Demo Mode)
   useEffect(() => {
-    if (user) {
+    if (user && !isDemoMode) {
       localStorage.setItem('govscheme_user', JSON.stringify(user));
     }
-  }, [user]);
+  }, [user, isDemoMode]);
 
   // Protected Routes Logic
   useEffect(() => {
-    const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'report', 'tracker'];
+    const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'report', 'tracker', 'settings'];
     if (!isBooting && protectedTabs.includes(activeTab) && !user) {
       setActiveTab('home');
       setIsAuthOpen(true);
@@ -176,6 +175,10 @@ export const App: React.FC = () => {
         break;
       case 'profile':
         title = 'My Profile | GovScheme AI';
+        break;
+      case 'settings':
+        title = 'Settings & Preferences | GovScheme AI';
+        metaDesc = 'Manage display, language, notifications, privacy, and account preferences.';
         break;
       case 'report':
         title = 'Citizen Assessment & AI Report Printer | GovScheme AI';
@@ -577,6 +580,50 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleStartLiveDemo = () => {
+    const demoProfile: UserProfile = {
+      id: 'demo-citizen-preview',
+      _id: 'demo-citizen-preview',
+      fullName: 'Ramesh Kumar (Demo Profile)',
+      email: 'demo.citizen@govscheme.preview',
+      phone: '+91 98765 43210',
+      role: 'citizen',
+      age: 38,
+      gender: 'Male',
+      maritalStatus: 'married',
+      state: 'Tamil Nadu',
+      district: 'Thanjavur',
+      occupation: 'farmer',
+      annualIncome: 140000,
+      category: 'OBC',
+      educationLevel: '10th Pass',
+      landHoldingAcres: 2.5,
+      familyMembersCount: 4,
+      hasDisability: false,
+      isRegisteredWorker: true,
+      verificationBadge: true,
+      profileCompletionScore: 100,
+      savedSchemeIds: [],
+      documents: [],
+      onboardingCompleted: true,
+      createdAt: new Date().toISOString()
+    };
+    setIsDemoMode(true);
+    setUser(demoProfile);
+    setActiveTab('schemes');
+  };
+
+  const handleExitLiveDemo = () => {
+    setIsDemoMode(false);
+    try {
+      const saved = localStorage.getItem('govscheme_user');
+      setUser(saved ? JSON.parse(saved) : null);
+    } catch {
+      setUser(null);
+    }
+    setActiveTab('home');
+  };
+
   const handleStartVoiceCommand = () => {
     setIsListeningGlobalVoice(true);
     startVoiceListening(
@@ -620,7 +667,10 @@ export const App: React.FC = () => {
           setKioskProfile(profile);
           setActiveTab('kiosk-report');
         }}
-        onExit={() => setActiveTab('home')}
+        onExit={() => {
+          setKioskProfile(null);
+          setActiveTab('home');
+        }}
       />
     );
   }
@@ -646,7 +696,10 @@ export const App: React.FC = () => {
         }}
         profile={activeKioskProfile} 
         schemes={schemes} 
-        onBack={() => setActiveTab('kiosk')} 
+        onBack={() => {
+          setKioskProfile(null);
+          setActiveTab('kiosk');
+        }} 
       />
     );
   }
@@ -730,7 +783,24 @@ export const App: React.FC = () => {
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onStartVoiceCommand={handleStartVoiceCommand}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onLiveDemo={handleStartLiveDemo}
       />
+
+      {/* Demo Mode Notice Banner */}
+      {isDemoMode && (
+        <div className="bg-amber-600 dark:bg-amber-700 text-white py-2 px-4 text-xs font-bold flex items-center justify-between z-40 sticky top-16 shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold">Demo Mode Active</span>
+            <span>Interactive Synthetic Citizen Experience • Production Database Untouched</span>
+          </div>
+          <button
+            onClick={handleExitLiveDemo}
+            className="bg-white text-amber-900 px-3 py-1 rounded-full text-xs font-extrabold hover:bg-amber-100 transition-colors shadow-sm"
+          >
+            Exit Demo
+          </button>
+        </div>
+      )}
 
       {/* Dynamic Tab Body Content */}
       <main className="flex-1 pt-20">
@@ -763,6 +833,7 @@ export const App: React.FC = () => {
             }}
             topSchemes={schemes}
             user={user}
+            onLiveDemo={handleStartLiveDemo}
           />
         )}
 
@@ -925,8 +996,31 @@ export const App: React.FC = () => {
           />
         )}
 
+        {activeTab === 'settings' && user && (
+          <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-4">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('settings', 'Settings & Preferences')}</h2>
+            <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">{t('settingsDesc', 'Configure display, language, notifications, and security controls.')}</p>
+            <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition"
+              >
+                {t('openSettingsDrawer', 'Open Settings Drawer')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('profile')}
+                className="px-6 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-bold rounded-xl transition"
+              >
+                {t('backToProfile', 'Back to Profile')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 404 Not Found Page */}
-        {!['home', 'wizard', 'analyzing', 'schemes', 'assistant', 'vault', 'tracker', 'profile', 'report', 'kiosk', 'kiosk-report', 'admin'].includes(activeTab) && (
+        {!['home', 'wizard', 'analyzing', 'schemes', 'assistant', 'vault', 'tracker', 'profile', 'report', 'kiosk', 'kiosk-report', 'admin', 'settings'].includes(activeTab) && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
             <div className="text-9xl font-bold text-gray-200 dark:text-gray-800 mb-4">404</div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Page Not Found</h2>
@@ -1035,8 +1129,13 @@ export const App: React.FC = () => {
             setUser(updated);
           }}
           onLogout={() => setLogoutConfirmOpen(true)}
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
+          isOpen={isSettingsOpen || activeTab === 'settings'}
+          onClose={() => {
+            setIsSettingsOpen(false);
+            if (activeTab === 'settings') {
+              setActiveTab('profile');
+            }
+          }}
         />
       )}
 

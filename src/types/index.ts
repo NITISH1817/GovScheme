@@ -62,8 +62,10 @@ export interface DocumentRecord {
 
 export interface UserProfile {
   id: string;
+  _id?: string;
   fullName: string;
-  mobile: string;
+  mobile?: string;
+  phone?: string;
   email: string;
   age: number;
   gender: TargetGender;
@@ -87,6 +89,8 @@ export interface UserProfile {
   documents: DocumentRecord[];
   role?: string;
   token?: string;
+  onboardingCompleted?: boolean;
+  createdAt?: string;
 }
 
 export interface EligibilityRules {
