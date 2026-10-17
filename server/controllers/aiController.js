@@ -6,7 +6,7 @@ import { schemesData } from '../../src/data/schemes.ts';
 const buildGroundedPrompt = (message) => {
   const schemes = schemesData;
   const context = `You are the official GovScheme AI Assistant. You help Indian citizens discover and understand government welfare schemes.
-Ground all scheme responses strictly on the verified schemes in our database:
+Ground all scheme responses strictly on the published portal-curated schemes in our database:
 ${schemes.slice(0, 30).map(s => `- ${s.name} (${s.category}, ${s.state}): ${s.shortDescription}`).join('\n')}
 
 Instructions:
@@ -32,8 +32,8 @@ export const chatWithAI = async (req, res) => {
       const lower = message.toLowerCase();
       const matched = schemesData.filter(s => lower.includes(s.name.toLowerCase()) || lower.includes(s.category.toLowerCase()));
       const reply = matched.length > 0
-        ? `[Grounded Knowledge Engine • Provider Notice: API Key Not Set]\n\nVerified Scheme: ${matched[0].name}\nBenefits: ${matched[0].benefitsSummary || matched[0].shortDescription}\nOfficial Portal: ${matched[0].officialWebsite || 'https://india.gov.in'}`
-        : 'Please explore our verified schemes catalog for full eligibility details.';
+        ? `[Grounded Knowledge Engine • Provider Notice: API Key Not Set]\n\nPublished Scheme (Official Portal Sourced): ${matched[0].name}\nBenefits: ${matched[0].benefitsSummary || matched[0].shortDescription}\nOfficial Portal: ${matched[0].officialWebsite || 'https://india.gov.in'}`
+        : 'Please explore our published schemes catalog for full eligibility details.';
       return res.json({ success: true, reply, provider: 'offline_grounded' });
     }
 
@@ -58,7 +58,7 @@ export const chatWithAI = async (req, res) => {
       const lower = message.toLowerCase();
       const matched = schemesData.filter(s => lower.includes(s.name.toLowerCase()) || lower.includes(s.category.toLowerCase()));
       reply = matched.length > 0
-        ? `[Grounded Knowledge Engine • AI Provider Busy]\n\nVerified Scheme: ${matched[0].name}\nDetails: ${matched[0].shortDescription}\nEligibility Rules apply.`
+        ? `[Grounded Knowledge Engine • AI Provider Busy]\n\nPublished Scheme: ${matched[0].name}\nDetails: ${matched[0].shortDescription}\nEligibility Rules apply.`
         : 'The AI provider is currently experiencing temporary high demand. Please consult the schemes catalog directly.';
       return res.json({ success: true, reply, provider: 'offline_grounded_fallback' });
     }
@@ -97,7 +97,7 @@ export const streamChatWithAI = async (req, res) => {
     if (res.flushHeaders) res.flushHeaders(); 
 
     if (!process.env.GEMINI_API_KEY) {
-      const errorMsg = "[Grounded Notice] GEMINI_API_KEY is not configured on the server. Responses are grounded in local verified scheme records.";
+      const errorMsg = "[Grounded Notice] GEMINI_API_KEY is not configured on the server. Responses are grounded in local published scheme records.";
       res.write(`data: ${JSON.stringify({ text: errorMsg })}\n\n`);
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       return res.end();
@@ -130,7 +130,7 @@ export const streamChatWithAI = async (req, res) => {
       const lower = message.toLowerCase();
       const matched = schemesData.filter(s => lower.includes(s.name.toLowerCase()) || lower.includes(s.category.toLowerCase()));
       const fallbackReply = matched.length > 0
-        ? `[Grounded Knowledge Engine • AI Cloud Stream Busy]\n\nVerified Scheme: ${matched[0].name}\nOverview: ${matched[0].shortDescription}\nApply on: ${matched[0].officialWebsite || 'https://india.gov.in'}`
+        ? `[Grounded Knowledge Engine • AI Cloud Stream Busy]\n\nPublished Scheme: ${matched[0].name}\nOverview: ${matched[0].shortDescription}\nApply on: ${matched[0].officialWebsite || 'https://india.gov.in'}`
         : '[Grounded Knowledge Engine] The cloud AI service is experiencing high temporary demand (503). Scheme records remain accessible on the Discover Schemes page.';
       res.write(`data: ${JSON.stringify({ text: fallbackReply })}\n\n`);
     }

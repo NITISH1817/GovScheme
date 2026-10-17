@@ -5,14 +5,27 @@ import Scheme from '../models/Scheme.js';
 // @access  Public (Citizen) & Private (Admin)
 export const getSchemes = async (req, res) => {
   try {
-    const { state, category, q, status, department, page = 1, limit = 20, sort = '-createdAt' } = req.query;
+    const { state, category, q, status, department, verificationStatus, page = 1, limit = 20, sort = '-createdAt' } = req.query;
     
     let filter = {};
     
-    if (req.user && (req.user.role === 'Super Admin' || req.user.role === 'NodalOfficer')) {
+    const isAdmin = req.user && (
+      req.user.role === 'Super Admin' ||
+      req.user.role === 'NodalOfficer' ||
+      req.user.role === 'Ministry Admin' ||
+      req.user.role === 'State Admin' ||
+      req.user.role === 'District Officer'
+    );
+
+    if (isAdmin) {
       if (status && status !== 'All') filter.status = status;
     } else {
       filter.status = 'Published';
+      filter.activeStatus = { $ne: false };
+    }
+
+    if (verificationStatus && verificationStatus !== 'All') {
+      filter.verificationStatus = verificationStatus;
     }
 
     if (state && state !== 'All') {
@@ -52,7 +65,20 @@ export const getSchemes = async (req, res) => {
 // @access  Private (Admin)
 export const createScheme = async (req, res) => {
   try {
-    const schemeData = { ...req.body, id: req.body.id || `SCHEME-${Date.now()}` };
+    const schemeData = {
+      ...req.body,
+      id: req.body.id || `SCHEME-${Date.now()}`,
+      status: req.body.status || 'Draft',
+      verificationStatus: req.body.verificationStatus || (req.body.officialWebsite ? 'PORTAL_CURATED' : 'PENDING')
+    };
+
+    if (schemeData.verificationStatus === 'OFFICIALLY_VERIFIED' && !schemeData.verificationEvidence) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot mark scheme as OFFICIALLY_VERIFIED without documented verificationEvidence from issuing authority.'
+      });
+    }
+
     const newScheme = new Scheme(schemeData);
     await newScheme.save();
     
@@ -82,6 +108,23 @@ export const updateScheme = async (req, res) => {
     }
     if (updateData.officialApplyUrl && !updateData.officialApplicationUrl) {
       updateData.officialApplicationUrl = updateData.officialApplyUrl;
+    }
+
+    // Role and evidence check for official verification
+    if (updateData.verificationStatus === 'OFFICIALLY_VERIFIED' && !updateData.verificationEvidence) {
+      // Check if existing record already has evidence
+      const existing = await Scheme.findOne({ $or: [{ _id: req.params.id }, { id: req.params.id }] });
+      if (!existing || !existing.verificationEvidence) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot mark scheme as OFFICIALLY_VERIFIED without documented verificationEvidence from issuing authority.'
+        });
+      }
+    }
+
+    if (updateData.verificationStatus === 'ADMIN_VERIFIED') {
+      updateData.verifiedBy = req.user ? req.user._id : undefined;
+      updateData.lastVerifiedAt = new Date();
     }
 
     let updated = await Scheme.findByIdAndUpdate(req.params.id, updateData, { new: true, returnDocument: 'after', runValidators: true }).catch(() => null);
@@ -293,9 +336,10 @@ export const recommendSchemes = async (req, res) => {
     profile = profile || {};
     const filters = req.body.filters || {};
 
-    // Pull active published schemes
+    // Pull active published schemes (strictly excludes Draft, Suspended, or Inactive schemes)
     const schemes = await Scheme.find({
-      $or: [{ activeStatus: true }, { status: 'Published' }]
+      status: 'Published',
+      activeStatus: { $ne: false }
     });
 
     const results = recommendSchemesForProfile(schemes, profile, filters);

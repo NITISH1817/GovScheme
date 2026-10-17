@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 
+export const SCHEME_VERIFICATION_STATUSES = [
+  'UNVERIFIED',
+  'PENDING',
+  'PORTAL_CURATED',
+  'ADMIN_VERIFIED',
+  'OFFICIALLY_VERIFIED',
+  'Verified' // Retained for backwards compatibility with legacy documents
+];
+
 const SchemeSchema = new mongoose.Schema({
   schemeId: { 
     type: String, 
@@ -102,13 +111,30 @@ const SchemeSchema = new mongoose.Schema({
   helpline: { type: String },
 
   sourceUrl: { type: String, required: true },
+  curationSource: { type: String, default: 'Official Government Portal' },
   lastVerifiedAt: { type: Date, default: Date.now },
   verificationStatus: { 
     type: String, 
-    default: 'Verified' 
+    enum: [
+      'UNVERIFIED',
+      'PENDING',
+      'PORTAL_CURATED',
+      'ADMIN_VERIFIED',
+      'OFFICIALLY_VERIFIED',
+      'Verified' // Retained for backwards compatibility with legacy documents
+    ],
+    default: 'PORTAL_CURATED',
+    index: true
   },
+  verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  verificationEvidence: { type: String },
   activeStatus: { type: Boolean, default: true, index: true },
-  status: { type: String, default: 'Published' },
+  status: {
+    type: String,
+    enum: ['Draft', 'Published', 'Archived', 'Suspended'],
+    default: 'Published',
+    index: true
+  },
   keywords: [{ type: String }],
   tags: [{ type: String }],
 

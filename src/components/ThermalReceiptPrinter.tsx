@@ -375,7 +375,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
       doc.text(disclaimer, pageWidth / 2, y, { align: 'center' });
       y += 4;
       doc.setFont('helvetica', 'bold');
-      doc.text(`*${reportData.reportId}* • CSC DIGITAL SEVA VERIFIED`, pageWidth / 2, y, { align: 'center' });
+      doc.text(`*${reportData.reportId}* • CSC DIGITAL SEVA ADVISORY REPORT`, pageWidth / 2, y, { align: 'center' });
 
       doc.save(`GovScheme_A4_Eligibility_Report_${reportData.reportId || 'Assessment'}.pdf`);
     } catch (err) {
@@ -1238,13 +1238,13 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '2px dashed #0284c7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '4px' }}>
               <div style={{ fontSize: '7px', fontWeight: 900, color: '#0284c7', textTransform: 'uppercase' }}>CSC SEVA</div>
-              <div style={{ fontSize: '6px', color: '#64748b' }}>VERIFIED</div>
-              <div style={{ fontSize: '6px', fontWeight: 700, color: '#16a34a' }}>CERTIFIED</div>
+              <div style={{ fontSize: '6px', color: '#64748b' }}>ASSESSED</div>
+              <div style={{ fontSize: '6px', fontWeight: 700, color: '#16a34a' }}>REPORT</div>
             </div>
             <div style={{ fontSize: '9px', color: '#475569' }}>
-              <div style={{ fontWeight: 800, color: '#0f172a' }}>{t('cscSevaCertified', 'CSC Digital Seva Certified Output')}</div>
+              <div style={{ fontWeight: 800, color: '#0f172a' }}>{t('cscSevaCertified', 'CSC Digital Seva Advisory Output')}</div>
               <div>E-Governance Services India Limited</div>
-              <div>Unique Verification Hash: <span style={{ fontFamily: 'monospace' }}>GS-{reportData.reportId.slice(-4)}-VERIFIED</span></div>
+              <div>Unique Assessment Hash: <span style={{ fontFamily: 'monospace' }}>GS-{reportData.reportId.slice(-4)}-ADVISORY</span></div>
             </div>
           </div>
 
@@ -1271,7 +1271,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
           {/* Authorized Signature Block */}
           <div style={{ textAlign: 'right', minWidth: '180px' }}>
             <div style={{ borderBottom: '1px solid #0f172a', paddingBottom: '4px', marginBottom: '4px', fontStyle: 'italic', color: '#0369a1', fontWeight: 700, fontSize: '11px' }}>
-              GovScheme AI / Verification Authority
+              GovScheme AI / Advisory Assessment Engine
             </div>
             <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#0f172a' }}>
               {t('authorizedSignature', 'Authorized Officer Signature')}

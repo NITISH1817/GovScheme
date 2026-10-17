@@ -335,9 +335,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <motion.div variants={itemVariants} className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-4 w-full border-t border-gov-border mt-4">
               {[
                 { icon: Search, label: t('Schemes Available'), value: topSchemes.length > 0 ? `${topSchemes.length}+` : '4000+', color: 'text-gov-blue' },
-                { icon: ShieldCheck, label: t('Central & State Schemes'), value: t('Verified'), color: 'text-gov-green' },
+                { icon: ShieldCheck, label: t('Central & State Schemes'), value: t('Curated', 'Curated'), color: 'text-gov-green' },
                 { icon: UserCheck, label: t('Personalized Eligibility'), value: t('AI Match'), color: 'text-gov-saffron' },
-                { icon: CheckCircle2, label: t('Official Scheme Sources'), value: t('100% Authentic'), color: 'text-gov-navy' }
+                { icon: CheckCircle2, label: t('Official Scheme Sources'), value: t('Official Portals', 'Official Portals'), color: 'text-gov-navy' }
               ].map((stat, i) => (
                 <div key={i} className="flex flex-col items-center space-y-3 group">
                   <div className={`p-3 rounded-full bg-gray-50 group-hover:bg-gray-100 transition-colors ${stat.color}`}>

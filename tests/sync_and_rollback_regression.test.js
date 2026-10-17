@@ -179,6 +179,9 @@ async function runSyncAndRollbackRegressionSuite() {
     if (kisan.status !== 'Published' || kisan.activeStatus !== true) {
       throw new Error('PM-KISAN not set to Published / activeStatus=true');
     }
+    if (kisan.verificationStatus !== 'PORTAL_CURATED') {
+      throw new Error(`PM-KISAN verificationStatus must be PORTAL_CURATED, got ${kisan.verificationStatus}`);
+    }
 
     const educationScheme = await Scheme.findOne({ id: 'edu-tn-tamil-puthalvan' });
     if (!educationScheme || !educationScheme.eligibilityRules) {
@@ -187,7 +190,10 @@ async function runSyncAndRollbackRegressionSuite() {
     if (educationScheme.status !== 'Published') {
       throw new Error('edu-tn-tamil-puthalvan not published');
     }
-    console.log('✓ Canonical schemes contain complete nested eligibilityRules and Published status.\n');
+    if (educationScheme.verificationStatus !== 'PORTAL_CURATED') {
+      throw new Error(`edu-tn-tamil-puthalvan verificationStatus must be PORTAL_CURATED, got ${educationScheme.verificationStatus}`);
+    }
+    console.log('✓ Canonical schemes contain complete nested eligibilityRules, Published status, and honest PORTAL_CURATED verification status.\n');
 
     // --- STEP 6: Execute Surgical Rollback ---
     console.log('--- PHASE 6: Surgical Rollback Verification (Using Sync Manifest) ---');

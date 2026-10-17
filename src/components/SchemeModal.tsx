@@ -392,7 +392,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <Check className="w-4 h-4 text-green-700 dark:text-green-300" />
               </div>
               <div>
-                <div className="text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider">{t('officialVerified', 'Verified Official Source')}</div>
+                <div className="text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider">{t('officialSourceCompiled', 'Official Source Portal')}</div>
                 <div className="text-sm text-green-700 dark:text-green-400 font-medium truncate max-w-[200px]" title={scheme.officialApplyUrl}>
                   {scheme.officialApplyUrl ? new URL(scheme.officialApplyUrl).hostname : t('govtPortal', 'Govt Portal')}
                 </div>
