@@ -2,9 +2,11 @@ import { UserProfile, Scheme, RuleEvaluationResult, MLRecommendationResult } fro
 import i18n from '../i18n';
 
 /**
- * Machine Learning Recommendation Scoring & Personalization Engine
- * Note: ML enhances ranking, preference matching, explainability, and related scheme recommendation.
- * Legal eligibility remains strictly enforced by the Rule Engine.
+ * Rule-Based Weighted Affinity & Personalization Scoring Engine
+ * Note: This ranking engine uses deterministic rule-based weights, demographic affinity,
+ * and category matching heuristics to score and rank schemes. It is a deterministic rule-based
+ * engine and does not claim to use a trained machine learning neural network.
+ * Legal eligibility remains strictly enforced by evaluateSchemeEligibility.
  */
 export function computeMLRecommendation(
   user: UserProfile,

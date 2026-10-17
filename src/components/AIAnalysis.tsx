@@ -1,18 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { GovSchemeLogoLoader } from './brand';
+import { UserProfile, Scheme } from '../types';
+import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 
 interface AIAnalysisProps {
+  user?: UserProfile | null;
+  schemes?: Scheme[];
   onComplete: () => void;
 }
 
-export const AIAnalysis: React.FC<AIAnalysisProps> = ({ onComplete }) => {
+export const AIAnalysis: React.FC<AIAnalysisProps> = ({ user, schemes = [], onComplete }) => {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [schemesFound, setSchemesFound] = useState(0);
+
+  // Dynamically calculate matching schemes count for this citizen profile
+  const targetCount = useMemo(() => {
+    if (!user || !schemes || schemes.length === 0) return 0;
+    return schemes.filter(scheme => {
+      const res = evaluateSchemeEligibility(user, scheme);
+      return res.status === 'Eligible' || res.status === 'Conditionally Eligible';
+    }).length;
+  }, [user, schemes]);
 
   const steps = [
     { label: t("YOUR PROFILE", "YOUR PROFILE"), text: t("Profile analyzed", "Profile analyzed") },
@@ -24,6 +37,7 @@ export const AIAnalysis: React.FC<AIAnalysisProps> = ({ onComplete }) => {
 
   useEffect(() => {
     let stepTimer: NodeJS.Timeout | undefined;
+    let counterInterval: NodeJS.Timeout | undefined;
     
     const runSteps = async () => {
       for (let i = 0; i < steps.length; i++) {
@@ -34,20 +48,29 @@ export const AIAnalysis: React.FC<AIAnalysisProps> = ({ onComplete }) => {
       await new Promise(resolve => setTimeout(resolve, 600));
       setShowResults(true);
       
+      if (targetCount <= 0) {
+        setSchemesFound(0);
+        return;
+      }
+
       let count = 0;
-      const counterInterval = setInterval(() => {
+      const stepDuration = Math.max(10, Math.min(50, Math.floor(1000 / targetCount)));
+      counterInterval = setInterval(() => {
         count += 1;
         setSchemesFound(count);
-        if (count >= 18) {
+        if (count >= targetCount) {
           clearInterval(counterInterval);
         }
-      }, 50);
+      }, stepDuration);
     };
     
     runSteps();
     
-    return () => clearTimeout(stepTimer);
-  }, [steps.length]);
+    return () => {
+      clearTimeout(stepTimer);
+      if (counterInterval) clearInterval(counterInterval);
+    };
+  }, [steps.length, targetCount]);
 
   return (
     <div className="relative min-h-[70vh] flex items-center justify-center py-20 bg-white dark:bg-[#07111F]">

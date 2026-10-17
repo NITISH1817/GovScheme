@@ -974,6 +974,8 @@ export const App: React.FC = () => {
 
         {activeTab === 'analyzing' && (
           <AIAnalysis
+            user={user}
+            schemes={schemes}
             onComplete={() => setActiveTab('schemes')}
           />
         )}

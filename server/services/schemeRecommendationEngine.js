@@ -2,30 +2,94 @@
 // Modules 8 & 9: Deterministic Government Scheme Eligibility Matching & Recommendation Engine
 // Accurately evaluates candidate schemes against confirmed user attributes without false exclusions.
 
-export function evaluateSchemeEligibility(scheme, profile) {
-  // profile: {
-  //   age: number | null,
-  //   gender: string | null, // 'Male', 'Female', 'Transgender', 'Other'
-  //   income: number | null,
-  //   state: string | null,
-  //   district: string | null,
-  //   occupation: string | null,
-  //   socialCategory: string | null, // 'General', 'OBC', 'SC', 'ST', 'Minority', 'BC', 'MBC', 'DNC'
-  //   education: string | null,
-  //   isStudent: boolean | null,
-  //   isFarmer: boolean | null,
-  //   isDifferentlyAbled: boolean | null,
-  //   isFirstGraduate: boolean | null,
-  //   landHoldingAcres: number | null
-  // }
+export function normalizeProfile(rawProfile = {}) {
+  if (!rawProfile || typeof rawProfile !== 'object') {
+    return {
+      age: null,
+      gender: null,
+      income: null,
+      annualIncome: null,
+      state: null,
+      district: null,
+      occupation: null,
+      socialCategory: null,
+      category: null,
+      education: null,
+      educationLevel: null,
+      isStudent: null,
+      isFarmer: null,
+      isDifferentlyAbled: null,
+      hasDisability: null,
+      isFirstGraduate: null,
+      landHoldingAcres: null
+    };
+  }
+
+  const p = rawProfile;
+  const rawAge = p.age !== undefined && p.age !== null && p.age !== '' ? Number(p.age) : null;
+  const age = rawAge !== null && !isNaN(rawAge) ? rawAge : null;
+
+  const rawIncome = p.income !== undefined && p.income !== null && p.income !== ''
+    ? Number(p.income)
+    : (p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? Number(p.annualIncome) : null);
+  const income = rawIncome !== null && !isNaN(rawIncome) ? rawIncome : null;
+
+  const rawLand = p.landHoldingAcres !== undefined && p.landHoldingAcres !== null && p.landHoldingAcres !== ''
+    ? Number(p.landHoldingAcres)
+    : null;
+  const landHoldingAcres = rawLand !== null && !isNaN(rawLand) ? rawLand : null;
+
+  const occupation = p.occupation ? String(p.occupation).trim() : null;
+  const occLower = occupation ? occupation.toLowerCase() : '';
+
+  const isStudent = p.isStudent !== undefined && p.isStudent !== null
+    ? Boolean(p.isStudent)
+    : (occLower ? occLower.includes('student') : null);
+
+  const isFarmer = p.isFarmer !== undefined && p.isFarmer !== null
+    ? Boolean(p.isFarmer)
+    : (occLower ? (occLower.includes('farmer') || occLower.includes('agriculture') || occLower.includes('cultivator')) : null);
+
+  const isDifferentlyAbled = p.isDifferentlyAbled !== undefined && p.isDifferentlyAbled !== null
+    ? Boolean(p.isDifferentlyAbled)
+    : (p.hasDisability !== undefined && p.hasDisability !== null ? Boolean(p.hasDisability) : null);
+
+  const socialCategory = p.socialCategory ? String(p.socialCategory).trim() : (p.category ? String(p.category).trim() : null);
+  const education = p.education ? String(p.education).trim() : (p.educationLevel ? String(p.educationLevel).trim() : null);
+
+  return {
+    ...p,
+    age,
+    gender: p.gender ? String(p.gender).trim() : null,
+    income,
+    annualIncome: income,
+    state: p.state ? String(p.state).trim() : null,
+    district: p.district ? String(p.district).trim() : null,
+    occupation,
+    socialCategory,
+    category: socialCategory,
+    education,
+    educationLevel: education,
+    isStudent,
+    isFarmer,
+    isDifferentlyAbled,
+    hasDisability: isDifferentlyAbled,
+    isFirstGraduate: p.isFirstGraduate !== undefined && p.isFirstGraduate !== null ? Boolean(p.isFirstGraduate) : null,
+    landHoldingAcres
+  };
+}
+
+export function evaluateSchemeEligibility(scheme, rawProfile) {
+  const profile = normalizeProfile(rawProfile);
+  const er = scheme.eligibilityRules || {};
 
   const satisfiedConditions = [];
   const failedConditions = [];
   const informationNeeded = [];
 
   // 1. Age Evaluation
-  const minAge = scheme.minimumAge ?? scheme.eligibilityRules?.minAge ?? 0;
-  const maxAge = scheme.maximumAge ?? scheme.eligibilityRules?.maxAge ?? 120;
+  const minAge = scheme.minimumAge ?? er.minAge ?? er.ageMin ?? 0;
+  const maxAge = scheme.maximumAge ?? er.maxAge ?? er.ageMax ?? 120;
 
   if (profile.age !== null && profile.age !== undefined && !isNaN(profile.age)) {
     if (profile.age >= minAge && profile.age <= maxAge) {
@@ -40,7 +104,7 @@ export function evaluateSchemeEligibility(scheme, profile) {
   }
 
   // 2. Income Evaluation
-  const rawLimit = scheme.incomeLimit ?? scheme.eligibilityRules?.incomeLimit;
+  const rawLimit = scheme.incomeLimit ?? er.maxAnnualIncome ?? er.incomeLimit;
   const incomeLimit = typeof rawLimit === "number" && rawLimit > 0 ? rawLimit : null;
 
   if (incomeLimit !== null) {
@@ -56,7 +120,7 @@ export function evaluateSchemeEligibility(scheme, profile) {
   }
 
   // 3. Gender Requirements
-  const rawGender = scheme.genderRequirements ?? scheme.eligibilityRules?.gender ?? ['All'];
+  const rawGender = scheme.genderRequirements ?? er.allowedGenders ?? er.gender ?? ['All'];
   const genderReqs = Array.isArray(rawGender) ? rawGender : [String(rawGender)];
   const isGenderRestricted = genderReqs.length > 0 && !genderReqs.some(g => ['all', 'any'].includes(g.toLowerCase()));
 
@@ -82,8 +146,10 @@ export function evaluateSchemeEligibility(scheme, profile) {
   }
 
   // 4. State / Nativity Requirements
-  const stateReqs = scheme.state ? [scheme.state] : (scheme.residenceRequirements?.states || []);
-  const isStateRestricted = scheme.governmentLevel === 'State' && stateReqs.length > 0 && !stateReqs.includes('All India');
+  const stateReqs = scheme.state && scheme.state !== 'Central' && scheme.state !== 'All'
+    ? [scheme.state]
+    : (er.allowedStates && er.allowedStates.length > 0 && !er.allowedStates.includes('All') ? er.allowedStates : (scheme.residenceRequirements?.states || []));
+  const isStateRestricted = (scheme.governmentLevel === 'State' || (scheme.state && scheme.state !== 'Central' && scheme.state !== 'All')) && stateReqs.length > 0 && !stateReqs.includes('All India');
 
   if (isStateRestricted) {
     if (profile.state) {
@@ -99,7 +165,8 @@ export function evaluateSchemeEligibility(scheme, profile) {
   }
 
   // 5. Social Category (SC/ST/OBC/MBC/BC/General)
-  const catReqs = Array.isArray(scheme.applicableSocialCategories) ? scheme.applicableSocialCategories : [String(scheme.applicableSocialCategories || 'All')];
+  const rawCats = scheme.applicableSocialCategories ?? er.allowedCategories ?? ['All'];
+  const catReqs = Array.isArray(rawCats) ? rawCats : [String(rawCats || 'All')];
   const isCatRestricted = catReqs.length > 0 && !catReqs.some(c => ['all', 'any'].includes(c.toLowerCase()));
 
   if (isCatRestricted) {
@@ -128,7 +195,7 @@ export function evaluateSchemeEligibility(scheme, profile) {
 
   // 6. Student Requirement
   const studentReq = scheme.studentRequirements;
-  const isStudentScheme = studentReq === "Yes" || (typeof studentReq === "object" && studentReq?.required === true) || scheme.category === 'Education';
+  const isStudentScheme = studentReq === "Yes" || (typeof studentReq === "object" && studentReq?.required === true) || scheme.category === 'Education' || scheme.category === 'Education & Skill' || (er.allowedOccupations && er.allowedOccupations.some(o => /student/i.test(o)));
   const effectiveIsStudent = profile.isStudent !== undefined && profile.isStudent !== null
     ? Boolean(profile.isStudent)
     : (profile.occupation ? profile.occupation.toLowerCase().includes('student') : null);
@@ -145,7 +212,7 @@ export function evaluateSchemeEligibility(scheme, profile) {
 
   // 7. Farmer Requirement
   const farmerReq = scheme.farmerRequirements;
-  const isFarmerScheme = farmerReq === "Yes" || (typeof farmerReq === "object" && farmerReq?.required === true) || scheme.category === 'Agriculture';
+  const isFarmerScheme = farmerReq === "Yes" || (typeof farmerReq === "object" && farmerReq?.required === true) || scheme.category === 'Agriculture' || scheme.category === 'Agriculture & Farmers' || (er.allowedOccupations && er.allowedOccupations.some(o => /farmer|cultivator/i.test(o)));
   const effectiveIsFarmer = profile.isFarmer !== undefined && profile.isFarmer !== null
     ? Boolean(profile.isFarmer)
     : (profile.occupation ? (profile.occupation.toLowerCase().includes('farmer') || profile.occupation.toLowerCase().includes('agriculture') || profile.occupation.toLowerCase().includes('cultivator')) : null);
@@ -161,7 +228,7 @@ export function evaluateSchemeEligibility(scheme, profile) {
   }
 
   // 8. Occupation Requirements (Canonical allowedOccupations / eligibleOccupations)
-  const rawOccupations = scheme.eligibleOccupations ?? scheme.eligibilityRules?.allowedOccupations ?? ['All'];
+  const rawOccupations = scheme.eligibleOccupations ?? er.allowedOccupations ?? ['All'];
   const occReqs = Array.isArray(rawOccupations) ? rawOccupations : [String(rawOccupations)];
   const isOccRestricted = occReqs.length > 0 && !occReqs.some(o => ['all', 'any'].includes(String(o).toLowerCase()));
 
@@ -187,9 +254,9 @@ export function evaluateSchemeEligibility(scheme, profile) {
     }
   }
 
-  // 8. Disability Requirement
+  // 9. Disability Requirement
   const disReq = scheme.disabilityRequirements;
-  const isDisabilityScheme = disReq === "Yes" || (typeof disReq === "string" && disReq.toLowerCase().startsWith('yes')) || (typeof disReq === "object" && disReq?.required === true);
+  const isDisabilityScheme = disReq === "Yes" || (typeof disReq === "string" && disReq.toLowerCase().startsWith('yes')) || (typeof disReq === "object" && disReq?.required === true) || er.requiresDisability === true;
 
   if (isDisabilityScheme) {
     if (profile.isDifferentlyAbled === true) {
@@ -201,7 +268,7 @@ export function evaluateSchemeEligibility(scheme, profile) {
     }
   }
 
-  // 9. First Graduate Requirement
+  // 10. First Graduate Requirement
   const fgReq = scheme.firstGraduateRequirements;
   const isFgScheme = fgReq === "Yes" || (typeof fgReq === "object" && fgReq?.required === true);
 
@@ -212,6 +279,17 @@ export function evaluateSchemeEligibility(scheme, profile) {
       failedConditions.push(`Scheme strictly for first generation graduate in family`);
     } else {
       informationNeeded.push(`First graduate certificate status needs confirmation`);
+    }
+  }
+
+  // 11. Land Holding Ceiling
+  const maxLand = scheme.landHoldingLimit ?? er.maxLandHoldingAcres;
+  if (maxLand !== undefined && maxLand !== null && typeof maxLand === 'number' && maxLand > 0 && maxLand < 900) {
+    const userLand = profile.landHoldingAcres ?? 0;
+    if (userLand <= maxLand) {
+      satisfiedConditions.push(`Land holding ${userLand} acres is within ceiling of ${maxLand} acres`);
+    } else {
+      failedConditions.push(`Land holding ${userLand} acres exceeds maximum allowed ${maxLand} acres`);
     }
   }
 
@@ -242,8 +320,10 @@ export function evaluateSchemeEligibility(scheme, profile) {
   }
 
   return {
-    schemeId: scheme.schemeId,
+    schemeId: scheme.schemeId || scheme.id,
+    id: scheme.id || scheme.schemeId,
     schemeName: scheme.schemeName || scheme.name,
+    name: scheme.name || scheme.schemeName,
     category: scheme.category,
     ministry: scheme.ministry || scheme.department,
     benefits: scheme.benefits,
@@ -265,7 +345,8 @@ export function evaluateSchemeEligibility(scheme, profile) {
   };
 }
 
-export function recommendSchemesForProfile(schemes, profile, filters = {}) {
+export function recommendSchemesForProfile(schemes, rawProfile, filters = {}) {
+  const profile = normalizeProfile(rawProfile);
   const evaluated = schemes.map(s => evaluateSchemeEligibility(s, profile));
 
   // Apply filters if provided

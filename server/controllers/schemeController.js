@@ -282,7 +282,8 @@ export const bulkImportSchemes = async (req, res) => {
   }
 };
 import { evaluateEligibility } from '../services/eligibilityEngine.js';
-import { recommendSchemesForProfile } from '../services/schemeRecommendationEngine.js';
+import { recommendSchemesForProfile, normalizeProfile } from '../services/schemeRecommendationEngine.js';
+import { schemesData } from '../../src/data/schemes.ts';
 
 // @desc    Get single scheme by ID or schemeId
 // @route   GET /api/schemes/:id
@@ -313,34 +314,35 @@ export const getSchemeById = async (req, res) => {
 // @access  Public or Authenticated Citizen
 export const recommendSchemes = async (req, res) => {
   try {
-    let profile = req.body.profile;
-    if ((!profile || Object.keys(profile).length === 0) && req.user) {
-      const p = req.user.profile || {};
-      profile = {
-        age: p.age,
-        gender: p.gender,
-        income: p.annualIncome,
-        annualIncome: p.annualIncome,
-        state: p.state,
-        district: p.district,
-        occupation: p.occupation,
-        socialCategory: p.category,
-        category: p.category,
-        education: p.educationLevel,
-        isStudent: p.occupation?.toLowerCase().includes('student'),
-        isFarmer: p.occupation?.toLowerCase().includes('farmer'),
-        isDifferentlyAbled: p.hasDisability,
-        landHoldingAcres: p.landHoldingAcres
-      };
+    let rawProfile = req.body.profile;
+    if (!rawProfile || Object.keys(rawProfile).length === 0) {
+      if (req.body && (req.body.age !== undefined || req.body.annualIncome !== undefined || req.body.income !== undefined || req.body.occupation !== undefined || req.body.state !== undefined)) {
+        rawProfile = req.body;
+      } else if (req.user && req.user.profile) {
+        rawProfile = req.user.profile;
+      }
     }
-    profile = profile || {};
+    const profile = normalizeProfile(rawProfile || {});
     const filters = req.body.filters || {};
 
     // Pull active published schemes (strictly excludes Draft, Suspended, or Inactive schemes)
-    const schemes = await Scheme.find({
+    let schemes = await Scheme.find({
       status: 'Published',
       activeStatus: { $ne: false }
     });
+
+    if (!schemes || schemes.length === 0) {
+      // Only fall back to canonical dataset in local development if the database collection is completely unseeded (0 documents)
+      const totalInDb = await Scheme.estimatedDocumentCount().catch(() => 0);
+      if (totalInDb === 0) {
+        schemes = schemesData.filter(s =>
+          (s.status === 'Published' || s.status === undefined) &&
+          s.status !== 'Draft' &&
+          s.status !== 'Suspended' &&
+          s.activeStatus !== false
+        );
+      }
+    }
 
     const results = recommendSchemesForProfile(schemes, profile, filters);
 

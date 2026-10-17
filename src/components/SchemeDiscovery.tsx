@@ -141,6 +141,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
     // Eligibility
     if (selectedEligibility.length > 0) {
       if (!selectedEligibility.includes(a.ruleResult.status)) return false;
+    } else {
+      // By default, recommendation view excludes schemes citizen is not eligible for
+      if (a.ruleResult.status === 'Not Eligible' || a.ruleResult.status === 'Almost Eligible') return false;
     }
     
     // Location
@@ -180,7 +183,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
             {t('yourRecSchemes', 'Your recommended schemes')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {t('basedOnInfo', 'Based on the information you provided. We found')} <strong className="text-gray-900 dark:text-white">{analyzedSchemes.length}</strong> {t('matchingSchemes', 'matching schemes.')}
+            {t('basedOnInfo', 'Based on the information you provided. We found')} <strong className="text-gray-900 dark:text-white">{filteredSchemes.length}</strong> {t('matchingSchemes', 'matching schemes.')}
           </p>
         </div>
 
@@ -284,7 +287,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t('eligibility', 'Eligibility')}</h3>
                   <div className="space-y-2">
-                    {['Eligible', 'Conditionally Eligible', 'Almost Eligible', 'Needs Review'].map(el => (
+                    {['Eligible', 'Conditionally Eligible', 'Almost Eligible', 'Not Eligible'].map(el => (
                       <label key={el} className="flex items-center gap-2 cursor-pointer group">
                         <input 
                           type="checkbox" 
@@ -293,7 +296,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                           className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]" 
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
-                          {el === 'Conditionally Eligible' ? t('potentiallyEligible', 'Potentially eligible') : el === 'Almost Eligible' ? t('almostEligible', 'Almost eligible') : el === 'Needs Review' ? t('needsMoreInfo', 'Needs more information') : t('eligible', el)}
+                          {el === 'Conditionally Eligible' ? t('potentiallyEligible', 'Potentially eligible') : el === 'Almost Eligible' ? t('almostEligible', 'Almost eligible') : el === 'Not Eligible' ? t('notEligible', 'Not Eligible') : t('eligible', el)}
                         </span>
                       </label>
                     ))}
@@ -401,9 +404,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                         ruleResult.status === 'Eligible' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
                         ruleResult.status === 'Conditionally Eligible' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' :
                         ruleResult.status === 'Almost Eligible' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800' :
-                        'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
+                        'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
                       }`}>
-                        {ruleResult.status === 'Eligible' ? t('eligible', 'Eligible') : ruleResult.status === 'Conditionally Eligible' ? t('potentiallyEligible', 'Conditionally Eligible') : ruleResult.status === 'Almost Eligible' ? t('almostEligible', 'Almost Eligible') : t('needsMoreInfo', 'Needs Review')}
+                        {ruleResult.status === 'Eligible' ? t('eligible', 'Eligible') : ruleResult.status === 'Conditionally Eligible' ? t('potentiallyEligible', 'Conditionally Eligible') : ruleResult.status === 'Almost Eligible' ? t('almostEligible', 'Almost Eligible') : t('notEligible', 'Not Eligible')}
                       </span>
                     </div>
 
