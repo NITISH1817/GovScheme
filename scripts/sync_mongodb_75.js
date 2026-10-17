@@ -113,7 +113,7 @@ export function getSanitizedTarget(uri) {
   }
 }
 
-export async function syncMongo({ mongoUri, dryRun = false, quiet = false, requireProduction = false } = {}) {
+export async function syncMongo({ mongoUri, dryRun = false, quiet = false, requireProduction = false, manifestDir = null } = {}) {
   const uri = mongoUri || process.env.PROD_MONGODB_URI || process.env.MONGODB_URI || process.env.MONGO_URI || (requireProduction ? null : 'mongodb://127.0.0.1:27017/govscheme');
   
   if (!uri) {
@@ -209,7 +209,7 @@ export async function syncMongo({ mongoUri, dryRun = false, quiet = false, requi
   let manifestPath = null;
   if (!dryRun) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const targetDir = path.resolve('backups');
+    const targetDir = manifestDir ? path.resolve(manifestDir) : path.resolve('backups');
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
