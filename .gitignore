@@ -129,3 +129,6 @@ dist-ssr
 *.local
 reference_video.mp4
 backups/
+
+# Local operational credential helper
+scripts/secure_save_prod_uri.js
