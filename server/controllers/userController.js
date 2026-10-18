@@ -244,7 +244,10 @@ export const updateUserProfile = async (req, res) => {
     // Security: Never allow a user to alter their role via profile updates
     // Any req.body.role or p.role is strictly ignored.
 
-    if (req.body.password && typeof req.body.password === 'string' && req.body.password.length >= 6) {
+    if (req.body.password !== undefined) {
+      if (typeof req.body.password !== 'string' || req.body.password.length < 8) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
+      }
       user.password = req.body.password;
     }
 

@@ -86,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => {
-                  const protectedTabs = ['schemes', 'assistant', 'vault', 'tracker'];
+                  const protectedTabs = ['assistant', 'vault', 'tracker'];
                   if (protectedTabs.includes(item.id) && !user) onOpenAuth();
                   else setActiveTab(item.id);
                 }}
@@ -377,7 +377,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     exit={{ y: -40, opacity: 0 }}
                     transition={{ delay: idx * 0.1, duration: 0.6, ease: customBezier }}
                     onClick={() => {
-                      const protectedTabs = ['schemes', 'assistant', 'vault', 'tracker'];
+                      const protectedTabs = ['assistant', 'vault', 'tracker'];
                       if (protectedTabs.includes(item.id) && !user) onOpenAuth();
                       else setActiveTab(item.id);
                       setMobileMenuOpen(false);

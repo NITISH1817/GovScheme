@@ -989,8 +989,8 @@ export const schemesData: Scheme[] = [
       "Select desired monthly pension amount (₹1,000 - ₹5,000).",
       "Auto-debit of monthly contribution starts from savings account."
     ],
-    "officialApplyUrl": "https://npscra.nsdl.co.in/scheme-details.php",
-    "officialWebsite": "https://www.npscra.nsdl.co.in/",
+    "officialApplyUrl": "https://npscra.proteantech.in/scheme-details.php",
+    "officialWebsite": "https://www.pfrda.org.in",
     "helplineNumber": "1800-110-069",
     "deadline": "Open All Year",
     "tags": [

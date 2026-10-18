@@ -9,7 +9,7 @@ import i18n from '../i18n';
  * Legal eligibility remains strictly enforced by evaluateSchemeEligibility.
  */
 export function computeMLRecommendation(
-  user: UserProfile,
+  user: UserProfile | null | undefined,
   scheme: Scheme,
   ruleResult: RuleEvaluationResult,
   allSchemes: Scheme[]
@@ -21,6 +21,8 @@ export function computeMLRecommendation(
     score += 35;
   } else if (ruleResult.status === 'Conditionally Eligible') {
     score += 20;
+  } else if (ruleResult.status === 'Insufficient Information') {
+    score += 10;
   } else if (ruleResult.status === 'Almost Eligible') {
     score -= 5;
   } else {
@@ -28,16 +30,16 @@ export function computeMLRecommendation(
   }
 
   // 2. Category & Occupation Affinity Boost
-  if (user.occupation?.toLowerCase().includes('farmer') && scheme.category.includes('Agriculture')) {
+  if (user?.occupation?.toLowerCase().includes('farmer') && scheme.category.includes('Agriculture')) {
     score += 10;
   }
-  if (user.hasDisability && scheme.category.includes('Disability')) {
+  if (user?.hasDisability && scheme.category.includes('Disability')) {
     score += 15;
   }
-  if (user.gender === 'Female' && scheme.category.includes('Women')) {
+  if (user?.gender === 'Female' && scheme.category.includes('Women')) {
     score += 10;
   }
-  if (user.age >= 60 && scheme.category.includes('Pension')) {
+  if ((user?.age ?? 0) >= 60 && scheme.category.includes('Pension')) {
     score += 10;
   }
 
@@ -51,7 +53,7 @@ export function computeMLRecommendation(
   }
 
   // 4. Popularity & State Preference
-  if (scheme.state.toLowerCase() === user.state?.toLowerCase()) {
+  if (user?.state && scheme.state.toLowerCase() === user.state.toLowerCase()) {
     score += 5;
   }
   score += Math.round((scheme.popularityScore ?? 80) * 0.05);
@@ -91,7 +93,7 @@ export function computeMLRecommendation(
 }
 
 function generateExplainabilityText(
-  user: UserProfile,
+  user: UserProfile | null | undefined,
   scheme: Scheme,
   ruleResult: RuleEvaluationResult,
   score: number
@@ -100,8 +102,8 @@ function generateExplainabilityText(
     return i18n.t('reasonEligible', {
       defaultValue: `Highly recommended ({{score}}% match score). You satisfy all legal criteria as a {{occupation}} residing in {{state}}. Financial benefit of ₹{{benefit}} available upon application.`,
       score,
-      occupation: i18n.t(user.occupation, user.occupation),
-      state: i18n.t(user.state, user.state),
+      occupation: user?.occupation ? i18n.t(user.occupation, user.occupation) : 'citizen',
+      state: user?.state ? i18n.t(user.state, user.state) : 'India',
       benefit: (scheme.financialBenefitAmount || 0).toLocaleString('en-IN')
     });
   } else if (ruleResult.status === 'Conditionally Eligible') {
@@ -110,6 +112,13 @@ function generateExplainabilityText(
       defaultValue: `Strong recommendation ({{score}}% match score). Your profile meets criteria, but you need to upload {{docs}} to complete verification before submitting on the official portal.`,
       score,
       docs
+    });
+  } else if (ruleResult.status === 'Insufficient Information') {
+    const info = (ruleResult.informationNeeded || []).slice(0, 2).map(d => i18n.t(d, d)).join('; ');
+    return i18n.t('reasonInsufficientInfo', {
+      defaultValue: `Potential match ({{score}}% relevance). Additional verification required: {{info}}. Update your profile to confirm eligibility.`,
+      score,
+      info: info || 'Demographic verification'
     });
   } else if (ruleResult.status === 'Almost Eligible') {
     const criteria = ruleResult.failedCriteria[0];
@@ -131,7 +140,7 @@ function generateExplainabilityText(
 /**
  * Ranks all schemes combining Rule Engine + ML Scores
  */
-export function rankSchemesForUser(user: UserProfile, schemes: Scheme[], ruleResultsMap: Record<string, RuleEvaluationResult>) {
+export function rankSchemesForUser(user: UserProfile | null | undefined, schemes: Scheme[], ruleResultsMap: Record<string, RuleEvaluationResult>) {
   return schemes
     .map(scheme => {
       const ruleResult = ruleResultsMap[scheme.id];

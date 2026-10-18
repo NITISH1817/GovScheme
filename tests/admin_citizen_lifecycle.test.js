@@ -259,12 +259,22 @@ async function runLifecycleTests() {
 
     // Seed an application and a document for this citizen
     const sampleScheme = await Scheme.findOne() || await Scheme.create({
+      schemeId: `TEST-SCHEME-${testStamp}`,
       id: `TEST-SCHEME-${testStamp}`,
+      schemeName: 'National Agricultural Support Grant',
       name: 'National Agricultural Support Grant',
+      description: 'Support grant for farmers across India',
+      shortDescription: 'Support grant for farmers',
       department: 'Ministry of Agriculture',
-      category: 'Agriculture',
+      category: 'Agriculture & Farmers',
       state: 'Central',
-      status: 'Active'
+      governmentLevel: 'Central',
+      sourceUrl: 'https://agricoop.nic.in',
+      benefits: 'Financial support grant',
+      benefitsSummary: 'Financial support grant',
+      status: 'Published',
+      activeStatus: true,
+      verificationStatus: 'PORTAL_CURATED'
     });
 
     const appRecord = await Application.create({
@@ -470,7 +480,7 @@ async function runLifecycleTests() {
     // Clean up test records
     await Promise.all([
       User.deleteMany({ email: { $in: [citizenEmail, adminEmail, `other_${testStamp}@test.gov`] } }),
-      Application.deleteMany({ _id: createdAppId }),
+      createdAppId ? Application.deleteMany({ _id: createdAppId }) : Promise.resolve(),
       Document.deleteMany({ documentId: { $in: [`DOC-${testStamp}`, `DOC-OTHER-${testStamp}`] } })
     ]);
     server.close();

@@ -11,7 +11,7 @@ import { getMissingProfileFields } from '../utils/profileUtils';
 
 interface SchemeDiscoveryProps {
   schemes: Scheme[];
-  user: UserProfile;
+  user: UserProfile | null;
   currentLang: string;
   initialCategory?: string;
   onSelectScheme: (analysis: CombinedSchemeAnalysis) => void;
@@ -187,16 +187,19 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
           </p>
         </div>
 
-        {missingFields.length > 0 && (
+        {(!user || missingFields.length > 0) && (
           <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                  {t('profileIncompleteNotice', 'Your citizen profile is missing required information')}
+                  {!user ? t('browsingAsGuest', 'Browsing as Guest Citizen') : t('profileIncompleteNotice', 'Your citizen profile is missing required information')}
                 </h4>
                 <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                  {t('missingFieldsExplanation', 'Recommendations require full demographic verification. Missing:')} <strong>{missingFields.join(', ')}</strong>.
+                  {!user
+                    ? t('guestNoticeDesc', 'Schemes are displayed with general criteria. Complete the Guided Eligibility Wizard to see your personalized eligibility matches.')
+                    : `${t('missingFieldsExplanation', 'Recommendations require full demographic verification. Missing:')} `}
+                  {user && <strong>{missingFields.join(', ')}</strong>}
                 </p>
               </div>
             </div>
@@ -206,7 +209,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 onClick={() => onNavigateTab('wizard')}
                 className="shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition"
               >
-                {t('completeProfileNow', 'Complete Profile Now')}
+                {!user ? t('checkEligibilityWizard', 'Check Eligibility Wizard') : t('completeProfileNow', 'Complete Profile Now')}
               </button>
             )}
           </div>
@@ -287,7 +290,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t('eligibility', 'Eligibility')}</h3>
                   <div className="space-y-2">
-                    {['Eligible', 'Conditionally Eligible', 'Almost Eligible', 'Not Eligible'].map(el => (
+                    {['Eligible', 'Conditionally Eligible', 'Almost Eligible', 'Insufficient Information', 'Not Eligible'].map(el => (
                       <label key={el} className="flex items-center gap-2 cursor-pointer group">
                         <input 
                           type="checkbox" 
@@ -296,7 +299,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                           className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]" 
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
-                          {el === 'Conditionally Eligible' ? t('potentiallyEligible', 'Potentially eligible') : el === 'Almost Eligible' ? t('almostEligible', 'Almost eligible') : el === 'Not Eligible' ? t('notEligible', 'Not Eligible') : t('eligible', el)}
+                          {el === 'Conditionally Eligible' ? t('potentiallyEligible', 'Potentially eligible') : el === 'Almost Eligible' ? t('almostEligible', 'Almost eligible') : el === 'Insufficient Information' ? t('insufficientInformation', 'Information Needed') : el === 'Not Eligible' ? t('notEligible', 'Not Eligible') : t('eligible', el)}
                         </span>
                       </label>
                     ))}
@@ -404,10 +407,20 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                         ruleResult.status === 'Eligible' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
                         ruleResult.status === 'Conditionally Eligible' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' :
                         ruleResult.status === 'Almost Eligible' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800' :
+                        ruleResult.status === 'Insufficient Information' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800' :
                         'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
                       }`}>
-                        {ruleResult.status === 'Eligible' ? t('eligible', 'Eligible') : ruleResult.status === 'Conditionally Eligible' ? t('potentiallyEligible', 'Conditionally Eligible') : ruleResult.status === 'Almost Eligible' ? t('almostEligible', 'Almost Eligible') : t('notEligible', 'Not Eligible')}
+                        {ruleResult.status === 'Eligible' ? t('eligible', 'Eligible') :
+                         ruleResult.status === 'Conditionally Eligible' ? t('potentiallyEligible', 'Conditionally Eligible') :
+                         ruleResult.status === 'Almost Eligible' ? t('almostEligible', 'Almost Eligible') :
+                         ruleResult.status === 'Insufficient Information' ? t('insufficientInformation', 'Information Needed') :
+                         t('notEligible', 'Not Eligible')}
                       </span>
+                      {scheme.verificationStatus && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                          {scheme.verificationStatus === 'ADMIN_VERIFIED' ? '✓ Admin Verified' : '✓ Portal Curated'}
+                        </span>
+                      )}
                     </div>
 
                     {scheme.financialBenefitAmount && (
@@ -419,14 +432,22 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
                     <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
                       <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">{t('whyYouMatch', 'WHY YOU MATCH')}</span>
-                      <ul className="space-y-1">
-                        {ruleResult.matchedCriteria.slice(0, 2).map((factor, i) => (
-                          <li key={i} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                            <Check className="w-3 h-3 text-[#15803D] shrink-0" />
-                            <span className="line-clamp-1">{t(factor, factor)}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {ruleResult.status === 'Insufficient Information' ? (
+                        <div className="text-xs text-blue-700 dark:text-blue-300 font-medium py-1">
+                          {ruleResult.informationNeeded && ruleResult.informationNeeded.length > 0
+                            ? `Verify with: ${ruleResult.informationNeeded.slice(0, 3).join(', ')}`
+                            : t('completeProfileToVerify', 'Complete profile to verify eligibility')}
+                        </div>
+                      ) : (
+                        <ul className="space-y-1">
+                          {ruleResult.matchedCriteria.slice(0, 2).map((factor, i) => (
+                            <li key={i} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                              <Check className="w-3 h-3 text-[#15803D] shrink-0" />
+                              <span className="line-clamp-1">{t(factor, factor)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
 

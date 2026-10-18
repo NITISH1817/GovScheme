@@ -343,7 +343,11 @@ async function runSecurityTestSuite() {
   }
 }
 
-runSecurityTestSuite().catch((err) => {
-  console.error('[SECURITY TEST SUITE FAILED]:', err);
-  process.exit(1);
-});
+runSecurityTestSuite()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('[SECURITY TEST SUITE FAILED]:', err);
+    process.exit(1);
+  });

@@ -35,6 +35,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
     hasDisability: user?.hasDisability ?? false,
     disabilityPercentage: user?.disabilityPercentage ?? 0,
     isRegisteredWorker: user?.isRegisteredWorker ?? false,
+    residenceType: user?.residenceType || 'Rural',
     interests: user?.interests || [],
     ...(user || {})
   }));
@@ -60,6 +61,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
         hasDisability: user.hasDisability !== undefined ? user.hasDisability : prev.hasDisability,
         disabilityPercentage: user.disabilityPercentage !== undefined ? user.disabilityPercentage : prev.disabilityPercentage,
         isRegisteredWorker: user.isRegisteredWorker !== undefined ? user.isRegisteredWorker : prev.isRegisteredWorker,
+        residenceType: user.residenceType || prev.residenceType || 'Rural',
         interests: Array.isArray(user.interests) && user.interests.length > 0 ? user.interests : prev.interests
       }));
     }
@@ -401,6 +403,22 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                       onStateChange={(state) => updateForm('state', state)}
                       onDistrictChange={(district) => updateForm('district', district)}
                     />
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('residenceArea', 'Area of Residence')}</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {['Rural', 'Urban', 'Semi-Urban'].map(type => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => updateForm('residenceType', type)}
+                            className={`p-3 rounded border text-center text-sm font-medium transition-colors ${formData.residenceType === type ? 'border-[#1769FF] bg-[#1769FF]/10 text-[#1769FF] font-bold' : 'border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-[#1769FF]/50'}`}
+                          >
+                            {t(type, type)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -425,6 +443,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                         <option value="SC">{t('SC', 'SC')}</option>
                         <option value="ST">{t('ST', 'ST')}</option>
                         <option value="EWS">{t('EWS', 'EWS')}</option>
+                        <option value="Minority">{t('Minority', 'Minority')}</option>
                       </select>
                     </div>
                   </div>

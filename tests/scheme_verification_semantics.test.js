@@ -10,16 +10,13 @@
 // 7. Missing and legacy statuses are handled deliberately and consistently.
 // 8. Admin verification and publication permissions continue to work correctly and independently.
 // 9. Sync-payload tests ensure canonical schemes are not incorrectly marked officially verified.
-// 10. Schema enum enforcement and backward compatibility.
-
+//10. Schema enum enforcement and backward compatibility.
 import assert from 'assert';
 import mongoose from 'mongoose';
 import Scheme, { SCHEME_VERIFICATION_STATUSES } from '../server/models/Scheme.js';
 import { buildSchemePayload, loadCanonicalSchemes } from '../scripts/sync_mongodb_75.js';
 import { evaluateSchemeEligibility, recommendSchemesForProfile } from '../server/services/schemeRecommendationEngine.js';
-
 const DISPOSABLE_TEST_URI = 'mongodb://127.0.0.1:27017/govscheme_disposable_verification_semantics_test';
-
 // Safety Guardrail: Strictly fail closed if targeting any remote/production environment
 function assertDisposableLocalDb(uri) {
   if (!uri.includes('127.0.0.1') && !uri.includes('localhost')) {
@@ -29,15 +26,12 @@ function assertDisposableLocalDb(uri) {
     throw new Error(`SECURITY HALT: Test database name must end with '_test', got: ${uri}`);
   }
 }
-
 async function runVerificationSemanticsSuite() {
   console.log('================================================================');
   console.log(' GOVSCHEME VERIFICATION STATUS SEMANTICS REGRESSION SUITE        ');
   console.log('================================================================\n');
-
   assertDisposableLocalDb(DISPOSABLE_TEST_URI);
   console.log(`[Safety Guardrail] Confirmed disposable local test database URI: ${DISPOSABLE_TEST_URI}`);
-
   let dbConnected = false;
   try {
     await mongoose.connect(DISPOSABLE_TEST_URI, { serverSelectionTimeoutMS: 2000 });
@@ -47,7 +41,6 @@ async function runVerificationSemanticsSuite() {
   } catch (e) {
     console.log('[Setup Notice] Local MongoDB daemon unavailable. Running suite in deterministic Mongoose in-memory validation mode.\n');
   }
-
   try {
     // -------------------------------------------------------------------------
     // TEST 1: Published, Portal-Curated Scheme Discovery Filter Logic
@@ -79,14 +72,12 @@ async function runVerificationSemanticsSuite() {
       benefitsSummary: 'Financial support'
     });
     await curatedScheme.validate();
-
     // Discovery filter rule: status === 'Published' && activeStatus !== false
     const matchesDiscoveryFilter = (s) => s.status === 'Published' && s.activeStatus !== false;
     assert(matchesDiscoveryFilter(curatedScheme), 'Published portal-curated scheme must satisfy public discovery filter');
     assert.strictEqual(curatedScheme.verificationStatus, 'PORTAL_CURATED', 'Must reflect PORTAL_CURATED status');
     assert.notStrictEqual(curatedScheme.verificationStatus, 'OFFICIALLY_VERIFIED', 'Must not falsely claim OFFICIALLY_VERIFIED');
     console.log('  PASS: Published portal-curated scheme without official verification satisfies public discovery filter.\n');
-
     // -------------------------------------------------------------------------
     // TEST 2: Genuinely Eligible Citizen Recommendation
     // -------------------------------------------------------------------------
@@ -98,16 +89,13 @@ async function runVerificationSemanticsSuite() {
       state: 'Maharashtra',
       isFarmer: true
     };
-
     const evalResult = evaluateSchemeEligibility(curatedScheme, eligibleCitizen);
     assert.strictEqual(evalResult.isEligible, true, 'Citizen must be marked eligible');
     assert.strictEqual(evalResult.matchStatus, 'ELIGIBLE_POTENTIAL_MATCH', 'Match status must be ELIGIBLE_POTENTIAL_MATCH');
-
     const recs = recommendSchemesForProfile([curatedScheme], eligibleCitizen);
     assert.strictEqual(recs.matchingCount, 1, 'Eligible count must be 1');
     assert.strictEqual(recs.recommendations[0].schemeId, 'test-scheme-kisan-portal');
     console.log('  PASS: Genuinely eligible citizen receives portal-curated scheme in recommendations.\n');
-
     // -------------------------------------------------------------------------
     // TEST 3: Ineligible Citizen Exclusion
     // -------------------------------------------------------------------------
@@ -119,11 +107,9 @@ async function runVerificationSemanticsSuite() {
       state: 'Maharashtra',
       isFarmer: false
     };
-
     const ineligibleEval = evaluateSchemeEligibility(curatedScheme, ineligibleCitizen);
     assert.strictEqual(ineligibleEval.isEligible, false, 'Ineligible citizen must not be marked eligible');
     assert.strictEqual(ineligibleEval.matchStatus, 'DOES_NOT_MATCH', 'Match status must be DOES_NOT_MATCH');
-
     const ineligibleRecs = recommendSchemesForProfile([curatedScheme], ineligibleCitizen);
     assert.strictEqual(ineligibleRecs.matchingCount, 0, 'Matching count must be 0 for ineligible profile');
     assert.strictEqual(ineligibleRecs.recommendations.length, 0, 'Ineligible scheme excluded from recommendations');
@@ -146,7 +132,6 @@ async function runVerificationSemanticsSuite() {
       sourceUrl: 'https://welfare.gov.in',
       benefits: 'Pending'
     });
-
     const suspendedScheme = new Scheme({
       schemeId: 'suspended-central-scheme',
       id: 'suspended-central-scheme',
@@ -160,11 +145,9 @@ async function runVerificationSemanticsSuite() {
       sourceUrl: 'https://welfare.gov.in',
       benefits: 'Suspended'
     });
-
     assert(!matchesDiscoveryFilter(draftScheme), 'Draft schemes must NEVER pass public discovery filter');
     assert(!matchesDiscoveryFilter(suspendedScheme), 'Inactive/suspended schemes must NEVER pass public discovery filter');
     console.log('  PASS: Draft and inactive schemes are strictly excluded from public discovery.\n');
-
     // -------------------------------------------------------------------------
     // TEST 5: Official URL Alone Does Not Grant Official Verification
     // -------------------------------------------------------------------------
@@ -186,11 +169,9 @@ async function runVerificationSemanticsSuite() {
       benefits: 'Financial support'
     });
     await urlScheme.validate();
-
     assert.strictEqual(urlScheme.verificationStatus, 'PORTAL_CURATED', 'Must default to PORTAL_CURATED, not OFFICIALLY_VERIFIED');
     assert.strictEqual(urlScheme.verificationEvidence, undefined, 'No evidence should be synthesized');
     console.log('  PASS: Official URL alone assigns PORTAL_CURATED, never OFFICIALLY_VERIFIED.\n');
-
     // -------------------------------------------------------------------------
     // TEST 6: Manual Admin Review Labeled ADMIN_VERIFIED, Not OFFICIALLY_VERIFIED
     // -------------------------------------------------------------------------
@@ -213,12 +194,10 @@ async function runVerificationSemanticsSuite() {
       lastVerifiedAt: new Date()
     });
     await adminReviewed.validate();
-
     assert.strictEqual(adminReviewed.verificationStatus, 'ADMIN_VERIFIED', 'Manual admin review must be ADMIN_VERIFIED');
     assert.notStrictEqual(adminReviewed.verificationStatus, 'OFFICIALLY_VERIFIED', 'Manual admin review must never claim OFFICIALLY_VERIFIED without issuer API');
     assert(adminReviewed.verifiedBy.equals(mockAdminId), 'Must record verifiedBy admin identifier');
     console.log('  PASS: Manual administrative review is accurately recorded as ADMIN_VERIFIED.\n');
-
     // -------------------------------------------------------------------------
     // TEST 7: Missing and Legacy Statuses Handled Deliberately
     // -------------------------------------------------------------------------

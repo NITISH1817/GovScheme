@@ -15,6 +15,7 @@ import { parseDocumentStructuredFields } from "../server/services/ocrEngine.js";
 import { verifyGovernmentDocument } from "../server/services/verificationService.js";
 import { allVerifiedSchemes, auditSchemesDataset } from "../server/data/verifiedSchemes60.js";
 import { evaluateSchemeEligibility, recommendSchemesForProfile } from "../server/services/schemeRecommendationEngine.js";
+import { connectDB } from "../server/db.js";
 
 dotenv.config();
 
@@ -219,7 +220,7 @@ async function runTests() {
   console.log("\n--- Group 5: Strict Document Isolation (MongoDB Test) ---");
 
   await asyncTest("Uploading Aadhaar and Ration Card maintains strict document isolation", async () => {
-    await mongoose.connect(MONGO_URI);
+    await connectDB();
     const testUserId = new mongoose.Types.ObjectId();
 
     const docA_Id = `TEST-ISO-${Date.now()}-A`;
@@ -285,7 +286,11 @@ async function runTests() {
   console.log("================================================================\n");
 }
 
-runTests().catch(err => {
-  console.error("Test execution failed:", err);
-  process.exit(1);
-});
+runTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch(err => {
+    console.error("Test execution failed:", err);
+    process.exit(1);
+  });

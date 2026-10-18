@@ -71,7 +71,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
           {/* Header */}
           <div className="px-8 py-6 flex justify-between items-start border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0F1B2D] sticky top-0 z-20">
             <div className="max-w-2xl space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                   {t(scheme.category, scheme.category).split('&')[0]}
                 </span>
@@ -79,12 +79,19 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                   {scheme.state === 'Central' ? t('govtOfIndia', 'Government of India') : t(`state_${scheme.state}`, scheme.state)}
                 </span>
+                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  {scheme.verificationStatus === 'ADMIN_VERIFIED' ? '✓ Admin Verified' : '✓ Portal Curated'}
+                </span>
               </div>
               <h2 className="text-3xl font-bold text-[#123C69] dark:text-white font-sans">
                 {t(`${scheme.id}_name`, scheme.name)}
               </h2>
-              <div className="text-sm text-gray-500">
-                {t('lastUpdatedLabel', 'Last updated:')} {scheme.lastUpdated ? new Date(scheme.lastUpdated).toLocaleDateString() : new Date().toLocaleDateString()}
+              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                <span>{t('lastUpdatedLabel', 'Last updated:')} {scheme.lastUpdated ? new Date(scheme.lastUpdated).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+                {scheme.curationSource && (
+                  <span>• {t('sourceLabel', 'Source:')} {scheme.curationSource}</span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -158,8 +165,8 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <div className="bg-blue-50 dark:bg-[#16243A]/50 border border-blue-200 dark:border-blue-800 rounded p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{t('matchScore', 'Match Score')}</span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{t('matchDesc', 'AI-driven confidence based on profile factors.')}</span>
+                      <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{t('matchScore', 'Relevance & Priority Score')}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{t('matchDesc', 'Deterministic rule evaluation and profile affinity weighting.')}</span>
                     </div>
                     <div className="text-3xl font-bold text-[#1769FF]">
                       {Math.round(effectiveMlResult.confidenceScore)}%
@@ -246,6 +253,21 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                         </td>
                       </tr>
                     ))}
+
+                    {/* Information Needed for Verification */}
+                    {effectiveRuleResult.informationNeeded && effectiveRuleResult.informationNeeded.map((field, idx) => (
+                      <tr key={`info-${idx}`} className="hover:bg-blue-50 dark:hover:bg-blue-900/10">
+                        <td className="px-6 py-4">
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">{t('infoNeeded', 'Information Needed:')} {field}</span>
+                          <p className="text-xs text-gray-500 mt-1">{t('completeProfileToVerify', 'Complete this field in your profile or the Guided Wizard to verify eligibility.')}</p>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-bold">
+                            <HelpCircle className="w-3 h-3" /> {t('needed', 'Needed')}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -328,17 +350,20 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
             <section className="space-y-4">
               <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('applicationProcess', 'Application Process')}</h3>
               <div className="relative py-4 border-l-2 border-gray-200 dark:border-gray-800 ml-4 space-y-8">
-                {[
-                  t('processStep1', 'Prepare Documents'), 
-                  t('processStep2', 'Apply Online'), 
-                  t('processStep3', 'Submit Verification'), 
-                  t('processStep4', 'Department Review'), 
-                  t('processStep5', 'Decision')
-                ].map((step, idx) => (
+                {(scheme.applicationSteps && scheme.applicationSteps.length > 0
+                  ? scheme.applicationSteps
+                  : [
+                      t('processStep1', 'Prepare Documents'),
+                      t('processStep2', 'Apply Online'),
+                      t('processStep3', 'Submit Verification'),
+                      t('processStep4', 'Department Review'),
+                      t('processStep5', 'Decision')
+                    ]
+                ).map((step, idx) => (
                   <div key={idx} className="relative pl-8">
                     <div className="absolute left-[-9px] top-1 w-4 h-4 rounded-full bg-[#123C69] border-4 border-white dark:border-[#07111F]" />
-                    <span className="text-xs font-bold text-gray-400 tracking-wider mb-1 block">0{idx + 1}</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{step}</span>
+                    <span className="text-xs font-bold text-gray-400 tracking-wider mb-1 block">{idx < 9 ? `0${idx + 1}` : `${idx + 1}`}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white leading-relaxed">{step}</span>
                   </div>
                 ))}
               </div>
@@ -395,6 +420,9 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <div className="text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider">{t('officialSourceCompiled', 'Official Source Portal')}</div>
                 <div className="text-sm text-green-700 dark:text-green-400 font-medium truncate max-w-[200px]" title={scheme.officialApplyUrl}>
                   {scheme.officialApplyUrl ? new URL(scheme.officialApplyUrl).hostname : t('govtPortal', 'Govt Portal')}
+                </div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  GovScheme is an independent citizen advisory portal.
                 </div>
               </div>
             </div>

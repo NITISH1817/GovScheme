@@ -72,6 +72,7 @@ export interface UserProfile {
   maritalStatus?: string;
   state: string;
   district: string;
+  residenceType?: 'Rural' | 'Urban' | 'Semi-Urban';
   category: CategorySocial;
   interests?: string[];
   occupation: string;
@@ -110,12 +111,17 @@ export interface EligibilityRules {
 
 export interface Scheme {
   id: string;
+  schemeId?: string;
   name: string;
+  schemeName?: string;
   shortDescription: string;
+  description?: string;
+  detailedDescription?: string;
   department: string;
   ministry: string;
   category: SchemeCategory;
   state: string; // 'Central' or State name e.g. 'Tamil Nadu'
+  governmentLevel?: string;
   benefitsSummary: string;
   financialBenefitAmount?: number; // In INR ₹ per annum or lump sum
   eligibilityRules: EligibilityRules;
@@ -129,14 +135,21 @@ export interface Scheme {
   faqs: { question: string; answer: string }[];
   lastUpdated: string;
   popularityScore: number;
+  verificationStatus?: 'UNVERIFIED' | 'PENDING' | 'PORTAL_CURATED' | 'ADMIN_VERIFIED' | 'OFFICIALLY_VERIFIED';
+  curationSource?: string;
+  sourceUrl?: string;
+  lastVerifiedAt?: string;
+  status?: 'Draft' | 'Published' | 'Archived' | 'Suspended';
+  activeStatus?: boolean;
 }
 
 export interface RuleEvaluationResult {
   schemeId: string;
-  status: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible';
+  status: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible' | 'Insufficient Information';
   matchedCriteria: string[];
   failedCriteria: string[];
   missingDocuments: string[];
+  informationNeeded?: string[];
   overallReason: string;
 }
 

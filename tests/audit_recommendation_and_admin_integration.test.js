@@ -538,7 +538,11 @@ async function runAudit() {
   }
 }
 
-runAudit().catch((err) => {
-  console.error('\n[AUDIT FAILURE]:', err);
-  process.exit(1);
-});
+runAudit()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('\n[AUDIT FAILURE]:', err);
+    process.exit(1);
+  });

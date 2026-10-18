@@ -31,6 +31,7 @@ import { AdminPlatform } from './components/admin/AdminPlatform';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
 import { GovSchemeLogoAnimated } from './components/brand';
+import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -97,6 +98,7 @@ export const App: React.FC = () => {
   
   const [isBooting, setIsBooting] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+  const [adminLoginRequested, setAdminLoginRequested] = useState(false);
 
   // Sync theme & accessibility font sizing onto html tag
   useEffect(() => {
@@ -141,7 +143,7 @@ export const App: React.FC = () => {
 
   // Protected Routes Logic
   useEffect(() => {
-    const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'report', 'tracker', 'settings'];
+    const protectedTabs = ['assistant', 'vault', 'profile', 'report', 'tracker', 'settings'];
     if (!isBooting && protectedTabs.includes(activeTab) && !user) {
       setActiveTab('home');
       setIsAuthOpen(true);
@@ -778,7 +780,7 @@ export const App: React.FC = () => {
     );
   }
 
-  const isAdminUser = (u: UserProfile | null | undefined): u is UserProfile => {
+  const isAdminUser = (u: UserProfile | null | undefined): boolean => {
     if (!u) return false;
     if (u.email === 'admin@govscheme.in') return true;
     const role = (u.role || '').toLowerCase();
@@ -797,25 +799,63 @@ export const App: React.FC = () => {
   // If Admin Mode
   if (activeTab === 'admin') {
     if (!isAdminUser(user)) {
+      if (adminLoginRequested && !user) {
+        return (
+          <AdminLogin
+            onLoginSuccess={(u) => {
+              setUser(u);
+              localStorage.setItem('govscheme_user', JSON.stringify(u));
+              localStorage.setItem('adminUser', JSON.stringify(u));
+              if (u.token) {
+                localStorage.setItem('adminToken', u.token);
+                localStorage.setItem('govscheme_token', u.token);
+              }
+              setAdminLoginRequested(false);
+            }}
+            onExit={() => {
+              setAdminLoginRequested(false);
+              setActiveTab('home');
+            }}
+          />
+        );
+      }
+
       return (
-        <AdminLogin 
-          onLoginSuccess={(u) => {
-            setUser(u);
-            localStorage.setItem('govscheme_user', JSON.stringify(u));
-            localStorage.setItem('adminUser', JSON.stringify(u));
-            if (u.token) {
-              localStorage.setItem('adminToken', u.token);
-              localStorage.setItem('govscheme_token', u.token);
-            }
-          }} 
-          onExit={() => setActiveTab('home')}
-        />
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#07111F] p-4">
+          <div className="max-w-md w-full bg-white dark:bg-[#0F1B2D] rounded-2xl shadow-xl p-8 border border-red-200 dark:border-red-900/30 text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
+              {user
+                ? `Administrator privileges required. Your current account (${user.email || user.fullName}) does not have administrative access to the GovScheme Admin Platform.`
+                : 'Restricted administrative area. You must be an authorized government official or platform administrator to access this area.'}
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setActiveTab('home')}
+                className="w-full py-2.5 bg-[#123C69] hover:bg-[#0F1B2D] text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" /> Return to Citizen Portal
+              </button>
+              {!user && (
+                <button
+                  onClick={() => setAdminLoginRequested(true)}
+                  className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold text-xs transition-colors"
+                >
+                  Authorized Personnel Login
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       );
     }
     return (
-      <AdminPlatform 
-        user={user} 
-        schemes={schemes} 
+      <AdminPlatform
+        user={user!}
+        schemes={schemes}
         onExit={() => setActiveTab('home')}
         theme={theme}
         setTheme={setTheme}
@@ -890,7 +930,7 @@ export const App: React.FC = () => {
               else setActiveTab('assistant');
             }}
             onNavigateTab={(tab) => {
-              const protectedTabs = ['schemes', 'assistant', 'vault', 'profile', 'tracker'];
+              const protectedTabs = ['assistant', 'vault', 'profile', 'tracker'];
               if (protectedTabs.includes(tab) && !user) {
                 setIsAuthOpen(true);
               } else {
@@ -899,11 +939,7 @@ export const App: React.FC = () => {
             }}
             onSelectCategory={(category) => {
               setSelectedCategoryFilter(category);
-              if (!user) {
-                setIsAuthOpen(true);
-              } else {
-                setActiveTab('schemes');
-              }
+              setActiveTab('schemes');
             }}
             topSchemes={schemes}
             user={user}
@@ -980,7 +1016,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'schemes' && user && (
+        {activeTab === 'schemes' && (
           <SchemeDiscovery
             schemes={schemes}
             user={user}

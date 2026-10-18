@@ -17,6 +17,8 @@ export const getSchemes = async (req, res) => {
       req.user.role === 'District Officer'
     );
 
+    const conditions = [];
+
     if (isAdmin) {
       if (status && status !== 'All') filter.status = status;
     } else {
@@ -29,7 +31,7 @@ export const getSchemes = async (req, res) => {
     }
 
     if (state && state !== 'All') {
-      filter.$or = [{ state: state }, { state: 'Central' }];
+      conditions.push({ $or: [{ state: state }, { state: 'Central' }] });
     }
     
     if (category && category !== 'All') {
@@ -40,11 +42,21 @@ export const getSchemes = async (req, res) => {
       filter.department = department;
     }
 
-    if (q) {
-      filter.$or = [
-        { name: { $regex: q, $options: 'i' } },
-        { shortDescription: { $regex: q, $options: 'i' } }
-      ];
+    if (q && typeof q === 'string' && q.trim()) {
+      const safeQ = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      conditions.push({
+        $or: [
+          { name: { $regex: safeQ, $options: 'i' } },
+          { schemeName: { $regex: safeQ, $options: 'i' } },
+          { shortDescription: { $regex: safeQ, $options: 'i' } },
+          { description: { $regex: safeQ, $options: 'i' } },
+          { keywords: { $in: [new RegExp(safeQ, 'i')] } }
+        ]
+      });
+    }
+
+    if (conditions.length > 0) {
+      filter.$and = conditions;
     }
 
     const pageNum = parseInt(page, 10);
@@ -301,6 +313,18 @@ export const getSchemeById = async (req, res) => {
 
     if (!scheme) {
       return res.status(404).json({ success: false, message: 'Scheme not found' });
+    }
+
+    const isAdmin = req.user && (
+      req.user.role === 'Super Admin' ||
+      req.user.role === 'NodalOfficer' ||
+      req.user.role === 'Ministry Admin' ||
+      req.user.role === 'State Admin' ||
+      req.user.role === 'District Officer'
+    );
+
+    if (!isAdmin && (scheme.status !== 'Published' || scheme.activeStatus === false)) {
+      return res.status(404).json({ success: false, message: 'Scheme not found or is currently not published' });
     }
 
     res.json({ success: true, scheme });

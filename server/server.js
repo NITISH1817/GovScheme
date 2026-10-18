@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import { connectDB } from './db.js';
 import User from './models/User.js';
 import bcrypt from 'bcryptjs';
@@ -183,13 +184,17 @@ app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/documents', documentRoutes);
 
-// Health check endpoint
+// Health check endpoint with dynamic database connection inspection
 app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.status(isDbConnected ? 200 : 503).json({
+    status: isDbConnected ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    services: { database: 'connected', server: 'online' }
+    services: {
+      database: isDbConnected ? 'connected' : 'disconnected',
+      server: 'online'
+    }
   });
 });
 
@@ -246,7 +251,9 @@ const startServer = async () => {
   try {
     await connectDB();
     await seedAdmin();
-    await seedMockData();
+    if (process.env.NODE_ENV !== 'production') {
+      await seedMockData();
+    }
   } catch (err) {
     console.error('[Critical Startup Error] Database initialization failed:', err);
     throw err;
