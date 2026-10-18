@@ -1243,8 +1243,10 @@ export const schemesData: Scheme[] = [
       "Bank Passbook"
     ],
     "applicationSteps": [
-      "College administration registers eligible students through Tamil Nadu UMIS portal.",
-      "Aadhaar authentication and bank account validation."
+      "Confirm eligibility: male student enrolled in a recognized higher education program who completed schooling from Class 6 to 12 in Tamil Nadu Government schools.",
+      "Submit required schooling proofs (such as EMIS number or Transfer Certificate), Aadhaar, and active bank account details to your college nodal officer.",
+      "The college administration registers and verifies the student's schooling credentials on the official Tamil Nadu higher education portal.",
+      "Complete Aadhaar authentication and verify that your bank account is active and seeded to receive direct benefit transfers upon department approval."
     ],
     "officialApplyUrl": "https://www.tn.gov.in",
     "officialWebsite": "https://www.tn.gov.in",
@@ -1305,8 +1307,10 @@ export const schemesData: Scheme[] = [
       "Allotment Order"
     ],
     "applicationSteps": [
-      "Obtain First Graduate Certificate from Revenue Department / e-Sevai centre.",
-      "Submit during TNEA / TNDALU counseling process."
+      "Apply for the First Graduate Certificate through the Tamil Nadu e-Sevai portal (tnesevai.tn.gov.in) or at an authorized local e-Sevai centre.",
+      "Submit applicant and parent identity proofs, school transfer certificates, and the required family joint declaration confirming no prior degree holder in the family.",
+      "The Revenue Department (VAO, Revenue Inspector, and Tahsildar) verifies family education records and issues the digitally signed certificate.",
+      "Produce the certificate during admission counseling (such as TNEA, TNDALU, or collegiate admissions) to claim tuition fee concession on the allotment order."
     ],
     "officialApplyUrl": "https://tnesevai.tn.gov.in",
     "officialWebsite": "https://www.tndce.tn.gov.in",
@@ -1369,8 +1373,11 @@ export const schemesData: Scheme[] = [
       "Bank Passbook"
     ],
     "applicationSteps": [
-      "Qualify in State NMMSS examination conducted in Class 8.",
-      "Register on National Scholarship Portal and complete e-KYC."
+      "Appear for and qualify in the State-level NMMSS selection examination conducted for Class 8 students by the State Education Department or SCERT.",
+      "Register on the National Scholarship Portal (scholarships.gov.in) with One-Time Registration (OTR) using Aadhaar-linked verification.",
+      "Submit the online scholarship application under the Department of School Education & Literacy section with academic, family income, and bank details.",
+      "Ensure your school principal or designated nodal officer conducts online institutional verification (Level-1) of your regular enrollment.",
+      "Track application verification by the District Nodal Officer on the portal; eligible awardees receive scholarship disbursements via DBT as notified by the Ministry."
     ],
     "officialApplyUrl": "https://scholarships.gov.in",
     "officialWebsite": "https://scholarships.gov.in",
@@ -2143,8 +2150,10 @@ export const schemesData: Scheme[] = [
       "Land Survey Number"
     ],
     "applicationSteps": [
-      "Contact village agricultural officer or collect sample kit at block level testing lab.",
-      "Receive digital Soil Health Card via SMS/portal."
+      "Contact your local village agricultural officer, Krishi Vigyan Kendra (KVK), or visit the nearest block-level Soil Testing Laboratory (STL).",
+      "Provide land identification details (such as Khasra, Khata, or survey number) and farmer contact information for sample registration.",
+      "Follow agricultural extension staff guidance to collect representative soil samples from your field or assist field teams during sample collection.",
+      "The sample is tested across standard nutrient and physical parameters at the laboratory; farmers receive testing results and fertilizer advisory via SMS or digital download at soilhealth.dac.gov.in."
     ],
     "officialApplyUrl": "https://soilhealth.dac.gov.in",
     "officialWebsite": "https://soilhealth.dac.gov.in",
@@ -3115,8 +3124,10 @@ export const schemesData: Scheme[] = [
       "College Student ID / Register Number"
     ],
     "applicationSteps": [
-      "Access naanmudhalvan.tn.gov.in through college portal.",
-      "Select domain track and complete industry certification."
+      "Access the official Naan Mudhalvan portal (naanmudhalvan.tn.gov.in) using your college student credentials or university registration number.",
+      "Browse and select the prescribed industry-aligned skill development courses or domain tracks available for your ongoing semester.",
+      "Participate in the scheduled training modules, lab exercises, and mentor sessions conducted in partnership with your college and training partners.",
+      "Complete course assessments to earn skill certifications and explore placement and internship opportunities facilitated through the portal."
     ],
     "officialApplyUrl": "https://naanmudhalvan.tn.gov.in",
     "officialWebsite": "https://naanmudhalvan.tn.gov.in",
