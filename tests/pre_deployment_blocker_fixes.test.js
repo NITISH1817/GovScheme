@@ -497,6 +497,7 @@ assert(apyScheme, 'Canonical atal-pension-yojana must exist');
 console.log('APY officialApplyUrl:', apyScheme.officialApplyUrl);
 console.log('APY officialWebsite:', apyScheme.officialWebsite);
 
+// 4.1 Canonical APY URLs
 assert.strictEqual(
   apyScheme.officialApplyUrl,
   'https://npscra.proteantech.in/scheme-details.php',
@@ -511,8 +512,66 @@ assert.strictEqual(
   false,
   'Outdated and failing nsdl.co.in domain must NOT be present in officialApplyUrl'
 );
+assert.strictEqual(
+  apyScheme.officialWebsite.includes('nsdl.co.in'),
+  false,
+  'Outdated and failing nsdl.co.in domain must NOT be present in officialWebsite'
+);
 console.log('PASS 4.1: Atal Pension Yojana verified with official Protean CRA and PFRDA destinations.');
+
+// 4.2 Universal check across all 75 canonical schemes
+const schemesWithNsdl = canonicalSchemes.filter(s => {
+  const allUrls = [s.officialWebsite, s.officialApplyUrl, s.applicationUrl].filter(Boolean);
+  return allUrls.some(u => u.includes('nsdl.co.in'));
+});
+assert.strictEqual(
+  schemesWithNsdl.length,
+  0,
+  `Zero schemes may contain obsolete nsdl.co.in domain. Found: ${schemesWithNsdl.map(s => s.id).join(', ')}`
+);
+console.log('PASS 4.2: Zero obsolete nsdl.co.in domains across all 75 canonical schemes.');
+
+// 4.3 Verify MongoDB Payload Builder output for APY
+import { buildSchemePayload } from '../scripts/sync_mongodb_75.js';
+const apyPayload = buildSchemePayload(apyScheme);
+assert.strictEqual(
+  apyPayload.officialWebsite,
+  'https://www.pfrda.org.in',
+  'Payload officialWebsite must point to PFRDA'
+);
+assert.strictEqual(
+  apyPayload.officialApplyUrl,
+  'https://npscra.proteantech.in/scheme-details.php',
+  'Payload officialApplyUrl must point to Protean CRA'
+);
+assert.strictEqual(
+  apyPayload.applyURL,
+  'https://npscra.proteantech.in/scheme-details.php',
+  'Payload applyURL must point to Protean CRA'
+);
+assert.strictEqual(
+  apyPayload.officialApplicationUrl,
+  'https://npscra.proteantech.in/scheme-details.php',
+  'Payload officialApplicationUrl must point to Protean CRA'
+);
+assert.strictEqual(
+  apyPayload.sourceUrl,
+  'https://www.pfrda.org.in',
+  'Payload sourceUrl must point to PFRDA'
+);
+console.log('PASS 4.3: MongoDB payload builder generates 100% clean Protean & PFRDA URLs for APY.');
+
+// 4.4 Verify Targeted Single-Record Patch constants
+import { APY_TARGET_UPDATES } from '../scripts/patch_apy_mongodb.js';
+assert.strictEqual(APY_TARGET_UPDATES.officialWebsite, 'https://www.pfrda.org.in');
+assert.strictEqual(APY_TARGET_UPDATES.officialApplyUrl, 'https://npscra.proteantech.in/scheme-details.php');
+assert.strictEqual(APY_TARGET_UPDATES.officialApplicationUrl, 'https://npscra.proteantech.in/scheme-details.php');
+assert.strictEqual(APY_TARGET_UPDATES.applyURL, 'https://npscra.proteantech.in/scheme-details.php');
+assert.strictEqual(APY_TARGET_UPDATES.sourceUrl, 'https://www.pfrda.org.in');
+assert(!Object.values(APY_TARGET_UPDATES).some(v => typeof v === 'string' && v.includes('nsdl.co.in')));
+console.log('PASS 4.4: Targeted patch specification strictly aligns with verified PFRDA and Protean CRA portals.');
 
 console.log('\n================================================================');
 console.log('ALL PRE-DEPLOYMENT BLOCKER FIX REGRESSION TESTS PASSED (100%)');
 console.log('================================================================');
+

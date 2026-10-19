@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "npx tsc --noEmit",
-    "test": "node tests/jwt_cors_hardening.test.js && node tests/security_vulnerabilities.test.js && node tests/ocr_isolation_recommendation.test.js && node tests/signup_profile_persistence.test.js && node tests/admin_citizen_lifecycle.test.js && node tests/scheme_recommendation_and_system.test.js",
+    "test": "node tests/auth_end_to_end_fixes.test.js && node tests/jwt_cors_hardening.test.js && node tests/security_vulnerabilities.test.js && node tests/ocr_isolation_recommendation.test.js && node tests/signup_profile_persistence.test.js && node tests/admin_citizen_lifecycle.test.js && node tests/scheme_recommendation_and_system.test.js && node tests/ai_ml_architecture_audit.test.js && node tests/search_and_grounded_ai.test.js",
     "preview": "vite preview",
     "start": "tsx server/server.js",
     "server": "tsx server/server.js",
