@@ -1,5 +1,5 @@
-import { UserProfile, Scheme, RuleEvaluationResult, MLRecommendationResult } from '../types';
-import i18n from '../i18n';
+import type { UserProfile, Scheme, RuleEvaluationResult, MLRecommendationResult } from '../types/index.ts';
+import i18n from '../i18n.ts';
 
 /**
  * Rule-Based Weighted Affinity & Personalization Scoring Engine

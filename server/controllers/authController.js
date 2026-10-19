@@ -19,6 +19,15 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
     }
 
+    if (typeof fullName !== 'string' || !fullName.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid full name' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== 'string' || !emailRegex.test(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
     if (typeof password !== 'string' || password.length < 8) {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
     }
@@ -84,6 +93,15 @@ export const loginUser = async (req, res) => {
     const ipAddress = req.ip || req.connection?.remoteAddress || '127.0.0.1';
     const device = req.headers?.['user-agent'] || 'Unknown';
 
+    if (!email || !password || typeof password !== 'string') {
+      return res.status(400).json({ success: false, message: 'Please provide both email and password' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== 'string' || !emailRegex.test(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
     const normalizedEmail = (email || '').trim().toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
 
@@ -147,7 +165,8 @@ export const loginUser = async (req, res) => {
       res.status(401).json({ success: false, message });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Login Error]:', error);
+    res.status(500).json({ success: false, message: 'Login service encountered an unexpected error. Please try again.' });
   }
 };
 
@@ -187,7 +206,8 @@ export const generateOTP = async (req, res) => {
       ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {})
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Generate OTP Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate OTP. Please try again.' });
   }
 };
 
@@ -239,7 +259,8 @@ export const verifyOTP = async (req, res) => {
       token: generateToken(user._id, user.fullName, user.role)
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Verify OTP Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to verify OTP. Please try again.' });
   }
 };
 

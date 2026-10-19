@@ -51,7 +51,8 @@ export const getUsers = async (req, res) => {
       users
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Get Users Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve citizens.' });
   }
 };
 
@@ -82,7 +83,8 @@ export const updateUserStatus = async (req, res) => {
     
     res.json({ success: true, user: { _id: user._id, fullName: user.fullName, isActive: user.isActive } });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Update User Status Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to update user status.' });
   }
 };
 
@@ -145,7 +147,8 @@ export const getUserProfile = async (req, res) => {
       documents
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Get User Profile Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to load citizen profile.' });
   }
 };
 
@@ -262,7 +265,8 @@ export const updateUserProfile = async (req, res) => {
       profile: formatted
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Update User Profile Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to update citizen profile.' });
   }
 };
 
@@ -295,7 +299,8 @@ export const getCitizenDetails = async (req, res) => {
       documents
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Get Citizen Details Error]:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve citizen details.' });
   }
 };
 

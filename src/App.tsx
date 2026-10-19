@@ -33,7 +33,7 @@ import { KioskReport } from './components/KioskReport';
 import { GovSchemeLogoAnimated } from './components/brand';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
 export const App: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -97,7 +97,6 @@ export const App: React.FC = () => {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   
   const [isBooting, setIsBooting] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
   const [adminLoginRequested, setAdminLoginRequested] = useState(false);
 
   // Sync theme & accessibility font sizing onto html tag
@@ -134,12 +133,12 @@ export const App: React.FC = () => {
     document.documentElement.lang = currentLang;
   }, [currentLang, i18n]);
 
-  // Save user to localStorage whenever it changes (safely skipped in Demo Mode)
+  // Save user to localStorage whenever it changes
   useEffect(() => {
-    if (user && !isDemoMode) {
+    if (user) {
       localStorage.setItem('govscheme_user', JSON.stringify(user));
     }
-  }, [user, isDemoMode]);
+  }, [user]);
 
   // Protected Routes Logic
   useEffect(() => {
@@ -211,9 +210,6 @@ export const App: React.FC = () => {
 
   // Fetch schemes and sync cloud profile from backend on initial load
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-
     const fetchSchemes = async () => {
       try {
         const response = await fetch(`${API_URL}/api/schemes?limit=100`);
@@ -503,7 +499,6 @@ export const App: React.FC = () => {
     const token = localStorage.getItem('govscheme_token');
     if (token) {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         await fetch(`${API_URL}/api/users/profile`, {
           method: 'PUT',
           headers: {
@@ -654,50 +649,6 @@ export const App: React.FC = () => {
         console.error('Failed to delete document from backend:', err);
       }
     }
-  };
-
-  const handleStartLiveDemo = () => {
-    const demoProfile: UserProfile = {
-      id: 'demo-citizen-preview',
-      _id: 'demo-citizen-preview',
-      fullName: 'Ramesh Kumar (Demo Profile)',
-      email: 'demo.citizen@govscheme.preview',
-      phone: '+91 98765 43210',
-      role: 'citizen',
-      age: 38,
-      gender: 'Male',
-      maritalStatus: 'married',
-      state: 'Tamil Nadu',
-      district: 'Thanjavur',
-      occupation: 'farmer',
-      annualIncome: 140000,
-      category: 'OBC',
-      educationLevel: '10th Pass',
-      landHoldingAcres: 2.5,
-      familyMembersCount: 4,
-      hasDisability: false,
-      isRegisteredWorker: true,
-      verificationBadge: true,
-      profileCompletionScore: 100,
-      savedSchemeIds: [],
-      documents: [],
-      onboardingCompleted: true,
-      createdAt: new Date().toISOString()
-    };
-    setIsDemoMode(true);
-    setUser(demoProfile);
-    setActiveTab('schemes');
-  };
-
-  const handleExitLiveDemo = () => {
-    setIsDemoMode(false);
-    try {
-      const saved = localStorage.getItem('govscheme_user');
-      setUser(saved ? JSON.parse(saved) : null);
-    } catch {
-      setUser(null);
-    }
-    setActiveTab('home');
   };
 
   const handleStartVoiceCommand = () => {
@@ -897,24 +848,7 @@ export const App: React.FC = () => {
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onStartVoiceCommand={handleStartVoiceCommand}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onLiveDemo={handleStartLiveDemo}
       />
-
-      {/* Demo Mode Notice Banner */}
-      {isDemoMode && (
-        <div className="bg-amber-600 dark:bg-amber-700 text-white py-2 px-4 text-xs font-bold flex items-center justify-between z-40 sticky top-16 shadow-md">
-          <div className="flex items-center gap-2">
-            <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold">Demo Mode Active</span>
-            <span>Interactive Synthetic Citizen Experience • Production Database Untouched</span>
-          </div>
-          <button
-            onClick={handleExitLiveDemo}
-            className="bg-white text-amber-900 px-3 py-1 rounded-full text-xs font-extrabold hover:bg-amber-100 transition-colors shadow-sm"
-          >
-            Exit Demo
-          </button>
-        </div>
-      )}
 
       {/* Dynamic Tab Body Content */}
       <main className="flex-1 pt-20">
@@ -943,7 +877,6 @@ export const App: React.FC = () => {
             }}
             topSchemes={schemes}
             user={user}
-            onLiveDemo={handleStartLiveDemo}
           />
         )}
 
@@ -961,7 +894,6 @@ export const App: React.FC = () => {
               let savedUser: UserProfile;
 
               if (token) {
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                 const res = await fetch(`${API_URL}/api/users/profile`, {
                   method: 'PUT',
                   headers: {
@@ -1065,7 +997,6 @@ export const App: React.FC = () => {
               const token = localStorage.getItem('govscheme_token');
               if (token) {
                 try {
-                  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
                   const res = await fetch(`${API_URL}/api/users/profile`, {
                     method: 'PUT',
                     headers: {
@@ -1202,11 +1133,11 @@ export const App: React.FC = () => {
 
           if (authoritativeUser.role === 'admin' || authoritativeUser.role === 'superadmin' || authoritativeUser.email === 'admin@govscheme.in') {
             setActiveTab('admin');
-          } else if (isNewRegistration || !isProfileComplete(authoritativeUser)) {
-            setWizardMode('wizard');
-            setActiveTab('wizard');
           } else {
-            setActiveTab('schemes');
+            // Citizen sign-in: keep user on their current tab or navigate to home without forcing the wizard
+            if (activeTab === 'wizard' || !activeTab) {
+              setActiveTab('home');
+            }
           }
         }}
         onContinueGuest={() => setUser(null)}

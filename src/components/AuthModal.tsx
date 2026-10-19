@@ -152,62 +152,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     return normalizeUserProfile(data, fallbackName, fallbackEmail);
   };
 
+  const getCleanApiUrl = () => {
+    return (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail.trim() || !loginEmail.includes('@') || loginPassword.length < 6) {
-      setError(t('invalidEmailOrPassword', 'Invalid email or password (min 6 characters)'));
+    const emailTrimmed = loginEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailTrimmed || !emailRegex.test(emailTrimmed)) {
+      setError(t('validEmailRequired', 'Please enter a valid email address'));
       return;
     }
+    if (!loginPassword) {
+      setError(t('passwordRequired', 'Please enter your password'));
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
-      let data: any = null;
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      try {
-        const response = await fetch(`${API_URL}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (response.ok) {
-          data = await response.json();
-        } else {
-          const errData = await response.json().catch(() => null);
-          data = errData || { success: false, message: t('invalidEmailOrPassword', 'Invalid email or password') };
-        }
-      } catch (networkErr) {
-        clearTimeout(timeoutId);
-        console.warn('Backend unavailable or network error, checking client-side authentication mode for:', loginEmail);
-        if (import.meta.env.DEV && loginEmail === 'admin@govscheme.in' && loginPassword === 'password123') {
-          data = {
-            success: true,
-            _id: 'mock-admin-id',
-            fullName: 'Super Admin (Dev Mode)',
-            email: 'admin@govscheme.in',
-            role: 'Super Admin',
-            token: 'mock-admin-token-dev'
-          };
-        } else {
-          const namePart = loginEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').trim();
-          const formattedName = namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'Citizen User';
-          data = {
-            success: true,
-            _id: `user-${Date.now()}`,
-            fullName: formattedName,
-            email: loginEmail,
-            role: 'citizen',
-            token: `demo-token-${Date.now()}`
-          };
-        }
-      }
+      const API_URL = getCleanApiUrl();
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailTrimmed, password: loginPassword }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-      if (data && data.success) {
-        const profile = createProfileFromAuthData(data, 'User', loginEmail);
+      const data = await response.json().catch(() => null);
+
+      if (response.ok && data && data.success) {
+        const profile = createProfileFromAuthData(data, 'User', emailTrimmed);
         if (data.token) {
           localStorage.setItem('govscheme_token', data.token);
           if (profile.role === 'admin' || profile.role === 'superadmin') {
@@ -219,11 +200,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onLoginSuccess(profile, false);
         onClose();
       } else {
-        setError(data?.message || t('loginFailed', 'Login failed'));
+        const msg = data?.message || (response.status === 401 ? t('invalidEmailOrPassword', 'Invalid email or password') : t('loginFailed', 'Login failed. Please try again.'));
+        setError(msg);
       }
-    } catch (err: any) {
-      console.error('Auth login error:', err);
-      setError(err?.message && !err.message.includes('fetch') && !err.message.includes('abort') ? err.message : t('networkError', 'Network error. Please try again.'));
+    } catch (networkErr: any) {
+      clearTimeout(timeoutId);
+      console.error('Auth login network error:', networkErr);
+      if (networkErr.name === 'AbortError') {
+        setError(t('serverTimeout', 'The server took too long to respond. The cloud service may be waking up, please try again in a few moments.'));
+      } else {
+        setError(t('networkError', 'Unable to reach the authentication service. Please check your connection or wait a moment while the cloud service starts.'));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -231,78 +218,46 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registerName.trim()) {
-      setError(t('nameRequired', 'Name is required'));
+    const nameTrimmed = registerName.trim();
+    const emailTrimmed = registerEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!nameTrimmed) {
+      setError(t('nameRequired', 'Full Name is required'));
       return;
     }
-    if (!registerEmail.trim() || !registerEmail.includes('@')) {
-      setError(t('validEmailRequired', 'Valid email is required'));
+    if (!emailTrimmed || !emailRegex.test(emailTrimmed)) {
+      setError(t('validEmailRequired', 'Please enter a valid email address'));
       return;
     }
-    if (registerPassword.length < 6) {
-      setError(t('passwordLength', 'Password must be at least 6 characters'));
+    if (registerPassword.length < 8) {
+      setError(t('passwordLength', 'Password must be at least 8 characters long'));
       return;
     }
     if (registerPassword !== registerConfirm) {
       setError(t('passwordsDontMatch', 'Passwords do not match'));
       return;
     }
+
     setError(null);
     setIsSubmitting(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
     
     try {
-      let data: any = null;
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      try {
-        const response = await fetch(`${API_URL}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullName: registerName.trim(), email: registerEmail.trim().toLowerCase(), password: registerPassword }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (response.ok) {
-          data = await response.json();
-        } else {
-          const errData = await response.json().catch(() => null);
-          const rawMessage = errData?.message || '';
-          let userFriendlyMessage = rawMessage;
-          if (
-            response.status === 409 ||
-            rawMessage.includes('E11000') ||
-            rawMessage.toLowerCase().includes('duplicate key') ||
-            rawMessage.toLowerCase().includes('already exists')
-          ) {
-            userFriendlyMessage = t('accountAlreadyExists', 'An account with this email already exists. Please sign in.');
-          } else if (
-            rawMessage.includes('buffering timed out') ||
-            rawMessage.includes('MongoServerError') ||
-            rawMessage.includes('timed out after')
-          ) {
-            userFriendlyMessage = t('serviceUnavailable', 'Database service is temporarily busy. Please try again shortly.');
-          }
-          data = {
-            success: false,
-            message: userFriendlyMessage || t('registrationFailed', 'Registration failed')
-          };
-        }
-      } catch (networkErr) {
-        clearTimeout(timeoutId);
-        console.warn('Backend unavailable during registration, creating local user profile:', registerEmail);
-        data = {
-          success: true,
-          _id: `user-${Date.now()}`,
-          fullName: registerName,
-          email: registerEmail,
-          role: 'citizen',
-          token: `demo-reg-token-${Date.now()}`
-        };
-      }
+      const API_URL = getCleanApiUrl();
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: nameTrimmed, email: emailTrimmed, password: registerPassword }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-      if (data && data.success) {
-        const profile = createProfileFromAuthData(data, registerName, registerEmail);
+      const data = await response.json().catch(() => null);
+
+      if (response.ok && data && data.success) {
+        const profile = createProfileFromAuthData(data, nameTrimmed, emailTrimmed);
         if (data.token) {
           localStorage.setItem('govscheme_token', data.token);
           localStorage.setItem('govscheme_user', JSON.stringify(profile));
@@ -310,19 +265,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onLoginSuccess(profile, true);
         onClose();
       } else {
-        const rawMsg = data?.message || '';
-        const safeMsg = (rawMsg.includes('E11000') || rawMsg.toLowerCase().includes('duplicate key'))
-          ? t('accountAlreadyExists', 'An account with this email already exists. Please sign in.')
-          : rawMsg || t('registrationFailed', 'Registration failed');
-        setError(safeMsg);
+        const rawMessage = data?.message || '';
+        let userFriendlyMessage = rawMessage;
+        if (
+          response.status === 409 ||
+          rawMessage.includes('E11000') ||
+          rawMessage.toLowerCase().includes('duplicate key') ||
+          rawMessage.toLowerCase().includes('already exists')
+        ) {
+          userFriendlyMessage = t('accountAlreadyExists', 'An account with this email already exists. Please sign in.');
+        } else if (
+          rawMessage.includes('buffering timed out') ||
+          rawMessage.includes('MongoServerError') ||
+          rawMessage.includes('timed out after')
+        ) {
+          userFriendlyMessage = t('serviceUnavailable', 'Database service is temporarily busy. Please try again shortly.');
+        }
+        setError(userFriendlyMessage || t('registrationFailed', 'Registration failed. Please try again.'));
       }
-    } catch (err: any) {
-      console.error('Register error:', err);
-      const errMsg = err?.message || '';
-      if (errMsg.includes('E11000') || errMsg.toLowerCase().includes('duplicate key') || errMsg.toLowerCase().includes('already exists')) {
-        setError(t('accountAlreadyExists', 'An account with this email already exists. Please sign in.'));
+    } catch (networkErr: any) {
+      clearTimeout(timeoutId);
+      console.error('Auth register network error:', networkErr);
+      if (networkErr.name === 'AbortError') {
+        setError(t('serverTimeout', 'The server took too long to respond. The cloud service may be waking up, please try again in a few moments.'));
       } else {
-        setError(errMsg && !errMsg.includes('fetch') && !errMsg.includes('Mongo') && !errMsg.includes('abort') ? errMsg : t('networkError', 'Network error. Please try again.'));
+        setError(t('networkError', 'Unable to reach the authentication service. Please check your connection or wait a moment while the cloud service starts.'));
       }
     } finally {
       setIsSubmitting(false);
@@ -342,7 +309,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const API_URL = getCleanApiUrl();
         const response = await fetch(`${API_URL}/api/auth/google`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -363,7 +330,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           onLoginSuccess(profile, isNew);
           onClose();
         } else {
-          setError(data.message || t('authFailed', 'Failed to authenticate with backend.'));
+          setError(data?.message || t('authFailed', 'Failed to authenticate with backend.'));
         }
       } catch (err: any) {
         console.error('Google auth error:', err);
@@ -445,7 +412,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
             
             <PasswordField 
-              placeholder={t('password', 'Password (min 6 chars)')} 
+              placeholder={t('passwordPlaceholder', 'Password (min 8 chars)')} 
               value={registerPassword} 
               onChange={(e: any) => setRegisterPassword(e.target.value)} 
             />

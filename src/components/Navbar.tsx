@@ -303,17 +303,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                {onLiveDemo && (
-                  <button
-                    type="button"
-                    onClick={onLiveDemo}
-                    className="px-3 py-1.5 rounded-full border border-primary/30 text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-1.5 shadow-sm"
-                    title="Experience interactive citizen demonstration"
-                  >
-                    <Sparkles className="w-3 h-3 text-primary animate-pulse" />
-                    <span>Live Demo</span>
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => onOpenAuth('login')}
@@ -410,22 +399,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Mobile Menu Auth Buttons */}
               {!user && (
                 <div className="flex flex-col gap-3 w-full max-w-xs mx-auto px-2 mt-2">
-                  {onLiveDemo && (
-                    <motion.button
-                      initial={{ y: 30, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -30, opacity: 0 }}
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        onLiveDemo();
-                      }}
-                      className="w-full py-3 rounded-full bg-primary/10 border-2 border-primary/40 text-primary font-bold text-base flex items-center justify-center gap-2"
-                    >
-                      <Sparkles className="w-5 h-5 text-primary" />
-                      Live Demo (Interactive)
-                    </motion.button>
-                  )}
                   <motion.button
                     initial={{ y: 30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}

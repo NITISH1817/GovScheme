@@ -128,6 +128,9 @@ import rateLimit from 'express-rate-limit';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust reverse proxy (Render, Cloudflare, Nginx) so req.ip and express-rate-limit read real client IP
+app.set('trust proxy', 1);
+
 // Production-hardened CORS configuration with strict origin allowlist
 app.use(cors(corsOptionsDelegate));
 
@@ -144,6 +147,19 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api', apiLimiter);
+
+// Dedicated Authentication Rate Limiter (Mitigates brute-force and credential stuffing)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'test' ? 1000 : 60, // 60 auth requests per 15 minutes in production/development
+  message: {
+    success: false,
+    message: 'Too many authentication attempts from this IP. Please try again after 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth', authLimiter);
 
 app.use(express.json({ limit: '10mb' }));
 

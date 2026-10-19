@@ -111,7 +111,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     setMessages(prev => [...prev, initialAiMsg]);
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
       const authToken = localStorage.getItem('govscheme_token') || localStorage.getItem('token') || '';
       const response = await fetch(`${API_URL}/api/ai/stream`, {
         method: 'POST',

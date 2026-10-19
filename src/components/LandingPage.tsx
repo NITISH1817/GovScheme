@@ -311,16 +311,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       {t('navKiosk', 'CSC Kiosk Mode')}
                     </span>
                   </MagneticButton>
-
-                  <MagneticButton
-                    onClick={() => (onLiveDemo ? onLiveDemo() : onNavigateTab('schemes'))}
-                    className="group relative overflow-hidden rounded-full bg-emerald-600 hover:bg-emerald-700 text-white p-2 flex items-center justify-between shadow-lg border border-emerald-500 w-full sm:w-auto min-w-[170px]"
-                  >
-                    <span className="font-bold text-lg pl-6 pr-6 w-full text-center flex items-center justify-center gap-2">
-                      <Sparkles className="w-5 h-5 text-amber-300" />
-                      {t('liveDemo', 'Live Demo')}
-                    </span>
-                  </MagneticButton>
                 </motion.div>
               </div>
 
