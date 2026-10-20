@@ -1,10 +1,30 @@
 import React from 'react';
-import { CombinedSchemeAnalysis, UserProfile, DocumentRecord } from '../types';
+import { CombinedSchemeAnalysis, UserProfile, DocumentRecord, DocumentPossessionStatus } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Bookmark, BookmarkCheck, Check, FileText, AlertCircle, HelpCircle, Activity, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  X,
+  ExternalLink,
+  Bookmark,
+  BookmarkCheck,
+  Check,
+  FileText,
+  AlertCircle,
+  HelpCircle,
+  Activity,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Phone,
+  Info
+} from 'lucide-react';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
+import { evaluateExplainableEligibility, PRELIMINARY_DISCLAIMER } from '../engine/explainableEligibility';
 
 interface SchemeModalProps {
   user: UserProfile | null;
@@ -28,6 +48,12 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
   const { scheme } = analysis;
   const { t } = useTranslation();
 
+  const [reportedDocs, setReportedDocs] = React.useState<Record<string, DocumentPossessionStatus>>({});
+
+  const explainableResult = React.useMemo(() => {
+    return evaluateExplainableEligibility(user, scheme, reportedDocs);
+  }, [user, scheme, reportedDocs, currentLang]);
+
   const effectiveRuleResult = React.useMemo(() => {
     if (!user) return analysis.ruleResult;
     return evaluateSchemeEligibility(user, scheme);
@@ -37,6 +63,21 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
     if (!user) return analysis.mlResult;
     return computeMLRecommendation(user, scheme, effectiveRuleResult, [scheme]);
   }, [user, scheme, effectiveRuleResult, currentLang, analysis.mlResult]);
+
+  const handleToggleDocPossession = (docId: string, status: DocumentPossessionStatus) => {
+    setReportedDocs(prev => ({
+      ...prev,
+      [docId]: status
+    }));
+  };
+
+  const handleResetDocPossession = (docId: string) => {
+    setReportedDocs(prev => {
+      const copy = { ...prev };
+      delete copy[docId];
+      return copy;
+    });
+  };
 
   const [copied, setCopied] = React.useState(false);
   const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(null);
@@ -202,149 +243,328 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   </div>
                 </div>
               </div>
-
-              <div className="overflow-hidden rounded border border-gray-200 dark:border-gray-800 mt-6">
-                <div className="bg-gray-50 dark:bg-[#0F1B2D] border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-[#123C69] dark:text-[#1769FF]" />
-                  <span className="font-bold text-gray-900 dark:text-white">{t('eligibilityAnalysis', 'Eligibility Analysis')}</span>
-                </div>
-                
-                <table className="w-full text-left text-sm">
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#07111F]">
-                    {/* Matched Criteria */}
-                    {effectiveRuleResult.matchedCriteria.map((factor, idx) => (
-                      <tr key={`match-${idx}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        <td className="px-6 py-4">
-                          <span className="text-gray-700 dark:text-gray-300 font-medium">{t(factor, factor)}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#15803D]/10 text-[#15803D] text-xs font-bold">
-                            <Check className="w-3 h-3" /> {t('matched', 'Matched')}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-
-                    {/* Failed Criteria */}
-                    {effectiveRuleResult.failedCriteria.map((factor, idx) => (
-                      <tr key={`failed-${idx}`} className="hover:bg-red-50 dark:hover:bg-red-900/10">
-                        <td className="px-6 py-4">
-                          <span className="text-gray-700 dark:text-gray-300 font-medium">{t(factor, factor)}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-100 text-red-700 text-xs font-bold">
-                            <X className="w-3 h-3" /> {t('unmet', 'Unmet')}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-
-                    {/* Missing Info / Documents */}
-                    {effectiveRuleResult.missingDocuments.map((doc, idx) => (
-                      <tr key={`missing-${idx}`} className="hover:bg-yellow-50 dark:hover:bg-yellow-900/10">
-                        <td className="px-6 py-4">
-                          <span className="text-gray-700 dark:text-gray-300 font-medium">{t('missingDoc', 'Missing Document:')} {t(doc, doc)}</span>
-                          <p className="text-xs text-gray-500 mt-1">{t('pleaseUpload', 'Please upload this document to your vault.')}</p>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-yellow-100 text-yellow-700 text-xs font-bold">
-                            <HelpCircle className="w-3 h-3" /> {t('missingInfo', 'Missing Info')}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-
-                    {/* Information Needed for Verification */}
-                    {effectiveRuleResult.informationNeeded && effectiveRuleResult.informationNeeded.map((field, idx) => (
-                      <tr key={`info-${idx}`} className="hover:bg-blue-50 dark:hover:bg-blue-900/10">
-                        <td className="px-6 py-4">
-                          <span className="text-gray-700 dark:text-gray-300 font-medium">{t('infoNeeded', 'Information Needed:')} {field}</span>
-                          <p className="text-xs text-gray-500 mt-1">{t('completeProfileToVerify', 'Complete this field in your profile or the Guided Wizard to verify eligibility.')}</p>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-bold">
-                            <HelpCircle className="w-3 h-3" /> {t('needed', 'Needed')}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </section>
 
-            {/* Eligibility */}
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('officialEligibility', 'Official Eligibility')}</h3>
-              <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-                {Object.entries(scheme.eligibilityRules).map(([key, val], idx) => {
-                  if (val === undefined || val === null || (Array.isArray(val) && val.length === 0)) return null;
-
-                  const renderValue = () => {
-                    if (typeof val === 'boolean') {
-                      return val ? t('yes', 'Yes') : t('no', 'No');
-                    }
-                    if (key === 'minAge' || key === 'maxAge') {
-                      return `${val} ${t('yearsUnit', 'years')}`;
-                    }
-                    if (key === 'minDisabilityPercentage') {
-                      return `${val}%`;
-                    }
-                    if (key === 'maxAnnualIncome' && typeof val === 'number') {
-                      return `₹${val.toLocaleString('en-IN')}`;
-                    }
-                    if (key === 'maxLandHoldingAcres') {
-                      return `${val} ${t('acresUnit', 'acres')}`;
-                    }
-                    if (Array.isArray(val)) {
-                      return val.map(v => t(String(v), String(v))).join(', ');
-                    }
-                    return t(String(val), String(val));
-                  };
-
-                  return (
-                    <li key={idx}>
-                      <span className="font-semibold">{t(key, key.replace(/([A-Z])/g, ' $1'))}:</span> {renderValue()}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-
-            {/* Documents */}
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('documentsRequired', 'Smart Document Checklist')}</h3>
-              
-              {user && (
-                <div className="mb-4">
-                  <span className="text-sm font-semibold text-gray-500">
-                    {(scheme.requiredDocuments || []).filter(doc => (user.documents || []).some((d: any) => d.type === doc)).length} / {(scheme.requiredDocuments || []).length} {t('documentsReady', 'documents ready')}
-                  </span>
-                  <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5 mt-2">
-                    <div className="bg-[#15803D] h-1.5 rounded-full" style={{ width: `${((scheme.requiredDocuments || []).length === 0 ? 100 : ((scheme.requiredDocuments || []).filter(doc => (user.documents || []).some((d: any) => d.type === doc)).length / (scheme.requiredDocuments || []).length) * 100)}%` }}></div>
+              {/* Explainable Eligibility & Decision Support */}
+              <div className="overflow-hidden rounded border border-gray-200 dark:border-gray-800 mt-6 bg-white dark:bg-[#07111F]">
+                <div className="bg-gray-50 dark:bg-[#0F1B2D] border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-[#123C69] dark:text-[#1769FF]" />
+                    <span className="font-bold text-gray-900 dark:text-white text-base">
+                      {t('eligibilityExplainingTitle', 'Explainable Eligibility & Decision Support')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-[#15803D]/10 text-[#15803D] border border-[#15803D]/20">
+                      <Check className="w-3 h-3" /> {explainableResult.satisfied.length} {t('criteriaSatisfied', 'Criteria Met')}
+                    </span>
+                    {explainableResult.notSatisfied.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800">
+                        <X className="w-3 h-3" /> {explainableResult.notSatisfied.length} {t('criteriaUnmet', 'Unmet')}
+                      </span>
+                    )}
+                    {explainableResult.unknown.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        <HelpCircle className="w-3 h-3" /> {explainableResult.unknown.length} {t('criteriaNeeded', 'Needed')}
+                      </span>
+                    )}
                   </div>
                 </div>
-              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {scheme.requiredDocuments.map((doc, idx) => {
-                  const isUploaded = user?.documents.some(d => d.type === doc);
-                  return (
-                    <div key={idx} className={`flex items-center justify-between gap-3 p-3 border rounded ${isUploaded ? 'bg-[#15803D]/5 border-[#15803D]/20' : 'bg-gray-50 dark:bg-[#0F1B2D] border-gray-200 dark:border-gray-800'}`}>
-                      <div className="flex items-center gap-3">
-                        {isUploaded ? <Check className="w-5 h-5 text-[#15803D] shrink-0" /> : <FileText className="w-5 h-5 text-gray-400 shrink-0" />}
-                        <span className={`text-sm ${isUploaded ? 'text-[#15803D] font-semibold' : 'text-gray-700 dark:text-gray-300'}`}>{t(doc, doc)}</span>
+                <div className="p-6 space-y-6">
+                  {/* Satisfied Criteria */}
+                  {explainableResult.satisfied.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                        {t('satisfiedCriteriaHeader', 'Satisfied Criteria')} ({explainableResult.satisfied.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {explainableResult.satisfied.map(crit => (
+                          <div key={crit.id} className="p-3 rounded border border-green-200 dark:border-green-900/30 bg-green-50/50 dark:bg-green-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                                  ✓ {t('satisfied', 'Satisfied')}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{crit.reason}</p>
+                            </div>
+                            {crit.userValueDescription && (
+                              <div className="text-xs text-gray-500 shrink-0 text-right sm:text-right">
+                                <span className="font-medium text-gray-700 dark:text-gray-300">{crit.userValueDescription}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                      {!isUploaded && user && (
-                        <button onClick={() => { onClose(); onNavigateTab('vault'); }} className="text-xs text-[#1769FF] font-bold hover:underline">
-                          {t('upload', 'Upload')}
-                        </button>
-                      )}
                     </div>
-                  );
-                })}
+                  )}
+
+                  {/* Unmet Criteria */}
+                  {explainableResult.notSatisfied.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <XCircle className="w-4 h-4 text-red-600" />
+                        {t('unmetCriteriaHeader', 'Unmet Criteria')} ({explainableResult.notSatisfied.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {explainableResult.notSatisfied.map(crit => (
+                          <div key={crit.id} className="p-3 rounded border border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                                  ✕ {t('unmet', 'Unmet')}
+                                </span>
+                              </div>
+                              <p className="text-xs text-red-700 dark:text-red-300 mt-1">{crit.reason}</p>
+                            </div>
+                            <div className="text-xs text-gray-500 shrink-0 sm:text-right">
+                              <span className="block text-[11px] text-gray-400">Required: {crit.requiredValueDescription}</span>
+                              {crit.userValueDescription && (
+                                <span className="font-medium text-red-600 dark:text-red-400">Profile: {crit.userValueDescription}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Information Needed */}
+                  {explainableResult.unknown.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        {t('informationNeededHeader', 'Information Still Needed')} ({explainableResult.unknown.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {explainableResult.unknown.map(crit => (
+                          <div key={crit.id} className="p-3 rounded border border-blue-200 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                  ? {t('criteriaNeeded', 'Needed')}
+                                </span>
+                              </div>
+                              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{crit.reason}</p>
+                            </div>
+                            <div className="text-xs text-gray-500 shrink-0 sm:text-right">
+                              <span className="block text-[11px] text-gray-400">Target: {crit.requiredValueDescription}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </section>
+
+              {/* Official Eligibility Parameters Reference */}
+              <section className="space-y-4">
+                <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('officialEligibility', 'Official Eligibility')}</h3>
+                <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
+                  {Object.entries(scheme.eligibilityRules || {}).map(([key, val], idx) => {
+                    if (val === undefined || val === null || (Array.isArray(val) && val.length === 0)) return null;
+
+                    const renderValue = () => {
+                      if (typeof val === 'boolean') {
+                        return val ? t('yes', 'Yes') : t('no', 'No');
+                      }
+                      if (key === 'minAge' || key === 'maxAge') {
+                        return `${val} ${t('yearsUnit', 'years')}`;
+                      }
+                      if (key === 'minDisabilityPercentage') {
+                        return `${val}%`;
+                      }
+                      if (key === 'maxAnnualIncome' && typeof val === 'number') {
+                        return `₹${val.toLocaleString('en-IN')}`;
+                      }
+                      if (key === 'maxLandHoldingAcres') {
+                        return `${val} ${t('acresUnit', 'acres')}`;
+                      }
+                      if (Array.isArray(val)) {
+                        return val.map(v => t(String(v), String(v))).join(', ');
+                      }
+                      return t(String(val), String(val));
+                    };
+
+                    return (
+                      <li key={idx}>
+                        <span className="font-semibold">{t(key, key.replace(/([A-Z])/g, ' $1'))}:</span> {renderValue()}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+
+              {/* Smart Document Readiness Checklist */}
+              <section className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+                  <h3 className="text-xl font-bold text-[#123C69] dark:text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#1769FF]" />
+                    {t('documentReadinessChecklist', 'Smart Document Readiness Checklist')}
+                  </h3>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-100 dark:bg-[#16243A] text-gray-700 dark:text-gray-300">
+                    {explainableResult.availableDocuments.length} / {explainableResult.requiredDocuments.length} {t('documentsReady', 'documents ready')}
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
+                  <div
+                    className="bg-[#15803D] h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${explainableResult.requiredDocuments.length === 0 ? 100 : (explainableResult.availableDocuments.length / explainableResult.requiredDocuments.length) * 100}%`
+                    }}
+                  />
+                </div>
+
+                {/* Catalogue Discrepancy Banner */}
+                {explainableResult.documentConflictDetected && explainableResult.documentConflictDetails && (
+                  <div className="p-3.5 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <span className="font-bold">{t('docConflictNotice', 'Catalogue Discrepancy')}:</span> {explainableResult.documentConflictDetails}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Document Metadata State */}
+                {explainableResult.requiredDocuments.length === 0 && (
+                  <div className="p-4 rounded border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0F1B2D] text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-gray-500 shrink-0" />
+                    <span>{t('noDocsRequiredInCatalogue', 'Document requirements are not specified in the catalogue for this scheme. Verify with the official portal or local CSC Kendra.')}</span>
+                  </div>
+                )}
+
+                {/* Document Items Grid */}
+                {explainableResult.documentItems.length > 0 && (
+                  <div className="grid grid-cols-1 gap-3">
+                    {explainableResult.documentItems.map(item => {
+                      const isAvailable = item.status === 'AVAILABLE';
+                      const isMissing = item.status === 'MISSING';
+                      const isUnconfirmed = item.status === 'UNCONFIRMED';
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 border rounded-lg transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                            isAvailable
+                              ? 'bg-[#15803D]/5 border-[#15803D]/25'
+                              : isMissing
+                              ? 'bg-red-50/50 dark:bg-red-950/15 border-red-200 dark:border-red-900/30'
+                              : 'bg-gray-50 dark:bg-[#0F1B2D] border-gray-200 dark:border-gray-800'
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {isAvailable ? (
+                                <Check className="w-4 h-4 text-[#15803D] shrink-0" />
+                              ) : isMissing ? (
+                                <X className="w-4 h-4 text-red-600 shrink-0" />
+                              ) : (
+                                <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                              )}
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {t(item.documentName, item.documentName)}
+                              </span>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                  isAvailable
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                                    : isMissing
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                                }`}
+                              >
+                                {isAvailable
+                                  ? t('haveDocBadge', 'Available')
+                                  : isMissing
+                                  ? t('missingDocBadge', 'Missing')
+                                  : t('unconfirmedDocBadge', 'Unconfirmed')}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 pl-6">{item.explanation}</p>
+                          </div>
+
+                          {/* Citizen interactive buttons */}
+                          <div className="flex items-center gap-1.5 pl-6 sm:pl-0 shrink-0">
+                            {!isAvailable && (
+                              <button
+                                onClick={() => handleToggleDocPossession(item.id, 'AVAILABLE')}
+                                className="px-2.5 py-1 text-xs rounded border border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 font-medium transition-colors"
+                              >
+                                {t('markHaveDoc', 'I have this')}
+                              </button>
+                            )}
+                            {!isMissing && (
+                              <button
+                                onClick={() => handleToggleDocPossession(item.id, 'MISSING')}
+                                className="px-2.5 py-1 text-xs rounded border border-red-400 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-medium transition-colors"
+                              >
+                                {t('markMissingDoc', "I don't have this")}
+                              </button>
+                            )}
+                            {item.possessionReportedByCitizen && (
+                              <button
+                                onClick={() => handleResetDocPossession(item.id)}
+                                className="px-2 py-1 text-xs rounded text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                {t('resetDocStatus', 'Reset')}
+                              </button>
+                            )}
+                            {!isAvailable && user && (
+                              <button
+                                onClick={() => {
+                                  onClose();
+                                  onNavigateTab('vault');
+                                }}
+                                className="px-2.5 py-1 text-xs rounded bg-blue-50 dark:bg-blue-900/20 text-[#1769FF] font-bold hover:underline"
+                              >
+                                {t('upload', 'Upload')}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* Practical Next Steps Section */}
+              <section className="space-y-4">
+                <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">
+                  {t('practicalNextSteps', 'Practical Next Steps & Actions')}
+                </h3>
+                <div className="space-y-2.5">
+                  {explainableResult.nextSteps.map((step, idx) => (
+                    <div key={idx} className="p-3 rounded border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0F1B2D] flex items-start gap-3">
+                      <span className="w-5 h-5 rounded-full bg-[#123C69] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                        {step}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Preliminary Advisory Disclaimer Notice */}
+              <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-300 space-y-1">
+                <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px] text-blue-800 dark:text-blue-200">
+                  <ShieldCheck className="w-4 h-4 text-[#1769FF]" />
+                  {t('preliminaryAdvisoryNotice', 'Preliminary Advisory')}
+                </div>
+                <p className="leading-relaxed text-gray-700 dark:text-gray-300">
+                  {explainableResult.disclaimer}
+                </p>
+              </div>
 
             {/* Application Process */}
             <section className="space-y-4">

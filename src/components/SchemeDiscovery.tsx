@@ -431,7 +431,24 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     )}
 
                     <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">{t('whyYouMatch', 'WHY YOU MATCH')}</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">{t('whyYouMatch', 'WHY YOU MATCH')}</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            ✓ {ruleResult.matchedCriteria.length} {t('criteriaSatisfied', 'Criteria Met')}
+                          </span>
+                          {ruleResult.failedCriteria.length > 0 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800">
+                              ✕ {ruleResult.failedCriteria.length} {t('criteriaUnmet', 'Unmet')}
+                            </span>
+                          )}
+                          {ruleResult.informationNeeded && ruleResult.informationNeeded.length > 0 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              ? {ruleResult.informationNeeded.length} {t('criteriaNeeded', 'Needed')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       {ruleResult.status === 'Insufficient Information' ? (
                         <div className="text-xs text-blue-700 dark:text-blue-300 font-medium py-1">
                           {ruleResult.informationNeeded && ruleResult.informationNeeded.length > 0

@@ -166,10 +166,59 @@ export interface MLRecommendationResult {
   relatedSchemeIds: string[];
 }
 
+export type CriterionStatus = 'SATISFIED' | 'NOT_SATISFIED' | 'UNKNOWN';
+export type DocumentPossessionStatus = 'AVAILABLE' | 'MISSING' | 'UNCONFIRMED';
+
+export interface CriterionEvaluation {
+  id: string;
+  title: string;
+  status: CriterionStatus;
+  userValueDescription?: string;
+  requiredValueDescription: string;
+  reason: string;
+}
+
+export interface DocumentReadinessItem {
+  id: string;
+  documentName: string;
+  status: DocumentPossessionStatus;
+  source: 'catalogue_required' | 'catalogue_rules' | 'both';
+  possessionReportedByCitizen: boolean;
+  explanation: string;
+}
+
+export interface ExplainableEligibilityResult {
+  schemeId: string;
+  schemeName: string;
+  overallStatus: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible' | 'Insufficient Information';
+  satisfied: CriterionEvaluation[];
+  notSatisfied: CriterionEvaluation[];
+  unknown: CriterionEvaluation[];
+  criteriaCount: {
+    total: number;
+    satisfied: number;
+    notSatisfied: number;
+    unknown: number;
+  };
+  requiredDocuments: string[];
+  availableDocuments: string[];
+  missingDocuments: string[];
+  unconfirmedDocuments: string[];
+  documentItems: DocumentReadinessItem[];
+  documentConflictDetected: boolean;
+  documentConflictDetails?: string;
+  explanations: string[];
+  nextSteps: string[];
+  officialApplyUrl?: string;
+  helplineNumber?: string;
+  disclaimer: string;
+}
+
 export interface CombinedSchemeAnalysis {
   scheme: Scheme;
   ruleResult: RuleEvaluationResult;
   mlResult: MLRecommendationResult;
+  explainableResult?: ExplainableEligibilityResult;
 }
 
 export interface ApplicationTrackerRecord {

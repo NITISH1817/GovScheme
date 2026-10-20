@@ -1,4 +1,4 @@
-import type { UserProfile, Scheme, RuleEvaluationResult } from '../types/index.ts';
+import type { UserProfile, Scheme, DocumentRecord, RuleEvaluationResult } from '../types/index.ts';
 import i18n from '../i18n.ts';
 
 export const SEMANTIC_EDUCATION_GROUPS: Record<string, string[]> = {
@@ -23,6 +23,25 @@ export const EDUCATION_TIER_ORDER: Record<string, number> = {
   doctorate: 8
 };
 
+export const KNOWN_RULE_KEYS = new Set([
+  'minAge',
+  'maxAge',
+  'ageMin',
+  'ageMax',
+  'allowedGenders',
+  'allowedStates',
+  'maxAnnualIncome',
+  'incomeLimit',
+  'allowedOccupations',
+  'allowedCategories',
+  'maxLandHoldingAcres',
+  'requiresDisability',
+  'minDisabilityPercentage',
+  'requiredEducation',
+  'education',
+  'requiredDocuments'
+]);
+
 // Flatten and sort aliases by length descending so specific multi-word phrases match before general substrings
 const SORTED_EDUCATION_ALIASES: Array<{ group: string; alias: string }> = (() => {
   const list: Array<{ group: string; alias: string }> = [];
@@ -45,14 +64,31 @@ export function resolveEducationGroup(term?: string | null): string | null {
   return null;
 }
 
-export function evaluateSchemeEligibility(user: UserProfile | null | undefined, scheme: Scheme): RuleEvaluationResult {
+export function evaluateSchemeEligibility(user: UserProfile | null | undefined, scheme: Scheme | null | undefined): RuleEvaluationResult {
   const u = (user || {}) as Partial<UserProfile>;
+  const s = (scheme || {}) as Scheme;
   // Safely extract rules (backend uses ageMin, frontend uses minAge)
-  const rules = scheme.eligibilityRules || {};
+  const rules = s.eligibilityRules || {};
   const matchedCriteria: string[] = [];
   const failedCriteria: string[] = [];
   const missingDocuments: string[] = [];
   const informationNeeded: string[] = [];
+
+  if (!s.eligibilityRules || Object.keys(rules).length === 0) {
+    informationNeeded.push(i18n.t('unsupportedRulesNotice', {
+      defaultValue: 'Scheme does not define structured machine-evaluable rules in the catalogue. Manual verification with official scheme guidelines is required.'
+    }));
+  } else {
+    for (const ruleKey of Object.keys(rules)) {
+      if (!KNOWN_RULE_KEYS.has(ruleKey)) {
+        informationNeeded.push(i18n.t('unsupportedRuleFieldNotice', {
+          ruleKey,
+          value: String((rules as any)[ruleKey]),
+          defaultValue: `Special rule condition '${ruleKey}' is not supported by automated rules. Verify against official guidelines.`
+        }));
+      }
+    }
+  }
 
   const minAge = rules.minAge ?? (rules as any).ageMin;
   const maxAge = rules.maxAge ?? (rules as any).ageMax;
@@ -91,7 +127,7 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
         target: targetGender,
         defaultValue: `Targeted for ${targetGender} (Gender not specified in profile)`
       }));
-    } else if (rules.allowedGenders.includes(u.gender)) {
+    } else if (rules.allowedGenders.some((g: string) => g.toLowerCase() === u.gender?.toLowerCase())) {
       matchedCriteria.push(i18n.t('ruleGenderMet', {
         gender: i18n.t(u.gender, u.gender),
         defaultValue: `Gender requirement met (${i18n.t(u.gender, u.gender)})`
@@ -107,15 +143,15 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     }
   }
 
-  if (scheme.state !== 'Central' && rules.allowedStates && rules.allowedStates.length > 0) {
+  if (s.state !== 'Central' && rules.allowedStates && rules.allowedStates.length > 0) {
     if (!u.state || !String(u.state).trim()) {
-      const allowedStates = rules.allowedStates.map((s: string) => i18n.t(s, s)).join(', ');
+      const allowedStates = rules.allowedStates.map((st: string) => i18n.t(st, st)).join(', ');
       informationNeeded.push(i18n.t('ruleStateUnknown', {
         allowedStates: allowedStates,
         defaultValue: `Scheme restricted to ${allowedStates} (State not specified in profile)`
       }));
     } else {
-      const stateMatched = rules.allowedStates.some((s: string) => s.toLowerCase() === u.state?.toLowerCase());
+      const stateMatched = rules.allowedStates.some((st: string) => st.toLowerCase() === u.state?.toLowerCase());
       const userState = i18n.t(u.state || 'Unknown', u.state || 'Unknown');
       if (stateMatched) {
         matchedCriteria.push(i18n.t('ruleResidentOf', {
@@ -123,7 +159,7 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
           defaultValue: `Resident of ${userState}`
         }));
       } else {
-        const allowedStates = rules.allowedStates.map((s: string) => i18n.t(s, s)).join(', ');
+        const allowedStates = rules.allowedStates.map((st: string) => i18n.t(st, st)).join(', ');
         failedCriteria.push(i18n.t('ruleStateFailed', {
           allowedStates: allowedStates,
           userState: userState,
@@ -131,7 +167,28 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
         }));
       }
     }
-  } else if (scheme.state === 'Central') {
+  } else if (s.state && s.state !== 'Central') {
+    const targetState = i18n.t(s.state, s.state);
+    if (!u.state || !String(u.state).trim()) {
+      informationNeeded.push(i18n.t('ruleStateUnknown', {
+        allowedStates: targetState,
+        defaultValue: `Scheme restricted to ${targetState} (State not specified in profile)`
+      }));
+    } else if (u.state.toLowerCase() === s.state.toLowerCase()) {
+      const userState = i18n.t(u.state, u.state);
+      matchedCriteria.push(i18n.t('ruleResidentOf', {
+        state: userState,
+        defaultValue: `Resident of ${userState}`
+      }));
+    } else {
+      const userState = i18n.t(u.state, u.state);
+      failedCriteria.push(i18n.t('ruleStateFailed', {
+        allowedStates: targetState,
+        userState: userState,
+        defaultValue: `Scheme restricted to ${targetState} (User in ${userState})`
+      }));
+    }
+  } else if (s.state === 'Central') {
     matchedCriteria.push(i18n.t('Central Scheme open across India', 'Central Scheme open across India'));
   }
 
@@ -187,18 +244,22 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
   }
 
   if (rules.maxLandHoldingAcres !== undefined) {
-    const userLand = u.landHoldingAcres ?? 0;
-    if (userLand <= rules.maxLandHoldingAcres) {
-      matchedCriteria.push(i18n.t('ruleLandMet', {
-        userLand: userLand,
+    if (u.landHoldingAcres === undefined || u.landHoldingAcres === null || isNaN(Number(u.landHoldingAcres))) {
+      informationNeeded.push(i18n.t('ruleLandUnknown', {
         maxLand: rules.maxLandHoldingAcres,
-        defaultValue: `Land holding ${userLand} acres within ceiling of ${rules.maxLandHoldingAcres} acres`
+        defaultValue: `Land holding ceiling ${rules.maxLandHoldingAcres} acres (Land holding not specified in profile)`
+      }));
+    } else if (Number(u.landHoldingAcres) <= rules.maxLandHoldingAcres) {
+      matchedCriteria.push(i18n.t('ruleLandMet', {
+        userLand: u.landHoldingAcres,
+        maxLand: rules.maxLandHoldingAcres,
+        defaultValue: `Land holding ${u.landHoldingAcres} acres within ceiling of ${rules.maxLandHoldingAcres} acres`
       }));
     } else {
       failedCriteria.push(i18n.t('ruleLandFailed', {
-        userLand: userLand,
+        userLand: u.landHoldingAcres,
         maxLand: rules.maxLandHoldingAcres,
-        defaultValue: `Land holding ${userLand} acres exceeds limit of ${rules.maxLandHoldingAcres} acres`
+        defaultValue: `Land holding ${u.landHoldingAcres} acres exceeds limit of ${rules.maxLandHoldingAcres} acres`
       }));
     }
   }
@@ -212,7 +273,7 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
       }));
     } else {
       const userCategory = i18n.t(u.category, u.category);
-      if (rules.allowedCategories.includes(u.category)) {
+      if (rules.allowedCategories.some((c: string) => c.toLowerCase() === u.category?.toLowerCase())) {
         matchedCriteria.push(i18n.t('ruleCategoryMet', {
           category: userCategory,
           defaultValue: `Social Category requirement met (${userCategory})`
@@ -229,7 +290,13 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
   }
 
   if (rules.requiresDisability) {
-    if (u.hasDisability) {
+    if (u.hasDisability === undefined || u.hasDisability === null) {
+      const minPerc = rules.minDisabilityPercentage ?? 40;
+      informationNeeded.push(i18n.t('ruleDisabilityUnknown', {
+        minPerc,
+        defaultValue: `Requires disability certificate (min ${minPerc}%). Disability status is not specified in profile`
+      }));
+    } else if (u.hasDisability) {
       const minPerc = rules.minDisabilityPercentage ?? 40;
       const userPerc = u.disabilityPercentage ?? 40;
       if (userPerc >= minPerc) {
@@ -329,8 +396,13 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     }
   }
 
-  const uploadedDocTypes = (u.documents || []).map(d => d.documentType || d.type || '').filter(Boolean);
-  const docsList = scheme.requiredDocuments || (scheme as any).documentsRequired || [];
+  const rawDocs = Array.isArray(u.documents) ? u.documents : [];
+  const uploadedDocTypes = rawDocs
+    .filter((d): d is DocumentRecord => !!d && typeof d === 'object')
+    .map(d => d.documentType || d.type || '')
+    .filter(Boolean);
+  const rawDocsList = s.requiredDocuments || (s as any).documentsRequired || [];
+  const docsList = Array.isArray(rawDocsList) ? rawDocsList.filter((d): d is string => typeof d === 'string') : [];
   
   docsList.forEach((reqDoc: string) => {
     const isDocPresent = uploadedDocTypes.some(docType => 
@@ -345,11 +417,18 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
   let overallReason = '';
 
   if (failedCriteria.length === 0 && informationNeeded.length === 0 && missingDocuments.length === 0) {
-    status = 'Eligible';
-    overallReason = i18n.t('ruleEligible', {
-      count: matchedCriteria.length,
-      defaultValue: `Full eligibility verified! All ${matchedCriteria.length} criteria met and all required documents present in Document Vault.`
-    });
+    if (matchedCriteria.length === 0) {
+      status = 'Insufficient Information';
+      overallReason = i18n.t('ruleNoCriteriaEvaluated', {
+        defaultValue: 'No machine-evaluable criteria defined in catalogue. Official guidelines must be consulted.'
+      });
+    } else {
+      status = 'Eligible';
+      overallReason = i18n.t('ruleEligible', {
+        count: matchedCriteria.length,
+        defaultValue: `Full eligibility verified! All ${matchedCriteria.length} criteria met and all required documents present in Document Vault.`
+      });
+    }
   } else if (failedCriteria.length === 0 && informationNeeded.length === 0 && missingDocuments.length > 0) {
     status = 'Conditionally Eligible';
     const docsStr = missingDocuments.map(d => i18n.t(d, d)).join(', ');
@@ -381,7 +460,7 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
   }
 
   return {
-    schemeId: scheme.id,
+    schemeId: s.id || '',
     status,
     matchedCriteria,
     failedCriteria,
