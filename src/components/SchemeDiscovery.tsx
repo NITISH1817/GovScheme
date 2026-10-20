@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
 import { performSemanticSearch } from '../engine/semanticSearch';
-import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SchemeComparisonModal } from './SchemeComparisonModal';
 import { getMissingProfileFields } from '../utils/profileUtils';
@@ -362,6 +362,14 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Multilingual & Transliteration Search Hint */}
+              <div className="flex items-center gap-1.5 mt-2 px-1 text-[11px] text-gray-500 dark:text-gray-400">
+                <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span className="truncate">
+                  {t('multilingualSearchHint', 'Search in English, Hindi, Tamil, Telugu, Malayalam, Marathi, Gujarati or Romanized terms (e.g., किसान, கல்வி, rythu, apy)')}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

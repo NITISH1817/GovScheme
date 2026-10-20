@@ -1596,5 +1596,8 @@
   "nextStepHelpline": "For assistance, contact the official scheme helpline at {{helplineNumber}}.",
   "summarySatisfied": "{{count}} eligibility criteria satisfied by your profile.",
   "summaryNotSatisfied": "{{count}} criteria appear unmet based on stated profile information.",
-  "summaryUnknown": "{{count}} criteria require additional verification or missing profile data."
+  "summaryUnknown": "{{count}} criteria require additional verification or missing profile data.",
+  "multilingualSearchHint": "Search in English, Hindi, Tamil, Telugu, Malayalam, Marathi, Gujarati or Romanized terms (e.g., किसान, கல்வி, rythu, apy)",
+  "searchMatchExact": "Exact Match",
+  "searchMatchMultilingual": "Multilingual Match"
 }
