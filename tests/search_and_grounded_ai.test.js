@@ -324,8 +324,283 @@ async function runTests() {
     }
   }
 
+  // -------------------------------------------------------------
+  // GROUP 7: Phase 3 Search Precision, Negative Phrases & Hyphen Preservation
+  // -------------------------------------------------------------
+  console.log('\n--- Group 7: Phase 3 Search Precision & Hyphen Preservation ---');
+
+  // 7.1 "non existent gibberish query" returns 0 false-positive results
+  {
+    const res = await performSemanticSearch('non existent gibberish query', schemesData);
+    assert.strictEqual(res.length, 0, 'Negative non-existent query must return 0 results');
+    pass('7.1: "non existent gibberish query" returns 0 results without false-positive matching');
+  }
+
+  // 7.2 "non-creamy layer" matches NFOBC with 0 false-positives (excluding non-farm schemes)
+  {
+    const res = await performSemanticSearch('non-creamy layer', schemesData);
+    assert(res.length > 0, '"non-creamy layer" must find relevant schemes');
+    assert.strictEqual(res[0].scheme.id, 'edu-national-fellowship-obc', 'Top result must be NFOBC');
+    assert.strictEqual(res[0].score, 0.99, 'Top result score must be 0.99');
+    const hasPMEGP = res.some(r => r.scheme.id === 'GOV-ENT-001');
+    assert(!hasPMEGP, 'PMEGP (non-farm) must NOT match non-creamy layer query');
+    pass('7.2: "non-creamy layer" matches NFOBC and excludes unrelated non-farm schemes');
+  }
+
+  // 7.3 "non creamy layer" (spaced variant) matches NFOBC identically
+  {
+    const res = await performSemanticSearch('non creamy layer', schemesData);
+    assert(res.length > 0, '"non creamy layer" must find relevant schemes');
+    assert.strictEqual(res[0].scheme.id, 'edu-national-fellowship-obc', 'Top result must be NFOBC');
+    assert.strictEqual(res[0].score, 0.99, 'Top result score must be 0.99');
+    const hasPMEGP = res.some(r => r.scheme.id === 'GOV-ENT-001');
+    assert(!hasPMEGP, 'PMEGP (non-farm) must NOT match non creamy layer query');
+    pass('7.3: "non creamy layer" correctly canonicalizes to non-creamy and matches NFOBC');
+  }
+
+  // 7.4 "PM-KISAN" matches PM-KISAN as #1 top result
+  {
+    const res = await performSemanticSearch('PM-KISAN', schemesData);
+    assert(res.length > 0, '"PM-KISAN" must return results');
+    assert.strictEqual(res[0].scheme.id, 'pm-kisan', 'Top result must be pm-kisan');
+    assert.strictEqual(res[0].score, 0.99, 'Top result score must be 0.99');
+    pass('7.4: "PM-KISAN" matches PM-KISAN as top result (score: 0.99)');
+  }
+
+  // 7.5 "post matric scholarship" matches post-matric-scholarship as #1
+  {
+    const res = await performSemanticSearch('post matric scholarship', schemesData);
+    assert(res.length > 0, '"post matric scholarship" must return results');
+    assert.strictEqual(res[0].scheme.id, 'post-matric-scholarship', 'Top result must be post-matric-scholarship');
+    assert.strictEqual(res[0].score, 0.99, 'Top result score must be 0.99');
+    pass('7.5: "post matric scholarship" matches Post-Matric Scholarship as top result (score: 0.99)');
+  }
+
+  // 7.6 "senior citizen pension" matches IGNOAPS as #1
+  {
+    const res = await performSemanticSearch('senior citizen pension', schemesData);
+    assert(res.length > 0, '"senior citizen pension" must return results');
+    assert.strictEqual(res[0].scheme.id, 'nsap-old-age-pension', 'Top result must be nsap-old-age-pension');
+    assert.strictEqual(res[0].score, 0.99, 'Top result score must be 0.99');
+    pass('7.6: "senior citizen pension" matches IGNOAPS as top result (score: 0.99)');
+  }
+
+  // 7.7 "schemes that do not require an income certificate" (Negative document constraint)
+  {
+    const res = await performSemanticSearch('schemes that do not require an income certificate', schemesData);
+    assert(res.length > 0, 'Must return schemes that do not require an income certificate');
+    const top = res[0].scheme;
+    const docs = (top.eligibilityRules?.requiredDocuments || []).map(d => d.toLowerCase());
+    const requiresIncome = docs.some(d => d.includes('income'));
+    assert(!requiresIncome, 'Top scheme must NOT require an income certificate');
+    pass('7.7: "schemes that do not require an income certificate" correctly prioritizes schemes without income doc requirement');
+  }
+
+  // 7.8 "schemes not available in Tamil Nadu" (Negative state constraint)
+  {
+    const res = await performSemanticSearch('schemes not available in Tamil Nadu', schemesData);
+    assert(res.length > 0, 'Must return schemes available outside Tamil Nadu');
+    const top = res[0].scheme;
+    assert.notStrictEqual(top.state, 'Tamil Nadu', 'Top scheme must NOT be a Tamil Nadu state scheme');
+    pass('7.8: "schemes not available in Tamil Nadu" correctly excludes Tamil Nadu state-specific schemes from top ranks');
+  }
+
+  // 7.9 "why does this scheme not exist in my district" (Honest non-misleading score calibration)
+  {
+    const res = await performSemanticSearch('why does this scheme not exist in my district', schemesData);
+    if (res.length > 0) {
+      assert(res[0].score <= 0.60, 'Incidental/weak query must NOT produce misleading high-confidence (<= 0.60)');
+    }
+    pass('7.9: "why does this scheme not exist in my district" does not produce misleading high-confidence match');
+  }
+
+  // 7.10 "non-creamy layer certificate" matches NFOBC with 0.99 & excludes PMEGP (non-farm)
+  {
+    const res = await performSemanticSearch('non-creamy layer certificate', schemesData);
+    assert(res.length > 0, '"non-creamy layer certificate" must return results');
+    assert.strictEqual(res[0].scheme.id, 'edu-national-fellowship-obc', 'Top result must be NFOBC');
+    assert.strictEqual(res[0].score, 0.99, 'Top result score must be 0.99');
+    const hasPMEGP = res.some(r => r.scheme.id === 'GOV-ENT-001');
+    assert(!hasPMEGP, 'PMEGP (non-farm) must NOT match non-creamy layer certificate');
+    pass('7.10: "non-creamy layer certificate" matches NFOBC with 0.99 and zero false-positive contamination');
+  }
+
+  // 7.11 "non-farm business loan" matches PMEGP with high score & excludes NFOBC (non-creamy)
+  {
+    const res = await performSemanticSearch('non-farm business loan', schemesData);
+    assert(res.length > 0, '"non-farm business loan" must return results');
+    assert(res[0].scheme.id === 'GOV-ENT-001' || res[0].scheme.id === 'pm-mudra', 'Top result must be PMEGP or MUDRA');
+    assert(res[0].score >= 0.90, 'Score must be high confidence >= 0.90');
+    const hasNFOBC = res.some(r => r.scheme.id === 'edu-national-fellowship-obc');
+    assert(!hasNFOBC, 'NFOBC (non-creamy) must NOT match non-farm query');
+    pass('7.11: "non-farm business loan" matches non-farm enterprise schemes and excludes non-creamy schemes');
+  }
+
+  // 7.12 Queries explicitly requesting nonexistent or fake schemes return 0 results
+  {
+    const fakeQueries = [
+      'Show me fake schemes that do not exist.',
+      'fake scheme xyz',
+      'bogus scheme abc',
+      'non existent gibberish query',
+      'nonexistent scheme',
+      'fake PM-KISAN',
+      'fake loan'
+    ];
+    for (const fakeQuery of fakeQueries) {
+      const res = await performSemanticSearch(fakeQuery, schemesData);
+      assert.strictEqual(res.length, 0, `Query "${fakeQuery}" must return 0 results`);
+    }
+    pass('7.12: Queries explicitly requesting nonexistent or fake schemes safely return 0 results');
+  }
+
+  // 7.13 Legitimate citizen fraud-awareness, website verification & scam reporting queries receive grounded results
+  {
+    // Verify catalogue fields directly against actual scheme data
+    const pmKisanCat = schemesData.find(s => s.id === 'pm-kisan');
+    assert(pmKisanCat, 'pm-kisan must exist in catalogue');
+    assert.strictEqual(pmKisanCat.officialWebsite, 'https://pmkisan.gov.in/', 'Actual PM-KISAN officialWebsite matches evidence');
+    assert.strictEqual(pmKisanCat.helplineNumber, '155261 / 011-24300606', 'Actual PM-KISAN helplineNumber matches evidence');
+
+    const pmjayCat = schemesData.find(s => s.id === 'pmjay-ayushman');
+    assert(pmjayCat, 'pmjay-ayushman must exist in catalogue');
+    assert.strictEqual(pmjayCat.officialWebsite, 'https://pmjay.gov.in/', 'Actual PM-JAY officialWebsite matches evidence');
+    assert.strictEqual(pmjayCat.helplineNumber, '14555 / 1800-11-4477', 'Actual PM-JAY helplineNumber matches evidence');
+
+    const scholarshipCat = schemesData.find(s => s.id === 'post-matric-scholarship');
+    assert(scholarshipCat, 'post-matric-scholarship must exist in catalogue');
+    assert.strictEqual(scholarshipCat.officialWebsite, 'https://scholarships.gov.in/', 'Actual Post-Matric officialWebsite matches evidence');
+    assert.strictEqual(scholarshipCat.helplineNumber, '0120-6619540', 'Actual Post-Matric helplineNumber matches evidence');
+
+    const udidCat = schemesData.find(s => s.id === 'udid-disability-scheme');
+    assert(udidCat, 'udid-disability-scheme must exist in catalogue');
+    assert.strictEqual(udidCat.officialWebsite, 'https://swavlambancard.gov.in/', 'Actual UDID officialWebsite matches evidence');
+    assert.strictEqual(udidCat.helplineNumber, '1800-11-4515', 'Actual UDID helplineNumber matches evidence');
+
+    // A. "How can I identify a fake government scheme?"
+    const identifyRes = await performSemanticSearch('How can I identify a fake government scheme?', schemesData);
+    assert(identifyRes.length > 0, '"How can I identify a fake government scheme?" must return verified reference guidance');
+    assert(identifyRes[0].score >= 0.70, 'Must have calibrated guidance score >= 0.70');
+    assert(identifyRes[0].scheme.officialWebsite.includes('.gov.in'), 'Must guide citizen with authentic official government portal URL');
+    assert(identifyRes[0].scheme.helplineNumber, 'Must guide citizen with verified official helpline number');
+
+    // B. "Is this PM-KISAN website fake?"
+    const pmKisanVerifyRes = await performSemanticSearch('Is this PM-KISAN website fake?', schemesData);
+    assert(pmKisanVerifyRes.length > 0, '"Is this PM-KISAN website fake?" must return PM-KISAN');
+    assert.strictEqual(pmKisanVerifyRes[0].scheme.id, 'pm-kisan', 'Top result must be verified PM-KISAN scheme');
+    assert.strictEqual(pmKisanVerifyRes[0].scheme.officialWebsite, 'https://pmkisan.gov.in/', 'Must cite exact authentic PM-KISAN portal URL');
+    assert(pmKisanVerifyRes[0].score >= 0.85, 'Must have high confidence score >= 0.85');
+
+    // C. "How do I report a fraudulent scheme?"
+    const reportRes = await performSemanticSearch('How do I report a fraudulent scheme?', schemesData);
+    assert(reportRes.length > 0, '"How do I report a fraudulent scheme?" must return verified reference schemes');
+    assert(reportRes[0].score >= 0.70, 'Must have calibrated guidance score >= 0.70');
+    assert(reportRes[0].scheme.helplineNumber, 'Must provide verified official helpline for reporting');
+
+    pass('7.13: Legitimate fraud-awareness and website verification queries return authentic grounded guidance with verified catalogue fields');
+  }
+
+  // 7.14 Negative-state filtering verified across Tamil Nadu and another supported state (Uttar Pradesh & Karnataka)
+  {
+    // Tamil Nadu negative state query
+    const resTN = await performSemanticSearch('schemes not available in Tamil Nadu', schemesData);
+    assert(resTN.length > 0, 'Must return schemes available outside Tamil Nadu');
+    assert.notStrictEqual(resTN[0].scheme.state, 'Tamil Nadu', 'Top scheme must not be a Tamil Nadu state scheme');
+
+    // Uttar Pradesh negative state query
+    const resUP = await performSemanticSearch('schemes not available in Uttar Pradesh', schemesData);
+    assert(resUP.length > 0, 'Must return schemes available outside Uttar Pradesh');
+    assert.notStrictEqual(resUP[0].scheme.state, 'Uttar Pradesh', 'Top scheme must not be an Uttar Pradesh state scheme');
+
+    // Karnataka negative state query
+    const resKA = await performSemanticSearch('schemes not available in Karnataka', schemesData);
+    assert(resKA.length > 0, 'Must return schemes available outside Karnataka');
+    assert.notStrictEqual(resKA[0].scheme.state, 'Karnataka', 'Top scheme must not be a Karnataka state scheme');
+
+    pass('7.14: Negative-state filtering verified for Tamil Nadu, Uttar Pradesh, and Karnataka');
+  }
+
+  // 7.15 Negative-document filtering verified against actual eligibilityRules.requiredDocuments
+  {
+    const resNoIncome = await performSemanticSearch('schemes that do not require an income certificate', schemesData);
+    assert(resNoIncome.length > 0, 'Must return schemes');
+
+    // Check top 5 results against actual eligibilityRules.requiredDocuments
+    for (let i = 0; i < Math.min(5, resNoIncome.length); i++) {
+      const scheme = resNoIncome[i].scheme;
+      const ruleDocs = (scheme.eligibilityRules?.requiredDocuments || []).map(d => d.toLowerCase());
+      const hasIncomeRule = ruleDocs.some(d => d.includes('income'));
+      assert(!hasIncomeRule, `Top rank scheme "${scheme.name}" must not require income certificate in eligibilityRules.requiredDocuments`);
+    }
+
+    pass('7.15: Negative-document filtering verified against actual eligibilityRules.requiredDocuments');
+  }
+
+  // 7.16 Consistent handling of eligibilityRules.requiredDocuments vs scheme.requiredDocuments for conflicting and missing fields
+  {
+    // A. Real catalogue discrepancy test: pmay-g has 'Income Certificate' in eligibilityRules but NOT in scheme.requiredDocuments
+    const resNoIncome = await performSemanticSearch('schemes that do not require an income certificate', schemesData);
+    const pmayG = resNoIncome.slice(0, 10).find(r => r.scheme.id === 'pmay-g');
+    assert(!pmayG, 'pmay-g (requiring income cert in eligibilityRules) must not appear in top results for negative income query');
+
+    // B. Synthetic test suite covering all combinations of conflicting, missing, and malformed document fields
+    const syntheticDocTestSchemes = [
+      {
+        id: 'syn-top-only-income',
+        name: 'Synthetic Income in Top-Level Only',
+        state: 'Central',
+        category: 'Welfare',
+        requiredDocuments: ['Income Certificate', 'Aadhaar Card'],
+        eligibilityRules: { requiredDocuments: [] }
+      },
+      {
+        id: 'syn-rules-only-income',
+        name: 'Synthetic Income in EligibilityRules Only',
+        state: 'Central',
+        category: 'Welfare',
+        requiredDocuments: ['MGNREGA Job Card'],
+        eligibilityRules: { requiredDocuments: ['Income Certificate'] }
+      },
+      {
+        id: 'syn-missing-rules-clean',
+        name: 'Synthetic Missing EligibilityRules Object',
+        state: 'Central',
+        category: 'Welfare',
+        requiredDocuments: ['Aadhaar Card']
+      },
+      {
+        id: 'syn-malformed-docs-clean',
+        name: 'Synthetic Malformed Document Array',
+        state: 'Central',
+        category: 'Welfare',
+        requiredDocuments: [null, undefined, 12345, 'Voter ID'],
+        eligibilityRules: { requiredDocuments: undefined }
+      }
+    ];
+
+    const synResults = await performSemanticSearch('schemes that do not require an income certificate', syntheticDocTestSchemes);
+
+    // 1. Conflicting scheme with income in top-level requiredDocuments only must be penalized
+    const foundTopOnly = synResults.find(r => r.scheme.id === 'syn-top-only-income');
+    assert(!foundTopOnly, 'Scheme with income in top-level requiredDocuments only must be penalized');
+
+    // 2. Conflicting scheme with income in eligibilityRules.requiredDocuments only must be penalized
+    const foundRulesOnly = synResults.find(r => r.scheme.id === 'syn-rules-only-income');
+    assert(!foundRulesOnly, 'Scheme with income in eligibilityRules.requiredDocuments only must be penalized');
+
+    // 3. Scheme with missing eligibilityRules object must not crash and remain eligible if no income certificate is required
+    const foundMissingRules = synResults.find(r => r.scheme.id === 'syn-missing-rules-clean');
+    assert(foundMissingRules, 'Scheme with missing eligibilityRules object must succeed without crashing');
+
+    // 4. Scheme with malformed/non-string elements in document arrays must not crash
+    const foundMalformed = synResults.find(r => r.scheme.id === 'syn-malformed-docs-clean');
+    assert(foundMalformed, 'Scheme with malformed document list must handle non-string elements safely');
+
+    pass('7.16: Consistent handling verified for conflicting, missing, and malformed requiredDocuments across both fields');
+  }
+
   console.log('\n================================================================');
-  console.log(' ALL FINAL ADVANCED SEARCH & GROUNDED AI TESTS PASSED (23/23)!  ');
+  console.log(' ALL FINAL ADVANCED SEARCH & GROUNDED AI TESTS PASSED (39/39)!  ');
   console.log('================================================================\n');
 }
 
