@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
 import { performSemanticSearch } from '../engine/semanticSearch';
-import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle, Globe } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle, Globe, CheckCircle2, XCircle, LayoutDashboard, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SchemeComparisonModal } from './SchemeComparisonModal';
 import { getMissingProfileFields } from '../utils/profileUtils';
@@ -14,6 +14,7 @@ interface SchemeDiscoveryProps {
   user: UserProfile | null;
   currentLang: string;
   initialCategory?: string;
+  initialViewMode?: 'recommended' | 'all' | 'ineligible';
   onSelectScheme: (analysis: CombinedSchemeAnalysis) => void;
   onToggleBookmark: (schemeId: string) => void;
   isBookmarked: (schemeId: string) => boolean;
@@ -25,6 +26,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   user,
   currentLang,
   initialCategory,
+  initialViewMode,
   onSelectScheme,
   onToggleBookmark,
   isBookmarked,
@@ -38,6 +40,15 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
   const [semanticResults, setSemanticResults] = useState<{schemeId: string, score: number}[] | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [viewMode, setViewMode] = useState<'recommended' | 'all' | 'ineligible'>(
+    initialViewMode || 'recommended'
+  );
+
+  useEffect(() => {
+    if (initialViewMode) {
+      setViewMode(initialViewMode);
+    }
+  }, [initialViewMode]);
   
   // Filters
   const [selectedGovtLevel, setSelectedGovtLevel] = useState<string[]>([]);
@@ -62,6 +73,23 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       return { scheme, ruleResult: ruleRes, mlResult: mlRes };
     }).sort((a, b) => b.mlResult.confidenceScore - a.mlResult.confidenceScore);
   }, [schemes, user, currentLang]);
+
+  const { recommendedCount, ineligibleCount, totalCount } = useMemo(() => {
+    let rec = 0;
+    let inelig = 0;
+    for (const a of analyzedSchemes) {
+      if (a.ruleResult.status === 'Eligible' || a.ruleResult.status === 'Conditionally Eligible') {
+        rec++;
+      } else if (a.ruleResult.status === 'Not Eligible' || a.ruleResult.status === 'Almost Eligible') {
+        inelig++;
+      }
+    }
+    return {
+      recommendedCount: rec,
+      ineligibleCount: inelig,
+      totalCount: schemes.length
+    };
+  }, [analyzedSchemes, schemes.length]);
 
   const missingFields = useMemo(() => getMissingProfileFields(user), [user]);
 
@@ -138,12 +166,20 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       if (!matchCat) return false;
     }
 
-    // Eligibility
+    // Eligibility & View Mode Filter
     if (selectedEligibility.length > 0) {
       if (!selectedEligibility.includes(a.ruleResult.status)) return false;
     } else {
-      // By default, recommendation view excludes schemes citizen is not eligible for
-      if (a.ruleResult.status === 'Not Eligible' || a.ruleResult.status === 'Almost Eligible') return false;
+      if (viewMode === 'recommended') {
+        if (user && (a.ruleResult.status === 'Not Eligible' || a.ruleResult.status === 'Almost Eligible')) {
+          return false;
+        }
+      } else if (viewMode === 'ineligible') {
+        if (a.ruleResult.status !== 'Not Eligible' && a.ruleResult.status !== 'Almost Eligible') {
+          return false;
+        }
+      }
+      // If viewMode === 'all', show all schemes without exclusion
     }
     
     // Location
@@ -177,14 +213,90 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight mb-2">
-            {t('yourRecSchemes', 'Your recommended schemes')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t('basedOnInfo', 'Based on the information you provided. We found')} <strong className="text-gray-900 dark:text-white">{filteredSchemes.length}</strong> {t('matchingSchemes', 'matching schemes.')}
-          </p>
+        {/* Header with Title and Mode Switcher */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#1769FF] bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                  {viewMode === 'recommended' ? t('recommended', 'Recommended') : viewMode === 'ineligible' ? t('notEligible', 'Not Applicable') : t('allSchemes', 'All Schemes')}
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight">
+                {viewMode === 'recommended'
+                  ? t('yourRecSchemes', 'Your Recommended Schemes')
+                  : viewMode === 'ineligible'
+                  ? t('notApplicableForYou', 'Not Applicable Schemes')
+                  : t('totalSchemesAvailable', 'Total Schemes Available')}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
+                {viewMode === 'recommended'
+                  ? (user 
+                      ? `${t('basedOnInfo', 'Based on your profile, we found')} ${filteredSchemes.length} ${t('matchingSchemes', 'matching schemes.')}`
+                      : t('guestNoticeDesc', 'Showing schemes with general eligibility. Complete your profile to see personalized matches.'))
+                  : viewMode === 'ineligible'
+                  ? `Showing ${filteredSchemes.length} schemes where your profile does not meet eligibility requirements. Inspect the mismatch reasons on each card.`
+                  : `Showing ${filteredSchemes.length} of ${totalCount} Central & State government schemes nationwide.`}
+              </p>
+            </div>
+
+            {/* Quick Segmented Mode Switcher */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-gray-100 dark:bg-[#0B1424] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setViewMode('recommended')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === 'recommended'
+                    ? 'bg-emerald-600 text-white shadow-md scale-[1.02]'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{t('recommendedForYou', 'Recommended')}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                  viewMode === 'recommended' ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                }`}>
+                  {recommendedCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('all')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === 'all'
+                    ? 'bg-[#123C69] dark:bg-[#1769FF] text-white shadow-md scale-[1.02]'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>{t('totalSchemesAvailable', 'Total Available')}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                  viewMode === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                }`}>
+                  {totalCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('ineligible')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === 'ineligible'
+                    ? 'bg-red-600 text-white shadow-md scale-[1.02]'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>{t('notApplicableForYou', 'Not Applicable')}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                  viewMode === 'ineligible' ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                }`}>
+                  {ineligibleCount}
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {(!user || missingFields.length > 0) && (
@@ -439,39 +551,87 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     )}
 
                     <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">{t('whyYouMatch', 'WHY YOU MATCH')}</span>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                            ✓ {ruleResult.matchedCriteria.length} {t('criteriaSatisfied', 'Criteria Met')}
-                          </span>
-                          {ruleResult.failedCriteria.length > 0 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800">
-                              ✕ {ruleResult.failedCriteria.length} {t('criteriaUnmet', 'Unmet')}
+                      {ruleResult.status === 'Not Eligible' || ruleResult.failedCriteria.length > 0 ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider flex items-center gap-1">
+                              <XCircle className="w-3.5 h-3.5" />
+                              {t('whyNotApplicable', 'Why You Are Not Applicable')}
                             </span>
-                          )}
-                          {ruleResult.informationNeeded && ruleResult.informationNeeded.length > 0 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              ? {ruleResult.informationNeeded.length} {t('criteriaNeeded', 'Needed')}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {ruleResult.failedCriteria.length > 0 && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-800">
+                                  ✕ {ruleResult.failedCriteria.length} {t('criteriaUnmet', 'Unmet')}
+                                </span>
+                              )}
+                              {ruleResult.matchedCriteria.length > 0 && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                  ✓ {ruleResult.matchedCriteria.length} {t('criteriaSatisfied', 'Met')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {ruleResult.failedCriteria.length > 0 ? (
+                            <div className="p-3 rounded-xl bg-red-50/90 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 mb-2">
+                              <ul className="space-y-1.5">
+                                {ruleResult.failedCriteria.map((reason, idx) => (
+                                  <li key={idx} className="text-xs text-red-700 dark:text-red-300 flex items-start gap-1.5 leading-snug">
+                                    <span className="text-red-500 font-bold shrink-0 mt-0.5">•</span>
+                                    <span>{reason}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : !user ? (
+                            <div className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200 dark:border-amber-900/40 mb-2">
+                              {t('signInToCheckEligibility', 'Sign in to verify if you qualify')}
+                            </div>
+                          ) : null}
+
+                          {ruleResult.matchedCriteria.length > 0 && (
+                            <div className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
+                              ✓ {t('satisfied', 'Satisfied')}: {ruleResult.matchedCriteria.slice(0, 2).join(', ')}
+                            </div>
                           )}
                         </div>
-                      </div>
-                      {ruleResult.status === 'Insufficient Information' ? (
-                        <div className="text-xs text-blue-700 dark:text-blue-300 font-medium py-1">
-                          {ruleResult.informationNeeded && ruleResult.informationNeeded.length > 0
-                            ? `Verify with: ${ruleResult.informationNeeded.slice(0, 3).join(', ')}`
-                            : t('completeProfileToVerify', 'Complete profile to verify eligibility')}
+                      ) : ruleResult.status === 'Insufficient Information' ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                              <HelpCircle className="w-3.5 h-3.5" />
+                              {t('eligibilityPending', 'ELIGIBILITY PENDING')}
+                            </span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              ? {ruleResult.informationNeeded?.length || 0} {t('criteriaNeeded', 'Needed')}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-700 dark:text-blue-300 font-medium py-1">
+                            {ruleResult.informationNeeded && ruleResult.informationNeeded.length > 0
+                              ? `Verify with: ${ruleResult.informationNeeded.slice(0, 3).join(', ')}`
+                              : t('completeProfileToVerify', 'Complete profile to verify eligibility')}
+                          </div>
                         </div>
                       ) : (
-                        <ul className="space-y-1">
-                          {ruleResult.matchedCriteria.slice(0, 2).map((factor, i) => (
-                            <li key={i} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                              <Check className="w-3 h-3 text-[#15803D] shrink-0" />
-                              <span className="line-clamp-1">{t(factor, factor)}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              {t('whyYouMatch', 'WHY YOU MATCH')}
+                            </span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                              ✓ {ruleResult.matchedCriteria.length} {t('criteriaSatisfied', 'Criteria Met')}
+                            </span>
+                          </div>
+                          <ul className="space-y-1">
+                            {ruleResult.matchedCriteria.slice(0, 3).map((factor, i) => (
+                              <li key={i} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                                <Check className="w-3 h-3 text-[#15803D] shrink-0" />
+                                <span className="line-clamp-1">{t(factor, factor)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -482,7 +642,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                       onClick={() => onSelectScheme({ scheme, ruleResult, mlResult })}
                       className="flex-1 py-2 rounded border border-[#123C69] text-[#123C69] dark:border-gray-600 dark:text-white font-semibold text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
-                      {t('details', 'Details')}
+                      {ruleResult.status === 'Not Eligible' ? t('whyNotApplicable', 'Why Not Applicable') : t('details', 'Details')}
                     </button>
                     <button 
                       onClick={() => toggleCompare(scheme)}

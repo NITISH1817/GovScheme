@@ -76,8 +76,15 @@ export const App: React.FC = () => {
   const [kioskProfile, setKioskProfile] = useState<Partial<UserProfile> | null>(null);
   const [pendingKioskRedirect, setPendingKioskRedirect] = useState<boolean>(false);
   const [authNotice, setAuthNotice] = useState<string | undefined>(undefined);
+  const [schemeDiscoveryMode, setSchemeDiscoveryMode] = useState<'recommended' | 'all' | 'ineligible'>('recommended');
 
   const handleNavigateTab = (tab: string) => {
+    if (tab.startsWith('schemes:')) {
+      const mode = tab.split(':')[1] as 'recommended' | 'all' | 'ineligible';
+      setSchemeDiscoveryMode(mode);
+      setActiveTab('schemes');
+      return;
+    }
     if (tab === 'kiosk' && !user) {
       setPendingKioskRedirect(true);
       setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
@@ -496,11 +503,17 @@ export const App: React.FC = () => {
     setActiveTab('home');
   };
 
-  // Compute eligible schemes count for the user
+  // Compute eligible and ineligible schemes count for the user
   const eligibleSchemesCount = schemes.filter(scheme => {
     if (!user) return true;
     const res = evaluateSchemeEligibility(user, scheme);
-    return res.status !== 'Not Eligible';
+    return res.status === 'Eligible' || res.status === 'Conditionally Eligible';
+  }).length;
+
+  const ineligibleSchemesCount = schemes.filter(scheme => {
+    if (!user) return false;
+    const res = evaluateSchemeEligibility(user, scheme);
+    return res.status === 'Not Eligible' || res.status === 'Almost Eligible';
   }).length;
 
   // Handlers
@@ -970,7 +983,7 @@ export const App: React.FC = () => {
                 setAuthNotice(undefined);
                 setActiveTab('kiosk');
               } else {
-                setActiveTab('analyzing');
+                setActiveTab('profile');
               }
             }}
             onCancel={() => {
@@ -1001,10 +1014,11 @@ export const App: React.FC = () => {
             user={user}
             currentLang={currentLang}
             initialCategory={selectedCategoryFilter}
+            initialViewMode={schemeDiscoveryMode}
             onSelectScheme={setSelectedSchemeAnalysis}
             onToggleBookmark={handleToggleBookmark}
             isBookmarked={isBookmarked}
-            onNavigateTab={setActiveTab}
+            onNavigateTab={handleNavigateTab}
           />
         )}
 
@@ -1066,8 +1080,10 @@ export const App: React.FC = () => {
                 }
               }
             }}
-            onNavigateTab={setActiveTab}
+            onNavigateTab={handleNavigateTab}
             eligibleSchemesCount={eligibleSchemesCount}
+            ineligibleSchemesCount={ineligibleSchemesCount}
+            totalSchemesCount={schemes.length}
             schemes={schemes}
           />
         )}
@@ -1193,10 +1209,8 @@ export const App: React.FC = () => {
             setAuthNotice(undefined);
             setActiveTab('kiosk');
           } else {
-            // Citizen sign-in with complete profile: keep user on their current tab or navigate to home
-            if (activeTab === 'wizard' || !activeTab) {
-              setActiveTab('home');
-            }
+            // Citizen sign-in: show the user's profile details
+            setActiveTab('profile');
           }
         }}
         onContinueGuest={() => setUser(null)}

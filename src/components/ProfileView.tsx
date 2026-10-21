@@ -4,7 +4,7 @@ import {
   CheckCircle2, Clock, Bookmark, FileText, AlertCircle, ChevronRight,
   User as UserIcon, Settings, Edit3, MapPin, Briefcase, IndianRupee,
   Activity, GraduationCap, LayoutDashboard, Printer, Sparkles, ShieldCheck,
-  X, Loader2, Save
+  X, Loader2, Save, XCircle, Users, Award, Home, Accessibility, Heart
 } from 'lucide-react';
 import { UserProfile, Scheme } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,8 @@ interface ProfileViewProps {
   onUpdateProfile: (updated: UserProfile) => void;
   onNavigateTab: (tab: string) => void;
   eligibleSchemesCount: number;
+  ineligibleSchemesCount?: number;
+  totalSchemesCount?: number;
   schemes?: Scheme[];
   initialSubTab?: 'overview' | 'report';
 }
@@ -24,8 +26,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onUpdateProfile,
   onNavigateTab,
   eligibleSchemesCount,
+  ineligibleSchemesCount,
+  totalSchemesCount,
   schemes = []
 }) => {
+  const totalCount = totalSchemesCount ?? (schemes.length || 75);
+  const ineligibleCount = ineligibleSchemesCount ?? Math.max(0, totalCount - eligibleSchemesCount);
   const { t } = useTranslation();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -189,61 +195,223 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </button>
             </motion.div>
 
-            {/* Eligibility Snapshot */}
-            <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-              <div className="flex items-center gap-2 mb-4">
-                <LayoutDashboard className="w-5 h-5 text-[#1769FF]" />
-                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">{t('eligibilitySnapshot', 'Your Eligibility Snapshot')}</h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
-                    <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('location', 'Location')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white mt-1">{t(user.state, user.state || 'Not specified')}{user.district ? ` • ${t(user.district, user.district)}` : ''}</p>
-                  </div>
+            {/* Welfare Scheme Exploration Cards */}
+            <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.08 }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-500" />
+                  <h2 className="text-lg font-bold text-[#123C69] dark:text-white">
+                    {t('exploreWelfareSchemes', 'Explore Government Schemes')}
+                  </h2>
                 </div>
-                
-                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center shrink-0">
-                    <Briefcase className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
+                <span className="text-xs text-gray-500 font-semibold">{totalCount} {t('schemesInCatalogue', 'Schemes Available')}</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. Recommended Schemes Card */}
+                <div 
+                  onClick={() => onNavigateTab('schemes:recommended')}
+                  className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 border-2 border-emerald-300 dark:border-emerald-700/80 hover:border-emerald-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
+                >
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('occupation', 'Occupation')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white mt-1">{t(user.occupation, user.occupation || 'Not specified')}</p>
-                    {user.educationLevel && <p className="text-sm text-gray-600 dark:text-gray-400">{t(user.educationLevel, user.educationLevel)}</p>}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </span>
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300">
+                        {t('eligible', 'Eligible')}
+                      </span>
+                    </div>
+                    <div className="text-3xl font-black text-emerald-700 dark:text-emerald-400">
+                      {eligibleSchemesCount}
+                    </div>
+                    <h3 className="font-bold text-gray-900 dark:text-white text-base mt-1">
+                      {t('recommendedForYou', 'Recommended Schemes')}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                      {t('recommendedSchemesDesc', 'Personalized schemes strictly matched to your verified profile.')}
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs font-bold text-emerald-700 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
+                    <span>{t('viewRecommended', 'View Matching Schemes')}</span>
+                    <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
-                    <IndianRupee className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                {/* 2. Total Schemes Available Card */}
+                <div 
+                  onClick={() => onNavigateTab('schemes:all')}
+                  className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="w-10 h-10 rounded-xl bg-[#1769FF] text-white flex items-center justify-center shadow-md">
+                        <LayoutDashboard className="w-5 h-5" />
+                      </span>
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">
+                        {t('allIndia', 'Central + State')}
+                      </span>
+                    </div>
+                    <div className="text-3xl font-black text-[#123C69] dark:text-blue-400">
+                      {totalCount}
+                    </div>
+                    <h3 className="font-bold text-gray-900 dark:text-white text-base mt-1">
+                      {t('totalSchemesAvailable', 'Total Schemes Available')}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                      {t('totalSchemesDesc', 'Full national repository across agriculture, pensions, health, and education.')}
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800/60 flex items-center justify-between text-xs font-bold text-[#1769FF] dark:text-blue-400 group-hover:translate-x-1 transition-transform">
+                    <span>{t('exploreAllCatalog', 'Explore Entire Catalogue')}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* 3. Not Applicable Schemes Card */}
+                <div 
+                  onClick={() => onNavigateTab('schemes:ineligible')}
+                  className="p-5 rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/20 border-2 border-red-200 dark:border-red-800 hover:border-red-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-md">
+                        <XCircle className="w-5 h-5" />
+                      </span>
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300">
+                        {t('notEligible', 'Not Applicable')}
+                      </span>
+                    </div>
+                    <div className="text-3xl font-black text-red-600 dark:text-red-400">
+                      {ineligibleCount}
+                    </div>
+                    <h3 className="font-bold text-gray-900 dark:text-white text-base mt-1">
+                      {t('notApplicableForYou', 'Not Applicable Schemes')}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                      {t('notApplicableDesc', 'Inspect schemes where your profile does not meet rules and see exact failure reasons.')}
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-red-200 dark:border-red-800/60 flex items-center justify-between text-xs font-bold text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform">
+                    <span>{t('seeWhyIneligible', 'See Why Not Applicable')}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* Comprehensive Demographic & Socio-Economic Profile Details */}
+            <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.12 }} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserIcon className="w-5 h-5 text-[#1769FF]" />
+                  <h2 className="text-lg font-bold text-[#123C69] dark:text-white">
+                    {t('demographicProfileDetails', 'Saved Profile & Eligibility Attributes')}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="text-xs font-bold text-[#1769FF] hover:underline flex items-center gap-1"
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> {t('edit', 'Edit')}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {/* 1. Demographics */}
+                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <UserIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('financial', 'Financial')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white mt-1">
-                      {user.annualIncome != null ? `₹${user.annualIncome.toLocaleString()}/${t('year', 'year')}` : t('incomeNotSpecified', 'Income not specified')}
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('demographics', 'Demographics')}</span>
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
+                      {user.age != null && user.age > 0 ? `${user.age} ${t('years', 'years')}` : t('notSpecified', 'Age not set')} • {t(user.gender || 'Not specified', user.gender || 'Gender not set')}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {t('category', 'Category')}: <strong className="text-gray-700 dark:text-gray-300">{user.category || 'General'}</strong>
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
-                    <Bookmark className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                {/* 2. Location */}
+                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <MapPin className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('preferences', 'Preferences')}</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {(user.interests || []).length > 0 ? (
-                        user.interests?.map((interest, i) => (
-                          <span key={i} className="text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">{t(interest, interest)}</span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-gray-500">{t('noNeedsSelected', 'No specific needs selected')}</span>
-                      )}
-                    </div>
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('location', 'Location')}</span>
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
+                      {t(user.state, user.state || 'State not set')}{user.district ? ` • ${t(user.district, user.district)}` : ''}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {t('residenceType', 'Residence')}: <strong className="text-gray-700 dark:text-gray-300">{user.residenceType || 'Rural'}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. Occupation & Education */}
+                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('occupation', 'Occupation')}</span>
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
+                      {t(user.occupation, user.occupation || 'Not specified')}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {t('education', 'Education')}: <strong className="text-gray-700 dark:text-gray-300">{user.educationLevel || t('notSpecified', 'Not specified')}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4. Financial & Household */}
+                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <IndianRupee className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('financial', 'Annual Income')}</span>
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
+                      {user.annualIncome != null ? `₹${user.annualIncome.toLocaleString()}/${t('year', 'year')}` : t('incomeNotSpecified', 'Not specified')}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {t('familySize', 'Family')}: <strong className="text-gray-700 dark:text-gray-300">{user.familyMembersCount || 1} {t('members', 'Members')}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* 5. Landholding & Farm */}
+                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                    <Home className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('landHolding', 'Land Holding')}</span>
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
+                      {user.landHoldingAcres ? `${user.landHoldingAcres} Acres` : t('landlessOrNone', '0 Acres (Landless)')}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {t('workerStatus', 'Registered Worker')}: <strong className="text-gray-700 dark:text-gray-300">{user.isRegisteredWorker ? t('yes', 'Yes') : t('no', 'No')}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* 6. Disability & Special Needs */}
+                <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <Accessibility className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('disabilityStatus', 'Disability Status')}</span>
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
+                      {user.hasDisability ? `Yes (${user.disabilityPercentage || 40}% UDID)` : t('none', 'No Disability')}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {t('maritalStatus', 'Marital')}: <strong className="text-gray-700 dark:text-gray-300">{user.maritalStatus || t('notSpecified', 'Not specified')}</strong>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -315,23 +483,38 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center">
-                <CheckCircle2 className="w-6 h-6 text-[#15803D] mb-2" />
+              <div 
+                onClick={() => onNavigateTab('schemes:recommended')} 
+                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all group"
+              >
+                <CheckCircle2 className="w-6 h-6 text-[#15803D] mb-2 group-hover:scale-110 transition-transform" />
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{eligibleSchemesCount}</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('eligible', 'Eligible')}</div>
+                <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mt-1">{t('recommended', 'Recommended')}</div>
               </div>
-              <div onClick={() => onNavigateTab('schemes')} className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-colors">
-                <Bookmark className="w-6 h-6 text-[#1769FF] mb-2" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{(user.savedSchemeIds || []).length}</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('saved', 'Saved')}</div>
+
+              <div 
+                onClick={() => onNavigateTab('schemes:all')} 
+                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:shadow-md transition-all group"
+              >
+                <LayoutDashboard className="w-6 h-6 text-[#1769FF] mb-2 group-hover:scale-110 transition-transform" />
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</div>
+                <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide mt-1">{t('totalSchemes', 'Total Schemes')}</div>
               </div>
-              <div onClick={() => onNavigateTab('tracker')} className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-colors">
-                <FileText className="w-6 h-6 text-gray-700 dark:text-gray-300 mb-2" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">0</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('applications', 'Applications')}</div>
+
+              <div 
+                onClick={() => onNavigateTab('schemes:ineligible')} 
+                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-red-500 hover:shadow-md transition-all group"
+              >
+                <XCircle className="w-6 h-6 text-red-500 mb-2 group-hover:scale-110 transition-transform" />
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{ineligibleCount}</div>
+                <div className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mt-1">{t('notApplicable', 'Not Applicable')}</div>
               </div>
-              <div onClick={() => onNavigateTab('vault')} className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-colors">
-                <AlertCircle className="w-6 h-6 text-[#D97706] mb-2" />
+
+              <div 
+                onClick={() => onNavigateTab('vault')} 
+                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-amber-500 hover:shadow-md transition-all group"
+              >
+                <AlertCircle className="w-6 h-6 text-[#D97706] mb-2 group-hover:scale-110 transition-transform" />
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{(user.documents || []).length}</div>
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('documents', 'Documents')}</div>
               </div>
