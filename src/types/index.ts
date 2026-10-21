@@ -97,16 +97,28 @@ export interface UserProfile {
 export interface EligibilityRules {
   minAge?: number;
   maxAge?: number;
+  ageMin?: number;
+  ageMax?: number;
   allowedGenders?: TargetGender[];
+  gender?: TargetGender[] | string;
   allowedStates?: string[]; // Empty or ["All"] means all India
+  state?: string[] | string;
   maxAnnualIncome?: number;
+  incomeLimit?: number;
   allowedOccupations?: string[];
+  occupation?: string[] | string;
   allowedCategories?: CategorySocial[];
+  category?: CategorySocial[] | string;
   maxLandHoldingAcres?: number;
+  landOwnershipMax?: number;
   requiresDisability?: boolean;
+  disabilityRequired?: boolean;
   minDisabilityPercentage?: number;
   requiredEducation?: string[];
+  education?: string[] | string;
+  familySizeMax?: number;
   requiredDocuments: string[];
+  documentsRequired?: string[];
 }
 
 export interface Scheme {

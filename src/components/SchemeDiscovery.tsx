@@ -235,8 +235,8 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                       ? `${t('basedOnInfo', 'Based on your profile, we found')} ${filteredSchemes.length} ${t('matchingSchemes', 'matching schemes.')}`
                       : t('guestNoticeDesc', 'Showing schemes with general eligibility. Complete your profile to see personalized matches.'))
                   : viewMode === 'ineligible'
-                  ? `Showing ${filteredSchemes.length} schemes where your profile does not meet eligibility requirements. Inspect the mismatch reasons on each card.`
-                  : `Showing ${filteredSchemes.length} of ${totalCount} Central & State government schemes nationwide.`}
+                  ? t('showingSchemesIneligible', 'Showing {{count}} schemes where your profile does not meet eligibility requirements. Inspect the mismatch reasons on each card.', { count: filteredSchemes.length })
+                  : t('showingSchemesTotal', 'Showing {{count}} of {{total}} Central & State government schemes nationwide.', { count: filteredSchemes.length, total: totalCount })}
               </p>
             </div>
 
@@ -270,7 +270,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 }`}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>{t('totalSchemesAvailable', 'Total Available')}</span>
+                <span>{t('totalAvailable', 'Total Available')}</span>
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                   viewMode === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                 }`}>
@@ -288,7 +288,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 }`}
               >
                 <XCircle className="w-3.5 h-3.5" />
-                <span>{t('notApplicableForYou', 'Not Applicable')}</span>
+                <span>{t('notApplicable', 'Not Applicable')}</span>
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                   viewMode === 'ineligible' ? 'bg-white/20 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                 }`}>
@@ -311,7 +311,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   {!user
                     ? t('guestNoticeDesc', 'Schemes are displayed with general criteria. Complete the Guided Eligibility Wizard to see your personalized eligibility matches.')
                     : `${t('missingFieldsExplanation', 'Recommendations require full demographic verification. Missing:')} `}
-                  {user && <strong>{missingFields.join(', ')}</strong>}
+                  {user && <strong>{missingFields.map(f => t(f, f)).join(', ')}</strong>}
                 </p>
               </div>
             </div>
@@ -549,7 +549,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                       </span>
                       {scheme.verificationStatus && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                          {scheme.verificationStatus === 'ADMIN_VERIFIED' ? '✓ Admin Verified' : '✓ Portal Curated'}
+                          {scheme.verificationStatus === 'ADMIN_VERIFIED' ? `✓ ${t('adminVerified', 'Admin Verified')}` : `✓ ${t('portalCurated', 'Portal Curated')}`}
                         </span>
                       )}
                     </div>
@@ -589,7 +589,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                                 {ruleResult.failedCriteria.map((reason, idx) => (
                                   <li key={idx} className="text-xs text-red-700 dark:text-red-300 flex items-start gap-1.5 leading-snug">
                                     <span className="text-red-500 font-bold shrink-0 mt-0.5">•</span>
-                                    <span>{reason}</span>
+                                    <span>{t(reason, reason)}</span>
                                   </li>
                                 ))}
                               </ul>
@@ -602,7 +602,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
                           {ruleResult.matchedCriteria.length > 0 && (
                             <div className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
-                              ✓ {t('satisfied', 'Satisfied')}: {ruleResult.matchedCriteria.slice(0, 2).join(', ')}
+                              ✓ {t('satisfied', 'Satisfied')}: {ruleResult.matchedCriteria.slice(0, 2).map(c => t(c, c)).join(', ')}
                             </div>
                           )}
                         </div>
@@ -619,7 +619,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                           </div>
                           <div className="text-xs text-blue-700 dark:text-blue-300 font-medium py-1">
                             {ruleResult.informationNeeded && ruleResult.informationNeeded.length > 0
-                              ? `Verify with: ${ruleResult.informationNeeded.slice(0, 3).join(', ')}`
+                              ? t('verifyWith', 'Verify with: {{criteria}}', { criteria: ruleResult.informationNeeded.slice(0, 3).map(c => t(c, c)).join(', ') })
                               : t('completeProfileToVerify', 'Complete profile to verify eligibility')}
                           </div>
                         </div>

@@ -29,17 +29,27 @@ export const KNOWN_RULE_KEYS = new Set([
   'ageMin',
   'ageMax',
   'allowedGenders',
+  'gender',
   'allowedStates',
+  'state',
   'maxAnnualIncome',
   'incomeLimit',
   'allowedOccupations',
+  'occupation',
   'allowedCategories',
+  'category',
   'maxLandHoldingAcres',
+  'landOwnershipMax',
   'requiresDisability',
+  'disabilityRequired',
   'minDisabilityPercentage',
   'requiredEducation',
   'education',
-  'requiredDocuments'
+  'familySizeMax',
+  'requiredDocuments',
+  'documentsRequired',
+  '_id',
+  'id'
 ]);
 
 // Flatten and sort aliases by length descending so specific multi-word phrases match before general substrings
@@ -81,10 +91,14 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
   } else {
     for (const ruleKey of Object.keys(rules)) {
       if (!KNOWN_RULE_KEYS.has(ruleKey)) {
+        const val = (rules as any)[ruleKey];
+        if (val === false || val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0)) {
+          continue;
+        }
         informationNeeded.push(i18n.t('unsupportedRuleFieldNotice', {
           ruleKey,
-          value: String((rules as any)[ruleKey]),
-          defaultValue: `Special rule condition '${ruleKey}' is not supported by automated rules. Verify against official guidelines.`
+          value: String(val),
+          defaultValue: `Special guideline '${ruleKey}' requires departmental review`
         }));
       }
     }
@@ -120,20 +134,21 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     }
   }
 
-  if (rules.allowedGenders && rules.allowedGenders.length > 0 && !rules.allowedGenders.includes('All')) {
+  const allowedGenders = rules.allowedGenders || (rules.gender ? (Array.isArray(rules.gender) ? rules.gender : [rules.gender]) : undefined);
+  if (allowedGenders && allowedGenders.length > 0 && !allowedGenders.includes('All')) {
     if (!u.gender || !String(u.gender).trim()) {
-      const targetGender = rules.allowedGenders.map((g: string) => i18n.t(g, g)).join(', ');
+      const targetGender = allowedGenders.map((g: string) => i18n.t(g, g)).join(', ');
       informationNeeded.push(i18n.t('ruleGenderUnknown', {
         target: targetGender,
         defaultValue: `Targeted for ${targetGender} (Gender not specified in profile)`
       }));
-    } else if (rules.allowedGenders.some((g: string) => g.toLowerCase() === u.gender?.toLowerCase())) {
+    } else if (allowedGenders.some((g: string) => g.toLowerCase() === u.gender?.toLowerCase())) {
       matchedCriteria.push(i18n.t('ruleGenderMet', {
         gender: i18n.t(u.gender, u.gender),
         defaultValue: `Gender requirement met (${i18n.t(u.gender, u.gender)})`
       }));
     } else {
-      const targetGender = rules.allowedGenders.map((g: string) => i18n.t(g, g)).join(', ');
+      const targetGender = allowedGenders.map((g: string) => i18n.t(g, g)).join(', ');
       const userGender = i18n.t(u.gender, u.gender);
       failedCriteria.push(i18n.t('ruleGenderFailed', {
         target: targetGender,
@@ -215,15 +230,16 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     }
   }
 
-  if (rules.allowedOccupations && rules.allowedOccupations.length > 0) {
+  const allowedOccupations = rules.allowedOccupations || (rules.occupation ? (Array.isArray(rules.occupation) ? rules.occupation : [rules.occupation]) : undefined);
+  if (allowedOccupations && allowedOccupations.length > 0) {
     if (!u.occupation || !String(u.occupation).trim()) {
-      const requiredOccupations = rules.allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
+      const requiredOccupations = allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
       informationNeeded.push(i18n.t('ruleOccupationUnknown', {
         requiredOccupations: requiredOccupations,
         defaultValue: `Requires occupation like ${requiredOccupations} (Occupation not specified in profile)`
       }));
     } else {
-      const occupationMatched = rules.allowedOccupations.some((occ: string) =>
+      const occupationMatched = allowedOccupations.some((occ: string) =>
         occ.toLowerCase().includes(u.occupation?.toLowerCase() || '') ||
         (u.occupation?.toLowerCase() || '').includes(occ.toLowerCase())
       );
@@ -234,7 +250,7 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
           defaultValue: `Occupation matches (${userOcc})`
         }));
       } else {
-        const requiredOccupations = rules.allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
+        const requiredOccupations = allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
         failedCriteria.push(i18n.t('ruleOccupationFailed', {
           requiredOccupation: requiredOccupations,
           userOccupation: userOcc,
@@ -265,32 +281,34 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     }
   }
 
-  if (rules.allowedCategories && rules.allowedCategories.length > 0 && !rules.allowedCategories.includes('All')) {
+  const allowedCategories = rules.allowedCategories || (rules.category ? (Array.isArray(rules.category) ? rules.category : [rules.category]) : undefined);
+  if (allowedCategories && allowedCategories.length > 0 && !allowedCategories.includes('All')) {
     if (!u.category || !String(u.category).trim()) {
-      const allowedCategories = rules.allowedCategories.map((c: string) => i18n.t(c, c)).join(', ');
+      const targetCategories = allowedCategories.map((c: string) => i18n.t(c, c)).join(', ');
       informationNeeded.push(i18n.t('ruleCategoryUnknown', {
-        allowedCategories: allowedCategories,
-        defaultValue: `Restricted to ${allowedCategories} (Category not specified in profile)`
+        allowedCategories: targetCategories,
+        defaultValue: `Restricted to ${targetCategories} (Category not specified in profile)`
       }));
     } else {
       const userCategory = i18n.t(u.category, u.category);
-      if (rules.allowedCategories.some((c: string) => c.toLowerCase() === u.category?.toLowerCase())) {
+      if (allowedCategories.some((c: string) => c.toLowerCase() === u.category?.toLowerCase())) {
         matchedCriteria.push(i18n.t('ruleCategoryMet', {
           category: userCategory,
           defaultValue: `Social Category requirement met (${userCategory})`
         }));
       } else {
-        const allowedCategories = rules.allowedCategories.map((c: string) => i18n.t(c, c)).join(', ');
+        const targetCategories = allowedCategories.map((c: string) => i18n.t(c, c)).join(', ');
         failedCriteria.push(i18n.t('ruleCategoryFailed', {
-          allowedCategories: allowedCategories,
+          allowedCategories: targetCategories,
           userCategory: userCategory,
-          defaultValue: `Restricted to ${allowedCategories} (User category: ${userCategory})`
+          defaultValue: `Restricted to ${targetCategories} (User category: ${userCategory})`
         }));
       }
     }
   }
 
-  if (rules.requiresDisability) {
+  const requiresDisability = rules.requiresDisability ?? rules.disabilityRequired;
+  if (requiresDisability) {
     if (u.hasDisability === undefined || u.hasDisability === null) {
       const minPerc = rules.minDisabilityPercentage ?? 40;
       informationNeeded.push(i18n.t('ruleDisabilityUnknown', {

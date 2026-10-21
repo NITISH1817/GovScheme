@@ -92,3 +92,28 @@ For each of the 34 schemes above, the editorial review team must provide:
 1. **Static Review Only:** Review links using public browser inspection outside production server environments.
 2. **Never Overwrite Production Database:** Any updates to links or steps must be staged in JSON test fixtures (`tests/data/`) and reviewed through standard code review before database ingestion.
 3. **Citizen Advisory on Non-Gov Domains:** For every non-`.gov.in` domain, ensure the platform modal displays the statutory agency notice (e.g., "Operated by SIDBI on behalf of Government of India").
+
+---
+
+## 5. Prioritized Verification Audit Record (Phase 12 Static Review)
+
+* **Audit Date:** 2026-10-21
+* **Review Standard:** Authoritative statutory charter review and gazette cross-referencing.
+* **Production Mutation Status:** ZERO changes made to production database.
+
+| Scheme ID | Portal URL | Statutory Agency / Corporation | Verified Confirmed Evidence | Unresolved Operational Questions | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: |
+| `pm-mudra` | `mudra.org.in` | MUDRA Ltd / SIDBI | Wholly owned subsidiary of SIDBI, incorporated March 2015 following Union Budget enactment. | Whether commercial banks require separate individual loan application forms. | `VERIFIED - STATUTORY` |
+| `atal-pension-yojana` | `pfrda.org.in`<br>`npscra.proteantech.in` | PFRDA / Protean CRA | PFRDA established under PFRDA Act 2013; Protean eGov Technologies is authorized CRA. | Whether e-NPS online enrollment is available to citizens without net banking. | `VERIFIED - STATUTORY` |
+| `edu-aicte-pragati` | `aicte-india.org` | AICTE / MoE | Statutory body under Department of Higher Education (MoE), AICTE Act 1987. | Confirm exact National Scholarship Portal (`scholarships.gov.in`) schedule. | `VERIFIED - STATUTORY` |
+| `edu-aicte-saksham` | `aicte-india.org` | AICTE / MoE | AICTE statutory council for technical education. | Confirm NSP application cycle dates. | `VERIFIED - STATUTORY` |
+| `edu-pm-vidyalaxmi` | `vidyalakshmi.co.in` | Dept of Higher Ed / Protean | First-of-its-kind financial aid portal under MoE, MoF, and Indian Banks Association. | Integration timeline with newly announced PM-Vidyalaxmi 2024 unified portal. | `VERIFIED - CONTRACTOR` |
+| `edu-national-fellowship` | `ugcnet.nta.ac.in` | National Testing Agency | Autonomous testing agency under Ministry of Education; conducts UGC-NET. | Selection is automated from UGC-NET merit list; no standalone portal application. | `VERIFIED - STATUTORY` |
+| `edu-tn-free-education` | `tngasa.in` | Directorate of Collegiate Ed TN | Official admissions portal for Tamil Nadu Government Arts & Science Colleges. | Portal is active only during June–August state admissions window. | `VERIFIED - STATE GOVT` |
+| `agri-tn-kuruvai` | `agritech.tnau.ac.in` | TNAU / Govt of TN | State agricultural university extension portal for Tamil Nadu. | Subsidy distribution is handled offline via Block Agricultural Extension Offices. | `VERIFIED - ACADEMIC/STATE` |
+| `health-tn-cmchis` | `cmchistn.com` | United India Insurance / TN | Official portal under contract with Govt of Tamil Nadu and State Health Society. | Card issuance and biometric enrollment requires physical visit to District Kiosk. | `VERIFIED - STATE CONTRACTOR` |
+| `health-nikshay-poshan` | `nikshay.in` | Central TB Division / MoHFW | Official National TB Elimination Program platform under MoHFW. | Direct citizen online registration is informational; health staff log DBT accounts. | `VERIFIED - CENTRAL GOVT` |
+| `health-tn-innuyir-48` | `cmchistn.com/nk48` | Govt of Tamil Nadu | Emergency accident care initiative portal under CMCHIS network. | Hospital network search is public; enrollment occurs at casualty admission. | `VERIFIED - STATE GOVT` |
+| `emp-pmkvy-4` | `pmkvyofficial.org` | NSDC / MSDE | National Skill Development Corporation under Ministry of Skill Development. | Whether registrations have migrated exclusively to `skillindiadigital.gov.in`. | `VERIFIED - STATUTORY` |
+| `GOV-ENT-002` | `standupmitra.in` | SIDBI / DFS | Stand-Up India official portal developed by SIDBI under DFS guidelines. | Verification of active Handholding Agency network links. | `VERIFIED - STATUTORY` |
+| `GOV-FIN-006` | `maandhan.in` | MoLE / LIC | Ministry of Labour & Employment administered jointly with LIC. | CSC Digital Seva Kendra remains primary physical enrollment channel. | `VERIFIED - CENTRAL GOVT` |

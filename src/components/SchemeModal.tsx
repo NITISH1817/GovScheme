@@ -136,7 +136,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 </span>
                 <span className="w-1 h-1 rounded-full bg-gray-300" />
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                  {scheme.verificationStatus === 'ADMIN_VERIFIED' ? '✓ Admin Verified' : '✓ Portal Curated'}
+                  {scheme.verificationStatus === 'ADMIN_VERIFIED' ? `✓ ${t('adminVerified', 'Admin Verified')}` : `✓ ${t('portalCurated', 'Portal Curated')}`}
                 </span>
               </div>
               <h2 id="scheme-modal-title" className="text-2xl sm:text-3xl font-bold text-[#123C69] dark:text-white font-sans break-words">

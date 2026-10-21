@@ -24,17 +24,27 @@ const KNOWN_RULE_KEYS = new Set([
   'ageMin',
   'ageMax',
   'allowedGenders',
+  'gender',
   'allowedStates',
+  'state',
   'maxAnnualIncome',
   'incomeLimit',
   'allowedOccupations',
+  'occupation',
   'allowedCategories',
+  'category',
   'maxLandHoldingAcres',
+  'landOwnershipMax',
   'requiresDisability',
+  'disabilityRequired',
   'minDisabilityPercentage',
   'requiredEducation',
   'education',
-  'requiredDocuments'
+  'familySizeMax',
+  'requiredDocuments',
+  'documentsRequired',
+  '_id',
+  'id'
 ]);
 
 /**
@@ -319,8 +329,9 @@ export function evaluateExplainableEligibility(
   }
 
   // 2. Gender Evaluation
-  if (rules.allowedGenders && Array.isArray(rules.allowedGenders) && rules.allowedGenders.length > 0 && !rules.allowedGenders.includes('All')) {
-    const targetGenders = rules.allowedGenders.map((g: string) => i18n.t(g, g)).join(', ');
+  const allowedGenders = rules.allowedGenders || (rules.gender ? (Array.isArray(rules.gender) ? rules.gender : [rules.gender]) : undefined);
+  if (allowedGenders && Array.isArray(allowedGenders) && allowedGenders.length > 0 && !allowedGenders.includes('All')) {
+    const targetGenders = allowedGenders.map((g: string) => i18n.t(g, g)).join(', ');
 
     if (!u || !u.gender || !String(u.gender).trim()) {
       recordCriterion({
@@ -334,7 +345,7 @@ export function evaluateExplainableEligibility(
           defaultValue: `Targeted for ${targetGenders} (Gender not specified in profile)`
         })
       });
-    } else if (rules.allowedGenders.some((g: string) => g.toLowerCase() === String(u.gender).toLowerCase())) {
+    } else if (allowedGenders.some((g: string) => g.toLowerCase() === String(u.gender).toLowerCase())) {
       const userGender = i18n.t(u.gender, u.gender);
       recordCriterion({
         id: 'gender',
@@ -511,8 +522,9 @@ export function evaluateExplainableEligibility(
   }
 
   // 5. Occupation Evaluation
-  if (rules.allowedOccupations && Array.isArray(rules.allowedOccupations) && rules.allowedOccupations.length > 0) {
-    const reqOccs = rules.allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
+  const allowedOccupations = rules.allowedOccupations || (rules.occupation ? (Array.isArray(rules.occupation) ? rules.occupation : [rules.occupation]) : undefined);
+  if (allowedOccupations && Array.isArray(allowedOccupations) && allowedOccupations.length > 0) {
+    const reqOccs = allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
 
     if (!u || !u.occupation || !String(u.occupation).trim()) {
       recordCriterion({
@@ -527,7 +539,7 @@ export function evaluateExplainableEligibility(
         })
       });
     } else {
-      const matched = rules.allowedOccupations.some((occ: string) =>
+      const matched = allowedOccupations.some((occ: string) =>
         occ.toLowerCase().includes(String(u.occupation).toLowerCase()) ||
         String(u.occupation).toLowerCase().includes(occ.toLowerCase())
       );
@@ -609,8 +621,9 @@ export function evaluateExplainableEligibility(
   }
 
   // 7. Social Category Evaluation
-  if (rules.allowedCategories && Array.isArray(rules.allowedCategories) && rules.allowedCategories.length > 0 && !rules.allowedCategories.includes('All')) {
-    const allowedCats = rules.allowedCategories.map((c: string) => i18n.t(c, c)).join(', ');
+  const allowedCategories = rules.allowedCategories || (rules.category ? (Array.isArray(rules.category) ? rules.category : [rules.category]) : undefined);
+  if (allowedCategories && Array.isArray(allowedCategories) && allowedCategories.length > 0 && !allowedCategories.includes('All')) {
+    const allowedCats = allowedCategories.map((c: string) => i18n.t(c, c)).join(', ');
 
     if (!u || !u.category || !String(u.category).trim()) {
       recordCriterion({
@@ -624,7 +637,7 @@ export function evaluateExplainableEligibility(
           defaultValue: `Restricted to ${allowedCats} (Category not specified in profile)`
         })
       });
-    } else if (rules.allowedCategories.some((c: string) => c.toLowerCase() === String(u.category).toLowerCase())) {
+    } else if (allowedCategories.some((c: string) => c.toLowerCase() === String(u.category).toLowerCase())) {
       const userCat = i18n.t(u.category, u.category);
       recordCriterion({
         id: 'socialCategory',
@@ -655,7 +668,8 @@ export function evaluateExplainableEligibility(
   }
 
   // 8. Disability Evaluation
-  if (rules.requiresDisability) {
+  const requiresDisability = rules.requiresDisability ?? rules.disabilityRequired;
+  if (requiresDisability) {
     const minPerc = rules.minDisabilityPercentage ?? 40;
     const requiredDesc = `Certified disability (min ${minPerc}%)`;
 
@@ -817,16 +831,20 @@ export function evaluateExplainableEligibility(
     // Check for any unsupported custom fields in eligibilityRules
     for (const ruleKey of Object.keys(rules)) {
       if (!KNOWN_RULE_KEYS.has(ruleKey)) {
+        const val = (rules as any)[ruleKey];
+        if (val === false || val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0)) {
+          continue;
+        }
         recordCriterion({
           id: `unsupported_rule_${ruleKey}`,
           title: i18n.t('criterionUnsupportedTitle', `Special Condition (${ruleKey})`),
           status: 'UNKNOWN',
           userValueDescription: i18n.t('unsupportedRuleEval', 'Cannot evaluate automatically'),
-          requiredValueDescription: String((rules as any)[ruleKey]),
+          requiredValueDescription: String(val),
           reason: i18n.t('unsupportedRuleFieldNotice', {
             ruleKey,
-            value: String((rules as any)[ruleKey]),
-            defaultValue: `Special rule condition '${ruleKey}' is not supported by automated rules. Verify against official guidelines.`
+            value: String(val),
+            defaultValue: `Special guideline '${ruleKey}' requires departmental review`
           })
         });
       }
