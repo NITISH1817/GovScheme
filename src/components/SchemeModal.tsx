@@ -1,7 +1,7 @@
 import React from 'react';
 import { CombinedSchemeAnalysis, UserProfile, DocumentRecord, DocumentPossessionStatus } from '../types';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   X,
   ExternalLink,
@@ -47,6 +47,17 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
 }) => {
   const { scheme } = analysis;
   const { t } = useTranslation();
+  const shouldReduceMotion = useReducedMotion();
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const [reportedDocs, setReportedDocs] = React.useState<Record<string, DocumentPossessionStatus>>({});
 
@@ -96,21 +107,24 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: shouldReduceMotion ? 0.05 : 0.3 }}
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           onClick={onClose}
         />
 
         {/* Drawer */}
         <motion.div 
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="scheme-modal-title"
+          initial={shouldReduceMotion ? { opacity: 0 } : { x: '100%' }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { x: 0 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { x: '100%' }}
+          transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-4xl h-[100dvh] bg-white dark:bg-[#07111F] shadow-2xl relative z-10 flex flex-col border-l border-gray-200 dark:border-gray-800"
         >
           {/* Header */}
-          <div className="px-8 py-6 flex justify-between items-start border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0F1B2D] sticky top-0 z-20">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 flex justify-between items-start border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0F1B2D] sticky top-0 z-20">
             <div className="max-w-2xl space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -125,7 +139,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   {scheme.verificationStatus === 'ADMIN_VERIFIED' ? '✓ Admin Verified' : '✓ Portal Curated'}
                 </span>
               </div>
-              <h2 className="text-3xl font-bold text-[#123C69] dark:text-white font-sans">
+              <h2 id="scheme-modal-title" className="text-2xl sm:text-3xl font-bold text-[#123C69] dark:text-white font-sans break-words">
                 {t(`${scheme.id}_name`, scheme.name)}
               </h2>
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
@@ -135,42 +149,46 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-2">
               <button 
                 onClick={handleCopy}
-                className="w-10 h-10 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center justify-center hover:bg-blue-100 transition-colors relative"
-                title={copied ? "Copied!" : "Copy Scheme Info"}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center justify-center hover:bg-blue-100 transition-colors relative"
+                title={copied ? t('copied', 'Copied!') : t('copyInfo', 'Copy Scheme Info')}
+                aria-label={copied ? t('copied', 'Copied!') : t('copyInfo', 'Copy Scheme Info')}
               >
-                {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-blue-600" />}
+                {copied ? <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" /> : <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />}
               </button>
               <button 
                 onClick={() => {
                   const url = encodeURIComponent(window.location.href);
                   const text = encodeURIComponent(`Check out this government scheme: ${scheme.name}`);
-                  window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+                  window.open(`https://wa.me/?text=${text}%20${url}`, '_blank', 'noopener,noreferrer');
                 }}
-                className="w-10 h-10 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center justify-center hover:bg-green-100 transition-colors tooltip-wrapper relative group"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center justify-center hover:bg-green-100 transition-colors tooltip-wrapper relative group"
+                aria-label={t('shareWhatsApp', 'Share scheme on WhatsApp')}
               >
                 {/* SVG for WhatsApp */}
-                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
               </button>
               <button 
                 onClick={() => onToggleBookmark(scheme.id)}
-                className="w-10 h-10 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                aria-label={isBookmarked ? t('removeBookmark', 'Remove bookmark') : t('saveBookmark', 'Bookmark scheme')}
               >
-                {isBookmarked ? <BookmarkCheck className="w-5 h-5 text-[#F59E0B]" fill="currentColor" /> : <Bookmark className="w-5 h-5 text-gray-400" />}
+                {isBookmarked ? <BookmarkCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#F59E0B]" fill="currentColor" /> : <Bookmark className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />}
               </button>
               <button 
                 onClick={onClose} 
-                className="w-10 h-10 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                aria-label={t('close', 'Close')}
               >
-                <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
           </div>
 
           {/* Content Scrollable */}
-          <div className="flex-1 overflow-y-auto px-8 py-10 space-y-12">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 sm:py-10 space-y-8 sm:space-y-12">
             
             {/* Overview */}
             <section className="space-y-4">
@@ -629,14 +647,14 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
           </div>
 
           {/* Footer Sticky Action */}
-          <div className="p-6 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0F1B2D] flex flex-col sm:flex-row sm:items-center justify-between shadow-[0_-10px_20px_rgba(0,0,0,0.02)] gap-4">
+          <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0F1B2D] flex flex-col sm:flex-row sm:items-center justify-between shadow-[0_-10px_20px_rgba(0,0,0,0.02)] gap-4">
             
             {/* Trust Panel */}
             <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
-              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center shrink-0">
                 <Check className="w-4 h-4 text-green-700 dark:text-green-300" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider">{t('officialSourceCompiled', 'Official Source Portal')}</div>
                 <div className="text-sm text-green-700 dark:text-green-400 font-medium truncate max-w-[200px]" title={scheme.officialApplyUrl}>
                   {scheme.officialApplyUrl ? new URL(scheme.officialApplyUrl).hostname : t('govtPortal', 'Govt Portal')}
@@ -648,10 +666,12 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
             </div>
 
             <button 
-              onClick={() => window.open(scheme.officialApplyUrl || '#', '_blank')}
-              className="px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              onClick={() => window.open(scheme.officialApplyUrl || '#', '_blank', 'noopener,noreferrer')}
+              className="min-h-[44px] px-6 sm:px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
-              {t('applyOnOfficialPortal', 'Apply on Official Portal')} <ExternalLink className="w-4 h-4" />
+              <span>{t('applyOnOfficialPortal', 'Apply on Official Portal')}</span>
+              <span className="sr-only"> ({t('opensInNewTab', 'opens in a new tab')})</span>
+              <ExternalLink className="w-4 h-4" />
             </button>
           </div>
 

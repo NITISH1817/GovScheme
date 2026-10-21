@@ -1,4 +1,4 @@
-﻿import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
@@ -115,6 +115,8 @@ export default defineConfig(({ command, mode }) => {
             charts: ['recharts'],
             icons: ['lucide-react'],
             motion: ['framer-motion'],
+            three: ['three', '@react-three/fiber', '@react-three/drei'],
+            pdf: ['jspdf', 'html2canvas'],
           },
         },
       },

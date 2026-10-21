@@ -219,6 +219,7 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     if (!u.occupation || !String(u.occupation).trim()) {
       const requiredOccupations = rules.allowedOccupations.map((o: string) => i18n.t(o, o)).join(', ');
       informationNeeded.push(i18n.t('ruleOccupationUnknown', {
+        requiredOccupations: requiredOccupations,
         defaultValue: `Requires occupation like ${requiredOccupations} (Occupation not specified in profile)`
       }));
     } else {

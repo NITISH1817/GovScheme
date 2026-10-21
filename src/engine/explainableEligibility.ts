@@ -522,6 +522,7 @@ export function evaluateExplainableEligibility(
         userValueDescription: i18n.t('notSpecifiedInProfile', 'Not specified in profile'),
         requiredValueDescription: reqOccs,
         reason: i18n.t('ruleOccupationUnknown', {
+          requiredOccupations: reqOccs,
           defaultValue: `Requires occupation like ${reqOccs} (Occupation not specified in profile)`
         })
       });

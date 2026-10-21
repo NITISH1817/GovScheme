@@ -92,7 +92,7 @@ export const App: React.FC = () => {
       setIsAuthOpen(true);
       return;
     }
-    const protectedTabs = ['assistant', 'vault', 'profile', 'tracker'];
+    const protectedTabs = ['assistant', 'vault', 'profile', 'report', 'tracker', 'settings'];
     if (protectedTabs.includes(tab) && !user) {
       setPendingKioskRedirect(false);
       setAuthNotice(undefined);

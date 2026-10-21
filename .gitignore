@@ -135,3 +135,7 @@ scripts/secure_save_prod_uri.js
 
 # Temporary uploads and test files
 uploads/
+
+# Local scratch and report submission documents
+scratch/
+final_report_submission/

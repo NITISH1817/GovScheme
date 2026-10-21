@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
 import { performSemanticSearch } from '../engine/semanticSearch';
-import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle, Globe, CheckCircle2, XCircle, LayoutDashboard, HelpCircle } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle, AlertTriangle, Globe, CheckCircle2, XCircle, LayoutDashboard, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SchemeComparisonModal } from './SchemeComparisonModal';
 import { getMissingProfileFields } from '../utils/profileUtils';
@@ -241,11 +241,11 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
             </div>
 
             {/* Quick Segmented Mode Switcher */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-gray-100 dark:bg-[#0B1424] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-inner">
+            <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-gray-100 dark:bg-[#0B1424] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-inner w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setViewMode('recommended')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 sm:flex-none min-h-[44px] flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                   viewMode === 'recommended'
                     ? 'bg-emerald-600 text-white shadow-md scale-[1.02]'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -263,7 +263,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('all')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 sm:flex-none min-h-[44px] flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                   viewMode === 'all'
                     ? 'bg-[#123C69] dark:bg-[#1769FF] text-white shadow-md scale-[1.02]'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -281,7 +281,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('ineligible')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 sm:flex-none min-h-[44px] flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                   viewMode === 'ineligible'
                     ? 'bg-red-600 text-white shadow-md scale-[1.02]'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -427,7 +427,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
             <div className="relative w-full group z-20">
               <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${isSearchingSemantic ? 'text-primary animate-pulse' : 'text-gray-400'}`} />
               <input 
+                id="scheme-search-input"
                 type="text" 
+                aria-label={t('searchSchemesPlaceholder', "Semantic Search... e.g. 'scholarships for girls in Tamil Nadu'")}
                 placeholder={isListening ? t('listeningSpeech', "Listening... Speak your need (e.g. 'help with college fees')") : t('searchSchemesPlaceholder', "Semantic Search... e.g. 'scholarships for girls in Tamil Nadu'")}
                 value={searchTerm}
                 onChange={(e) => handleSemanticSearch(e.target.value)}
@@ -440,7 +442,8 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 <button 
                   onClick={() => setIsListening(!isListening)}
                   className={`p-1.5 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                  title={t('searchByVoice', 'Search by Voice')}
+                  title={isListening ? t('stopListening', 'Stop Listening') : t('searchByVoice', 'Search by Voice')}
+                  aria-label={isListening ? t('stopListening', 'Stop Listening') : t('searchByVoice', 'Search by Voice')}
                 >
                   {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
@@ -499,13 +502,14 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                         </span>
                         {semanticScore && (
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${semanticScore > 0.8 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                            <Zap className="w-3 h-3 inline-block mr-0.5" /> Semantic Match: {(semanticScore * 100).toFixed(0)}%
+                            <Zap className="w-3 h-3 inline-block mr-0.5" /> {t('semanticMatchLabel', 'Semantic Match')}: {(semanticScore * 100).toFixed(0)}%
                           </span>
                         )}
                       </div>
                       <button 
                         onClick={() => onToggleBookmark(scheme.id)}
-                        className="text-gray-400 hover:text-[#F59E0B] transition-colors"
+                        className="text-gray-400 hover:text-[#F59E0B] transition-colors p-1"
+                        aria-label={isBookmarked(scheme.id) ? t('removeBookmark', 'Remove bookmark') : t('saveBookmark', 'Bookmark scheme')}
                       >
                         {isBookmarked(scheme.id) ? <BookmarkCheck className="w-5 h-5 text-[#F59E0B]" fill="currentColor" /> : <Bookmark className="w-5 h-5" />}
                       </button>
@@ -519,22 +523,29 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                       {t(`${scheme.id}_desc`, scheme.shortDescription)}
                     </p>
 
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center gap-2 mb-4 flex-wrap">
                       <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
                         {scheme.state === 'Central' ? t('centralGovt', 'Central Govt') : t('stateGovt', 'State Govt')}
                       </span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded border inline-flex items-center gap-1.5 ${
                         ruleResult.status === 'Eligible' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
                         ruleResult.status === 'Conditionally Eligible' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' :
                         ruleResult.status === 'Almost Eligible' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800' :
                         ruleResult.status === 'Insufficient Information' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800' :
                         'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
                       }`}>
-                        {ruleResult.status === 'Eligible' ? t('eligible', 'Eligible') :
-                         ruleResult.status === 'Conditionally Eligible' ? t('potentiallyEligible', 'Conditionally Eligible') :
-                         ruleResult.status === 'Almost Eligible' ? t('almostEligible', 'Almost Eligible') :
-                         ruleResult.status === 'Insufficient Information' ? t('insufficientInformation', 'Information Needed') :
-                         t('notEligible', 'Not Eligible')}
+                        {ruleResult.status === 'Eligible' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> :
+                         ruleResult.status === 'Conditionally Eligible' ? <AlertCircle className="w-3.5 h-3.5 shrink-0" /> :
+                         ruleResult.status === 'Almost Eligible' ? <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> :
+                         ruleResult.status === 'Insufficient Information' ? <HelpCircle className="w-3.5 h-3.5 shrink-0" /> :
+                         <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                        <span>
+                          {ruleResult.status === 'Eligible' ? t('eligible', 'Eligible') :
+                           ruleResult.status === 'Conditionally Eligible' ? t('potentiallyEligible', 'Conditionally Eligible') :
+                           ruleResult.status === 'Almost Eligible' ? t('almostEligible', 'Almost Eligible') :
+                           ruleResult.status === 'Insufficient Information' ? t('insufficientInformation', 'Information Needed') :
+                           t('notEligible', 'Not Eligible')}
+                        </span>
                       </span>
                       {scheme.verificationStatus && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
@@ -637,16 +648,16 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   </div>
 
                   {/* Actions */}
-                  <div className="p-4 bg-gray-50 dark:bg-[#07111F] border-t border-gray-200 dark:border-gray-800 flex items-center gap-2">
+                  <div className="p-4 bg-gray-50 dark:bg-[#07111F] border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <button 
                       onClick={() => onSelectScheme({ scheme, ruleResult, mlResult })}
-                      className="flex-1 py-2 rounded border border-[#123C69] text-[#123C69] dark:border-gray-600 dark:text-white font-semibold text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="flex-1 min-h-[44px] py-2 px-3 rounded border border-[#123C69] text-[#123C69] dark:border-gray-600 dark:text-white font-semibold text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center text-center"
                     >
                       {ruleResult.status === 'Not Eligible' ? t('whyNotApplicable', 'Why Not Applicable') : t('details', 'Details')}
                     </button>
                     <button 
                       onClick={() => toggleCompare(scheme)}
-                      className={`flex-1 py-2 rounded font-semibold text-sm transition-colors ${
+                      className={`flex-1 min-h-[44px] py-2 px-3 rounded font-semibold text-sm transition-colors flex items-center justify-center text-center ${
                         compareQueue.find(s => s.id === scheme.id) 
                           ? 'bg-[#123C69] text-white' 
                           : 'bg-white dark:bg-[#16243A] border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -656,9 +667,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     </button>
                     <button 
                       onClick={() => window.open(scheme.officialApplyUrl || '#', '_blank')}
-                      className="flex-1 py-2 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
+                      className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center"
                     >
-                      {t('apply', 'Apply')} <ExternalLink className="w-4 h-4" />
+                      <span>{t('apply', 'Apply')}</span> <ExternalLink className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -671,30 +682,38 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight mb-2">
-                  No exact matches found for "{searchTerm}".
+                  {t('noExactMatches', 'No exact matches found for')} "{searchTerm}".
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md">
-                  Try these alternatives based on related eligibility criteria and broader location signals.
+                  {t('noMatchesSubtitle', 'Try these alternatives based on related eligibility criteria and broader location signals.')}
                 </p>
                 
                 <div className="text-left bg-gray-50 dark:bg-[#07111F] border border-gray-200 dark:border-gray-700 p-6 rounded-lg w-full max-w-md">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 block">Try these alternatives:</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 block">
+                    {t('tryAlternativesTitle', 'Try these alternatives:')}
+                  </span>
                   <ul className="space-y-3">
                     <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#1769FF]" />
-                      <button onClick={() => { setSelectedCategories([]); setSelectedGovtLevel([]); setSelectedEligibility([]); }} className="hover:text-[#1769FF] transition-colors text-left">Remove all current filters (Similar Categories)</button>
+                      <button onClick={() => { setSelectedCategories([]); setSelectedGovtLevel([]); setSelectedEligibility([]); }} className="hover:text-[#1769FF] transition-colors text-left">
+                        {t('removeFiltersOption', 'Remove all current filters (Similar Categories)')}
+                      </button>
                     </li>
                     <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#1769FF]" />
-                      <button onClick={() => { setSelectedState(''); }} className="hover:text-[#1769FF] transition-colors text-left">Search all of India (Broader Location)</button>
+                      <button onClick={() => { setSelectedState(''); }} className="hover:text-[#1769FF] transition-colors text-left">
+                        {t('searchAllIndiaOption', 'Search all of India (Broader Location)')}
+                      </button>
                     </li>
                     <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#1769FF]" />
-                      <button onClick={() => { setSelectedGovtLevel(['Central']); }} className="hover:text-[#1769FF] transition-colors text-left">Explore Central Government schemes (Nearby Eligibility)</button>
+                      <button onClick={() => { setSelectedGovtLevel(['Central']); }} className="hover:text-[#1769FF] transition-colors text-left">
+                        {t('exploreCentralOption', 'Explore Central Government schemes (Nearby Eligibility)')}
+                      </button>
                     </li>
                     <li className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#1769FF]" />
-                      <span>Ask the AI Document Assistant for help</span>
+                      <span>{t('askAIAssistantOption', 'Ask the AI Document Assistant for help')}</span>
                     </li>
                   </ul>
                 </div>

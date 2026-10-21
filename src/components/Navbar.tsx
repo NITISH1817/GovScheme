@@ -115,6 +115,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => setLangDropdownOpen(!langDropdownOpen)}
                 className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                aria-label="Select Language"
               >
                 <Languages className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
               </button>
@@ -147,6 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setSettingsDropdownOpen(!settingsDropdownOpen)}
                 className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
                 title={t('displaySettings', 'Display Settings')}
+                aria-label={t('displaySettings', 'Display Settings')}
               >
                 <Settings2 className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
               </button>
@@ -236,6 +238,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => { if (!user) onOpenAuth(); else onOpenNotifications(); }}
               className="relative w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+              aria-label={t('notifications', 'Notifications')}
             >
               <Bell className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
               {unreadCount > 0 && (
@@ -339,6 +342,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden w-8 h-8 relative flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10"
               aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav-menu"
             >
               <div className="w-4 h-3 flex flex-col justify-between items-center relative">
                 <motion.span animate={mobileMenuOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute top-0" />
@@ -354,11 +359,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div 
+            id="mobile-nav-menu"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: customBezier }}
-            className="fixed inset-0 z-40 bg-white/95 dark:bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center pt-20"
+            className="fixed inset-0 z-40 bg-white/95 dark:bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-start overflow-y-auto px-4 py-24"
           >
             <div className="flex flex-col gap-8 text-center">
               {navItems.map((item, idx) => (
