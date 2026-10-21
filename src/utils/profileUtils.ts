@@ -1,4 +1,4 @@
-import { UserProfile, TargetGender, CategorySocial } from '../types';
+import type { UserProfile, TargetGender, CategorySocial } from '../types/index.ts';
 
 export const calculateProfileCompletion = (user: Partial<UserProfile> | any): number => {
   if (!user) return 0;

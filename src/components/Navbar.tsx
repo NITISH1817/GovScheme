@@ -18,7 +18,7 @@ interface NavbarProps {
   textSize: 'small' | 'normal' | 'large' | 'xlarge';
   setTextSize: (size: 'small' | 'normal' | 'large' | 'xlarge') => void;
   user: UserProfile | null;
-  onOpenAuth: (mode?: 'login' | 'register') => void;
+  onOpenAuth: (mode?: 'login' | 'register', reason?: string) => void;
   onLogout: () => void;
   unreadCount: number;
   onOpenNotifications: () => void;
@@ -86,9 +86,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => {
-                  const protectedTabs = ['assistant', 'vault', 'tracker'];
-                  if (protectedTabs.includes(item.id) && !user) onOpenAuth();
-                  else setActiveTab(item.id);
+                  const protectedTabs = ['assistant', 'vault', 'tracker', 'kiosk'];
+                  if (protectedTabs.includes(item.id) && !user) {
+                    onOpenAuth('login', item.id === 'kiosk' ? 'kiosk' : undefined);
+                  } else {
+                    setActiveTab(item.id);
+                  }
                 }}
                 className={`px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 ${
                   activeTab === item.id 
@@ -366,9 +369,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     exit={{ y: -40, opacity: 0 }}
                     transition={{ delay: idx * 0.1, duration: 0.6, ease: customBezier }}
                     onClick={() => {
-                      const protectedTabs = ['assistant', 'vault', 'tracker'];
-                      if (protectedTabs.includes(item.id) && !user) onOpenAuth();
-                      else setActiveTab(item.id);
+                      const protectedTabs = ['assistant', 'vault', 'tracker', 'kiosk'];
+                      if (protectedTabs.includes(item.id) && !user) {
+                        onOpenAuth('login', item.id === 'kiosk' ? 'kiosk' : undefined);
+                      } else {
+                        setActiveTab(item.id);
+                      }
                       setMobileMenuOpen(false);
                     }}
                     className="text-4xl font-extrabold text-gov-navy dark:text-white"

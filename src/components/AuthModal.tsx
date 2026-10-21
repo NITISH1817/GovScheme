@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, X, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, X, Loader2, Monitor } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGoogleLogin } from '@react-oauth/google';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
@@ -121,11 +121,13 @@ interface AuthModalProps {
   onContinueGuest: () => void;
   currentLang: LanguageCode;
   initialMode?: 'login' | 'register';
+  authNotice?: string;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   initialMode = 'login',
+  authNotice,
   onClose,
   onLoginSuccess,
 }) => {
@@ -389,6 +391,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <div className="auth-form-wrapper register">
           <form className="auth-form-container" onSubmit={handleRegisterSubmit}>
             <h2>{t('createAccount', 'Create Account')}</h2>
+            {authNotice && (
+              <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-semibold flex items-center gap-2">
+                <Monitor size={16} className="text-amber-600 shrink-0" />
+                <span>{authNotice}</span>
+              </div>
+            )}
             
             <div className="auth-input-group">
               <input 
@@ -463,6 +471,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <div className="auth-form-wrapper login">
           <form className="auth-form-container" onSubmit={handleLoginSubmit}>
             <h2>{t('welcomeBack', 'Welcome Back')}</h2>
+            {authNotice && (
+              <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-semibold flex items-center gap-2">
+                <Monitor size={16} className="text-amber-600 shrink-0" />
+                <span>{authNotice}</span>
+              </div>
+            )}
             
             <div className="auth-input-group">
               <input 

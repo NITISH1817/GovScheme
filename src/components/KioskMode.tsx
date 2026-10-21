@@ -7,6 +7,7 @@ import { languages } from '../data/translations';
 import { Globe } from 'lucide-react';
 
 interface KioskModeProps {
+  user?: UserProfile | null;
   onGenerateReport: (profile: Partial<UserProfile>) => void;
   onExit: () => void;
   currentLang?: LanguageCode;
@@ -14,6 +15,7 @@ interface KioskModeProps {
 }
 
 export const KioskMode: React.FC<KioskModeProps> = ({ 
+  user,
   onGenerateReport, 
   onExit,
   currentLang,
@@ -22,24 +24,37 @@ export const KioskMode: React.FC<KioskModeProps> = ({
   const { t, i18n } = useTranslation();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
-    age: '',
-    mobile: '',
-    state: '',
-    income: '',
-    occupation: ''
+    fullName: user?.fullName || '',
+    age: user?.age !== undefined && user?.age !== null ? String(user.age) : '',
+    mobile: user?.mobile || '',
+    state: user?.state || '',
+    income: user?.annualIncome !== undefined && user?.annualIncome !== null ? String(user.annualIncome) : '',
+    occupation: user?.occupation || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const idleTimerRef = useRef<any>(null);
 
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        fullName: user.fullName || prev.fullName || '',
+        age: user.age !== undefined && user.age !== null ? String(user.age) : prev.age,
+        mobile: user.mobile || prev.mobile || '',
+        state: user.state || prev.state,
+        income: user.annualIncome !== undefined && user.annualIncome !== null ? String(user.annualIncome) : prev.income,
+        occupation: user.occupation || prev.occupation
+      }));
+    }
+  }, [user]);
+
   const resetFormData = () => {
     setFormData({
-      fullName: '',
-      age: '',
-      mobile: '',
-      state: '',
-      income: '',
-      occupation: ''
+      fullName: user?.fullName || '',
+      age: user?.age !== undefined && user?.age !== null ? String(user.age) : '',
+      mobile: user?.mobile || '',
+      state: user?.state || '',
+      income: user?.annualIncome !== undefined && user?.annualIncome !== null ? String(user.annualIncome) : '',
+      occupation: user?.occupation || ''
     });
   };
 

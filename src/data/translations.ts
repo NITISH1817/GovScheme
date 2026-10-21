@@ -1,4 +1,4 @@
-import { LanguageCode } from '../types';
+import type { LanguageCode } from '../types/index.ts';
 
 export interface TranslationDict {
   appName: string;
@@ -14,6 +14,7 @@ export interface TranslationDict {
   navProfile: string;
   navAdmin: string;
   navKiosk: string;
+  kioskAuthNotice: string;
   aiPoweredTitle: string;
   aiPoweredDesc: string;
   multilingualTitle: string;
@@ -108,6 +109,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "My Profile",
     navAdmin: "Admin Portal",
     navKiosk: "CSC Kiosk Mode",
+    kioskAuthNotice: "Please sign in or sign up to access CSC Kiosk Mode.",
     aiPoweredTitle: "AI Powered Engine",
     aiPoweredDesc: "Combines strict legal eligibility rules with ML preference ranking for transparent recommendations.",
     multilingualTitle: "10 Indian Languages",
@@ -201,6 +203,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "मेरी प्रोफ़ाइल",
     navAdmin: "प्रशासक पोर्टल",
     navKiosk: "सीएससी कियोस्क",
+    kioskAuthNotice: "सीएससी कियोस्क मोड का उपयोग करने के लिए कृपया साइन इन या साइन अप करें।",
     aiPoweredTitle: "AI संचालित इंजन",
     aiPoweredDesc: "पारदर्शी सिफारिशों के लिए एमएल रैंकिंग के साथ कानूनी पात्रता नियमों को जोड़ता है।",
     multilingualTitle: "10 भारतीय भाषाएँ",
@@ -294,6 +297,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "எனது சுயவிவரம்",
     navAdmin: "நிர்வாகி போர்ட்டல்",
     navKiosk: "CSC கியோஸ்க் முறை",
+    kioskAuthNotice: "CSC கியோஸ்க் முறையை அணுக தயவுசெய்து உள்நுழையவும் அல்லது பதிவு செய்யவும்.",
     aiPoweredTitle: "AI தகுதி இயந்திரம்",
     aiPoweredDesc: "சட்டபூர்வமான தகுதி விதிகளையும் ML பரிந்துரைகளையும் இணைத்து வெளிப்படையான பரிந்துரைகளை வழங்குகிறது.",
     multilingualTitle: "10 இந்திய மொழிகள்",
@@ -388,6 +392,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "నా ప్రొఫైల్",
     navAdmin: "అడ్మిన్ పోర్టల్",
     navKiosk: "CSC కియోస్క్ మోడ్",
+    kioskAuthNotice: "CSC కియోస్క్ మోడ్‌ను ఉపయోగించడానికి దయచేసి సైన్ ఇన్ లేదా సైన్ అప్ చేయండి.",
     aiPoweredTitle: "AI ఆధారిత ఇంజిన్",
     aiPoweredDesc: "పారదర్శక సిఫార్సుల కోసం చట్టపరమైన అర్హత నియమాలను ML ర్యాంకింగ్‌తో మిళితం చేస్తుంది.",
     multilingualTitle: "10 భారతీయ భాషలు",
@@ -452,6 +457,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "ನನ್ನ ಪ್ರೊಫೈಲ್",
     navAdmin: "ಅಡ್ಮಿನ್ ಪೋರ್ಟಲ್",
     navKiosk: "CSC ಕಿಯೋಸ್ಕ್ ಮೋಡ್",
+    kioskAuthNotice: "CSC ಕಿಯೋಸ್ಕ್ ಮೋಡ್ ಪ್ರವೇಶಿಸಲು ದಯವಿಟ್ಟು ಸೈನ್ ಇನ್ ಅಥವಾ ಸೈನ್ ಅಪ್ ಮಾಡಿ.",
     aiPoweredTitle: "AI ಆಧಾರಿತ ಎಂಜಿನ್",
     aiPoweredDesc: "ಪಾರದರ್ಶಕ ಶಿಫಾರಸುಗಳಿಗಾಗಿ ಕಾನೂನು ಅರ್ಹತಾ ನಿಯಮಗಳನ್ನು ಎಂಎಲ್ ರ‍್ಯಾಂಕಿಂಗ್‌ನೊಂದಿಗೆ ಸಂಯೋಜಿಸುತ್ತದೆ.",
     multilingualTitle: "10 ಭಾರತೀಯ ಭಾಷೆಗಳು",
@@ -516,6 +522,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "എന്റെ പ്രൊഫൈൽ",
     navAdmin: "അഡ്മിൻ പോർട്ടൽ",
     navKiosk: "CSC കിയോസ്ക് മോഡ്",
+    kioskAuthNotice: "സി‌എസ്‌സി കിയോസ്‌ക് മോഡ് ആക്‌സസ് ചെയ്യുന്നതിന് ദയവായി സൈൻ ഇൻ ചെയ്യുക അല്ലെങ്കിൽ സൈൻ അപ്പ് ചെയ്യുക.",
     aiPoweredTitle: "AI പവേർഡ് എഞ്ചിൻ",
     aiPoweredDesc: "സുതാര്യമായ ശുപാർശകൾക്കായി യോഗ്യതാ നിയമങ്ങളെയും ML റാങ്കിംഗിനെയും സംയോജിപ്പിക്കുന്നു.",
     multilingualTitle: "10 ഇന്ത്യൻ ഭാഷകൾ",
@@ -586,6 +593,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "माझे प्रोफाईल",
     navAdmin: "ॲडमिन पोर्टल",
     navKiosk: "CSC किऑस्क मोड",
+    kioskAuthNotice: "सीएससी किऑस्क मोड वापरण्यासाठी कृपया साइन इन किंवा साइन अप करा.",
     aiPoweredTitle: "AI समर्थित इंजिन",
     aiPoweredDesc: "पारदर्शक शिफारशींसाठी कायदेशीर पात्रता नियम आणि ML रँकिंग एकत्र करते.",
     multilingualTitle: "10 भारतीय भाषा",
@@ -639,6 +647,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "મારી પ્રોફાઇલ",
     navAdmin: "એડમિન પોર્ટલ",
     navKiosk: "CSC કિયોસ્ક મોડ",
+    kioskAuthNotice: "CSC કિયોસ્ક મોડ ઍક્સેસ કરવા માટે કૃપા કરીને સાઇન ઇન અથવા સાઇન અપ કરો.",
     aiPoweredTitle: "AI આધારિત એન્જિન",
     aiPoweredDesc: "પારદર્શક ભલામણો માટે કાનૂની પાત્રતા નિયમો અને ML રેન્કિંગને જોડે છે.",
     multilingualTitle: "10 ભારતીય ભાષાઓ",
@@ -692,6 +701,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "ਮੇਰੀ ਪ੍ਰੋਫਾਈਲ",
     navAdmin: "ਐਡਮਿਨ ਪੋਰਟਲ",
     navKiosk: "CSC ਕਿਓਸਕ ਮੋਡ",
+    kioskAuthNotice: "CSC ਕਿਓਸਕ ਮੋਡ ਤੱਕ ਪਹੁੰਚਣ ਲਈ ਕਿਰਪਾ ਕਰਕੇ ਸਾਈਨ ਇਨ ਜਾਂ ਸਾਈਨ ਅੱਪ ਕਰੋ।",
     aiPoweredTitle: "AI ਸੰਚਾਲਿਤ ਇੰਜਣ",
     aiPoweredDesc: "ਪਾਰਦਰਸ਼ੀ ਸੁਝਾਵਾਂ ਲਈ ਕਾਨੂੰਨੀ ਯੋਗਤਾ ਨਿਯਮਾਂ ਅਤੇ ML ਰੈਂਕਿੰਗ ਨੂੰ ਜੋੜਦਾ ਹੈ।",
     multilingualTitle: "10 ਭਾਰਤੀ ਭਾਸ਼ਾਵਾਂ",
@@ -745,6 +755,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     navProfile: "আমার প্রোফাইল",
     navAdmin: "এডমিন পোর্টাল",
     navKiosk: "CSC কিয়স্ক মোড",
+    kioskAuthNotice: "CSC কিয়স্ক মোড অ্যাক্সেস করতে অনুগ্রহ করে সাইন ইন বা সাইন আপ করুন।",
     aiPoweredTitle: "AI চালিত ইঞ্জিন",
     aiPoweredDesc: "স্বচ্ছ সুপারিশের জন্য আইনি যোগ্যতার নিয়ম এবং ML র‍্যাঙ্কিং সংযুক্ত করে।",
     multilingualTitle: "১০টি ভারতীয় ভাষা",

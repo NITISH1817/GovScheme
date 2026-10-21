@@ -61,18 +61,6 @@ export const App: React.FC = () => {
     setActiveTabState(tab);
   };
 
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      setActiveTabState(hash || 'home');
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  const [wizardMode, setWizardMode] = useState<'wizard' | 'life-event' | 'what-can-i-get' | 'ai-interview'>('wizard');
-  const [kioskProfile, setKioskProfile] = useState<Partial<UserProfile> | null>(null);
-
   // User & Data State
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
@@ -83,6 +71,47 @@ export const App: React.FC = () => {
   const [schemes, setSchemes] = useState<Scheme[]>(schemesData);
   const [applications, setApplications] = useState<ApplicationTrackerRecord[]>(initialApplications);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
+
+  const [wizardMode, setWizardMode] = useState<'wizard' | 'life-event' | 'what-can-i-get' | 'ai-interview'>('wizard');
+  const [kioskProfile, setKioskProfile] = useState<Partial<UserProfile> | null>(null);
+  const [pendingKioskRedirect, setPendingKioskRedirect] = useState<boolean>(false);
+  const [authNotice, setAuthNotice] = useState<string | undefined>(undefined);
+
+  const handleNavigateTab = (tab: string) => {
+    if (tab === 'kiosk' && !user) {
+      setPendingKioskRedirect(true);
+      setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
+      setAuthMode('login');
+      setIsAuthOpen(true);
+      return;
+    }
+    const protectedTabs = ['assistant', 'vault', 'profile', 'tracker'];
+    if (protectedTabs.includes(tab) && !user) {
+      setPendingKioskRedirect(false);
+      setAuthNotice(undefined);
+      setIsAuthOpen(true);
+      return;
+    }
+    setAuthNotice(undefined);
+    setActiveTab(tab);
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'kiosk' && !user) {
+        setPendingKioskRedirect(true);
+        setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
+        setIsAuthOpen(true);
+        setActiveTabState('home');
+        window.location.hash = 'home';
+        return;
+      }
+      setActiveTabState(hash || 'home');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [user, t]);
 
   // Modal Controls
   const [selectedSchemeAnalysis, setSelectedSchemeAnalysis] = useState<CombinedSchemeAnalysis | null>(null);
@@ -667,7 +696,7 @@ export const App: React.FC = () => {
         } else if (lower.includes('vault') || lower.includes('aadhaar')) {
           setActiveTab('vault');
         } else if (lower.includes('kiosk')) {
-          setActiveTab('kiosk');
+          handleNavigateTab('kiosk');
         } else {
           setActiveTab('schemes');
         }
@@ -682,9 +711,17 @@ export const App: React.FC = () => {
 
   // If in Kiosk Mode, render full-screen CSC Kiosk view
   if (activeTab === 'kiosk') {
+    if (!user) {
+      setPendingKioskRedirect(true);
+      setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
+      setIsAuthOpen(true);
+      setActiveTab('home');
+      return null;
+    }
     return (
       <KioskMode
         key={currentLang}
+        user={user}
         currentLang={currentLang}
         onLanguageChange={(lang) => {
           i18n.changeLanguage(lang);
@@ -839,7 +876,14 @@ export const App: React.FC = () => {
         reducedMotion={reducedMotion}
         setReducedMotion={setReducedMotion}
         user={user}
-        onOpenAuth={(mode?: 'login' | 'register') => {
+        onOpenAuth={(mode?: 'login' | 'register', reason?: string) => {
+          if (reason === 'kiosk') {
+            setPendingKioskRedirect(true);
+            setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
+          } else {
+            setPendingKioskRedirect(false);
+            setAuthNotice(undefined);
+          }
           setAuthMode(mode || 'login');
           setIsAuthOpen(true);
         }}
@@ -863,14 +907,7 @@ export const App: React.FC = () => {
               if (!user) setIsAuthOpen(true);
               else setActiveTab('assistant');
             }}
-            onNavigateTab={(tab) => {
-              const protectedTabs = ['assistant', 'vault', 'profile', 'tracker'];
-              if (protectedTabs.includes(tab) && !user) {
-                setIsAuthOpen(true);
-              } else {
-                setActiveTab(tab);
-              }
-            }}
+            onNavigateTab={handleNavigateTab}
             onSelectCategory={(category) => {
               setSelectedCategoryFilter(category);
               setActiveTab('schemes');
@@ -927,11 +964,21 @@ export const App: React.FC = () => {
               setUser(savedUser);
               localStorage.setItem('govscheme_user', JSON.stringify(savedUser));
 
-              // Navigate to recommendations via analysis
-              setActiveTab('analyzing');
+              // If user came via Kiosk Mode, navigate directly to Kiosk Mode with filled profile
+              if (pendingKioskRedirect) {
+                setPendingKioskRedirect(false);
+                setAuthNotice(undefined);
+                setActiveTab('kiosk');
+              } else {
+                setActiveTab('analyzing');
+              }
             }}
             onCancel={() => {
-              if (user && isProfileComplete(user)) {
+              if (pendingKioskRedirect) {
+                setPendingKioskRedirect(false);
+                setAuthNotice(undefined);
+                setActiveTab('kiosk');
+              } else if (user && isProfileComplete(user)) {
                 setActiveTab('schemes');
               } else {
                 setActiveTab('home');
@@ -1080,7 +1127,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <Footer currentLang={currentLang} onNavigate={setActiveTab} />
+      <Footer currentLang={currentLang} onNavigate={handleNavigateTab} />
 
       {/* Scheme Details Modal */}
       {selectedSchemeAnalysis && (
@@ -1107,7 +1154,11 @@ export const App: React.FC = () => {
       <AuthModal
         isOpen={isAuthOpen}
         initialMode={authMode}
-        onClose={() => setIsAuthOpen(false)}
+        authNotice={authNotice}
+        onClose={() => {
+          setIsAuthOpen(false);
+          setAuthNotice(undefined);
+        }}
         onLoginSuccess={async (loggedInUser, isNewRegistration = false) => {
           let authoritativeUser = loggedInUser;
           const token = localStorage.getItem('govscheme_token');
@@ -1133,8 +1184,16 @@ export const App: React.FC = () => {
 
           if (authoritativeUser.role === 'admin' || authoritativeUser.role === 'superadmin' || authoritativeUser.email === 'admin@govscheme.in') {
             setActiveTab('admin');
+          } else if (isNewRegistration || !isProfileComplete(authoritativeUser)) {
+            // When citizen signs up (or profile is incomplete), automatically prompt user to fill their profile
+            setWizardMode('wizard');
+            setActiveTab('wizard');
+          } else if (pendingKioskRedirect) {
+            setPendingKioskRedirect(false);
+            setAuthNotice(undefined);
+            setActiveTab('kiosk');
           } else {
-            // Citizen sign-in: keep user on their current tab or navigate to home without forcing the wizard
+            // Citizen sign-in with complete profile: keep user on their current tab or navigate to home
             if (activeTab === 'wizard' || !activeTab) {
               setActiveTab('home');
             }
