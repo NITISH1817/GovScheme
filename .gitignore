@@ -132,3 +132,6 @@ backups/
 
 # Local operational credential helper
 scripts/secure_save_prod_uri.js
+
+# Temporary uploads and test files
+uploads/
