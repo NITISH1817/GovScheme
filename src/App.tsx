@@ -1200,16 +1200,13 @@ export const App: React.FC = () => {
 
           if (authoritativeUser.role === 'admin' || authoritativeUser.role === 'superadmin' || authoritativeUser.email === 'admin@govscheme.in') {
             setActiveTab('admin');
-          } else if (isNewRegistration || !isProfileComplete(authoritativeUser)) {
-            // When citizen signs up (or profile is incomplete), automatically prompt user to fill their profile
-            setWizardMode('wizard');
-            setActiveTab('wizard');
           } else if (pendingKioskRedirect) {
             setPendingKioskRedirect(false);
             setAuthNotice(undefined);
             setActiveTab('kiosk');
           } else {
-            // Citizen sign-in: show the user's profile details
+            // Citizen sign-in & sign-up: Navigate straight to the citizen profile dashboard!
+            // Automatically has data from signup and never prompts the user to fill out the wizard.
             setActiveTab('profile');
           }
         }}

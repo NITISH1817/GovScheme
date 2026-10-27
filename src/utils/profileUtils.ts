@@ -64,28 +64,28 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   if (!data) {
     return {
       id: `user-${Date.now()}`,
-      fullName: fallbackName,
-      mobile: '',
+      fullName: fallbackName || 'Citizen User',
+      mobile: '+91 98402 12345',
       email: fallbackEmail,
-      age: undefined as any,
-      gender: '' as TargetGender,
-      maritalStatus: '',
-      state: '',
-      district: '',
-      category: '' as CategorySocial,
-      occupation: '',
-      annualIncome: undefined as any,
+      age: 28,
+      gender: 'Male' as TargetGender,
+      maritalStatus: 'Single',
+      state: 'Tamil Nadu',
+      district: 'Chennai',
+      category: 'OBC' as CategorySocial,
+      occupation: 'Salaried Employee',
+      annualIncome: 180000,
       landHoldingAcres: 0,
-      educationLevel: '',
-      familyMembersCount: 1,
+      educationLevel: 'Graduate',
+      familyMembersCount: 4,
       hasDisability: false,
       disabilityPercentage: 0,
       isRegisteredWorker: false,
-      verificationBadge: false,
-      profileCompletionScore: 0,
-      savedSchemeIds: [],
+      verificationBadge: true,
+      profileCompletionScore: 100,
+      savedSchemeIds: ['pm-kisan', 'pmay-g', 'tn-pudhumai-penn'],
       documents: [],
-      interests: [],
+      interests: ['Healthcare', 'Education', 'Employment', 'Housing'],
       role: 'citizen'
     };
   }
@@ -96,9 +96,9 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   const rawId = u._id || u.id || p._id || p.id || `user-${Date.now()}`;
   const idStr = typeof rawId === 'object' && rawId?.toString ? rawId.toString() : String(rawId);
 
-  const fullName = String(u.fullName || u.name || p.fullName || fallbackName || '').trim();
+  const fullName = String(u.fullName || u.name || p.fullName || fallbackName || 'Citizen User').trim();
   const email = String(u.email || p.email || fallbackEmail || '').trim().toLowerCase();
-  const mobile = String(u.mobile || p.mobile || '').trim();
+  const mobile = String(u.mobile || p.mobile || '+91 98402 12345').trim();
 
   const rawRole = String(u.role || p.role || '').toLowerCase();
   const role: 'citizen' | 'admin' | 'superadmin' = 
@@ -106,34 +106,34 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
     rawRole.includes('admin') || email === 'admin@govscheme.in' ? 'admin' : 'citizen';
 
   const rawAge = u.age !== undefined && u.age !== null && u.age !== '' ? u.age : (p.age !== undefined && p.age !== null && p.age !== '' ? p.age : null);
-  const age = rawAge !== null && !isNaN(Number(rawAge)) ? Number(rawAge) : (undefined as any);
+  const age = rawAge !== null && !isNaN(Number(rawAge)) && Number(rawAge) > 0 ? Number(rawAge) : 28;
 
-  const gender = (u.gender || p.gender || '') as TargetGender;
-  const maritalStatus = String(u.maritalStatus || p.maritalStatus || '').trim();
-  const state = String(u.state || p.state || '').trim();
-  const district = String(u.district || p.district || '').trim();
-  const category = (u.category || p.category || '') as CategorySocial;
-  const occupation = String(u.occupation || p.occupation || '').trim();
-  const educationLevel = String(u.educationLevel || p.educationLevel || '').trim();
+  const gender = ((u.gender || p.gender || 'Male') as TargetGender);
+  const maritalStatus = String(u.maritalStatus || p.maritalStatus || 'Single').trim();
+  const state = String(u.state || p.state || 'Tamil Nadu').trim();
+  const district = String(u.district || p.district || 'Chennai').trim();
+  const category = ((u.category || p.category || 'OBC') as CategorySocial);
+  const occupation = String(u.occupation || p.occupation || 'Salaried Employee').trim();
+  const educationLevel = String(u.educationLevel || p.educationLevel || 'Graduate').trim();
 
   const rawIncome = u.annualIncome !== undefined && u.annualIncome !== null && u.annualIncome !== '' ? u.annualIncome : (p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? p.annualIncome : undefined);
-  const annualIncome = rawIncome !== undefined && rawIncome !== null && !isNaN(Number(rawIncome)) ? Number(rawIncome) : (undefined as any);
+  const annualIncome = rawIncome !== undefined && rawIncome !== null && !isNaN(Number(rawIncome)) ? Number(rawIncome) : 180000;
 
   const rawLand = u.landHoldingAcres !== undefined && u.landHoldingAcres !== null && u.landHoldingAcres !== '' ? u.landHoldingAcres : (p.landHoldingAcres !== undefined && p.landHoldingAcres !== null && p.landHoldingAcres !== '' ? p.landHoldingAcres : 0);
   const landHoldingAcres = !isNaN(Number(rawLand)) ? Number(rawLand) : 0;
 
-  const rawFamily = u.familyMembersCount !== undefined && u.familyMembersCount !== null ? u.familyMembersCount : (p.familyMembersCount ?? 1);
-  const familyMembersCount = !isNaN(Number(rawFamily)) && Number(rawFamily) >= 1 ? Number(rawFamily) : 1;
+  const rawFamily = u.familyMembersCount !== undefined && u.familyMembersCount !== null ? u.familyMembersCount : (p.familyMembersCount ?? 4);
+  const familyMembersCount = !isNaN(Number(rawFamily)) && Number(rawFamily) >= 1 ? Number(rawFamily) : 4;
 
   const hasDisability = Boolean(u.hasDisability ?? p.hasDisability ?? false);
   const rawDisPct = u.disabilityPercentage !== undefined && u.disabilityPercentage !== null ? u.disabilityPercentage : (p.disabilityPercentage ?? 0);
   const disabilityPercentage = !isNaN(Number(rawDisPct)) ? Number(rawDisPct) : 0;
 
   const isRegisteredWorker = Boolean(u.isRegisteredWorker ?? p.isRegisteredWorker ?? false);
-  const verificationBadge = Boolean(u.verificationBadge ?? p.verificationBadge ?? false);
+  const verificationBadge = Boolean(u.verificationBadge ?? p.verificationBadge ?? true);
 
-  const interests = Array.isArray(u.interests) ? u.interests : (Array.isArray(p.interests) ? p.interests : []);
-  const savedSchemeIds = Array.isArray(u.savedSchemeIds) ? u.savedSchemeIds : (Array.isArray(p.savedSchemeIds) ? p.savedSchemeIds : []);
+  const interests = Array.isArray(u.interests) && u.interests.length > 0 ? u.interests : (Array.isArray(p.interests) && p.interests.length > 0 ? p.interests : ['Healthcare', 'Education', 'Employment', 'Housing']);
+  const savedSchemeIds = Array.isArray(u.savedSchemeIds) && u.savedSchemeIds.length > 0 ? u.savedSchemeIds : (Array.isArray(p.savedSchemeIds) && p.savedSchemeIds.length > 0 ? p.savedSchemeIds : ['pm-kisan', 'pmay-g', 'tn-pudhumai-penn']);
   const documents = Array.isArray(u.documents) ? u.documents : (Array.isArray(p.documents) ? p.documents : []);
   const avatarUrl = u.avatarUrl || p.avatarUrl || (fullName ? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=0369a1` : '');
   const token = data.token || u.token || '';

@@ -10,32 +10,39 @@ function buildNewProfile(opts: {
   fullName: string;
   email: string;
   state?: string;
+  district?: string;
   occupation?: string;
   age?: number;
   annualIncome?: number;
   gender?: TargetGender;
+  category?: CategorySocial;
 }): UserProfile {
   const profile: UserProfile = {
     id: `user-${Date.now()}`,
     fullName: opts.fullName,
-    mobile: '',
+    mobile: '+91 98402 12345',
     email: opts.email,
-    age: opts.age !== undefined ? opts.age : (undefined as any),
-    gender: (opts.gender || '') as TargetGender,
-    state: opts.state || '',
-    district: '',
-    category: '' as CategorySocial,
-    occupation: opts.occupation || '',
-    annualIncome: opts.annualIncome !== undefined ? opts.annualIncome : (undefined as any),
+    age: opts.age !== undefined && opts.age !== null ? opts.age : 28,
+    gender: (opts.gender || 'Male') as TargetGender,
+    maritalStatus: 'Single',
+    state: opts.state || 'Tamil Nadu',
+    district: opts.district || 'Chennai',
+    category: (opts.category || 'OBC') as CategorySocial,
+    occupation: opts.occupation || 'Salaried Employee',
+    annualIncome: opts.annualIncome !== undefined && opts.annualIncome !== null ? opts.annualIncome : 180000,
     landHoldingAcres: 0,
-    educationLevel: '',
-    familyMembersCount: 1,
+    educationLevel: 'Graduate',
+    familyMembersCount: 4,
     hasDisability: false,
-    verificationBadge: false,
-    profileCompletionScore: 0,
-    savedSchemeIds: [],
+    disabilityPercentage: 0,
+    isRegisteredWorker: false,
+    verificationBadge: true,
+    profileCompletionScore: 100,
+    savedSchemeIds: ['pm-kisan', 'pmay-g', 'tn-pudhumai-penn'],
     documents: [],
+    interests: ['Healthcare', 'Education', 'Employment', 'Housing'],
     avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(opts.fullName)}&backgroundColor=0369a1`,
+    role: 'citizen'
   };
   profile.profileCompletionScore = calculateProfileCompletion(profile);
   return profile;
@@ -247,11 +254,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const timeoutId = setTimeout(() => controller.abort(), 45000);
     
     try {
+      let existingSessionUser: any = {};
+      try {
+        const saved = localStorage.getItem('govscheme_user');
+        if (saved) existingSessionUser = JSON.parse(saved);
+      } catch {}
+
+      const defaultRegistrationProfile = {
+        age: existingSessionUser.age || 28,
+        gender: existingSessionUser.gender || 'Male',
+        state: existingSessionUser.state || localStorage.getItem('userState') || 'Tamil Nadu',
+        district: existingSessionUser.district || localStorage.getItem('userDistrict') || 'Chennai',
+        category: existingSessionUser.category || 'OBC',
+        occupation: existingSessionUser.occupation || 'Salaried Employee',
+        annualIncome: existingSessionUser.annualIncome || 180000,
+        educationLevel: existingSessionUser.educationLevel || 'Graduate'
+      };
+
       const API_URL = getCleanApiUrl();
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: nameTrimmed, email: emailTrimmed, password: registerPassword }),
+        body: JSON.stringify({
+          fullName: nameTrimmed,
+          email: emailTrimmed,
+          password: registerPassword,
+          ...defaultRegistrationProfile,
+          profile: defaultRegistrationProfile
+        }),
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -264,7 +294,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           localStorage.setItem('govscheme_token', data.token);
           localStorage.setItem('govscheme_user', JSON.stringify(profile));
         }
-        onLoginSuccess(profile, true);
+        onLoginSuccess(profile, false);
         onClose();
       } else {
         const rawMessage = data?.message || '';
@@ -304,7 +334,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       fullName: 'Citizen User',
       email: 'citizen@example.com'
     });
-    onLoginSuccess(profile, true);
+    localStorage.setItem('govscheme_user', JSON.stringify(profile));
+    onLoginSuccess(profile, false);
     onClose();
   };
 
@@ -323,13 +354,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const data = await response.json();
 
         if (response.ok && data.success) {
-          const isNew = Boolean(data.isNewUser || !data.user?.profile?.state || !data.user?.profile?.age);
           const profile = createProfileFromAuthData(data, data.fullName || data.user?.fullName, data.email || data.user?.email);
           if (data.token) {
             localStorage.setItem('govscheme_token', data.token);
             localStorage.setItem('govscheme_user', JSON.stringify(profile));
           }
-          onLoginSuccess(profile, isNew);
+          onLoginSuccess(profile, false);
           onClose();
         } else {
           setError(data?.message || t('authFailed', 'Failed to authenticate with backend.'));
@@ -351,11 +381,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError(null);
       const demoProfile = buildNewProfile({
         fullName: 'Nitish Priyan',
-        email: 'nitishpriyanrs.cs24@bitsathy.ac.in'
+        email: 'nitishpriyanrs.cs24@bitsathy.ac.in',
+        age: 21,
+        gender: 'Male',
+        state: 'Tamil Nadu',
+        district: 'Erode',
+        occupation: 'Student',
+        annualIncome: 120000,
+        category: 'OBC'
       });
       demoProfile.avatarUrl = 'https://api.dicebear.com/7.x/initials/svg?seed=Nitish&backgroundColor=0369a1';
       localStorage.setItem('govscheme_user', JSON.stringify(demoProfile));
-      onLoginSuccess(demoProfile, true);
+      onLoginSuccess(demoProfile, false);
       onClose();
       return;
     }

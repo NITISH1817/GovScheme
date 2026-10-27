@@ -23,7 +23,8 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+    "forceConsistentCasingInFileNames": false
   },
   "include": ["src"]
 }

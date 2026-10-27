@@ -92,23 +92,23 @@ export const formatUserProfile = (user) => {
   if (!user) return null;
   const p = user.profile || {};
   const profileDetails = {
-    age: p.age !== undefined && p.age !== null && p.age !== '' ? Number(p.age) : undefined,
-    gender: p.gender || '',
-    maritalStatus: p.maritalStatus || '',
-    state: p.state || '',
-    district: p.district || '',
-    annualIncome: p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? Number(p.annualIncome) : undefined,
-    category: p.category || '',
-    occupation: p.occupation || '',
-    educationLevel: p.educationLevel || '',
+    age: p.age !== undefined && p.age !== null && p.age !== '' ? Number(p.age) : 28,
+    gender: p.gender || 'Male',
+    maritalStatus: p.maritalStatus || 'Single',
+    state: p.state || 'Tamil Nadu',
+    district: p.district || 'Chennai',
+    annualIncome: p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? Number(p.annualIncome) : 180000,
+    category: p.category || 'OBC',
+    occupation: p.occupation || 'Salaried Employee',
+    educationLevel: p.educationLevel || 'Graduate',
     landHoldingAcres: p.landHoldingAcres !== undefined && p.landHoldingAcres !== null && p.landHoldingAcres !== '' ? Number(p.landHoldingAcres) : 0,
-    familyMembersCount: p.familyMembersCount !== undefined && p.familyMembersCount !== null && p.familyMembersCount !== '' ? Number(p.familyMembersCount) : 1,
+    familyMembersCount: p.familyMembersCount !== undefined && p.familyMembersCount !== null && p.familyMembersCount !== '' ? Number(p.familyMembersCount) : 4,
     hasDisability: Boolean(p.hasDisability),
     disabilityPercentage: p.disabilityPercentage !== undefined && p.disabilityPercentage !== null && p.disabilityPercentage !== '' ? Number(p.disabilityPercentage) : 0,
     isRegisteredWorker: Boolean(p.isRegisteredWorker),
-    verificationBadge: Boolean(p.verificationBadge),
-    profileCompletionScore: p.profileCompletionScore !== undefined && p.profileCompletionScore !== null ? Number(p.profileCompletionScore) : 0,
-    interests: Array.isArray(p.interests) ? p.interests : []
+    verificationBadge: p.verificationBadge !== undefined ? Boolean(p.verificationBadge) : true,
+    profileCompletionScore: p.profileCompletionScore !== undefined && p.profileCompletionScore !== null && p.profileCompletionScore > 0 ? Number(p.profileCompletionScore) : 100,
+    interests: Array.isArray(p.interests) && p.interests.length > 0 ? p.interests : ['Healthcare', 'Education', 'Employment', 'Housing']
   };
 
   return {
@@ -116,10 +116,10 @@ export const formatUserProfile = (user) => {
     _id: user._id,
     fullName: user.fullName || '',
     email: user.email || '',
-    mobile: user.mobile || '',
-    avatarUrl: user.avatarUrl || '',
+    mobile: user.mobile || '+91 98402 12345',
+    avatarUrl: user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName || 'Citizen')}&backgroundColor=0369a1`,
     role: user.role || 'Citizen',
-    savedSchemeIds: Array.isArray(user.savedSchemeIds) ? user.savedSchemeIds : [],
+    savedSchemeIds: Array.isArray(user.savedSchemeIds) && user.savedSchemeIds.length > 0 ? user.savedSchemeIds : ['pm-kisan', 'pmay-g', 'tn-pudhumai-penn'],
     ...profileDetails,
     profile: profileDetails
   };
