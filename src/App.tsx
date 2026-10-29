@@ -169,10 +169,32 @@ export const App: React.FC = () => {
     document.documentElement.lang = currentLang;
   }, [currentLang, i18n]);
 
-  // Save user to localStorage whenever it changes
+  // Save user to localStorage and accounts registry whenever it changes
   useEffect(() => {
     if (user) {
       localStorage.setItem('govscheme_user', JSON.stringify(user));
+      try {
+        const emailKey = (user.email || '').toLowerCase().trim();
+        if (emailKey) {
+          const raw = localStorage.getItem('govscheme_accounts_db');
+          const accounts = raw ? JSON.parse(raw) : {};
+          const existing = accounts[emailKey]?.profile || {};
+          const merged: any = { ...existing, ...user };
+          for (const [k, v] of Object.entries(existing)) {
+            if (v !== undefined && v !== null && v !== '' && ((user as any)[k] === undefined || (user as any)[k] === null || (user as any)[k] === '')) {
+              merged[k] = v;
+            }
+          }
+          accounts[emailKey] = {
+            ...(accounts[emailKey] || {}),
+            profile: normalizeUserProfile(merged),
+            token: user.token || accounts[emailKey]?.token || localStorage.getItem('govscheme_token') || `token_${Date.now()}`
+          };
+          localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+        }
+      } catch (err) {
+        console.warn('Could not sync user to local accounts database:', err);
+      }
     }
   }, [user]);
 
@@ -800,7 +822,7 @@ export const App: React.FC = () => {
   // If Admin Mode
   if (activeTab === 'admin') {
     if (!isAdminUser(user)) {
-      if (adminLoginRequested && !user) {
+      if (!user || adminLoginRequested) {
         return (
           <AdminLogin
             onLoginSuccess={(u) => {
@@ -812,6 +834,7 @@ export const App: React.FC = () => {
                 localStorage.setItem('govscheme_token', u.token);
               }
               setAdminLoginRequested(false);
+              setActiveTab('admin');
             }}
             onExit={() => {
               setAdminLoginRequested(false);
@@ -823,31 +846,28 @@ export const App: React.FC = () => {
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#07111F] p-4">
-          <div className="max-w-md w-full bg-white dark:bg-[#0F1B2D] rounded-2xl shadow-xl p-8 border border-red-200 dark:border-red-900/30 text-center">
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="max-w-md w-full bg-white dark:bg-[#0F1B2D] rounded-2xl shadow-xl p-8 border border-amber-200 dark:border-amber-900/30 text-center">
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShieldAlert className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Admin Access Required</h2>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-              {user
-                ? `Administrator privileges required. Your current account (${user.email || user.fullName}) does not have administrative access to the GovScheme Admin Platform.`
-                : 'Restricted administrative area. You must be an authorized government official or platform administrator to access this area.'}
+              You are currently signed in as <strong className="text-gray-900 dark:text-white">{user.fullName || user.email}</strong> (Citizen). 
+              Administrative privileges are required to access the GovScheme Command Center.
             </p>
             <div className="flex flex-col gap-3">
               <button
+                onClick={() => setAdminLoginRequested(true)}
+                className="w-full py-2.5 bg-[#1769FF] hover:bg-[#123C69] text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-md"
+              >
+                Sign In with Admin Account
+              </button>
+              <button
                 onClick={() => setActiveTab('home')}
-                className="w-full py-2.5 bg-[#123C69] hover:bg-[#0F1B2D] text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" /> Return to Citizen Portal
               </button>
-              {!user && (
-                <button
-                  onClick={() => setAdminLoginRequested(true)}
-                  className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold text-xs transition-colors"
-                >
-                  Authorized Personnel Login
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -944,38 +964,60 @@ export const App: React.FC = () => {
               let savedUser: UserProfile;
 
               if (token) {
-                const res = await fetch(`${API_URL}/api/users/profile`, {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                  },
-                  body: JSON.stringify(mergedPayload)
-                });
+                try {
+                  const res = await fetch(`${API_URL}/api/users/profile`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify(mergedPayload)
+                  });
 
-                if (!res.ok) {
-                  const errData = await res.json().catch(() => null);
-                  const msg = errData?.message || `Failed to save profile (HTTP ${res.status})`;
-                  throw new Error(msg);
-                }
-
-                const data = await res.json();
-                if (!data.success) {
-                  throw new Error(data.message || 'Profile persistence failed on server');
-                }
-
-                savedUser = normalizeUserProfile(data.user || data.profile || data);
-                if (token && !savedUser.token) savedUser.token = token;
-                if (user?.documents && (!savedUser.documents || savedUser.documents.length === 0)) {
-                  savedUser.documents = user.documents;
+                  if (res.ok) {
+                    const data = await res.json().catch(() => null);
+                    if (data && (data.success || data.user || data.profile)) {
+                      savedUser = normalizeUserProfile(data.user || data.profile || data);
+                      if (token && !savedUser.token) savedUser.token = token;
+                      if (user?.documents && (!savedUser.documents || savedUser.documents.length === 0)) {
+                        savedUser.documents = user.documents;
+                      }
+                    } else {
+                      savedUser = normalizeUserProfile(mergedPayload);
+                    }
+                  } else {
+                    savedUser = normalizeUserProfile(mergedPayload);
+                  }
+                } catch (networkErr) {
+                  console.warn('Backend unavailable during wizard completion, saving locally:', networkErr);
+                  savedUser = normalizeUserProfile(mergedPayload);
                 }
               } else {
                 savedUser = normalizeUserProfile(mergedPayload);
               }
 
-              // Update React state and localStorage only after successful save
+              savedUser.profileCompletionScore = calculateProfileCompletion(savedUser);
+
+              // Update React state and localStorage
               setUser(savedUser);
               localStorage.setItem('govscheme_user', JSON.stringify(savedUser));
+
+              // Explicitly save into local accounts database so future logins restore these exact details
+              try {
+                const raw = localStorage.getItem('govscheme_accounts_db');
+                const accounts = raw ? JSON.parse(raw) : {};
+                const emailKey = (savedUser.email || '').toLowerCase().trim();
+                if (emailKey) {
+                  accounts[emailKey] = {
+                    ...(accounts[emailKey] || {}),
+                    profile: savedUser,
+                    token: savedUser.token || accounts[emailKey]?.token || localStorage.getItem('govscheme_token') || `token_${Date.now()}`
+                  };
+                  localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+                }
+              } catch (e) {
+                console.warn('Failed to update govscheme_accounts_db:', e);
+              }
 
               // If user came via Kiosk Mode, navigate directly to Kiosk Mode with filled profile
               if (pendingKioskRedirect) {
@@ -1175,6 +1217,11 @@ export const App: React.FC = () => {
           setIsAuthOpen(false);
           setAuthNotice(undefined);
         }}
+        onOpenAdmin={() => {
+          setIsAuthOpen(false);
+          setAuthNotice(undefined);
+          setActiveTab('admin');
+        }}
         onLoginSuccess={async (loggedInUser, isNewRegistration = false) => {
           let authoritativeUser = loggedInUser;
           const token = localStorage.getItem('govscheme_token');
@@ -1186,7 +1233,14 @@ export const App: React.FC = () => {
               if (res.ok) {
                 const fresh = await res.json();
                 if (fresh.success && (fresh.user || fresh.profile || fresh.fullName)) {
-                  authoritativeUser = normalizeUserProfile(fresh.user || fresh.profile || fresh);
+                  const normalizedFresh = normalizeUserProfile(fresh.user || fresh.profile || fresh);
+                  const mergedWithFresh: any = { ...authoritativeUser, ...normalizedFresh };
+                  for (const [k, v] of Object.entries(authoritativeUser)) {
+                    if (v !== undefined && v !== null && v !== '' && ((normalizedFresh as any)[k] === undefined || (normalizedFresh as any)[k] === null || (normalizedFresh as any)[k] === '')) {
+                      mergedWithFresh[k] = v;
+                    }
+                  }
+                  authoritativeUser = normalizeUserProfile(mergedWithFresh);
                   if (token && !authoritativeUser.token) authoritativeUser.token = token;
                 }
               }
@@ -1195,18 +1249,43 @@ export const App: React.FC = () => {
             }
           }
 
+          // Merge with stored local account details to guarantee all previously entered profile details are restored
+          const emailKey = authoritativeUser.email?.toLowerCase().trim();
+          if (emailKey) {
+            try {
+              const raw = localStorage.getItem('govscheme_accounts_db');
+              const accounts = raw ? JSON.parse(raw) : {};
+              const localAcc = accounts[emailKey];
+              if (localAcc && localAcc.profile) {
+                const merged: any = { ...localAcc.profile, ...authoritativeUser };
+                for (const [k, v] of Object.entries(localAcc.profile)) {
+                  if (v !== undefined && v !== null && v !== '' && ((authoritativeUser as any)[k] === undefined || (authoritativeUser as any)[k] === null || (authoritativeUser as any)[k] === '')) {
+                    merged[k] = v;
+                  }
+                }
+                authoritativeUser = normalizeUserProfile(merged);
+              }
+            } catch (e) {
+              console.warn('Error reading local accounts database:', e);
+            }
+          }
+
+          authoritativeUser.profileCompletionScore = calculateProfileCompletion(authoritativeUser);
           setUser(authoritativeUser);
           localStorage.setItem('govscheme_user', JSON.stringify(authoritativeUser));
 
-          if (authoritativeUser.role === 'admin' || authoritativeUser.role === 'superadmin' || authoritativeUser.email === 'admin@govscheme.in') {
+          if (isAdminUser(authoritativeUser)) {
             setActiveTab('admin');
+          } else if (isNewRegistration || !isProfileComplete(authoritativeUser)) {
+            // When citizen signs up (or profile is incomplete), automatically prompt user to fill their profile
+            setWizardMode('wizard');
+            setActiveTab('wizard');
           } else if (pendingKioskRedirect) {
             setPendingKioskRedirect(false);
             setAuthNotice(undefined);
             setActiveTab('kiosk');
           } else {
-            // Citizen sign-in & sign-up: Navigate straight to the citizen profile dashboard!
-            // Automatically has data from signup and never prompts the user to fill out the wizard.
+            // Complete citizen profile: show the user's profile details
             setActiveTab('profile');
           }
         }}

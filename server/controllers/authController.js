@@ -43,38 +43,13 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Extract profile values if passed or provision full, sensible citizen demographic defaults
-    const pInput = req.body.profile && typeof req.body.profile === 'object' ? req.body.profile : req.body;
-    const initialProfile = {
-      age: pInput.age !== undefined && pInput.age !== null && pInput.age !== '' ? Number(pInput.age) : 28,
-      gender: pInput.gender || 'Male',
-      maritalStatus: pInput.maritalStatus || 'Single',
-      state: pInput.state || 'Tamil Nadu',
-      district: pInput.district || 'Chennai',
-      category: pInput.category || 'OBC',
-      occupation: pInput.occupation || 'Salaried Employee',
-      annualIncome: pInput.annualIncome !== undefined && pInput.annualIncome !== null && pInput.annualIncome !== '' ? Number(pInput.annualIncome) : 180000,
-      educationLevel: pInput.educationLevel || 'Graduate',
-      landHoldingAcres: pInput.landHoldingAcres !== undefined && pInput.landHoldingAcres !== null ? Number(pInput.landHoldingAcres) : 0,
-      familyMembersCount: pInput.familyMembersCount !== undefined && pInput.familyMembersCount !== null ? Number(pInput.familyMembersCount) : 4,
-      hasDisability: Boolean(pInput.hasDisability),
-      disabilityPercentage: pInput.disabilityPercentage !== undefined && pInput.disabilityPercentage !== null ? Number(pInput.disabilityPercentage) : 0,
-      isRegisteredWorker: Boolean(pInput.isRegisteredWorker),
-      verificationBadge: true,
-      profileCompletionScore: 100,
-      interests: Array.isArray(pInput.interests) && pInput.interests.length > 0 ? pInput.interests : ['Healthcare', 'Education', 'Employment', 'Housing']
-    };
-
     // Security Hardening (SEC-01): Public registration must unconditionally assign the 'Citizen' role.
     // Any user-supplied role is strictly ignored to prevent privilege escalation.
     const user = await User.create({
       fullName: (fullName || '').trim(),
       email: normalizedEmail,
       password,
-      role: 'Citizen',
-      avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent((fullName || '').trim())}&backgroundColor=0369a1`,
-      profile: initialProfile,
-      savedSchemeIds: ['pm-kisan', 'pmay-g', 'tn-pudhumai-penn']
+      role: 'Citizen'
     });
 
     if (user) {
@@ -152,30 +127,6 @@ export const loginUser = async (req, res) => {
       user.loginHistory.push({ ipAddress, device, status: 'Success' });
       if (user.loginHistory.length > 50) user.loginHistory.shift(); // Keep last 50 records
       
-      // Ensure existing user has complete profile data
-      if (!user.profile || !user.profile.state || !user.profile.age) {
-        user.profile = {
-          age: user.profile?.age || 28,
-          gender: user.profile?.gender || 'Male',
-          maritalStatus: user.profile?.maritalStatus || 'Single',
-          state: user.profile?.state || 'Tamil Nadu',
-          district: user.profile?.district || 'Chennai',
-          annualIncome: user.profile?.annualIncome !== undefined ? user.profile.annualIncome : 180000,
-          category: user.profile?.category || 'OBC',
-          occupation: user.profile?.occupation || 'Salaried Employee',
-          educationLevel: user.profile?.educationLevel || 'Graduate',
-          familyMembersCount: user.profile?.familyMembersCount || 4,
-          landHoldingAcres: user.profile?.landHoldingAcres || 0,
-          hasDisability: Boolean(user.profile?.hasDisability),
-          disabilityPercentage: user.profile?.disabilityPercentage || 0,
-          isRegisteredWorker: Boolean(user.profile?.isRegisteredWorker),
-          verificationBadge: true,
-          profileCompletionScore: 100,
-          interests: Array.isArray(user.profile?.interests) && user.profile.interests.length > 0 ? user.profile.interests : ['Healthcare', 'Education', 'Employment', 'Housing']
-        };
-        user.markModified('profile');
-      }
-
       await user.save();
 
       const userPayload = formatUserProfile(user);
@@ -407,25 +358,17 @@ export const googleAuth = async (req, res) => {
         password: randomPassword,
         role: 'Citizen',
         profile: {
-          age: 28,
-          gender: 'Male',
-          maritalStatus: 'Single',
-          state: 'Tamil Nadu',
-          district: 'Chennai',
-          annualIncome: 180000,
-          category: 'OBC',
-          occupation: 'Salaried Employee',
-          educationLevel: 'Graduate',
-          familyMembersCount: 4,
-          landHoldingAcres: 0,
-          hasDisability: false,
-          disabilityPercentage: 0,
-          isRegisteredWorker: false,
-          verificationBadge: true,
-          profileCompletionScore: 100,
-          interests: ['Healthcare', 'Education', 'Employment', 'Housing']
-        },
-        savedSchemeIds: ['pm-kisan', 'pmay-g', 'tn-pudhumai-penn']
+          age: null,
+          gender: '',
+          maritalStatus: '',
+          state: '',
+          district: '',
+          annualIncome: undefined,
+          category: '',
+          occupation: '',
+          educationLevel: '',
+          profileCompletionScore: 0
+        }
       });
     } else {
       if (googleSub && !user.googleId) {

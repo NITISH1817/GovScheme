@@ -147,7 +147,7 @@ export interface Scheme {
   faqs: { question: string; answer: string }[];
   lastUpdated: string;
   popularityScore: number;
-  verificationStatus?: 'UNVERIFIED' | 'PENDING' | 'PORTAL_CURATED' | 'ADMIN_VERIFIED' | 'OFFICIALLY_VERIFIED';
+  verificationStatus?: 'UNVERIFIED' | 'PENDING' | 'PORTAL_CURATED' | 'ADMIN_VERIFIED' | 'OFFICIALLY_VERIFIED' | 'Verified';
   curationSource?: string;
   sourceUrl?: string;
   lastVerifiedAt?: string;

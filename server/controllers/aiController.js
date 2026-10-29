@@ -98,14 +98,21 @@ export const chatWithAI = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-1.5-flash', 'gemini-2.0-flash'];
+    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     
+    const withTimeout = (promise, ms = 4500) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`AI request timed out after ${ms}ms`)), ms))
+      ]);
+    };
+
     let reply = '';
     let usedModel = '';
     for (const modelName of candidateModels) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(buildGroundedPrompt(message, topSchemes));
+        const result = await withTimeout(model.generateContent(buildGroundedPrompt(message, topSchemes)), 4500);
         reply = result.response.text();
         usedModel = modelName;
         break;
@@ -175,15 +182,22 @@ export const streamChatWithAI = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-1.5-flash', 'gemini-2.0-flash'];
+    const candidateModels = [process.env.GEMINI_MODEL || 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     
     let streamSuccess = false;
     let fullResponse = "";
 
+    const withTimeout = (promise, ms = 4500) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`AI stream request timed out after ${ms}ms`)), ms))
+      ]);
+    };
+
     for (const modelName of candidateModels) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContentStream(buildGroundedPrompt(message, topSchemes));
+        const result = await withTimeout(model.generateContentStream(buildGroundedPrompt(message, topSchemes)), 4500);
 
         for await (const chunk of result.stream) {
           const chunkText = chunk.text();

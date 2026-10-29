@@ -26,6 +26,39 @@ import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
 import { evaluateExplainableEligibility, PRELIMINARY_DISCLAIMER } from '../engine/explainableEligibility';
 
+const STATUTORY_ENTITIES: Record<string, string> = {
+  'mudra.org.in': 'SIDBI (Small Industries Development Bank of India)',
+  'pfrda.org.in': 'PFRDA (Statutory Regulatory Authority under MoF)',
+  'proteantech.in': 'Protean eGov Technologies (Authorized Central Recordkeeping Agency)',
+  'aicte-india.org': 'AICTE (Statutory Council under Ministry of Education)',
+  'vidyalakshmi.co.in': 'Dept of Higher Education & IBA / Protean',
+  'ugcnet.nta.ac.in': 'National Testing Agency (Ministry of Education)',
+  'tngasa.in': 'Directorate of Collegiate Education (Govt of Tamil Nadu)',
+  'agritech.tnau.ac.in': 'Tamil Nadu Agricultural University (TNAU)',
+  'cmchistn.com': 'United India Insurance / State Health Society Tamil Nadu',
+  'nikshay.in': 'Central TB Division, MoHFW / National Health Mission',
+  'pmkvyofficial.org': 'National Skill Development Corporation (MSDE)',
+  'standupmitra.in': 'SIDBI under Department of Financial Services guidelines',
+  'maandhan.in': 'Ministry of Labour & Employment / LIC'
+};
+
+const getSafeHostname = (url?: string): string => {
+  if (!url || typeof url !== 'string') return '';
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url.replace(/^https?:\/\//i, '').split('/')[0] || '';
+  }
+};
+
+const getStatutoryEntity = (url?: string): string | null => {
+  const host = getSafeHostname(url).toLowerCase();
+  for (const [domain, entity] of Object.entries(STATUTORY_ENTITIES)) {
+    if (host.includes(domain)) return entity;
+  }
+  return null;
+};
+
 interface SchemeModalProps {
   user: UserProfile | null;
   analysis: CombinedSchemeAnalysis;
@@ -135,9 +168,23 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   {scheme.state === 'Central' ? t('govtOfIndia', 'Government of India') : t(`state_${scheme.state}`, scheme.state)}
                 </span>
                 <span className="w-1 h-1 rounded-full bg-gray-300" />
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                  {scheme.verificationStatus === 'ADMIN_VERIFIED' ? `✓ ${t('adminVerified', 'Admin Verified')}` : `✓ ${t('portalCurated', 'Portal Curated')}`}
-                </span>
+                {scheme.verificationStatus === 'OFFICIALLY_VERIFIED' ? (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    ✓ {t('officiallyVerified', 'Officially Verified')}
+                  </span>
+                ) : scheme.verificationStatus === 'ADMIN_VERIFIED' ? (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                    ✓ {t('adminVerified', 'Admin Verified')}
+                  </span>
+                ) : scheme.verificationStatus === 'PORTAL_CURATED' || (scheme.verificationStatus as string) === 'Verified' ? (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    ✓ {t('portalCurated', 'Portal Curated')}
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                    ⚠ {t('pendingReview', 'Pending Review')}
+                  </span>
+                )}
               </div>
               <h2 id="scheme-modal-title" className="text-2xl sm:text-3xl font-bold text-[#123C69] dark:text-white font-sans break-words">
                 {t(`${scheme.id}_name`, scheme.name)}
@@ -656,9 +703,14 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider">{t('officialSourceCompiled', 'Official Source Portal')}</div>
-                <div className="text-sm text-green-700 dark:text-green-400 font-medium truncate max-w-[200px]" title={scheme.officialApplyUrl}>
-                  {scheme.officialApplyUrl ? new URL(scheme.officialApplyUrl).hostname : t('govtPortal', 'Govt Portal')}
+                <div className="text-sm text-green-700 dark:text-green-400 font-medium truncate max-w-[240px]" title={scheme.officialApplyUrl || scheme.officialWebsite}>
+                  {getSafeHostname(scheme.officialApplyUrl || scheme.officialWebsite) || t('govtPortal', 'Govt Portal')}
                 </div>
+                {getStatutoryEntity(scheme.officialApplyUrl || scheme.officialWebsite) && (
+                  <div className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300">
+                    {getStatutoryEntity(scheme.officialApplyUrl || scheme.officialWebsite)}
+                  </div>
+                )}
                 <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                   GovScheme is an independent citizen advisory portal.
                 </div>

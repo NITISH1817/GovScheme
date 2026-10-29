@@ -8,6 +8,7 @@
 import assert from 'assert';
 import http from 'http';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
 dotenv.config();
 process.env.NODE_ENV = 'test';
@@ -283,6 +284,7 @@ async function runAiMlAuditSuite() {
 
   } finally {
     await new Promise((resolve) => server.close(resolve));
+    await mongoose.disconnect().catch(() => {});
   }
 
   console.log('\n================================================================');
@@ -291,7 +293,9 @@ async function runAiMlAuditSuite() {
 }
 
 runAiMlAuditSuite().then(() => {
-  process.exit(0);
+  setTimeout(() => {
+    process.exit(0);
+  }, 100);
 }).catch((err) => {
   console.error('[FATAL AUDIT TEST SUITE FAILURE]:', err);
   process.exit(1);

@@ -385,7 +385,14 @@ export const CommandCenterOverview: React.FC<CommandCenterOverviewProps> = ({ st
                   <item.icon className={`w-5 h-5 ${item.color}`} />
                   <span className="text-sm font-semibold text-[#07111F] dark:text-[#F8FAFC]">{item.text}</span>
                 </div>
-                <button className="text-xs font-bold text-[#1769FF] dark:text-[#60A5FA] flex items-center gap-1 group-hover:underline">
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onNavigate) onNavigate(item.view);
+                  }}
+                  className="text-xs font-bold text-[#1769FF] dark:text-[#60A5FA] flex items-center gap-1 group-hover:underline cursor-pointer"
+                >
                   Take Action <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Shield, Activity, Database, Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Shield, Activity, Database, Lock, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { GovSchemeLogo3D } from '../brand';
 
@@ -213,6 +213,21 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
         {/* Right Side - Login */}
         <div className="w-full md:w-7/12 p-8 md:p-16 flex flex-col justify-center bg-[#FFFFFF] dark:bg-[#0B1424]">
           <div className="max-w-md w-full mx-auto">
+            {/* Top Return to Citizen Portal */}
+            <div className="flex items-center justify-between mb-8">
+              <button
+                type="button"
+                onClick={onExit}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#64748B] hover:text-[#1769FF] dark:text-[#94A3B8] dark:hover:text-[#60A5FA] transition-colors group cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                <span>Return to Citizen Portal</span>
+              </button>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 flex items-center gap-1">
+                <Shield className="w-3 h-3" /> Official Portal
+              </span>
+            </div>
+
             <div className="mb-10 text-center md:text-left">
               <h2 className="text-3xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-2">Welcome back</h2>
               <p className="text-[#64748B] dark:text-[#94A3B8]">Administrator</p>
@@ -314,6 +329,23 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
                 )}
               </button>
             </form>
+
+            {/* Quick Demo Helper */}
+            <div className="mt-8 pt-4 border-t border-[#E2E8F0] dark:border-[#243449] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-center sm:text-left">Default Admin Account:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@govscheme.in');
+                  setPassword('password123');
+                  setLoginState('idle');
+                  setErrorMessage('');
+                }}
+                className="font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline cursor-pointer bg-transparent border-0 p-0"
+              >
+                Auto-fill (admin@govscheme.in)
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>

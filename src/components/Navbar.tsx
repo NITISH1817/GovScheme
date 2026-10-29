@@ -218,18 +218,31 @@ export const Navbar: React.FC<NavbarProps> = ({
               </AnimatePresence>
             </div>
 
-            {/* Admin Portal Quick Launch Button (if admin is logged in) */}
-            {isAdminUser(user) && (
+            {/* Admin Portal Quick Launch Button */}
+            {isAdminUser(user) ? (
               <button
                 onClick={() => setActiveTab('admin')}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
                   activeTab === 'admin'
-                    ? 'bg-amber-500 text-white'
+                    ? 'bg-amber-500 text-white shadow-amber-500/25'
                     : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
                 }`}
                 title="Admin Command Center"
               >
                 <Shield className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
+                <span className="hidden sm:inline">Admin Portal</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'admin'
+                    ? 'bg-gov-navy text-white dark:bg-white dark:text-black'
+                    : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800/40'
+                }`}
+                title="Admin & Official Portal Access"
+              >
+                <Shield className="w-3.5 h-3.5 text-[#1769FF] dark:text-[#60A5FA]" />
                 <span className="hidden sm:inline">Admin Portal</span>
               </button>
             )}
@@ -292,9 +305,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <Printer className="w-4 h-4 text-primary" /> {t('reports', 'Reports (AI Printer)')}
                       </button>
                       
-                      {isAdminUser(user) && (
+                      {isAdminUser(user) ? (
                         <button onClick={() => { setActiveTab('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-amber-500/10 flex items-center gap-2 text-amber-600 dark:text-amber-400">
                           <Shield className="w-4 h-4" /> Admin Command Center
+                        </button>
+                      ) : (
+                        <button onClick={() => { setActiveTab('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-blue-500/10 flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                          <Shield className="w-4 h-4" /> Switch to Admin Portal
                         </button>
                       )}
                       
@@ -390,23 +407,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               ))}
               
-              {/* Admin Portal in Mobile Menu if admin */}
-              {isAdminUser(user) && (
-                <div className="overflow-hidden">
-                  <motion.button
-                    initial={{ y: 40, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -40, opacity: 0 }}
-                    onClick={() => {
-                      setActiveTab('admin');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-2 justify-center"
-                  >
-                    <Shield className="w-6 h-6" /> Admin Portal
-                  </motion.button>
-                </div>
-              )}
+              {/* Admin Portal in Mobile Menu */}
+              <div className="overflow-hidden">
+                <motion.button
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -40, opacity: 0 }}
+                  onClick={() => {
+                    setActiveTab('admin');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`text-2xl font-extrabold flex items-center gap-2 justify-center ${
+                    isAdminUser(user) ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'
+                  }`}
+                >
+                  <Shield className="w-6 h-6" /> {isAdminUser(user) ? 'Admin Command Center' : 'Admin Portal'}
+                </motion.button>
+              </div>
               
               {/* Mobile Menu Auth Buttons */}
               {!user && (
