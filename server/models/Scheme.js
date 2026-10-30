@@ -146,6 +146,9 @@ const SchemeSchema = new mongoose.Schema({
   version: { type: Number, default: 1 }
 }, { timestamps: true });
 
+// High-performance compound index for public scheme discovery and filtering
+SchemeSchema.index({ status: 1, activeStatus: 1, state: 1, category: 1, createdAt: -1 });
+
 // Auto-sync legacy fields before saving
 SchemeSchema.pre('save', function() {
   if (this.schemeId && !this.id) this.id = this.schemeId;

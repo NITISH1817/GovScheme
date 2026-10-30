@@ -1665,5 +1665,11 @@
   "District": "District",
   "Annual Income": "Annual Income",
   "Category": "Social Category",
-  "State of Residence": "State of Residence"
+  "State of Residence": "State of Residence",
+  "loadingSchemes": "Loading government schemes...",
+  "cloudWakingNotice": "Connecting to secure cloud server... The free-tier service may take a moment to wake up.",
+  "serverUnavailable": "Backend server is temporarily unavailable. Please retry in a moment.",
+  "retry": "Retry",
+  "clearSearch": "Clear Search",
+  "operatingOfflineMode": "Operating with cached scheme catalog. Real-time updates may be delayed."
 }

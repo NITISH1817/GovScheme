@@ -52,6 +52,11 @@ export const ensureDatabaseSync = async (conn, targetDbName) => {
 };
 
 export const connectDB = async () => {
+  // Reuse existing connection if already established
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
+    return mongoose;
+  }
+
   const isProduction = process.env.NODE_ENV === 'production';
   const targetDbName = process.env.MONGO_DB_NAME || 'govscheme';
   const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || (isProduction ? null : 'mongodb://127.0.0.1:27017/govscheme');
@@ -60,7 +65,12 @@ export const connectDB = async () => {
     try {
       const conn = await mongoose.connect(mongoUri, {
         dbName: targetDbName,
+        maxPoolSize: 20,
+        minPoolSize: 2,
+        socketTimeoutMS: 45000,
         serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 10000,
+        heartbeatFrequencyMS: 10000
       });
       console.log(`[Database] MongoDB Connected: ${conn.connection.host} (Active Database: ${conn.connection.db.databaseName})`);
       await ensureDatabaseSync(conn, targetDbName);

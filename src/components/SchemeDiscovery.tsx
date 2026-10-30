@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Scheme, UserProfile, CombinedSchemeAnalysis } from '../types';
 import { useTranslation } from 'react-i18next';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
 import { performSemanticSearch } from '../engine/semanticSearch';
-import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle, AlertTriangle, Globe, CheckCircle2, XCircle, LayoutDashboard, HelpCircle } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ExternalLink, Check, Search, Filter, Mic, MicOff, Zap, AlertCircle, AlertTriangle, Globe, CheckCircle2, XCircle, LayoutDashboard, HelpCircle, X, RefreshCw, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SchemeComparisonModal } from './SchemeComparisonModal';
 import { getMissingProfileFields } from '../utils/profileUtils';
@@ -19,6 +19,10 @@ interface SchemeDiscoveryProps {
   onToggleBookmark: (schemeId: string) => void;
   isBookmarked: (schemeId: string) => boolean;
   onNavigateTab?: (tab: string) => void;
+  isLoading?: boolean;
+  error?: string | null;
+  isBackendWaking?: boolean;
+  onRetry?: () => void;
 }
 
 export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
@@ -30,7 +34,11 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   onSelectScheme,
   onToggleBookmark,
   isBookmarked,
-  onNavigateTab
+  onNavigateTab,
+  isLoading = false,
+  error = null,
+  isBackendWaking = false,
+  onRetry
 }) => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +57,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       setViewMode(initialViewMode);
     }
   }, [initialViewMode]);
-  
+
   // Filters
   const [selectedGovtLevel, setSelectedGovtLevel] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
@@ -93,18 +101,44 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
   const missingFields = useMemo(() => getMissingProfileFields(user), [user]);
 
-  const handleSemanticSearch = async (val: string) => {
-    setSearchTerm(val);
-    if (!val.trim()) {
+  // Debounced semantic search with out-of-order race cancellation
+  const activeSearchIdRef = useRef(0);
+
+  useEffect(() => {
+    const trimmed = searchTerm.trim();
+    if (!trimmed) {
       setSemanticResults(null);
-      setShowSuggestions(false);
+      setIsSearchingSemantic(false);
       return;
     }
-    setShowSuggestions(true);
-    setIsSearchingSemantic(true);
-    const results = await performSemanticSearch(val, schemes);
-    setSemanticResults(results.map(r => ({ schemeId: r.scheme.id, score: r.score })));
-    setIsSearchingSemantic(false);
+
+    const timer = setTimeout(() => {
+      const searchId = ++activeSearchIdRef.current;
+      setIsSearchingSemantic(true);
+
+      performSemanticSearch(trimmed, schemes).then(results => {
+        if (searchId !== activeSearchIdRef.current) return;
+        setSemanticResults(results.map(r => ({ schemeId: r.scheme.id, score: r.score })));
+        setIsSearchingSemantic(false);
+      }).catch(err => {
+        console.warn('Semantic search error:', err);
+        if (searchId === activeSearchIdRef.current) {
+          setIsSearchingSemantic(false);
+        }
+      });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, schemes]);
+
+  const handleSemanticSearch = (val: string) => {
+    setSearchTerm(val);
+    if (val.trim()) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+      setSemanticResults(null);
+    }
   };
 
   const predefinedSuggestions = [
@@ -123,7 +157,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       const matchesSearch = a.scheme.name.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchesSearch) return false;
     }
-    
+
     // Govt level
     const isCentral = a.scheme.state === 'Central';
     const govtLevel = isCentral ? 'Central' : 'State';
@@ -181,12 +215,12 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       }
       // If viewMode === 'all', show all schemes without exclusion
     }
-    
+
     // Location
     if (selectedState && a.scheme.state !== 'Central' && a.scheme.state !== selectedState) return false;
     // Note: if scheme has district specific array, we could filter it here.
 
-    
+
     return true;
   }).sort((a, b) => {
     if (semanticResults) {
@@ -212,7 +246,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
+
         {/* Header with Title and Mode Switcher */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
@@ -231,7 +265,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
                 {viewMode === 'recommended'
-                  ? (user 
+                  ? (user
                       ? `${t('basedOnInfo', 'Based on your profile, we found')} ${filteredSchemes.length} ${t('matchingSchemes', 'matching schemes.')}`
                       : t('guestNoticeDesc', 'Showing schemes with general eligibility. Complete your profile to see personalized matches.'))
                   : viewMode === 'ineligible'
@@ -328,14 +362,14 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
         )}
 
         <div className="flex flex-col lg:flex-row gap-8">
-          
+
           {/* Left Sidebar Filters */}
           <aside className="w-full lg:w-64 shrink-0 space-y-8">
             <div className="bg-white dark:bg-[#0F1B2D] p-5 rounded border border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-2 mb-4 text-[#123C69] dark:text-white font-bold">
                 <Filter className="w-4 h-4" /> {t('filters', 'Filters')}
               </div>
-              
+
               <div className="space-y-6">
                 {/* Government Level */}
                 <div>
@@ -343,11 +377,11 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   <div className="space-y-2">
                     {['Central', 'State'].map(level => (
                       <label key={level} className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={selectedGovtLevel.includes(level)}
                           onChange={() => toggleFilter(setSelectedGovtLevel, level)}
-                          className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]" 
+                          className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{t(`filterLevel_${level}`, level)}</span>
                       </label>
@@ -358,8 +392,8 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 {/* State Location */}
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t('location', 'Location')}</h3>
-                  <select 
-                    value={selectedState} 
+                  <select
+                    value={selectedState}
                     onChange={e => setSelectedState(e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none"
                   >
@@ -386,11 +420,11 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                       'Financial Help'
                     ].map(cat => (
                       <label key={cat} className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={selectedCategories.includes(cat)}
                           onChange={() => toggleFilter(setSelectedCategories, cat)}
-                          className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]" 
+                          className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">{t(`filterCat_${cat}`, cat)}</span>
                       </label>
@@ -404,11 +438,11 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                   <div className="space-y-2">
                     {['Eligible', 'Conditionally Eligible', 'Almost Eligible', 'Insufficient Information', 'Not Eligible'].map(el => (
                       <label key={el} className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={selectedEligibility.includes(el)}
                           onChange={() => toggleFilter(setSelectedEligibility, el)}
-                          className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]" 
+                          className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
                           {el === 'Conditionally Eligible' ? t('potentiallyEligible', 'Potentially eligible') : el === 'Almost Eligible' ? t('almostEligible', 'Almost eligible') : el === 'Insufficient Information' ? t('insufficientInformation', 'Information Needed') : el === 'Not Eligible' ? t('notEligible', 'Not Eligible') : t('eligible', el)}
@@ -423,23 +457,72 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
           {/* Right Results Grid */}
           <main className="flex-1 space-y-6">
-            
+
+            {/* Cloud Cold Start & Waking Feedback */}
+            {isBackendWaking && (
+              <div className="flex items-center gap-3 p-3.5 mb-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 text-xs shadow-sm">
+                <Loader2 className="w-4 h-4 shrink-0 animate-spin text-amber-600 dark:text-amber-400" />
+                <div className="flex-1">
+                  <span className="font-semibold block">{t('cloudWakingNotice', 'Connecting to secure cloud server... The free-tier service may take a moment to wake up.')}</span>
+                  <span className="text-[11px] text-amber-700/80 dark:text-amber-400/80">Container spinning up. Subsequent requests will be fast.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Error & Offline Catalog Notice */}
+            {error && (
+              <div className="flex items-center justify-between gap-3 p-3.5 mb-2 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300 text-xs shadow-sm">
+                <div className="flex items-center gap-2.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                  <div>
+                    <span className="font-semibold block">{t('serverUnavailable', 'Backend server is temporarily unavailable. Please retry in a moment.')}</span>
+                    <span className="text-[11px] text-red-700/80 dark:text-red-400/80">{schemes.length > 0 ? t('operatingOfflineMode', 'Operating with cached scheme catalog. Real-time updates may be delayed.') : error}</span>
+                  </div>
+                </div>
+                {onRetry && (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-xs transition-colors flex items-center gap-1.5 shrink-0"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    {t('retry', 'Retry')}
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="relative w-full group z-20">
               <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${isSearchingSemantic ? 'text-primary animate-pulse' : 'text-gray-400'}`} />
-              <input 
+              <input
                 id="scheme-search-input"
-                type="text" 
+                type="text"
                 aria-label={t('searchSchemesPlaceholder', "Semantic Search... e.g. 'scholarships for girls in Tamil Nadu'")}
                 placeholder={isListening ? t('listeningSpeech', "Listening... Speak your need (e.g. 'help with college fees')") : t('searchSchemesPlaceholder', "Semantic Search... e.g. 'scholarships for girls in Tamil Nadu'")}
                 value={searchTerm}
                 onChange={(e) => handleSemanticSearch(e.target.value)}
                 onFocus={() => { if(searchTerm) setShowSuggestions(true); }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                className={`w-full pl-11 pr-16 py-3 rounded bg-white dark:bg-[#0F1B2D] border ${isListening ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200 dark:border-gray-800 focus:border-[#1769FF] focus:ring-1 focus:ring-[#1769FF]'} outline-none text-gray-900 dark:text-white transition-all shadow-sm`}
+                className={`w-full pl-11 pr-24 py-3 rounded bg-white dark:bg-[#0F1B2D] border ${isListening ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200 dark:border-gray-800 focus:border-[#1769FF] focus:ring-1 focus:ring-[#1769FF]'} outline-none text-gray-900 dark:text-white transition-all shadow-sm`}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSemanticResults(null);
+                      setShowSuggestions(false);
+                    }}
+                    className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                    title={t('clearSearch', 'Clear Search')}
+                    aria-label={t('clearSearch', 'Clear Search')}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
                 {semanticResults && <span title="Powered by ChromaDB Semantic Search"><Zap className="w-4 h-4 text-emerald-500" /></span>}
-                <button 
+                <button
                   onClick={() => setIsListening(!isListening)}
                   className={`p-1.5 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                   title={isListening ? t('stopListening', 'Stop Listening') : t('searchByVoice', 'Search by Voice')}
@@ -452,7 +535,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               {/* Smart Suggestions Dropdown */}
               <AnimatePresence>
                 {showSuggestions && predefinedSuggestions.length > 0 && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -461,7 +544,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     <ul>
                       {predefinedSuggestions.map((sug, i) => (
                         <li key={i}>
-                          <button 
+                          <button
                             onClick={() => {
                               handleSemanticSearch(sug);
                               setShowSuggestions(false);
@@ -487,12 +570,35 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredSchemes.map(({ scheme, ruleResult, mlResult }) => {
+            {isLoading && schemes.length === 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6" aria-busy="true" aria-label={t('loadingSchemes', 'Loading government schemes...')}>
+                {[1, 2, 3, 4].map(idx => (
+                  <div key={idx} className="bg-white dark:bg-[#0F1B2D] rounded-xl border border-gray-200 dark:border-gray-800 p-5 animate-pulse flex flex-col gap-3 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="h-4 w-28 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                      <div className="h-5 w-5 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+                    </div>
+                    <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    <div className="h-4 w-4/5 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-5 w-20 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                      <div className="h-5 w-24 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    </div>
+                    <div className="mt-auto pt-4 flex gap-2">
+                      <div className="h-10 flex-1 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                      <div className="h-10 flex-1 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredSchemes.map(({ scheme, ruleResult, mlResult }) => {
                 const semanticScore = semanticResults?.find(r => r.schemeId === scheme.id)?.score;
                 return (
                 <div key={scheme.id} className="bg-white dark:bg-[#0F1B2D] rounded border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col hover:shadow-md transition-shadow relative">
-                  
+
                   {/* Card Content */}
                   <div className="p-5 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-3">
@@ -506,7 +612,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                           </span>
                         )}
                       </div>
-                      <button 
+                      <button
                         onClick={() => onToggleBookmark(scheme.id)}
                         className="text-gray-400 hover:text-[#F59E0B] transition-colors p-1"
                         aria-label={isBookmarked(scheme.id) ? t('removeBookmark', 'Remove bookmark') : t('saveBookmark', 'Bookmark scheme')}
@@ -518,7 +624,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     <h3 className="text-lg font-bold text-[#123C69] dark:text-white mb-2 line-clamp-2">
                       {t(`${scheme.id}_name`, scheme.name)}
                     </h3>
-                    
+
                     <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
                       {t(`${scheme.id}_desc`, scheme.shortDescription)}
                     </p>
@@ -649,23 +755,23 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
                   {/* Actions */}
                   <div className="p-4 bg-gray-50 dark:bg-[#07111F] border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <button 
+                    <button
                       onClick={() => onSelectScheme({ scheme, ruleResult, mlResult })}
                       className="flex-1 min-h-[44px] py-2 px-3 rounded border border-[#123C69] text-[#123C69] dark:border-gray-600 dark:text-white font-semibold text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center text-center"
                     >
                       {ruleResult.status === 'Not Eligible' ? t('whyNotApplicable', 'Why Not Applicable') : t('details', 'Details')}
                     </button>
-                    <button 
+                    <button
                       onClick={() => toggleCompare(scheme)}
                       className={`flex-1 min-h-[44px] py-2 px-3 rounded font-semibold text-sm transition-colors flex items-center justify-center text-center ${
-                        compareQueue.find(s => s.id === scheme.id) 
-                          ? 'bg-[#123C69] text-white' 
+                        compareQueue.find(s => s.id === scheme.id)
+                          ? 'bg-[#123C69] text-white'
                           : 'bg-white dark:bg-[#16243A] border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}
                     >
                       {compareQueue.find(s => s.id === scheme.id) ? t('added', 'Added') : t('compare', 'Compare')}
                     </button>
-                    <button 
+                    <button
                       onClick={() => window.open(scheme.officialApplyUrl || '#', '_blank')}
                       className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center"
                     >
@@ -675,19 +781,23 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                 </div>
               )})}
             </div>
-            
-            {filteredSchemes.length === 0 && (
+
+            )}
+
+            {!isLoading && filteredSchemes.length === 0 && (
               <div className="col-span-1 md:col-span-2 flex flex-col items-center text-center py-16 px-4 bg-white dark:bg-[#0F1B2D] rounded border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-6">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight mb-2">
-                  {t('noExactMatches', 'No exact matches found for')} "{searchTerm}".
+                  {searchTerm.trim()
+                    ? `${t('noExactMatches', 'No exact matches found for')} "${searchTerm}".`
+                    : t('noMatchingSchemes', 'No schemes match the selected filters.')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md">
                   {t('noMatchesSubtitle', 'Try these alternatives based on related eligibility criteria and broader location signals.')}
                 </p>
-                
+
                 <div className="text-left bg-gray-50 dark:bg-[#07111F] border border-gray-200 dark:border-gray-700 p-6 rounded-lg w-full max-w-md">
                   <span className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 block">
                     {t('tryAlternativesTitle', 'Try these alternatives:')}
@@ -726,7 +836,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
 
       {/* Floating Compare Bar */}
       {compareQueue.length > 0 && (
-        <motion.div 
+        <motion.div
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           className="fixed bottom-0 left-0 right-0 z-50 bg-[#123C69] text-white p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.2)]"
@@ -736,13 +846,13 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               <span className="font-bold">{compareQueue.length} {t('schemesCount', 'schemes')}</span> {t('selectedForComparison', 'selected for comparison (Max 3)')}
             </div>
             <div className="flex gap-2">
-              <button 
-                onClick={() => setCompareQueue([])} 
+              <button
+                onClick={() => setCompareQueue([])}
                 className="px-4 py-2 text-sm font-semibold hover:bg-white/10 rounded transition-colors"
               >
                 {t('clear', 'Clear')}
               </button>
-              <button 
+              <button
                 disabled={compareQueue.length < 2}
                 onClick={() => setShowComparison(true)}
                 className="px-6 py-2 bg-[#1769FF] text-white font-bold rounded shadow disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
@@ -755,7 +865,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
       )}
 
       {/* Comparison Modal */}
-      <SchemeComparisonModal 
+      <SchemeComparisonModal
         isOpen={showComparison}
         onClose={() => setShowComparison(false)}
         schemes={compareQueue}

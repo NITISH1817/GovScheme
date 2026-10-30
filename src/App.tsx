@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { socketService } from './api/socketClient';
 import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile, Scheme, CombinedSchemeAnalysis, DocumentRecord, ApplicationTrackerRecord, NotificationItem } from './types';
@@ -69,7 +69,10 @@ export const App: React.FC = () => {
     } catch { return null; }
   });
   const [schemes, setSchemes] = useState<Scheme[]>(schemesData);
-  const [applications, setApplications] = useState<ApplicationTrackerRecord[]>(initialApplications);
+  const [isSchemesLoading, setIsSchemesLoading] = useState<boolean>(false);
+  const [schemesError, setSchemesError] = useState<string | null>(null);
+  const [isBackendWaking, setIsBackendWaking] = useState<boolean>(false);
+  const [applications, setApplications] = useState<ApplicationTrackerRecord[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
 
   const [wizardMode, setWizardMode] = useState<'wizard' | 'life-event' | 'what-can-i-get' | 'ai-interview'>('wizard');
@@ -131,7 +134,7 @@ export const App: React.FC = () => {
   const [isListeningGlobalVoice, setIsListeningGlobalVoice] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-  
+
   const [isBooting, setIsBooting] = useState(true);
   const [adminLoginRequested, setAdminLoginRequested] = useState(false);
 
@@ -266,32 +269,68 @@ export const App: React.FC = () => {
     }
   }, [activeTab]);
 
+  const fetchSchemes = useCallback(async () => {
+    setIsSchemesLoading(true);
+    setSchemesError(null);
+    setIsBackendWaking(false);
+
+    // If request takes longer than 2.5s, signal waking cold start
+    const wakingTimer = setTimeout(() => {
+      setIsBackendWaking(true);
+    }, 2500);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+    try {
+      const response = await fetch(`${API_URL}/api/schemes?limit=100`, {
+        signal: controller.signal
+      });
+      clearTimeout(wakingTimer);
+      clearTimeout(timeoutId);
+      setIsBackendWaking(false);
+
+      if (!response.ok) {
+        throw new Error(`Server returned HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.schemes)) {
+        // Merge API schemes with local fallback schemesData
+        setSchemes(prev => {
+          const apiSchemes = data.schemes;
+          const newSchemes = [...apiSchemes];
+
+          if (Array.isArray(prev)) {
+            prev.forEach(localScheme => {
+              if (!apiSchemes.find((s: any) => s.id === localScheme.id)) {
+                newSchemes.push(localScheme);
+              }
+            });
+          }
+          return newSchemes;
+        });
+        setSchemesError(null);
+      } else {
+        throw new Error('Invalid scheme catalog response structure');
+      }
+    } catch (error: any) {
+      clearTimeout(wakingTimer);
+      clearTimeout(timeoutId);
+      setIsBackendWaking(false);
+      const isAbort = error.name === 'AbortError';
+      const errMsg = isAbort
+        ? 'Request timed out after 25s. The server may still be spinning up.'
+        : (error.message || 'Failed to fetch schemes from backend');
+      console.warn('Backend schemes fetch notice:', errMsg);
+      setSchemesError(errMsg);
+    } finally {
+      setIsSchemesLoading(false);
+    }
+  }, []);
+
   // Fetch schemes and sync cloud profile from backend on initial load
   useEffect(() => {
-    const fetchSchemes = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/schemes?limit=100`);
-        const data = await response.json();
-        if (data.success && Array.isArray(data.schemes)) {
-          // Merge API schemes with local fallback schemesData
-          setSchemes(prev => {
-            const apiSchemes = data.schemes;
-            const newSchemes = [...apiSchemes];
-
-            if (Array.isArray(prev)) {
-              prev.forEach(localScheme => {
-                if (!apiSchemes.find((s: any) => s.id === localScheme.id)) {
-                  newSchemes.push(localScheme);
-                }
-              });
-            }
-            return newSchemes;
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch schemes from backend:', error);
-      }
-    };
 
     const fetchNotifications = async () => {
       try {
@@ -354,7 +393,7 @@ export const App: React.FC = () => {
 
           if (appsRes && appsRes.ok) {
             const appsData = await appsRes.json();
-            if (appsData.success && Array.isArray(appsData.applications) && appsData.applications.length > 0) {
+            if (appsData.success && Array.isArray(appsData.applications)) {
               const mappedApps: ApplicationTrackerRecord[] = appsData.applications.map((a: any) => {
                 const currentStatus = a.status || 'Submitted';
                 const stages = [
@@ -375,15 +414,26 @@ export const App: React.FC = () => {
                   remarks: i === effectiveIdx ? (a.remarks || `Status: ${currentStatus}`) : undefined
                 }));
 
+                const dynamicDocs = Array.isArray(a.uploadedDocuments) && a.uploadedDocuments.length > 0
+                  ? a.uploadedDocuments.map((ud: any) => ({
+                      name: ud.documentId?.documentType || ud.documentId?.type || 'Document',
+                      verified: Boolean(ud.verified || ud.documentId?.verificationStatus === 'CHECKS_PASSED'),
+                      label: ud.verified || ud.documentId?.verificationStatus === 'CHECKS_PASSED' ? 'Verified' : 'Pending Verification'
+                    }))
+                  : [];
+
                 return {
                   id: a._id,
-                  schemeId: a.schemeId?.id || a.schemeId?._id || a.schemeId,
-                  schemeName: a.schemeId?.name || 'Government Scheme',
-                  applicationNumber: `APP-${String(a._id).slice(-8).toUpperCase()}`,
+                  schemeId: a.schemeId?.id || a.schemeId?.schemeId || a.schemeId?._id || a.schemeId,
+                  schemeName: a.schemeId?.name || a.schemeId?.schemeName || 'Government Scheme',
+                  applicationNumber: a.remarks && a.remarks.startsWith('Ack Number: ')
+                    ? a.remarks.replace('Ack Number: ', '')
+                    : `APP-${String(a._id).slice(-8).toUpperCase()}`,
                   status: currentStatus as any,
                   appliedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                   officialPortalLink: a.schemeId?.officialApplyUrl || a.schemeId?.officialWebsite || 'https://www.india.gov.in',
-                  statusTimeline: timeline
+                  statusTimeline: timeline,
+                  verifiedDocuments: dynamicDocs
                 };
               });
               setApplications(mappedApps);
@@ -451,7 +501,7 @@ export const App: React.FC = () => {
       setSchemes(prev => prev.filter(s => s.id !== data.schemeId));
     };
 
-    const handleApplicationStatusUpdated = (data: { applicationId: string; status: string; remarks?: string }) => {
+  const handleApplicationStatusUpdated = (data: { applicationId: string; status: string; remarks?: string }) => {
       setApplications(prev => prev.map(app => {
         if (app.id === data.applicationId || (app as any)._id === data.applicationId) {
           const stages = [
@@ -513,6 +563,68 @@ export const App: React.FC = () => {
       socketService.disconnect();
     };
   }, []);
+
+  const handleTrackApplication = async (schemeId: string, customAppNumber?: string) => {
+    const token = localStorage.getItem('govscheme_token');
+    if (!token) {
+      setIsAuthOpen(true);
+      return;
+    }
+    try {
+      const response = await fetch(`${API_URL}/api/applications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          schemeId,
+          remarks: customAppNumber ? `Ack Number: ${customAppNumber}` : 'Submitted via GovScheme Tracker'
+        })
+      });
+
+      const data = await response.json();
+      if (data.success && data.application) {
+        const a = data.application;
+        const currentStatus = a.status || 'Submitted';
+        const stages = [
+          'Application Started',
+          'Documents Uploaded',
+          'Submitted',
+          'Under Review',
+          'Approved',
+          'Benefit Released'
+        ];
+        const statusIdx = stages.findIndex(s => s.toLowerCase() === currentStatus.toLowerCase());
+        const effectiveIdx = statusIdx >= 0 ? statusIdx : 2;
+
+        const timeline = stages.map((stg, i) => ({
+          stage: stg,
+          date: i <= effectiveIdx ? (a.updatedAt ? new Date(a.updatedAt).toISOString().split('T')[0] : 'Completed') : 'Pending',
+          completed: i <= effectiveIdx,
+          remarks: i === effectiveIdx ? (a.remarks || `Status: ${currentStatus}`) : undefined
+        }));
+
+        const newTrackRecord: ApplicationTrackerRecord = {
+          id: a._id,
+          schemeId: a.schemeId?.id || a.schemeId?.schemeId || a.schemeId?._id || schemeId,
+          schemeName: a.schemeId?.name || a.schemeId?.schemeName || 'Government Scheme',
+          applicationNumber: customAppNumber || `APP-${String(a._id).slice(-8).toUpperCase()}`,
+          status: currentStatus as any,
+          appliedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          officialPortalLink: a.schemeId?.officialApplyUrl || a.schemeId?.officialWebsite || 'https://www.india.gov.in',
+          statusTimeline: timeline
+        };
+
+        setApplications(prev => [newTrackRecord, ...prev]);
+      } else {
+        throw new Error(data.message || 'Failed to record application');
+      }
+    } catch (err: any) {
+      console.error('Error tracking application:', err.message);
+      throw err;
+    }
+  };
 
   // Logout handler
   const handleLogout = () => {
@@ -588,12 +700,12 @@ export const App: React.FC = () => {
   };
 
   const handleSaveDocument = async (
-    newDoc: DocumentRecord, 
+    newDoc: DocumentRecord,
     autoFillFields?: Partial<UserProfile>,
     file?: File | null
   ) => {
     if (!user) return;
-    
+
     // 1. Immediately update local state
     setUser(prev => {
       if (!prev) return prev;
@@ -786,19 +898,19 @@ export const App: React.FC = () => {
       category: 'General'
     };
     return (
-      <KioskReport 
+      <KioskReport
         key={currentLang}
         currentLang={currentLang}
         onLanguageChange={(lang) => {
           i18n.changeLanguage(lang);
           setCurrentLang(lang);
         }}
-        profile={activeKioskProfile} 
-        schemes={schemes} 
+        profile={activeKioskProfile}
+        schemes={schemes}
         onBack={() => {
           setKioskProfile(null);
           setActiveTab('kiosk');
-        }} 
+        }}
       />
     );
   }
@@ -852,7 +964,7 @@ export const App: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Admin Access Required</h2>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-              You are currently signed in as <strong className="text-gray-900 dark:text-white">{user.fullName || user.email}</strong> (Citizen). 
+              You are currently signed in as <strong className="text-gray-900 dark:text-white">{user.fullName || user.email}</strong> (Citizen).
               Administrative privileges are required to access the GovScheme Command Center.
             </p>
             <div className="flex flex-col gap-3">
@@ -1061,6 +1173,10 @@ export const App: React.FC = () => {
             onToggleBookmark={handleToggleBookmark}
             isBookmarked={isBookmarked}
             onNavigateTab={handleNavigateTab}
+            isLoading={isSchemesLoading}
+            error={schemesError}
+            isBackendWaking={isBackendWaking}
+            onRetry={fetchSchemes}
           />
         )}
 
@@ -1086,6 +1202,10 @@ export const App: React.FC = () => {
           <ApplicationTracker
             applications={applications}
             onNavigateTab={setActiveTab}
+            user={user}
+            schemes={schemes}
+            onTrackApplication={handleTrackApplication}
+            onOpenAuth={() => setIsAuthOpen(true)}
           />
         )}
 

@@ -4,28 +4,39 @@ import Scheme from '../models/Scheme.js';
 
 export const createApplication = async (req, res) => {
   try {
-    const { schemeId, uploadedDocuments } = req.body;
+    const { schemeId, uploadedDocuments, remarks } = req.body;
     const userId = req.user._id;
 
-    // Verify scheme exists
-    const scheme = await Scheme.findById(schemeId);
+    // Verify scheme exists by _id, schemeId, or id
+    let scheme = null;
+    if (mongoose.Types.ObjectId.isValid(schemeId)) {
+      scheme = await Scheme.findById(schemeId);
+    }
+    if (!scheme) {
+      scheme = await Scheme.findOne({ $or: [{ schemeId }, { id: schemeId }] });
+    }
     if (!scheme) {
       return res.status(404).json({ success: false, message: 'Scheme not found' });
     }
 
     const newApp = await Application.create({
       userId,
-      schemeId,
+      schemeId: scheme._id,
       status: 'Submitted',
+      remarks: remarks || 'Application submitted via GovScheme Portal',
       uploadedDocuments: uploadedDocuments || [],
       timeline: [{
         status: 'Submitted',
-        remarks: 'Application submitted by citizen.',
+        remarks: remarks || 'Application submitted by citizen.',
         updatedBy: userId
       }]
     });
 
-    res.status(201).json({ success: true, application: newApp });
+    const populated = await Application.findById(newApp._id)
+      .populate('schemeId', 'name shortDescription department category officialApplyUrl officialWebsite id schemeId')
+      .populate('uploadedDocuments.documentId', 'documentType type docNumber verificationStatus');
+
+    res.status(201).json({ success: true, application: populated });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -35,7 +46,8 @@ export const getUserApplications = async (req, res) => {
   try {
     const userId = req.user._id;
     const applications = await Application.find({ userId })
-      .populate('schemeId', 'name shortDescription department category')
+      .populate('schemeId', 'name shortDescription department category officialApplyUrl officialWebsite id schemeId')
+      .populate('uploadedDocuments.documentId', 'documentType type docNumber verificationStatus')
       .sort('-createdAt');
 
     res.json({ success: true, applications });

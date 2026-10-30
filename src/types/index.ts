@@ -247,6 +247,11 @@ export interface ApplicationTrackerRecord {
   }[];
   officialPortalLink: string;
   applicationNumber: string;
+  verifiedDocuments?: Array<{
+    name: string;
+    verified: boolean;
+    label: string;
+  }>;
 }
 
 export interface ChatMessage {

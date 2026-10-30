@@ -1,14 +1,22 @@
 import Scheme from '../models/Scheme.js';
 
+// Safe In-Memory LRU/TTL Cache for Public Scheme Catalog
+const schemeCache = new Map();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
+
+export const clearSchemeCache = () => {
+  schemeCache.clear();
+};
+
 // @desc    Get all schemes (with advanced filtering & pagination)
 // @route   GET /api/schemes
 // @access  Public (Citizen) & Private (Admin)
 export const getSchemes = async (req, res) => {
   try {
     const { state, category, q, status, department, verificationStatus, page = 1, limit = 20, sort = '-createdAt' } = req.query;
-    
+
     let filter = {};
-    
+
     const isAdmin = req.user && (
       req.user.role === 'Super Admin' ||
       req.user.role === 'NodalOfficer' ||
@@ -16,6 +24,31 @@ export const getSchemes = async (req, res) => {
       req.user.role === 'State Admin' ||
       req.user.role === 'District Officer'
     );
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 20);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Check in-memory cache for public queries
+    const cacheKey = !isAdmin ? `schemes:${JSON.stringify({
+      state: state || 'All',
+      category: category || 'All',
+      department: department || 'All',
+      verificationStatus: verificationStatus || 'All',
+      q: (q && typeof q === 'string') ? q.trim() : '',
+      page: pageNum,
+      limit: limitNum,
+      sort: sort || '-createdAt'
+    })}` : null;
+
+    if (cacheKey) {
+      const cached = schemeCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+        res.set('X-Cache', 'HIT');
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+        return res.json(cached.data);
+      }
+    }
 
     const conditions = [];
 
@@ -33,7 +66,7 @@ export const getSchemes = async (req, res) => {
     if (state && state !== 'All') {
       conditions.push({ $or: [{ state: state }, { state: 'Central' }] });
     }
-    
+
     if (category && category !== 'All') {
       filter.category = category;
     }
@@ -59,14 +92,27 @@ export const getSchemes = async (req, res) => {
       filter.$and = conditions;
     }
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const skip = (pageNum - 1) * limitNum;
+    // Execute find query and count query concurrently with lean projection
+    const [schemes, total] = await Promise.all([
+      Scheme.find(filter).sort(sort).skip(skip).limit(limitNum).lean(),
+      Scheme.countDocuments(filter)
+    ]);
 
-    const schemes = await Scheme.find(filter).sort(sort).skip(skip).limit(limitNum);
-    const total = await Scheme.countDocuments(filter);
-    
-    res.json({ success: true, total, page: pageNum, pages: Math.ceil(total / limitNum), schemes });
+    const responsePayload = {
+      success: true,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      schemes
+    };
+
+    if (cacheKey) {
+      schemeCache.set(cacheKey, { data: responsePayload, timestamp: Date.now() });
+    }
+
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+    res.json(responsePayload);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -93,11 +139,16 @@ export const createScheme = async (req, res) => {
 
     const newScheme = new Scheme(schemeData);
     await newScheme.save();
-    
+    clearSchemeCache();
+
+    if (updated) {
+      clearSchemeCache();
+    }
+
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEME_CREATED', { scheme: newScheme });
     }
-    
+
     res.status(201).json({ success: true, scheme: newScheme });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -143,18 +194,22 @@ export const updateScheme = async (req, res) => {
     if (!updated) {
       updated = await Scheme.findOneAndUpdate({ $or: [{ id: req.params.id }, { schemeId: req.params.id }] }, updateData, { new: true, returnDocument: 'after', runValidators: true });
     }
-    
+
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Scheme not found' });
     }
-    
+
+    if (updated) {
+      clearSchemeCache();
+    }
+
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEME_UPDATED', { scheme: updated });
       if (updated.status === 'Published') {
         req.app.get('io').emit('SCHEME_PUBLISHED', { scheme: updated });
       }
     }
-    
+
     res.json({ success: true, scheme: updated });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -170,15 +225,19 @@ export const deleteScheme = async (req, res) => {
     if (!deleted) {
       deleted = await Scheme.findOneAndDelete({ id: req.params.id });
     }
-    
+
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Scheme not found' });
     }
-    
+
+    if (updated) {
+      clearSchemeCache();
+    }
+
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEME_DELETED', { schemeId: req.params.id });
     }
-    
+
     res.json({ success: true, message: 'Scheme deleted successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -193,7 +252,7 @@ export const duplicateScheme = async (req, res) => {
     let original = await Scheme.findById(req.params.id).catch(() => null);
     if (!original) original = await Scheme.findOne({ id: req.params.id });
     if (!original) return res.status(404).json({ success: false, message: 'Scheme not found' });
-    
+
     const copy = original.toObject();
     delete copy._id;
     copy.id = `SCHEME-${Date.now()}`;
@@ -201,11 +260,15 @@ export const duplicateScheme = async (req, res) => {
     copy.status = 'Draft';
 
     const newScheme = await Scheme.create(copy);
-    
+
+    if (updated) {
+      clearSchemeCache();
+    }
+
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEME_CREATED', { scheme: newScheme });
     }
-    
+
     res.status(201).json({ success: true, scheme: newScheme });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -222,7 +285,7 @@ export const bulkSchemeAction = async (req, res) => {
   }
   try {
     const filter = { $or: [{ _id: { $in: ids } }, { id: { $in: ids } }] };
-    
+
     if (action === 'delete') {
       await Scheme.deleteMany(filter);
     } else if (action === 'publish') {
@@ -234,11 +297,15 @@ export const bulkSchemeAction = async (req, res) => {
     } else {
       return res.status(400).json({ success: false, message: 'Unknown action' });
     }
-    
+
+    if (updated) {
+      clearSchemeCache();
+    }
+
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEMES_BULK_UPDATED', { ids, action });
     }
-    
+
     res.json({ success: true, message: `Bulk ${action} completed for ${ids.length} schemes` });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -274,7 +341,7 @@ export const bulkImportSchemes = async (req, res) => {
       if (!scheme.department) scheme.department = 'General';
       if (!scheme.state) scheme.state = 'All India';
       if (!scheme.category) scheme.category = 'General';
-      
+
       scheme.shortDescription = 'Imported from CSV';
       scheme.detailedDescription = 'Imported';
       schemes.push(scheme);
@@ -282,6 +349,10 @@ export const bulkImportSchemes = async (req, res) => {
 
     const inserted = await Scheme.insertMany(schemes);
     fs.unlinkSync(req.file.path); // Cleanup
+
+    if (updated) {
+      clearSchemeCache();
+    }
 
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEMES_BULK_UPDATED', { ids: inserted.map(s => s._id), action: 'import' });
@@ -303,17 +374,7 @@ import { schemesData } from '../../src/data/schemes.ts';
 export const getSchemeById = async (req, res) => {
   try {
     const { id } = req.params;
-    let scheme = null;
-    if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      scheme = await Scheme.findById(id);
-    }
-    if (!scheme) {
-      scheme = await Scheme.findOne({ $or: [{ schemeId: id }, { id: id }] });
-    }
-
-    if (!scheme) {
-      return res.status(404).json({ success: false, message: 'Scheme not found' });
-    }
+    const cacheKey = `scheme:id:${id}`;
 
     const isAdmin = req.user && (
       req.user.role === 'Super Admin' ||
@@ -323,11 +384,39 @@ export const getSchemeById = async (req, res) => {
       req.user.role === 'District Officer'
     );
 
+    if (!isAdmin) {
+      const cached = schemeCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+        res.set('X-Cache', 'HIT');
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+        return res.json(cached.data);
+      }
+    }
+
+    let scheme = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      scheme = await Scheme.findById(id).lean();
+    }
+    if (!scheme) {
+      scheme = await Scheme.findOne({ $or: [{ schemeId: id }, { id: id }] }).lean();
+    }
+
+    if (!scheme) {
+      return res.status(404).json({ success: false, message: 'Scheme not found' });
+    }
+
     if (!isAdmin && (scheme.status !== 'Published' || scheme.activeStatus === false)) {
       return res.status(404).json({ success: false, message: 'Scheme not found or is currently not published' });
     }
 
-    res.json({ success: true, scheme });
+    const payload = { success: true, scheme };
+    if (!isAdmin) {
+      schemeCache.set(cacheKey, { data: payload, timestamp: Date.now() });
+    }
+
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -389,10 +478,10 @@ export const evaluateUserEligibility = async (req, res) => {
     if (!scheme) {
       return res.status(404).json({ success: false, message: 'Scheme not found' });
     }
-    
+
     // Use user profile from req.user
     const userProfile = req.user.profile || {};
-    
+
     const result = evaluateEligibility({
       age: userProfile.age,
       annualIncome: userProfile.annualIncome,
@@ -407,4 +496,3 @@ export const evaluateUserEligibility = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
