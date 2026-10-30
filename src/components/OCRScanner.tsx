@@ -479,8 +479,10 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                       <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
                         {scanResult.detectedTypeLabel}
                       </h4>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                        <span>Format & Regex Checks: Passed</span>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2 mt-0.5">
+                        <span>Document: <strong className="text-slate-700 dark:text-slate-200">{selectedFile?.name || 'Document'}</strong></span>
+                        <span>•</span>
+                        <span>Pages: <strong className="text-slate-700 dark:text-slate-200">{scanResult.pageCount || 1}</strong></span>
                         <span>•</span>
                         <span>Confidence: {getConfidenceBadge(scanResult.extractedFields.confidenceScore)}</span>
                       </div>

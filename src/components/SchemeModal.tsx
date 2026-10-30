@@ -1,5 +1,5 @@
 import React from 'react';
-import { CombinedSchemeAnalysis, UserProfile, DocumentRecord, DocumentPossessionStatus } from '../types';
+import { Scheme, CombinedSchemeAnalysis, UserProfile, DocumentRecord, DocumentPossessionStatus } from '../types';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
@@ -69,6 +69,7 @@ interface SchemeModalProps {
   onToggleBookmark: (schemeId: string) => void;
   isBookmarked: boolean;
   onNavigateTab: (tab: string) => void;
+  onApplyScheme?: (scheme: Scheme) => void;
 }
 
 export const SchemeModal: React.FC<SchemeModalProps> = ({
@@ -78,7 +79,8 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
   currentLang,
   onToggleBookmark,
   isBookmarked,
-  onNavigateTab
+  onNavigateTab,
+  onApplyScheme
 }) => {
   const { scheme } = analysis;
   const { t } = useTranslation();
@@ -723,7 +725,16 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <span>{t('autoFillApplication', 'Auto-Fill Application Form')}</span>
               </button>
 
-              <button                onClick={() => window.open(scheme.officialApplyUrl || '#', '_blank', 'noopener,noreferrer')}
+              <button
+                type="button"
+                onClick={() => {
+                  if (onApplyScheme) {
+                    onClose();
+                    onApplyScheme(scheme);
+                  } else {
+                    window.open(scheme.officialApplyUrl || '#', '_blank', 'noopener,noreferrer');
+                  }
+                }}
                 className="min-h-[44px] px-6 sm:px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
                 <span>{t('applyOnOfficialPortal', 'Apply on Official Portal')}</span>
@@ -738,6 +749,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
             onClose={() => setIsAppFormOpen(false)}
             scheme={scheme}
             user={user}
+            onNavigateTab={onNavigateTab}
             onOpenVaultScan={() => {
               setIsAppFormOpen(false);
               onClose();

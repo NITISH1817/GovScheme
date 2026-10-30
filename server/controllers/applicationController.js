@@ -31,6 +31,34 @@ export const createApplication = async (req, res) => {
       }
     }
 
+    // Avoid accidental duplicate records and preserve/update existing application if already initiated
+    const existingApp = await Application.findOne({
+      userId,
+      $or: [
+        { schemeId: scheme._id },
+        ...(cleanAppNumber ? [{ applicationNumber: cleanAppNumber }] : [])
+      ]
+    });
+
+    if (existingApp) {
+      if (cleanAppNumber) existingApp.applicationNumber = cleanAppNumber;
+      if (remarks) existingApp.remarks = remarks;
+      existingApp.status = 'Submitted';
+      existingApp.timeline.push({
+        status: 'Submitted',
+        remarks: remarks || `Application acknowledgement recorded: ${cleanAppNumber || 'Updated'}`,
+        updatedBy: userId,
+        timestamp: new Date()
+      });
+      await existingApp.save();
+
+      const populated = await Application.findById(existingApp._id)
+        .populate('schemeId', 'name shortDescription department category officialApplyUrl officialWebsite id schemeId')
+        .populate('uploadedDocuments.documentId', 'documentType type docNumber verificationStatus');
+
+      return res.status(200).json({ success: true, application: populated, isUpdate: true });
+    }
+
     const newApp = await Application.create({
       userId,
       schemeId: scheme._id,

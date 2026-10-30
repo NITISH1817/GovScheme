@@ -19,6 +19,7 @@ interface SchemeDiscoveryProps {
   onToggleBookmark: (schemeId: string) => void;
   isBookmarked: (schemeId: string) => boolean;
   onNavigateTab?: (tab: string) => void;
+  onApplyScheme?: (scheme: Scheme) => void;
   isLoading?: boolean;
   error?: string | null;
   isBackendWaking?: boolean;
@@ -35,6 +36,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   onToggleBookmark,
   isBookmarked,
   onNavigateTab,
+  onApplyScheme,
   isLoading = false,
   error = null,
   isBackendWaking = false,
@@ -238,7 +240,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   const toggleCompare = (scheme: Scheme) => {
     setCompareQueue(prev => {
       if (prev.find(s => s.id === scheme.id)) return prev.filter(s => s.id !== scheme.id);
-      if (prev.length >= 3) return prev; // max 3
+      if (prev.length >= 4) return prev; // max 4 schemes
       return [...prev, scheme];
     });
   };
@@ -772,7 +774,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                       {compareQueue.find(s => s.id === scheme.id) ? t('added', 'Added') : t('compare', 'Compare')}
                     </button>
                     <button
-                      onClick={() => window.open(scheme.officialApplyUrl || '#', '_blank')}
+                      onClick={() => onApplyScheme ? onApplyScheme(scheme) : window.open(scheme.officialApplyUrl || '#', '_blank')}
                       className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center"
                     >
                       <span>{t('apply', 'Apply')}</span> <ExternalLink className="w-4 h-4" />
@@ -843,7 +845,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
         >
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <span className="font-bold">{compareQueue.length} {t('schemesCount', 'schemes')}</span> {t('selectedForComparison', 'selected for comparison (Max 3)')}
+              <span className="font-bold">{compareQueue.length} {t('schemesCount', 'schemes')}</span> {t('selectedForComparison', 'selected for comparison (Max 4)')}
             </div>
             <div className="flex gap-2">
               <button
@@ -869,6 +871,9 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
         isOpen={showComparison}
         onClose={() => setShowComparison(false)}
         schemes={compareQueue}
+        onRemoveScheme={(schemeId) => setCompareQueue(prev => prev.filter(s => s.id !== schemeId))}
+        onClearAll={() => setCompareQueue([])}
+        onApplyScheme={onApplyScheme}
       />
 
     </div>

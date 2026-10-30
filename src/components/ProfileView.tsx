@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   CheckCircle2, Clock, Bookmark, FileText, AlertCircle, ChevronRight,
   User as UserIcon, Settings, Edit3, MapPin, Briefcase, IndianRupee,
   Activity, GraduationCap, LayoutDashboard, Printer, Sparkles, ShieldCheck,
-  X, Loader2, Save, XCircle, Users, Award, Home, Accessibility, Heart
+  X, Loader2, Save, XCircle, Users, Award, Home, Accessibility, Heart,
+  ExternalLink, Lock, CheckSquare, ArrowRight, FolderLock
 } from 'lucide-react';
-import { UserProfile, Scheme } from '../types';
+import { UserProfile, Scheme, ApplicationTrackerRecord } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LocationSelector } from './LocationSelector';
+import { CitizenAssessmentModal } from './CitizenAssessmentModal';
+import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -19,6 +22,7 @@ interface ProfileViewProps {
   totalSchemesCount?: number;
   schemes?: Scheme[];
   initialSubTab?: 'overview' | 'report';
+  applications?: ApplicationTrackerRecord[];
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -28,21 +32,41 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   eligibleSchemesCount,
   ineligibleSchemesCount,
   totalSchemesCount,
-  schemes = []
+  schemes = [],
+  initialSubTab,
+  applications = []
 }) => {
-  const totalCount = totalSchemesCount ?? (schemes.length || 75);
-  const ineligibleCount = ineligibleSchemesCount ?? Math.max(0, totalCount - eligibleSchemesCount);
   const { t } = useTranslation();
+
+  // Single Consistent Source of Truth for Scheme Statistics
+  const totalCount = totalSchemesCount ?? schemes.length;
+  const eligibleCount = eligibleSchemesCount;
+  const ineligibleCount = ineligibleSchemesCount ?? Math.max(0, totalCount - eligibleCount);
+
+  // Modal States
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(initialSubTab === 'report');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Edit Profile Form State
   const [formData, setFormData] = useState<UserProfile>({ ...user });
 
   useEffect(() => {
     setFormData({ ...user });
   }, [user]);
+
+  // Top recommended schemes for the citizen (up to 3 previews)
+  const topRecommended = useMemo(() => {
+    if (!schemes || schemes.length === 0) return [];
+    return schemes
+      .filter((s) => {
+        const res = evaluateSchemeEligibility(user, s);
+        return res.status === 'Eligible' || res.status === 'Conditionally Eligible';
+      })
+      .slice(0, 3);
+  }, [user, schemes]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,30 +111,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
+  const userDocs = user.documents || [];
+  const verifiedDocsCount = userDocs.filter(d => d.status === 'Verified' || d.verificationStatus === 'CHECKS_PASSED').length;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07111F] pt-24 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        
-        {/* Header with Title and Settings */}
+
+        {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-black uppercase tracking-widest text-[#1769FF] bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-md border border-blue-200 dark:border-blue-800">
-                CITIZEN PROFILE DASHBOARD
+                CITIZEN DASHBOARD
               </span>
             </div>
             <h1 className="text-3xl font-bold text-[#123C69] dark:text-white font-sans tracking-tight">
-              {t('myProfile', 'My Profile')}
+              {t('myProfile', 'Citizen Profile & Scheme Dashboard')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
-              {t('manageProfileDesc', 'Manage your information to improve your government scheme recommendations.')}
+              {t('manageProfileDesc', 'Manage your eligibility criteria, view matched government welfare schemes, and generate assessment reports.')}
             </p>
           </div>
 
           <div className="flex items-center gap-2.5">
-            <button 
+            <button
               type="button"
-              onClick={() => onNavigateTab('settings')} 
+              onClick={() => onNavigateTab('settings')}
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm"
             >
               <Settings className="w-4 h-4" /> {t('settings', 'Settings')}
@@ -119,117 +146,160 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Main Content Column */}
+
+          {/* Main Content Column (Span 2) */}
           <div className="lg:col-span-2 space-y-8">
-            
-            {/* Profile Overview Card */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#1769FF]/5 to-transparent rounded-bl-full -z-10 pointer-events-none"></div>
-              
-              <div className="flex items-center gap-6 z-10">
-                <div 
+
+            {/* 1. CITIZEN PROFILE CARD */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded-3xl shadow-sm p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#1769FF]/5 to-transparent rounded-bl-full -z-10 pointer-events-none" />
+
+              <div className="flex items-center gap-5 sm:gap-6 z-10">
+                <div
                   onClick={() => setIsEditModalOpen(true)}
-                  className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 shrink-0 border-4 border-white dark:border-[#0F1B2D] shadow-md relative group cursor-pointer"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 dark:bg-gray-800 shrink-0 border-4 border-white dark:border-[#0F1B2D] shadow-md relative group cursor-pointer"
                   title={t('clickToEdit', 'Click to edit profile')}
                 >
-                  <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                  <img
+                    src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`}
+                    alt="Avatar"
+                    className="w-full h-full rounded-full object-cover"
+                  />
                   <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Edit3 className="w-6 h-6 text-white" />
+                    <Edit3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                 </div>
-                
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t(user.fullName, user.fullName)}</h2>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{user.email || t('notProvided', 'No email provided')} • +91 {user.mobile}</p>
-                  
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{t('profileCompleteness', 'Profile Completeness')}: {user.profileCompletionScore}%</span>
+
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                      {t(user.fullName, user.fullName)}
+                    </h2>
+                    {user.verificationBadge && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+                        <ShieldCheck className="w-3 h-3 text-blue-600" />
+                        Verified
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
+                    {user.email || t('notProvided', 'No email provided')} • +91 {user.mobile || '—'}
+                  </p>
+
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between mb-1 text-xs">
+                      <span className="font-bold text-gray-700 dark:text-gray-300">
+                        {t('profileCompleteness', 'Profile Completeness')}: {user.profileCompletionScore}%
+                      </span>
                     </div>
-                    <div className="w-48 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                      <div className="bg-[#15803D] h-1.5 rounded-full" style={{ width: `${user.profileCompletionScore}%` }}></div>
+                    <div className="w-48 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-[#15803D] h-full rounded-full transition-all duration-700"
+                        style={{ width: `${user.profileCompletionScore}%` }}
+                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="z-10 w-full md:w-auto flex flex-col sm:flex-row gap-2">
-                <button 
+              <div className="z-10 w-full md:w-auto">
+                <button
                   type="button"
-                  onClick={() => setIsEditModalOpen(true)} 
-                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#1769FF] text-white font-bold hover:bg-blue-700 transition-colors shadow-sm"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#1769FF] text-white font-bold text-xs sm:text-sm hover:bg-blue-700 transition-colors shadow-sm active:scale-95"
                 >
-                  <Edit3 className="w-4 h-4" /> {t('editProfile', 'Edit Profile')}
+                  <Edit3 className="w-4 h-4" />
+                  <span>{t('editProfile', 'Edit Profile')}</span>
                 </button>
               </div>
             </motion.div>
 
-            {/* Direct Action: Generate Citizen Eligibility Assessment Report */}
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }} 
-              animate={{ y: 0, opacity: 1 }} 
+            {/* 2. CITIZEN ASSESSMENT & ELIGIBILITY REPORT CARD */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.05 }}
-              className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl p-6 shadow-md text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden"
+              className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 rounded-3xl p-6 sm:p-7 shadow-md text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden"
             >
               <div className="flex items-start gap-4 z-10">
-                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 shadow-sm">
                   <Printer className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-white">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded text-emerald-100">
+                      OFFICIAL ADVISORY
+                    </span>
+                    <span className="text-xs text-emerald-200">
+                      {eligibleCount} Matches Found
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-lg sm:text-xl text-white font-heading">
                     {t('citizenAssessmentReport', 'Citizen Assessment & Eligibility Report')}
                   </h3>
-                  <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl">
-                    {t('genReportDesc', 'Generate an instant deterministic assessment report with live physical thermal receipt printing evaluating all welfare schemes.')}
+                  <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl leading-relaxed">
+                    {t('genReportDesc', 'Generate an instant deterministic assessment report evaluating all welfare schemes with PDF export and print options.')}
                   </p>
                 </div>
               </div>
-              <button 
+
+              <button
                 type="button"
-                onClick={() => onNavigateTab('report')}
-                className="z-10 w-full md:w-auto px-6 py-3 bg-white text-emerald-800 hover:bg-emerald-50 text-sm font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap flex items-center justify-center gap-2"
+                onClick={() => setIsAssessmentModalOpen(true)}
+                className="z-10 w-full md:w-auto px-6 py-3.5 bg-white text-emerald-800 hover:bg-emerald-50 text-xs sm:text-sm font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap flex items-center justify-center gap-2 shrink-0"
               >
                 <FileText className="w-4 h-4 text-emerald-700" />
                 <span>{t('genAssessmentReport', 'Generate Assessment Report')}</span>
               </button>
             </motion.div>
 
-            {/* Welfare Scheme Exploration Cards */}
-            <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.08 }}>
-              <div className="flex items-center justify-between mb-3">
+            {/* 3. CONSOLIDATED SCHEME STATISTICS SECTION (ONLY ONCE) */}
+            <motion.section
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.08 }}
+              className="space-y-3"
+            >
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-amber-500" />
-                  <h2 className="text-lg font-bold text-[#123C69] dark:text-white">
+                  <h2 className="text-lg font-bold text-[#123C69] dark:text-white font-heading">
                     {t('exploreWelfareSchemes', 'Explore Government Schemes')}
                   </h2>
                 </div>
-                <span className="text-xs text-gray-500 font-semibold">{totalCount} {t('schemesInCatalogue', 'Schemes Available')}</span>
+                <span className="text-xs text-gray-500 font-semibold">
+                  {totalCount} {t('schemesInCatalogue', 'Schemes Available')}
+                </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 1. Recommended Schemes Card */}
-                <div 
+                {/* Card 1 — Recommended Schemes */}
+                <div
                   onClick={() => onNavigateTab('schemes:recommended')}
-                  className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 border-2 border-emerald-300 dark:border-emerald-700/80 hover:border-emerald-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
+                  className="p-5 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 border-2 border-emerald-300 dark:border-emerald-700/80 hover:border-emerald-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                      <span className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
                         <CheckCircle2 className="w-5 h-5" />
                       </span>
-                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300">
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300">
                         {t('eligible', 'Eligible')}
                       </span>
                     </div>
-                    <div className="text-3xl font-black text-emerald-700 dark:text-emerald-400">
-                      {eligibleSchemesCount}
+                    <div className="text-3xl font-black text-emerald-700 dark:text-emerald-400 font-sans">
+                      {eligibleCount}
                     </div>
                     <h3 className="font-bold text-gray-900 dark:text-white text-base mt-1">
                       {t('recommendedForYou', 'Recommended Schemes')}
                     </h3>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                      {t('recommendedSchemesDesc', 'Personalized schemes strictly matched to your verified profile.')}
+                      {t('recommendedSchemesDesc', 'Personalized schemes strictly matched to your verified profile attributes.')}
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs font-bold text-emerald-700 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
@@ -238,25 +308,25 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </div>
                 </div>
 
-                {/* 2. Total Schemes Available Card */}
-                <div 
+                {/* Card 2 — Total Schemes */}
+                <div
                   onClick={() => onNavigateTab('schemes:all')}
-                  className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
+                  className="p-5 rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="w-10 h-10 rounded-xl bg-[#1769FF] text-white flex items-center justify-center shadow-md">
                         <LayoutDashboard className="w-5 h-5" />
                       </span>
-                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300">
                         {t('allIndia', 'Central + State')}
                       </span>
                     </div>
-                    <div className="text-3xl font-black text-[#123C69] dark:text-blue-400">
+                    <div className="text-3xl font-black text-[#123C69] dark:text-blue-400 font-sans">
                       {totalCount}
                     </div>
                     <h3 className="font-bold text-gray-900 dark:text-white text-base mt-1">
-                      {t('totalSchemesAvailable', 'Total Schemes Available')}
+                      {t('totalSchemesAvailable', 'Total Schemes')}
                     </h3>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                       {t('totalSchemesDesc', 'Full national repository across agriculture, pensions, health, and education.')}
@@ -268,21 +338,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </div>
                 </div>
 
-                {/* 3. Not Applicable Schemes Card */}
-                <div 
+                {/* Card 3 — Not Applicable Schemes */}
+                <div
                   onClick={() => onNavigateTab('schemes:ineligible')}
-                  className="p-5 rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/20 border-2 border-red-200 dark:border-red-800 hover:border-red-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
+                  className="p-5 rounded-3xl bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/20 border-2 border-red-200 dark:border-red-800 hover:border-red-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between group"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-md">
                         <XCircle className="w-5 h-5" />
                       </span>
-                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300">
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300">
                         {t('notEligible', 'Not Applicable')}
                       </span>
                     </div>
-                    <div className="text-3xl font-black text-red-600 dark:text-red-400">
+                    <div className="text-3xl font-black text-red-600 dark:text-red-400 font-sans">
                       {ineligibleCount}
                     </div>
                     <h3 className="font-bold text-gray-900 dark:text-white text-base mt-1">
@@ -300,12 +370,84 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </div>
             </motion.section>
 
-            {/* Comprehensive Demographic & Socio-Economic Profile Details */}
-            <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.12 }} className="space-y-4">
+            {/* 4. RECOMMENDED SCHEMES PREVIEW SECTION */}
+            {topRecommended.length > 0 && (
+              <motion.section
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-5 h-5 text-emerald-600" />
+                    <h2 className="text-lg font-bold text-[#123C69] dark:text-white font-heading">
+                      Top Matching Schemes for You
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab('schemes:recommended')}
+                    className="text-xs font-bold text-[#1769FF] hover:underline flex items-center gap-1"
+                  >
+                    <span>View All {eligibleCount} Schemes</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {topRecommended.map((scheme) => (
+                    <div
+                      key={scheme.id}
+                      onClick={() => onNavigateTab('schemes')}
+                      className="bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer flex flex-col justify-between"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-[#1769FF] dark:bg-blue-950 dark:text-blue-300">
+                            {scheme.category}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600">
+                            ✓ Eligible
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2">
+                          {scheme.name}
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs line-clamp-2">
+                          {scheme.benefitsSummary || scheme.shortDescription}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                        {scheme.financialBenefitAmount ? (
+                          <span className="font-black text-emerald-600 dark:text-emerald-400">
+                            ₹{scheme.financialBenefitAmount.toLocaleString('en-IN')}/yr
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 font-semibold">Subsidized Aid</span>
+                        )}
+                        <span className="text-[#1769FF] font-bold flex items-center gap-0.5">
+                          Details <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.section>
+            )}
+
+            {/* 5. SAVED PROFILE & ELIGIBILITY ATTRIBUTES */}
+            <motion.section
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.12 }}
+              className="space-y-4"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <UserIcon className="w-5 h-5 text-[#1769FF]" />
-                  <h2 className="text-lg font-bold text-[#123C69] dark:text-white">
+                  <h2 className="text-lg font-bold text-[#123C69] dark:text-white font-heading">
                     {t('demographicProfileDetails', 'Saved Profile & Eligibility Attributes')}
                   </h2>
                 </div>
@@ -417,133 +559,215 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </div>
             </motion.section>
 
-            {/* Personalized Profile Insights */}
-            {user.profileCompletionScore < 100 && (
-              <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                <div className="bg-[#123C69] rounded-xl p-6 shadow-sm text-white flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <AlertCircle className="w-6 h-6 text-blue-300 shrink-0 mt-1" />
-                    <div>
-                      <h3 className="font-bold text-lg">{t('profileInsight', 'Profile Insight')}</h3>
-                      <p className="text-blue-100 text-sm mt-1 max-w-md">
-                        {user.educationLevel === undefined && user.occupation === 'Student' 
-                          ? t('missingEduInsight', 'Adding your education level could help identify additional scholarship schemes.')
-                          : t('missingInfoInsight', 'Adding your missing information could help identify additional schemes.')}
-                      </p>
+            {/* 6. MY APPLICATIONS SECTION */}
+            <motion.section
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.16 }}
+              className="space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#1769FF]" />
+                  <h2 className="text-lg font-bold text-[#123C69] dark:text-white font-heading">
+                    {t('myApplications', 'My Applications')}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('tracker')}
+                  className="text-xs font-bold text-[#1769FF] hover:underline flex items-center gap-1"
+                >
+                  <span>Open Tracker</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {applications && applications.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {applications.slice(0, 4).map((app) => (
+                    <div
+                      key={app.id}
+                      onClick={() => onNavigateTab('tracker')}
+                      className="bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm hover:border-blue-400 transition cursor-pointer flex flex-col justify-between"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-400 font-mono">
+                            {app.applicationNumber}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+                            {app.status}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">
+                          {app.schemeName}
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          Applied: {app.appliedDate}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-[#1769FF] font-semibold">
+                        <span>View Milestones</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-[#0F1B2D] rounded-2xl border border-gray-200 dark:border-gray-800 p-8 text-center flex flex-col items-center">
+                  <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-3">
+                    <FileText className="w-7 h-7 text-gray-400" />
                   </div>
-                  <button onClick={() => onNavigateTab('wizard')} className="w-full md:w-auto px-6 py-2 bg-white text-[#123C69] text-sm font-bold rounded-lg shadow hover:bg-gray-50 transition-colors whitespace-nowrap">
-                    {t('completeProfile', 'Complete Profile')}
+                  <h3 className="font-bold text-gray-900 dark:text-white text-base">
+                    {t('noAppsYet', 'No applications tracked yet')}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1 max-w-sm">
+                    {t('noAppsDesc', "When you apply for a scheme and record your acknowledgement number, you can monitor its progress here.")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab('schemes:recommended')}
+                    className="mt-4 px-5 py-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900 text-[#1769FF] dark:text-blue-300 text-xs font-bold rounded-xl transition"
+                  >
+                    Find Schemes to Apply
                   </button>
                 </div>
-              </motion.section>
-            )}
-            
-            {/* Recent Activity */}
-            <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-              <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-5 h-5 text-[#1769FF]" />
-                <h2 className="text-lg font-bold text-[#123C69] dark:text-white">{t('recentActivity', 'Recent Activity')}</h2>
-              </div>
-              <div className="bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-2">
-                <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                  <div className="p-4 flex items-center gap-4">
-                    <div className="w-2 h-2 rounded-full bg-[#1769FF]" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('loggedIntoPlatform', 'Logged into GovScheme platform')}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{t('justNow', 'Just now')}</p>
-                    </div>
-                  </div>
-                  {(user.savedSchemeIds || []).length > 0 && (
-                    <div className="p-4 flex items-center gap-4">
-                      <div className="w-2 h-2 rounded-full bg-[#15803D]" />
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('savedSchemeToProfile', 'Saved a new scheme to profile')}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{t('recently', 'Recently')}</p>
-                      </div>
-                    </div>
-                  )}
-                  {(user.documents || []).length > 0 && (
-                    <div className="p-4 flex items-center gap-4">
-                      <div className="w-2 h-2 rounded-full bg-purple-500" />
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('addedDocToVault', 'Added document to Document Vault')}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{t('recently', 'Recently')}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </motion.section>
 
           </div>
 
-          {/* Right Sidebar Column */}
+          {/* Right Sidebar Column (Span 1) — ZERO DUPLICATE STATISTICS */}
           <div className="space-y-6">
-            
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div 
-                onClick={() => onNavigateTab('schemes:recommended')} 
-                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all group"
-              >
-                <CheckCircle2 className="w-6 h-6 text-[#15803D] mb-2 group-hover:scale-110 transition-transform" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{eligibleSchemesCount}</div>
-                <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mt-1">{t('recommended', 'Recommended')}</div>
+
+            {/* Document Vault Summary Card */}
+            <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FolderLock className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-bold text-base text-[#123C69] dark:text-white font-heading">
+                    Document Vault
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                  Encrypted
+                </span>
               </div>
 
-              <div 
-                onClick={() => onNavigateTab('schemes:all')} 
-                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:shadow-md transition-all group"
-              >
-                <LayoutDashboard className="w-6 h-6 text-[#1769FF] mb-2 group-hover:scale-110 transition-transform" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</div>
-                <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide mt-1">{t('totalSchemes', 'Total Schemes')}</div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500">Stored Documents:</span>
+                  <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">{userDocs.length} / 10</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500">Format Verified:</span>
+                  <span className="font-bold text-emerald-600 font-mono text-sm">{verifiedDocsCount}</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-purple-600 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((userDocs.length / 5) * 100))}%` }}
+                  />
+                </div>
               </div>
 
-              <div 
-                onClick={() => onNavigateTab('schemes:ineligible')} 
-                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-red-500 hover:shadow-md transition-all group"
+              <button
+                type="button"
+                onClick={() => onNavigateTab('vault')}
+                className="w-full py-2.5 px-4 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 font-bold text-xs transition flex items-center justify-between"
               >
-                <XCircle className="w-6 h-6 text-red-500 mb-2 group-hover:scale-110 transition-transform" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{ineligibleCount}</div>
-                <div className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mt-1">{t('notApplicable', 'Not Applicable')}</div>
-              </div>
+                <span>Manage Stored Documents</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
 
-              <div 
-                onClick={() => onNavigateTab('vault')} 
-                className="bg-white dark:bg-[#0F1B2D] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-amber-500 hover:shadow-md transition-all group"
-              >
-                <AlertCircle className="w-6 h-6 text-[#D97706] mb-2 group-hover:scale-110 transition-transform" />
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{(user.documents || []).length}</div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">{t('documents', 'Documents')}</div>
+            {/* Quick Actions Card */}
+            <div className="bg-white dark:bg-[#0F1B2D] p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm space-y-3">
+              <h3 className="font-bold text-base text-[#123C69] dark:text-white font-heading">
+                Quick Actions
+              </h3>
+
+              <div className="space-y-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsAssessmentModalOpen(true)}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    Print Assessment Report
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('assistant')}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    Ask AI Assistant
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('kiosk')}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4 text-amber-600" />
+                    Open CSC Kiosk Mode
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
               </div>
             </div>
 
-            {/* Empty Applications State */}
-            <section>
-              <h2 className="text-lg font-bold text-[#123C69] dark:text-white mb-4">{t('myApplications', 'My Applications')}</h2>
-              <div className="bg-white dark:bg-[#0F1B2D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 text-center flex flex-col items-center">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                  <FileText className="w-8 h-8 text-gray-400" />
+            {/* Profile Insights Card */}
+            {user.profileCompletionScore < 100 && (
+              <div className="bg-[#123C69] rounded-3xl p-6 shadow-sm text-white space-y-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-300" />
+                  <h4 className="font-bold text-sm">
+                    {t('profileInsight', 'Profile Discovery Tip')}
+                  </h4>
                 </div>
-                <h3 className="font-bold text-gray-900 dark:text-white">{t('noAppsYet', 'No applications yet')}</h3>
-                <p className="text-sm text-gray-500 mt-2 max-w-xs">{t('noAppsDesc', "Once you start an application, you'll be able to track it here.")}</p>
-                <button onClick={() => onNavigateTab('schemes')} className="mt-6 px-6 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold rounded hover:bg-gray-200 transition-colors">
-                  {t('exploreSchemes', 'Explore Schemes')}
+                <p className="text-blue-100 text-xs leading-relaxed">
+                  Completing your education level, family size, and social category attributes will automatically unlock additional targeted state schemes.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="w-full py-2.5 bg-white text-[#123C69] text-xs font-bold rounded-xl shadow hover:bg-gray-100 transition-colors"
+                >
+                  Complete Missing Info
                 </button>
               </div>
-            </section>
+            )}
 
           </div>
         </div>
       </div>
 
+      {/* CITIZEN ASSESSMENT & ELIGIBILITY REPORT MODAL */}
+      <CitizenAssessmentModal
+        isOpen={isAssessmentModalOpen}
+        onClose={() => setIsAssessmentModalOpen(false)}
+        user={user}
+        schemes={schemes}
+        onNavigateTab={onNavigateTab}
+      />
+
       {/* Interactive Edit Profile Modal */}
       <AnimatePresence>
         {isEditModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -601,9 +825,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     <input
                       type="number"
                       required
-                      min={1}
-                      max={120}
-                      value={formData.age || ''}
+                      min="1"
+                      max="120"
+                      value={formData.age !== undefined && formData.age !== null ? formData.age : ''}
                       onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     />
@@ -618,18 +842,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     >
                       <option value="">{t('selectGender', 'Select Gender')}</option>
-                      <option value="Male">{t('Male', 'Male')}</option>
-                      <option value="Female">{t('Female', 'Female')}</option>
-                      <option value="Transgender">{t('Transgender', 'Transgender')}</option>
-                      <option value="Other">{t('Other', 'Other')}</option>
+                      <option value="Male">{t('male', 'Male')}</option>
+                      <option value="Female">{t('female', 'Female')}</option>
+                      <option value="Transgender">{t('transgender', 'Transgender')}</option>
                     </select>
                   </div>
 
-                  {/* Social Category */}
+                  {/* Category */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('category', 'Social Category')}</label>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('socialCategory', 'Social Category')}</label>
                     <select
-                      value={formData.category || ''}
+                      value={formData.category || 'General'}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     >
@@ -642,46 +865,34 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     </select>
                   </div>
 
-                  {/* Location Selector */}
-                  <div className="sm:col-span-2">
-                    <LocationSelector
-                      state={formData.state || ''}
-                      district={formData.district || ''}
-                      onStateChange={(st) => setFormData(prev => ({ ...prev, state: st, district: '' }))}
-                      onDistrictChange={(dt) => setFormData(prev => ({ ...prev, district: dt }))}
-                    />
-                  </div>
-
                   {/* Occupation */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('occupation', 'Primary Occupation')}</label>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('occupation', 'Occupation')}</label>
                     <select
-                      value={formData.occupation || ''}
+                      value={formData.occupation || 'Farmer'}
                       onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     >
-                      <option value="">{t('selectOccupation', 'Select Occupation')}</option>
-                      <option value="Farmer">{t('Farmer', 'Farmer')}</option>
-                      <option value="Agriculture Worker">{t('Agriculture Worker', 'Agriculture Worker')}</option>
-                      <option value="Student">{t('Student', 'Student')}</option>
-                      <option value="Street Vendor">{t('Street Vendor', 'Street Vendor')}</option>
-                      <option value="Self Employed">{t('Self Employed', 'Self Employed')}</option>
-                      <option value="Daily Wage Worker">{t('Daily Wage Worker', 'Daily Wage Worker')}</option>
-                      <option value="Private Employee">{t('Private Employee', 'Private Employee')}</option>
-                      <option value="Government Employee">{t('Government Employee', 'Government Employee')}</option>
-                      <option value="Unemployed">{t('Unemployed', 'Unemployed')}</option>
-                      <option value="Retired">{t('Retired', 'Retired')}</option>
+                      <option value="Farmer">Farmer / Agriculture</option>
+                      <option value="Student">Student</option>
+                      <option value="Self-Employed">Self-Employed / Business</option>
+                      <option value="Unemployed">Unemployed</option>
+                      <option value="Employed">Salaried / Private Employee</option>
+                      <option value="Daily Wage Laborer">Daily Wage Laborer</option>
+                      <option value="Artisan">Artisan / Weaver</option>
+                      <option value="Fisherman">Fisherman</option>
+                      <option value="Senior Citizen">Senior Citizen / Pensioner</option>
                     </select>
                   </div>
 
-                  {/* Annual Household Income */}
+                  {/* Annual Income */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('annualIncome', 'Annual Household Income (₹)')} *</label>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('annualIncome', 'Annual Family Income (₹)')} *</label>
                     <input
                       type="number"
                       required
-                      min={0}
-                      value={formData.annualIncome !== undefined ? formData.annualIncome : ''}
+                      min="0"
+                      value={formData.annualIncome !== undefined && formData.annualIncome !== null ? formData.annualIncome : ''}
                       onChange={(e) => setFormData({ ...formData, annualIncome: Number(e.target.value) })}
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     />
@@ -718,6 +929,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     />
                   </div>
+                </div>
+
+                {/* State & District Selector */}
+                <div className="pt-2">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('location', 'State & District')} *</label>
+                  <LocationSelector
+                    state={formData.state || ''}
+                    district={formData.district || ''}
+                    onStateChange={(state) => setFormData({ ...formData, state, district: '' })}
+                    onDistrictChange={(district) => setFormData({ ...formData, district })}
+                  />
                 </div>
 
                 {/* Additional Toggles */}
@@ -763,42 +985,28 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsEditModalOpen(false);
-                      onNavigateTab('wizard');
-                    }}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs"
                   >
-                    <Sparkles className="w-3.5 h-3.5" /> {t('useGuidedWizard', 'Prefer Step-by-Step Guided Wizard? Click here')}
+                    {t('cancel', 'Cancel')}
                   </button>
-
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => setIsEditModalOpen(false)}
-                      className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-200 transition"
-                    >
-                      {t('cancel', 'Cancel')}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1 sm:flex-initial px-6 py-2 rounded-xl bg-[#1769FF] hover:bg-blue-700 text-white font-bold text-xs shadow flex items-center justify-center gap-2 transition disabled:opacity-50"
-                    >
-                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      <span>{isSubmitting ? t('saving', 'Saving...') : t('saveChanges', 'Save Changes')}</span>
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-2.5 rounded-xl bg-[#1769FF] text-white font-bold hover:bg-blue-700 transition flex items-center gap-2 text-xs shadow-md disabled:opacity-50"
+                  >
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    <span>{isSubmitting ? t('saving', 'Saving...') : t('saveChanges', 'Save Changes')}</span>
+                  </button>
                 </div>
               </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };

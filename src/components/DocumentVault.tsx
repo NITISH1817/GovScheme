@@ -13,7 +13,8 @@ import {
   Award,
   Sparkles,
   Check,
-  ArrowRight
+  ArrowRight,
+  Download
 } from 'lucide-react';
 import { UserProfile, DocumentRecord } from '../types';
 
@@ -21,12 +22,14 @@ interface DocumentVaultProps {
   user: UserProfile;
   onOpenOCR: (expectedType: DocumentRecord['type']) => void;
   onDeleteDoc: (docId: string) => void;
+  className?: string;
 }
 
 export const DocumentVault: React.FC<DocumentVaultProps> = ({
   user,
   onOpenOCR,
-  onDeleteDoc
+  onDeleteDoc,
+  className
 }) => {
   const { t } = useTranslation();
   const customBezier = [0.32, 0.72, 0, 1];
@@ -74,7 +77,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-32 space-y-12">
+    <div className={`max-w-7xl mx-auto px-4 sm:px-8 ${className || 'py-32'} space-y-12`}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -344,6 +347,18 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>{t('rescan', 'Rescan')}</span>
                       </button>
+                      {existingDoc.fileUrl && (
+                        <a
+                          href={existingDoc.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={`${existingDoc.type}_${existingDoc.docNumber || 'doc'}`}
+                          className="w-10 h-10 rounded-xl border border-blue-200 dark:border-blue-900/40 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 flex items-center justify-center transition-colors shrink-0"
+                          title="Download / View Stored Document"
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                      )}
                       <button
                         onClick={() => onDeleteDoc(existingDoc.id || existingDoc.documentId || existingDoc._id || '')}
                         className="w-10 h-10 rounded-xl border border-red-200 dark:border-red-900/40 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center justify-center transition-colors shrink-0"

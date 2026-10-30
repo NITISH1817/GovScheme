@@ -127,16 +127,88 @@ export async function preprocessDocumentFile(filePath, mimeType) {
 export async function extractRawTextFromFile(filePath, mimeType, lang = 'eng') {
   const isPdf = mimeType === 'application/pdf' || (filePath && filePath.toLowerCase().endsWith('.pdf'));
 
-  // If PDF, process using pdfjs-dist
+  // If PDF, process using pdfjs-dist and embedded scanned image OCR fallback
   if (isPdf) {
     try {
       const pdfBuffer = fs.readFileSync(filePath);
-      const pdfText = await extractTextFromPdfBuffer(pdfBuffer);
+
+      // Validate empty PDF
+      if (!pdfBuffer || pdfBuffer.length === 0) {
+        return {
+          rawText: '',
+          meanConfidence: 0,
+          pageCount: 0,
+          error: 'Uploaded PDF file is empty.',
+          engine: 'pdf-empty'
+        };
+      }
+
+      // Detect password protection
+      const headerStr = pdfBuffer.slice(0, 4096).toString('latin1');
+      if (headerStr.includes('/Encrypt')) {
+        return {
+          rawText: 'This PDF document is password-protected. Please upload an unprotected copy.',
+          meanConfidence: 0,
+          pageCount: 1,
+          isEncrypted: true,
+          engine: 'pdf-encrypted'
+        };
+      }
+
+      const { text: pdfText, pageCount } = await extractTextFromPdfBuffer(pdfBuffer);
+
+      // If PDF has meaningful machine-readable text
+      if (pdfText && pdfText.trim().length > 35) {
+        return {
+          rawText: normalizeIndicNumerals(pdfText.trim()),
+          meanConfidence: 92,
+          pageCount: pageCount || 1,
+          engine: 'pdfjs-native'
+        };
+      }
+
+      // If scanned PDF (insufficient embedded text), extract raster image streams and run Tesseract OCR
+      const images = extractImageStreamsFromPdfBuffer(pdfBuffer);
+      if (images.length > 0) {
+        let combinedOcrText = pdfText ? pdfText.trim() + '\n' : '';
+        let totalConfidence = 0;
+        let processedImages = 0;
+
+        for (const imgBuf of images.slice(0, 5)) {
+          let worker = null;
+          try {
+            worker = await createWorker(lang || 'eng');
+            const ret = await worker.recognize(imgBuf);
+            await worker.terminate();
+            worker = null;
+            if (ret.data.text && ret.data.text.trim()) {
+              combinedOcrText += '\n' + ret.data.text.trim();
+              totalConfidence += (ret.data.confidence || 75);
+              processedImages++;
+            }
+          } catch (tessErr) {
+            if (worker) {
+              await worker.terminate().catch(() => {});
+            }
+          }
+        }
+
+        if (combinedOcrText.trim().length > 10) {
+          return {
+            rawText: normalizeIndicNumerals(combinedOcrText.trim()),
+            meanConfidence: processedImages > 0 ? Math.round(totalConfidence / processedImages) : 80,
+            pageCount: pageCount || images.length,
+            engine: 'pdf-scanned-ocr'
+          };
+        }
+      }
+
       if (pdfText && pdfText.trim().length > 0) {
         return {
           rawText: normalizeIndicNumerals(pdfText.trim()),
-          meanConfidence: 90,
-          engine: 'pdfjs-native'
+          meanConfidence: 75,
+          pageCount: pageCount || 1,
+          engine: 'pdfjs-partial'
         };
       }
     } catch (pdfErr) {
@@ -145,7 +217,8 @@ export async function extractRawTextFromFile(filePath, mimeType, lang = 'eng') {
 
     return {
       rawText: 'PDF document uploaded. Please verify or complete fields manually.',
-      meanConfidence: 65,
+      meanConfidence: 50,
+      pageCount: 1,
       engine: 'pdf-fallback'
     };
   }
@@ -188,6 +261,34 @@ export async function extractRawTextFromFile(filePath, mimeType, lang = 'eng') {
 /**
  * Extract plain text from PDF buffer
  */
+/**
+ * Extracts embedded JPEG raster streams directly from scanned PDF buffers
+ */
+export function extractImageStreamsFromPdfBuffer(buffer) {
+  const images = [];
+  let pos = 0;
+  const jpegStart = Buffer.from([0xFF, 0xD8, 0xFF]);
+  const jpegEnd = Buffer.from([0xFF, 0xD9]);
+
+  while (pos < buffer.length && images.length < 6) {
+    const startIdx = buffer.indexOf(jpegStart, pos);
+    if (startIdx === -1) break;
+
+    const endIdx = buffer.indexOf(jpegEnd, startIdx + 3);
+    if (endIdx === -1) break;
+
+    const imgLen = (endIdx + 2) - startIdx;
+    if (imgLen > 1024) { // Only valid images (>1KB)
+      images.push(buffer.slice(startIdx, endIdx + 2));
+    }
+    pos = endIdx + 2;
+  }
+  return images;
+}
+
+/**
+ * Extract plain text and page metadata from PDF buffer
+ */
 async function extractTextFromPdfBuffer(buffer) {
   try {
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
@@ -195,16 +296,21 @@ async function extractTextFromPdfBuffer(buffer) {
     const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
     const pdfDocument = await loadingTask.promise;
     let textContent = '';
-    const numPages = Math.min(pdfDocument.numPages, 5); // Process up to first 5 pages for efficiency
+    const numPages = Math.min(pdfDocument.numPages, 6);
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocument.getPage(i);
       const content = await page.getTextContent();
-      const strings = content.items.map(item => item.str);
-      textContent += strings.join(' ') + '\n';
+      const strings = content.items
+        .filter(item => typeof item.str === 'string')
+        .map(item => item.str.trim())
+        .filter(Boolean);
+      if (strings.length > 0) {
+        textContent += `\n--- Page ${i} ---\n` + strings.join(' ') + '\n';
+      }
     }
-    return textContent;
+    return { text: textContent.trim(), pageCount: pdfDocument.numPages };
   } catch (e) {
-    return '';
+    return { text: '', pageCount: 1, error: e.message };
   }
 }
 

@@ -16,6 +16,7 @@ import { LandingPage } from './components/LandingPage';
 import { ProfileView } from './components/ProfileView';
 import { SchemeDiscovery } from './components/SchemeDiscovery';
 import { SchemeModal } from './components/SchemeModal';
+import { SchemeApplicationModal } from './components/SchemeApplicationModal';
 import { AIAssistant } from './components/AIAssistant';
 import { DocumentVault } from './components/DocumentVault';
 import { OCRScanner } from './components/OCRScanner';
@@ -160,6 +161,7 @@ export const App: React.FC = () => {
 
   // Modal Controls
   const [selectedSchemeAnalysis, setSelectedSchemeAnalysis] = useState<CombinedSchemeAnalysis | null>(null);
+  const [selectedApplyScheme, setSelectedApplyScheme] = useState<Scheme | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | undefined>(undefined);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -951,6 +953,38 @@ export const App: React.FC = () => {
     return <GovSchemeLogoAnimated onComplete={() => setIsBooting(false)} />;
   }
 
+  const handleUpdateProfile = async (updated: Partial<UserProfile>) => {
+    const merged = { ...(user || {}), ...updated } as UserProfile;
+    merged.profileCompletionScore = calculateProfileCompletion(merged);
+    setUser(merged);
+    localStorage.setItem('govscheme_user', JSON.stringify(merged));
+
+    const token = localStorage.getItem('govscheme_token');
+    if (token) {
+      try {
+        const res = await fetch(`${API_URL}/api/users/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(merged)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && (data.user || data.profile)) {
+            const serverUser = data.user || data.profile;
+            const authoritative = { ...merged, ...serverUser };
+            setUser(authoritative);
+            localStorage.setItem('govscheme_user', JSON.stringify(authoritative));
+          }
+        }
+      } catch (err) {
+        console.warn('Could not persist profile update to backend:', err);
+      }
+    }
+  };
+
   // If in Kiosk Mode, render full-screen CSC Kiosk view
   if (activeTab === 'kiosk') {
     if (!user) {
@@ -961,23 +995,87 @@ export const App: React.FC = () => {
       return null;
     }
     return (
-      <KioskMode
-        key={currentLang}
-        user={user}
-        currentLang={currentLang}
-        onLanguageChange={(lang) => {
-          i18n.changeLanguage(lang);
-          setCurrentLang(lang);
-        }}
-        onGenerateReport={(profile) => {
-          setKioskProfile(profile);
-          setActiveTab('kiosk-report');
-        }}
-        onExit={() => {
-          setKioskProfile(null);
-          setActiveTab('home');
-        }}
-      />
+      <>
+        <KioskMode
+          key={currentLang}
+          user={user}
+          schemes={schemes}
+          applications={applications}
+          bookmarks={user?.savedSchemeIds || []}
+          onToggleBookmark={handleToggleBookmark}
+          isBookmarked={isBookmarked}
+          onTrackApplication={handleTrackApplication}
+          onOpenAuth={(mode, reason) => {
+            if (mode) setAuthMode(mode === 'signup' ? 'register' : mode);
+            if (reason) setAuthNotice(reason);
+            setIsAuthOpen(true);
+          }}
+          onOpenOCR={handleOpenOCRForDoc}
+          onDeleteDoc={handleDeleteDocument}
+          onUpdateProfile={handleUpdateProfile}
+          onLogout={handleLogout}
+          currentLang={currentLang}
+          onLanguageChange={(lang) => {
+            i18n.changeLanguage(lang);
+            setCurrentLang(lang);
+          }}
+          onGenerateReport={(profile) => {
+            setKioskProfile(profile);
+            setActiveTab('kiosk-report');
+          }}
+          onExit={() => {
+            setKioskProfile(null);
+            setActiveTab('home');
+          }}
+        />
+
+        {/* OCR Scanner Modal (Functional inside Kiosk) */}
+        <OCRScanner
+          isOpen={ocrModalOpen}
+          onClose={() => setOcrModalOpen(false)}
+          expectedType={ocrTargetDocType || 'Aadhaar'}
+          userProfile={user}
+          onSaveDocument={handleSaveDocument}
+        />
+
+        {/* Auth Modal (Functional inside Kiosk) */}
+        <AuthModal
+          isOpen={isAuthOpen}
+          initialMode={authMode}
+          authNotice={authNotice}
+          onContinueGuest={() => setIsAuthOpen(false)}
+          currentLang={currentLang}
+          onClose={() => {
+            setIsAuthOpen(false);
+            setAuthNotice(undefined);
+          }}
+          onOpenAdmin={() => {
+            setIsAuthOpen(false);
+            setAuthNotice(undefined);
+            setActiveTab('admin');
+          }}
+          onLoginSuccess={async (loggedInUser) => {
+            let authoritativeUser = loggedInUser;
+            const token = localStorage.getItem('govscheme_token');
+            if (token) {
+              try {
+                const res = await fetch(`${API_URL}/api/users/profile`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                  const fresh = await res.json();
+                  if (fresh.success && (fresh.user || fresh.profile)) {
+                    authoritativeUser = normalizeUserProfile(fresh.user || fresh.profile);
+                  }
+                }
+              } catch (e) {}
+            }
+            setUser(authoritativeUser);
+            setIsAuthOpen(false);
+            setAuthNotice(undefined);
+          }}
+        />
+      </>
     );
   }
 
@@ -1337,6 +1435,7 @@ export const App: React.FC = () => {
             error={schemesError}
             isBackendWaking={isBackendWaking}
             onRetry={fetchSchemes}
+            onApplyScheme={(s) => setSelectedApplyScheme(s)}
           />
         )}
 
@@ -1407,6 +1506,7 @@ export const App: React.FC = () => {
             ineligibleSchemesCount={ineligibleSchemesCount}
             totalSchemesCount={schemes.length}
             schemes={schemes}
+            applications={applications}
           />
         )}
 
@@ -1467,6 +1567,26 @@ export const App: React.FC = () => {
       {/* Footer */}
       <Footer currentLang={currentLang} onNavigate={handleNavigateTab} user={user} />
 
+      {/* Scheme Application Journey Modal */}
+      <SchemeApplicationModal
+        isOpen={Boolean(selectedApplyScheme)}
+        onClose={() => setSelectedApplyScheme(null)}
+        scheme={selectedApplyScheme}
+        user={user}
+        onOpenVaultScan={() => {
+          setSelectedApplyScheme(null);
+          setActiveTab('vault');
+        }}
+        onApplicationSaved={(newApp) => {
+          setApplications(prev => [newApp, ...prev.filter(a => a.id !== newApp.id)]);
+        }}
+        onNavigateTab={handleNavigateTab}
+        onOpenAuth={() => {
+          setSelectedApplyScheme(null);
+          setIsAuthOpen(true);
+        }}
+      />
+
       {/* Scheme Details Modal */}
       {selectedSchemeAnalysis && (
         <SchemeModal
@@ -1477,6 +1597,7 @@ export const App: React.FC = () => {
           onToggleBookmark={handleToggleBookmark}
           isBookmarked={isBookmarked(selectedSchemeAnalysis.scheme.id)}
           onNavigateTab={setActiveTab}
+          onApplyScheme={(s) => setSelectedApplyScheme(s)}
         />
       )}
 

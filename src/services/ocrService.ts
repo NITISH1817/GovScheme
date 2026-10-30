@@ -1,10 +1,12 @@
 import { createWorker } from 'tesseract.js';
 import { DocumentRecord } from '../types';
+import { extractPDFTextAndImages } from './pdfHelper';
 
 export interface OCRScanResult {
   docType: DocumentRecord['type'];
   docNumber: string;
   maskedDocNumber?: string;
+  pageCount?: number;
   extractedFields: {
     fullName?: string;
     dob?: string;
@@ -143,7 +145,9 @@ function parseDOB(text: string): string {
   if (match) {
     const parts = match[1].replace(/[\/.]/g, '-').split('-');
     if (parts.length === 3) {
-      return parts[0].length === 4        ? `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`        : `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      return parts[0].length === 4
+        ? `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
+        : `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
     }
   }
   const yobMatch = text.match(/(?:Year of Birth|YOB|DOB|Birth Year|பிறந்த ஆண்டு|जन्म वर्ष)\s*[:\-]?\s*(19\d{2}|20\d{2})/i);
@@ -268,18 +272,68 @@ function detectDocumentType(text: string, expectedType: DocumentRecord['type']):
 }
 
 /**
- * Intelligent OCR Scan using Tesseract.js client worker and authenticated backend processing
+ * Intelligent OCR Scan supporting text-based PDFs, scanned image PDFs, multi-page PDFs, and images.
  */
 export async function performOCRScan(
   file: File,
   expectedType: DocumentRecord['type'] | 'Unknown',
   lang: string = 'eng'
 ): Promise<OCRScanResult> {
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
   const isImage = file.type.startsWith('image/');
   let rawText = '';
   let confidence = 75;
+  let pageCount = 1;
 
-  // 1. Try Client-Side Tesseract OCR for images if worker is available
+  // 1. PDF Processing Pipeline (Embedded text extraction + scanned image page rendering fallback)
+  if (isPdf) {
+    try {
+      const pdfRes = await extractPDFTextAndImages(file);
+      pageCount = pdfRes.pageCount || 1;
+
+      if (pdfRes.error) {
+        return {
+          docType: expectedType === 'Unknown' ? 'Aadhaar' : expectedType,
+          docNumber: '',
+          extractedFields: { confidenceScore: 0 },
+          isValidDocType: false,
+          detectedTypeLabel: pdfRes.isEncrypted ? 'Password-Protected PDF' : 'Invalid PDF Document',
+          rawTextPreview: pdfRes.error,
+          pageCount
+        };
+      }
+
+      if (pdfRes.hasEmbeddedText && pdfRes.text.length > 25) {
+        rawText = pdfRes.text;
+        confidence = 90;
+      }
+
+      // If scanned pages exist, apply Tesseract OCR
+      if (pdfRes.pageImages && pdfRes.pageImages.length > 0) {
+        try {
+          const worker = await createWorker(lang || 'eng');
+          for (let p = 0; p < pdfRes.pageImages.length; p++) {
+            const pageDataUrl = pdfRes.pageImages[p];
+            const ret = await worker.recognize(pageDataUrl);
+            const pageText = ret.data.text || '';
+            if (pageText.trim().length > 0) {
+              rawText += `\n--- Page ${p + 1} (Scanned OCR) ---\n${pageText}`;
+              if (ret.data.confidence) {
+                confidence = Math.round((confidence + ret.data.confidence) / 2);
+              }
+            }
+          }
+          await worker.terminate();
+        } catch (tessErr) {
+          console.warn('[OCR Service] PDF page image OCR fallback note:', tessErr);
+        }
+      }
+    } catch (pdfErr) {
+      console.warn('[OCR Service] Client-side PDF processing note:', pdfErr);
+    }
+  }
+
+  // 2. Image Processing Pipeline
   if (isImage) {
     try {
       const worker = await createWorker(lang || 'eng');
@@ -292,7 +346,7 @@ export async function performOCRScan(
     }
   }
 
-  // 2. If client-side OCR didn't yield text or it's a PDF, try backend upload endpoint
+  // 3. Fallback / Synchronize with Backend upload endpoint if authenticated
   if (!rawText && typeof window !== 'undefined') {
     const token = localStorage.getItem('govscheme_token');
     if (token) {
@@ -302,7 +356,8 @@ export async function performOCRScan(
         formData.append('documentType', String(expectedType === 'Unknown' ? 'Aadhaar' : (expectedType || 'Aadhaar')));
         formData.append('language', lang || 'eng');
 
-        const resp = await fetch('/api/documents/upload', {
+        const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+        const resp = await fetch(`${apiUrl}/api/documents/upload`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
@@ -318,6 +373,7 @@ export async function performOCRScan(
               docType: (doc.documentType || expectedType) as DocumentRecord['type'],
               docNumber: docNum,
               maskedDocNumber: docNum.length >= 12 ? maskAadhaar(docNum) : docNum,
+              pageCount: doc.pageCount || pageCount,
               extractedFields: {
                 fullName: ext.fullName,
                 dob: ext.dob,
@@ -347,7 +403,7 @@ export async function performOCRScan(
     }
   }
 
-  // 3. Parse fields from extracted rawText
+  // 4. Parse structured fields from extracted rawText
   const normalizedText = normalizeIndicNumerals(rawText || '');
   const detected = detectDocumentType(normalizedText, expectedType === 'Unknown' ? 'Aadhaar' : expectedType);
   const finalDocType = expectedType === 'Unknown' ? (detected.detectedType as DocumentRecord['type']) : expectedType;
@@ -374,6 +430,7 @@ export async function performOCRScan(
     docType: finalDocType,
     docNumber,
     maskedDocNumber: maskedNumber,
+    pageCount,
     extractedFields: {
       fullName: fullName || undefined,
       dob: dob || undefined,
@@ -389,6 +446,6 @@ export async function performOCRScan(
     },
     isValidDocType: Boolean(rawText && rawText.length > 10),
     detectedTypeLabel: rawText ? `${finalDocType} (OCR Complete)` : `${finalDocType} (Manual Entry Required)`,
-    rawTextPreview: rawText ? rawText.slice(0, 300) : 'No machine-readable text detected. You may enter details manually.'
+    rawTextPreview: rawText ? rawText.slice(0, 400) : 'No machine-readable text detected. You may enter details manually.'
   };
 }

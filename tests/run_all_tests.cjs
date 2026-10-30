@@ -1,6 +1,6 @@
 /**
  * tests/run_all_tests.cjs
- * Tracked, reproducible test harness executing all 17 GovScheme test suites sequentially.
+ * Tracked, reproducible test harness executing all 20 GovScheme test suites sequentially.
  * Provides unified summary table with assertion counts, exit codes, and execution durations.
  */
 
@@ -26,11 +26,15 @@ const suites = [
   'tests/intelligent_document_vault_ocr.test.js',
   'tests/authorized_admin_portal_access.test.js',
   'tests/admin_auth_security_hardening.test.js',
-  'tests/multilingual_language_parity.test.js'
+  'tests/multilingual_language_parity.test.js',
+  'tests/advanced_csc_touchscreen_kiosk.test.js',
+  'tests/homepage_category_repositioning.test.js',
+  'tests/critical_functional_bug_fixes.test.js',
+  'tests/assessment_dashboard_thermal.test.js'
 ];
 
 console.log('========================================================================');
-console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 20-SUITE RUN      ');
+console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 24-SUITE RUN      ');
 console.log('========================================================================\n');
 
 const results = [];
