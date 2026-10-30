@@ -8,8 +8,8 @@ const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
 // Bulk operations
-router.post('/bulk', protect, adminOnly, auditLog('BULK_SCHEME_ACTION'), bulkSchemeAction);
-router.post('/bulk-import', protect, adminOnly, upload.single('file'), auditLog('BULK_IMPORT_SCHEMES'), bulkImportSchemes);
+router.post('/bulk', protect, authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin'), auditLog('BULK_SCHEME_ACTION'), bulkSchemeAction);
+router.post('/bulk-import', protect, authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin'), upload.single('file'), auditLog('BULK_IMPORT_SCHEMES'), bulkImportSchemes);
 
 // Scheme recommendation (Modules 8 & 9)
 router.post('/recommend', optionalAuth, recommendSchemes);

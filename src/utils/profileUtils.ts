@@ -100,10 +100,16 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   const email = String(u.email || p.email || fallbackEmail || '').trim().toLowerCase();
   const mobile = String(u.mobile || p.mobile || '').trim();
 
-  const rawRole = String(u.role || p.role || '').toLowerCase();
-  const role: 'citizen' | 'admin' | 'superadmin' = 
-    rawRole.includes('super') ? 'superadmin' :
-    rawRole.includes('admin') || email === 'admin@govscheme.in' ? 'admin' : 'citizen';
+  const rawRole = String(u.role || p.role || '').trim();
+  const lowerRole = rawRole.toLowerCase();
+  const role: string =
+    (lowerRole === 'superadmin' || lowerRole === 'super admin') ? 'Super Admin' :
+    (lowerRole === 'state admin') ? 'State Admin' :
+    (lowerRole === 'ministry admin') ? 'Ministry Admin' :
+    (lowerRole === 'district officer') ? 'District Officer' :
+    (lowerRole === 'nodal officer') ? 'Nodal Officer' :
+    (lowerRole === 'data entry operator') ? 'Data Entry Operator' :
+    (lowerRole === 'admin') ? 'Admin' : 'Citizen';
 
   const rawAge = u.age !== undefined && u.age !== null && u.age !== '' ? u.age : (p.age !== undefined && p.age !== null && p.age !== '' ? p.age : null);
   const age = rawAge !== null && !isNaN(Number(rawAge)) && Number(rawAge) > 0 ? Number(rawAge) : (undefined as any);

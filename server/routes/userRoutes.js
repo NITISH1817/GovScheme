@@ -1,6 +1,6 @@
 import express from 'express';
 import { getUsers, updateUserStatus, getUserProfile, updateUserProfile, getCitizenDetails } from '../controllers/userController.js';
-import { protect, adminOnly } from '../middleware/authMiddleware.js';
+import { protect, adminOnly, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -15,6 +15,6 @@ router.route('/:id/details')
   .get(protect, adminOnly, getCitizenDetails);
 
 router.route('/:id/status')
-  .put(protect, adminOnly, updateUserStatus);
+  .put(protect, authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin', 'District Officer'), updateUserStatus);
 
 export default router;

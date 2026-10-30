@@ -12,6 +12,6 @@ router.route('/my-applications')
   .get(protect, authorizeRoles('Citizen'), getUserApplications);
 
 router.route('/:id/status')
-  .put(protect, adminOnly, updateApplicationStatus);
+  .put(protect, authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin', 'District Officer', 'Nodal Officer'), updateApplicationStatus);
 
 export default router;

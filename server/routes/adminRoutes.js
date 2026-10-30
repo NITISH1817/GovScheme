@@ -1,16 +1,30 @@
 import express from 'express';
-import mongoose from 'mongoose';
-import User from '../models/User.js';
-import Application from '../models/Application.js';
-import Document from '../models/Document.js';
 import { getUsers, getCitizenDetails, updateUserStatus } from '../controllers/userController.js';
 import { getDashboardAnalytics } from '../controllers/analyticsController.js';
 import { protect, adminOnly, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// All routes in /api/admin require authentication and admin role
+// All routes under /api/admin strictly require valid authentication and an approved administrative role
 router.use(protect, adminOnly);
+
+/**
+ * GET /api/admin/verify-session
+ * Validates the caller's JWT against the database user record and returns authoritative admin profile.
+ */
+router.get('/verify-session', (req, res) => {
+  res.json({
+    success: true,
+    authenticated: true,
+    user: {
+      id: req.user._id,
+      fullName: req.user.fullName,
+      email: req.user.email,
+      role: req.user.role,
+      isActive: req.user.isActive
+    }
+  });
+});
 
 /**
  * GET /api/admin/citizens
@@ -26,9 +40,13 @@ router.get('/citizens/:id', getCitizenDetails);
 
 /**
  * PUT /api/admin/citizens/:id/status
- * Activate or suspend a citizen account (Excludes Data Entry Operators)
+ * Activate or suspend a citizen account (Excludes Data Entry Operators & Nodal Officers)
  */
-router.put('/citizens/:id/status', authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin', 'District Officer'), updateUserStatus);
+router.put(
+  '/citizens/:id/status',
+  authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin', 'District Officer'),
+  updateUserStatus
+);
 
 /**
  * GET /api/admin/analytics

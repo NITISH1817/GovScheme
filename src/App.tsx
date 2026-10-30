@@ -9,7 +9,7 @@ import { initialUserProfile, initialApplications, initialNotifications } from '.
 import { evaluateSchemeEligibility } from './engine/ruleEngine';
 import { computeMLRecommendation } from './engine/mlEngine';
 import { calculateProfileCompletion, normalizeUserProfile, isProfileComplete } from './utils/profileUtils';
-import { isAuthorizedAdminUser, getAuthorizedAdminEmails, getAdminAccountMention, DEFAULT_AUTHORIZED_ADMIN_EMAILS } from './utils/adminAuth';
+import { isAuthorizedAdminUser, getAuthorizedAdminEmails, getAdminAccountMention, DEFAULT_AUTHORIZED_ADMIN_EMAILS, verifyAdminSessionWithBackend } from './utils/adminAuth';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LandingPage } from './components/LandingPage';
@@ -172,6 +172,53 @@ export const App: React.FC = () => {
 
   const [isBooting, setIsBooting] = useState(true);
   const [adminLoginRequested, setAdminLoginRequested] = useState(false);
+  const [isAdminVerifying, setIsAdminVerifying] = useState<boolean>(() => getInitialTab() === 'admin');
+  const [isAdminSessionVerified, setIsAdminSessionVerified] = useState<boolean>(false);
+  const [adminVerificationError, setAdminVerificationError] = useState<string | null>(null);
+
+  // Authoritative session verification: when Admin tab is active, verify JWT with backend
+  useEffect(() => {
+    if (activeTab === 'admin') {
+      const token = localStorage.getItem('adminToken') || user?.token;
+      if (!token || token.startsWith('mock-') || token.includes('mock')) {
+        setIsAdminSessionVerified(false);
+        setIsAdminVerifying(false);
+        setAdminLoginRequested(true);
+        return;
+      }
+
+      let isMounted = true;
+      setIsAdminVerifying(true);
+      setAdminVerificationError(null);
+
+      verifyAdminSessionWithBackend(token).then((res) => {
+        if (!isMounted) return;
+        setIsAdminVerifying(false);
+        if (res.valid && res.user) {
+          setUser(res.user);
+          setIsAdminSessionVerified(true);
+          localStorage.setItem('adminUser', JSON.stringify(res.user));
+          localStorage.setItem('govscheme_user', JSON.stringify(res.user));
+          setAdminLoginRequested(false);
+        } else {
+          setIsAdminSessionVerified(false);
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          if (res.status === 503) {
+            setAdminVerificationError('Administrator authentication service is temporarily unavailable. Please try again later.');
+          } else {
+            setAdminLoginRequested(true);
+          }
+        }
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    } else {
+      setIsAdminVerifying(false);
+    }
+  }, [activeTab]);
 
   // Sync theme & accessibility font sizing onto html tag
   useEffect(() => {
@@ -967,42 +1014,9 @@ export const App: React.FC = () => {
     return isAuthorizedAdminUser(u);
   };
 
-  const handleAutoConnectAdmin = () => {
-    if (user && !isAdminUser(user)) {
-      localStorage.setItem('saved_citizen_user', JSON.stringify(user));
-    }
-    const adminUser: UserProfile = {
-      id: 'admin_1',
-      fullName: 'Super Administrator',
-      email: 'admin@govscheme.in',
-      mobile: '9999999999',
-      age: 40,
-      gender: 'Male',
-      state: 'Central',
-      district: 'New Delhi',
-      category: 'General',
-      occupation: 'Government Administrator',
-      annualIncome: 1200000,
-      landHoldingAcres: 0,
-      educationLevel: 'Post Graduate',
-      familyMembersCount: 4,
-      hasDisability: false,
-      verificationBadge: true,
-      profileCompletionScore: 100,
-      savedSchemeIds: [],
-      documents: [],
-      role: 'Super Admin',
-      token: localStorage.getItem('adminToken') || 'mock-admin-token-govscheme-2026'
-    };
-    setUser(adminUser);
-    localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
-    localStorage.setItem('adminUser', JSON.stringify(adminUser));
-    localStorage.setItem('adminToken', adminUser.token || 'mock-admin-token-govscheme-2026');
-    setAdminLoginRequested(false);
-    setActiveTab('admin');
-  };
-
   const handleExitAdmin = () => {
+    setIsAdminSessionVerified(false);
+    setIsAdminVerifying(false);
     const savedCitizen = localStorage.getItem('saved_citizen_user');
     if (savedCitizen) {
       try {
@@ -1016,12 +1030,58 @@ export const App: React.FC = () => {
 
   // If Admin Mode
   if (activeTab === 'admin') {
-    if (!isAdminUser(user)) {
+    if (isAdminVerifying) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#07111F] p-4 font-sans">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Verifying Administrator Authentication with Backend Authority...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (adminVerificationError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#07111F] p-4 font-sans">
+          <div className="max-w-md w-full bg-white dark:bg-[#0F1B2D] rounded-2xl shadow-xl p-8 border border-amber-200 dark:border-amber-900/40 text-center">
+            <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Service Temporarily Unavailable</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-xs mb-6 leading-relaxed">
+              {adminVerificationError}
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setAdminVerificationError(null);
+                  setActiveTabState('admin');
+                }}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs transition shadow-md"
+              >
+                Retry Authentication
+              </button>
+              <button
+                onClick={handleExitAdmin}
+                className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs transition"
+              >
+                Return to Citizen Portal
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isAdminUser(user) || !isAdminSessionVerified) {
       if (!user || adminLoginRequested) {
         return (
           <AdminLogin
             onLoginSuccess={(u) => {
               setUser(u);
+              setIsAdminSessionVerified(true);
+              setIsAdminVerifying(false);
               localStorage.setItem('govscheme_user', JSON.stringify(u));
               localStorage.setItem('adminUser', JSON.stringify(u));
               if (u.token) {

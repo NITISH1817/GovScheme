@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Document from '../models/Document.js';
 import { formatUserProfile } from './userController.js';
 import { getJwtSecret } from '../config/jwtConfig.js';
+import { isValidAdminRole, isAuthorizedAdminEmail } from '../config/adminPolicy.js';
 
 const generateToken = (id, name, role) => {
   return jwt.sign({ id, name, role }, getJwtSecret(), {
@@ -167,6 +168,109 @@ export const loginUser = async (req, res) => {
   } catch (error) {
     console.error('[Login Error]:', error);
     res.status(500).json({ success: false, message: 'Login service encountered an unexpected error. Please try again.' });
+  }
+};
+
+/**
+ * Dedicated Administrator Login Endpoint
+ * Enforces:
+ * - Active account status check.
+ * - Authoritative MongoDB role verification against approved administrative roles.
+ * - Server-side email allowlist validation for Super Admin accounts.
+ * - Issues a real signed JWT upon success.
+ * - Rejects non-administrative users with HTTP 403 Forbidden.
+ */
+export const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const ipAddress = req.ip || req.connection?.remoteAddress || '127.0.0.1';
+    const device = req.headers?.['user-agent'] || 'Unknown';
+
+    if (!email || !password || typeof password !== 'string') {
+      return res.status(400).json({ success: false, message: 'Please provide both admin email and password' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== 'string' || !emailRegex.test(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid administrator email or password' });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({ success: false, message: 'Your administrative account has been suspended. Please contact the system administrator.' });
+    }
+
+    // Check Lockout
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      return res.status(423).json({ success: false, message: 'Account locked due to consecutive failed attempts. Try again later.' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      user.loginAttempts = (user.loginAttempts || 0) + 1;
+      if (user.loginAttempts >= 5) {
+        user.lockUntil = Date.now() + 15 * 60 * 1000;
+      }
+      user.loginHistory.push({ ipAddress, device, status: 'Failed' });
+      if (user.loginHistory.length > 50) user.loginHistory.shift();
+      await user.save();
+
+      const message = user.loginAttempts >= 5
+        ? 'Account locked due to too many failed attempts.'
+        : 'Invalid administrator email or password';
+      return res.status(401).json({ success: false, message });
+    }
+
+    // Authoritative Database Role Verification
+    if (!isValidAdminRole(user.role) || String(user.role).toLowerCase() === 'citizen') {
+      user.loginHistory.push({ ipAddress, device, status: 'Failed' });
+      await user.save();
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Account does not have administrative privileges.'
+      });
+    }
+
+    // Server-Side Email Allowlist Validation for Super Admin accounts
+    if ((user.role === 'Super Admin' || String(user.role).toLowerCase() === 'superadmin') && !isAuthorizedAdminEmail(normalizedEmail)) {
+      user.loginHistory.push({ ipAddress, device, status: 'Failed' });
+      await user.save();
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Account is not in the authorized administrator allowlist.'
+      });
+    }
+
+    // Successful Admin Login
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    user.loginHistory.push({ ipAddress, device, status: 'Success' });
+    if (user.loginHistory.length > 50) user.loginHistory.shift();
+    await user.save();
+
+    const token = generateToken(user._id, user.fullName, user.role);
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        token
+      },
+      token
+    });
+  } catch (error) {
+    console.error('[Admin Login Error]:', error);
+    res.status(500).json({ success: false, message: 'Administrator authentication service encountered an error. Please try again.' });
   }
 };
 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Shield, Activity, Database, Lock, ArrowRight, ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Shield, Activity, Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { GovSchemeLogo3D } from '../brand';
-import { isAuthorizedAdminEmail, DEFAULT_AUTHORIZED_ADMIN_EMAILS } from '../../utils/adminAuth';
+import { DEFAULT_AUTHORIZED_ADMIN_EMAILS, isAuthorizedAdminRole } from '../../utils/adminAuth';
 
 interface AdminLoginProps {
   onLoginSuccess: (user: UserProfile) => void;
@@ -16,134 +16,110 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
   const [showPassword, setShowPassword] = useState(false);
   const [loginState, setLoginState] = useState<'idle' | 'authenticating' | 'verifying' | 'loading' | 'error'>('idle');
   const [isFocused, setIsFocused] = useState<'email' | 'password' | null>(null);
-
   const [errorMessage, setErrorMessage] = useState('');
 
   const executeLogin = async () => {
+    if (!email.trim() || !password) {
+      setErrorMessage('Please provide both administrator email and password.');
+      setLoginState('error');
+      return;
+    }
+
     try {
       setLoginState('authenticating');
       setErrorMessage('');
 
-      // Real backend authentication
+      const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+
+      let response: Response;
       try {
-        const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
-        const response = await fetch(`${API_URL}/api/auth/login`, {
+        // First try the dedicated administrative login endpoint
+        response = await fetch(`${API_URL}/api/auth/admin-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email.trim(), password })
         });
-        const data = await response.json();
 
-        if (response.ok && data.success) {
-          localStorage.setItem('adminToken', data.token);
-          localStorage.setItem('govscheme_token', data.token);
-          const adminUser: UserProfile = {
-            id: data._id || data.id || 'admin_1',
-            fullName: data.fullName || 'Super Admin',
-            email: data.email || email,
-            mobile: data.mobile || '9999999999',
-            age: 40,
-            gender: 'Male',
-            state: data.state || 'Central',
-            district: data.district || 'New Delhi',
-            category: 'General',
-            occupation: 'Government Official',
-            annualIncome: 1200000,
-            landHoldingAcres: 0,
-            educationLevel: 'Post Graduate',
-            familyMembersCount: 4,
-            hasDisability: false,
-            verificationBadge: true,
-            profileCompletionScore: 100,
-            savedSchemeIds: [],
-            documents: data.documents || [],
-            role: data.role || 'Super Admin',
-            token: data.token
-          };
-          localStorage.setItem('adminUser', JSON.stringify(adminUser));
-          localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
-          setLoginState('loading');
-          setTimeout(() => onLoginSuccess(adminUser), 400);
+        // Fallback to primary auth endpoint if admin-login is not yet routed on legacy server
+        if (response.status === 404) {
+          response = await fetch(`${API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.trim(), password })
+          });
+        }
+      } catch (networkErr: any) {
+        console.warn('[Admin Auth] Backend connection failure:', networkErr.message);
+        // Fail closed on backend connection error. NEVER produce mock tokens.
+        setErrorMessage('Administrator authentication service is temporarily unavailable. Please try again later.');
+        setLoginState('error');
+        return;
+      }
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.success && data.token) {
+        const returnedUser = data.user || data;
+        const role = (returnedUser.role || '').trim();
+
+        // Enforce administrative role requirement from authoritative database response
+        if (!isAuthorizedAdminRole(role) || role.toLowerCase() === 'citizen') {
+          setErrorMessage('Access denied: Account does not have administrative privileges.');
+          setLoginState('error');
           return;
         }
-      } catch (networkErr) {
-        console.warn('Backend login endpoint unavailable, checking local fallback', networkErr);
-      }
 
-      // Fallback for standard admin authentication (works in both development and production when backend is sleeping)
-      const trimmedEmail = email.trim().toLowerCase();
-      const isAuthorized = isAuthorizedAdminEmail(trimmedEmail) || trimmedEmail.includes('admin');
-      if (isAuthorized && (password === 'password123' || password === 'admin' || password.length >= 4)) {
-        localStorage.setItem('adminToken', 'mock-admin-token-govscheme-2026');
         const adminUser: UserProfile = {
-          id: 'admin_1',
-          fullName: trimmedEmail.includes('nitish') ? 'Nitish Priyan (Super Admin)' : 'Super Administrator',
-          email: trimmedEmail || 'admin@govscheme.in',
-          mobile: '9999999999',
-          age: 40,
-          gender: 'Male',
-          state: 'Central',
-          district: 'New Delhi',
-          category: 'General',
-          occupation: 'Super Admin',
-          annualIncome: 1200000,
-          landHoldingAcres: 0,
-          educationLevel: 'Post Graduate',
-          familyMembersCount: 4,
-          hasDisability: false,
+          id: returnedUser._id || returnedUser.id || 'admin',
+          fullName: returnedUser.fullName || 'Administrator',
+          email: returnedUser.email || email.trim(),
+          mobile: returnedUser.mobile || '',
+          age: returnedUser.age || 40,
+          gender: returnedUser.gender || 'Male',
+          state: returnedUser.state || 'Central',
+          district: returnedUser.district || 'New Delhi',
+          category: returnedUser.category || 'General',
+          occupation: returnedUser.occupation || 'Government Administrator',
+          annualIncome: returnedUser.annualIncome || 1200000,
+          landHoldingAcres: returnedUser.landHoldingAcres || 0,
+          educationLevel: returnedUser.educationLevel || 'Post Graduate',
+          familyMembersCount: returnedUser.familyMembersCount || 4,
+          hasDisability: Boolean(returnedUser.hasDisability),
           verificationBadge: true,
           profileCompletionScore: 100,
-          savedSchemeIds: [],
-          documents: [],
-          role: 'Super Admin'
+          savedSchemeIds: returnedUser.savedSchemeIds || [],
+          documents: returnedUser.documents || [],
+          role: returnedUser.role,
+          token: data.token
         };
+
+        // Store authoritative backend token and profile
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('govscheme_token', data.token);
         localStorage.setItem('adminUser', JSON.stringify(adminUser));
         localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
+
         setLoginState('loading');
-        setTimeout(() => onLoginSuccess(adminUser), 400);
-      } else {
-        setErrorMessage(`Invalid admin credentials. Access is restricted to authorized administrative accounts (${DEFAULT_AUTHORIZED_ADMIN_EMAILS.join(', ')}).`);
-        setLoginState('error');
+        setTimeout(() => onLoginSuccess(adminUser), 300);
+        return;
       }
+
+      // Handle specific backend HTTP status responses
+      if (response.status === 403) {
+        setErrorMessage(data.message || 'Access denied: Account does not have administrative privileges.');
+      } else if (response.status === 401) {
+        setErrorMessage(data.message || 'Invalid administrator email or password.');
+      } else if (response.status === 423) {
+        setErrorMessage(data.message || 'Account locked due to consecutive failed attempts. Please try again later.');
+      } else {
+        setErrorMessage(data.message || 'Administrator authentication failed. Please check your credentials.');
+      }
+      setLoginState('error');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Authentication failed');
+      console.error('[Admin Auth] Error executing login:', err);
+      setErrorMessage(err.message || 'Administrator authentication service encountered an error.');
       setLoginState('error');
     }
-  };
-
-  const handleInstantAutoConnect = (preferredEmail: string = 'admin@govscheme.in') => {
-    setLoginState('authenticating');
-    setErrorMessage('');
-    const targetEmail = preferredEmail.trim().toLowerCase();
-    const adminUser: UserProfile = {
-      id: 'admin_1',
-      fullName: targetEmail.includes('nitish') ? 'Nitish Priyan (Super Admin)' : 'Super Administrator',
-      email: targetEmail,
-      mobile: '9999999999',
-      age: 40,
-      gender: 'Male',
-      state: 'Central',
-      district: 'New Delhi',
-      category: 'General',
-      occupation: 'Super Administrator',
-      annualIncome: 1200000,
-      landHoldingAcres: 0,
-      educationLevel: 'Post Graduate',
-      familyMembersCount: 4,
-      hasDisability: false,
-      verificationBadge: true,
-      profileCompletionScore: 100,
-      savedSchemeIds: [],
-      documents: [],
-      role: 'Super Admin',
-      token: 'mock-admin-token-govscheme-2026'
-    };
-    localStorage.setItem('adminToken', 'mock-admin-token-govscheme-2026');
-    localStorage.setItem('govscheme_token', 'mock-admin-token-govscheme-2026');
-    localStorage.setItem('adminUser', JSON.stringify(adminUser));
-    localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
-    setLoginState('loading');
-    setTimeout(() => onLoginSuccess(adminUser), 300);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -163,7 +139,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
         
         {/* Left Side - Brand & Security */}
         <div className="w-full md:w-5/12 bg-[#123C69] dark:bg-[#101D31] p-10 text-white flex-col justify-between relative overflow-hidden hidden md:flex">
-          {/* Animated 2D Background */}
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
               <motion.path 
@@ -184,18 +159,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
                 animate={{ pathLength: 1, opacity: 0.3, x: [0, -50, 0] }}
                 transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
               />
-              <motion.path 
-                d="M-100,350 Q300,200 600,400 T1100,350" 
-                fill="none" 
-                stroke="#60A5FA" 
-                strokeWidth="1"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.4, x: [-20, 20, -20] }}
-                transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-              />
             </svg>
-            
-            {/* Grid */}
             <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
           </div>
 
@@ -222,35 +186,35 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-sm font-medium">
                 <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center"><CheckCircle2 className="w-4 h-4 text-[#4ADE80]" /></div>
-                Secure Platform
+                Authenticated Backend Security
               </div>
               <div className="flex items-center gap-3 text-sm font-medium">
                 <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center"><CheckCircle2 className="w-4 h-4 text-[#4ADE80]" /></div>
-                Verified Data
+                Strict Role-Based Authorization
               </div>
               <div className="flex items-center gap-3 text-sm font-medium">
                 <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center"><CheckCircle2 className="w-4 h-4 text-[#4ADE80]" /></div>
-                Role-Based Access
+                No Mock or Offline Escalation
               </div>
             </div>
           </div>
 
           <div className="relative z-10 mt-12 pt-6 border-t border-blue-800/50">
             <div className="flex items-center gap-2 mb-2 text-xs font-bold text-blue-300 tracking-wider">
-              <Shield className="w-4 h-4" /> SECURE ADMIN ACCESS
+              <Shield className="w-4 h-4" /> SECURE ADMIN ACCESS GATEWAY
             </div>
             <div className="text-xs text-blue-400/80 space-y-1">
-              <div>✓ Encrypted authentication</div>
-              <div>✓ Role-based authorization</div>
+              <div>✓ Verified MongoDB Authority</div>
+              <div>✓ Cryptographic JWT Validation</div>
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-blue-800/30">
                 <div className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse"></div>
-                System status operational
+                Security Protocol Active
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side - Login */}
+        {/* Right Side - Login Form */}
         <div className="w-full md:w-7/12 p-8 md:p-16 flex flex-col justify-center bg-[#FFFFFF] dark:bg-[#0B1424]">
           <div className="max-w-md w-full mx-auto">
             {/* Top Return to Citizen Portal */}
@@ -269,46 +233,37 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
             </div>
 
             <div className="mb-6 text-center md:text-left">
-              <h2 className="text-3xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-2">Welcome back</h2>
-              <p className="text-[#64748B] dark:text-[#94A3B8]">Administrator Command Center</p>
+              <h2 className="text-3xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-2">Administrator Sign In</h2>
+              <p className="text-[#64748B] dark:text-[#94A3B8] text-sm">
+                Enter your official administrative credentials to access the GovScheme Command Center.
+              </p>
             </div>
 
-            {/* Authorized Admin Notice & Quick Connect */}
-            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-blue-900/10 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-blue-950/40 border border-blue-500/20">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  Authorized Administrator Access
-                </span>
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                  2 Accounts Allowed
-                </span>
+            {/* Authoritative Security Notice */}
+            <div className="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+              <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-semibold mb-1.5">
+                <Shield className="w-4 h-4 text-amber-500" />
+                <span>Restricted Administrative Zone</span>
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
-                Administrative privileges are strictly restricted to authorized emails:
-                <br />
-                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">admin@govscheme.in</span>
-                {' '}&bull;{' '}
-                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">nitishpriyan1807@gmail.com</span>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+                Authentication strictly requires an active, verified MongoDB administrative account. Citizens and guests are denied access.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleInstantAutoConnect('admin@govscheme.in')}
-                  disabled={loginState === 'authenticating' || loginState === 'loading'}
-                  className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Connect as admin@govscheme.in</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInstantAutoConnect('nitishpriyan1807@gmail.com')}
-                  disabled={loginState === 'authenticating' || loginState === 'loading'}
-                  className="py-2 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Connect as Nitish Priyan</span>
-                </button>
+              <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span className="text-slate-500">Authorized Accounts:</span>
+                {DEFAULT_AUTHORIZED_ADMIN_EMAILS.map((admEmail) => (
+                  <button
+                    key={admEmail}
+                    type="button"
+                    onClick={() => {
+                      setEmail(admEmail);
+                      setErrorMessage('');
+                    }}
+                    className="font-mono text-blue-600 dark:text-blue-400 hover:underline px-1 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40"
+                    title={`Fill ${admEmail}`}
+                  >
+                    {admEmail}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -316,54 +271,34 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 p-4 rounded-lg bg-[#B91C1C]/10 border border-[#B91C1C]/20 flex flex-col gap-1"
+                className="mb-6 p-4 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 flex items-start gap-3"
               >
-                <div className="text-[#B91C1C] dark:text-[#F87171] font-bold text-sm">Unable to sign in</div>
-                <div className="text-[#B91C1C]/80 dark:text-[#F87171]/80 text-xs">{errorMessage || 'Check your credentials and try again.'}</div>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-[#1769FF] dark:text-[#60A5FA]">
-                  <span>Quick Fill:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail('admin@govscheme.in');
-                      setPassword('password123');
-                      setLoginState('idle');
-                    }}
-                    className="hover:underline cursor-pointer bg-transparent border-0 p-0 text-[#1769FF] dark:text-[#60A5FA]"
-                  >
-                    admin@govscheme.in
-                  </button>
-                  <span>|</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail('nitishpriyan1807@gmail.com');
-                      setPassword('password123');
-                      setLoginState('idle');
-                    }}
-                    className="hover:underline cursor-pointer bg-transparent border-0 p-0 text-[#1769FF] dark:text-[#60A5FA]"
-                  >
-                    nitishpriyan1807@gmail.com
-                  </button>
+                <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="text-rose-700 dark:text-rose-300 font-bold text-sm">Authentication Failed</div>
+                  <div className="text-rose-600 dark:text-rose-400 text-xs mt-0.5 leading-relaxed">
+                    {errorMessage || 'Authentication failed. Please verify your credentials and try again.'}
+                  </div>
                 </div>
               </motion.div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-[#07111F] dark:text-[#F8FAFC] mb-2 transition-colors">
-                  Admin ID / Email
+                  Administrator Email
                 </label>
                 <div className={`relative rounded-lg border transition-all duration-300 ${isFocused === 'email' ? 'border-[#1769FF] dark:border-[#60A5FA] shadow-[0_0_0_3px_rgba(23,105,255,0.1)]' : 'border-[#E2E8F0] dark:border-[#243449]'} bg-[#F8FAFC] dark:bg-[#101D31]`}>
-                  <input 
-                    type="text" 
+                  <input
+                    type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onFocus={() => setIsFocused('email')}
                     onBlur={() => setIsFocused(null)}
-                    disabled={loginState !== 'idle' && loginState !== 'error'}
+                    disabled={loginState === 'authenticating' || loginState === 'loading'}
+                    required
                     className="w-full px-4 py-3 bg-transparent border-none outline-none text-[#07111F] dark:text-[#F8FAFC] placeholder-[#94A3B8]"
-                    placeholder="admin@gov.in"
+                    placeholder="admin@govscheme.in"
                   />
                 </div>
               </div>
@@ -380,82 +315,37 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
                     onChange={(e) => setPassword(e.target.value)}
                     onFocus={() => setIsFocused('password')}
                     onBlur={() => setIsFocused(null)}
-                    disabled={loginState !== 'idle' && loginState !== 'error'}
+                    disabled={loginState === 'authenticating' || loginState === 'loading'}
+                    required
                     className="w-full pl-11 pr-12 py-3 bg-transparent border-none outline-none text-[#07111F] dark:text-[#F8FAFC] placeholder-[#94A3B8] tracking-wide"
-                    placeholder="••••••••"
+                    placeholder="••••••••••••"
                   />
                   <button 
                     type="button" 
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 text-[#94A3B8] hover:text-[#07111F] dark:hover:text-[#F8FAFC] transition-colors focus:outline-none"
-                    disabled={loginState !== 'idle' && loginState !== 'error'}
+                    disabled={loginState === 'authenticating' || loginState === 'loading'}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="remember" className="rounded border-[#E2E8F0] dark:border-[#243449] text-[#1769FF] focus:ring-[#1769FF] dark:bg-[#101D31]" />
-                  <label htmlFor="remember" className="text-xs text-[#64748B] dark:text-[#94A3B8] cursor-pointer">Remember me</label>
-                </div>
-                <button type="button" className="text-xs font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline">
-                  Forgot password?
-                </button>
-              </div>
-
               <button 
                 type="submit"
-                disabled={loginState !== 'idle' && loginState !== 'error'}
-                className="w-full py-3.5 px-4 bg-[#1769FF] hover:bg-[#123C69] disabled:bg-[#1769FF]/70 text-white rounded-lg font-bold transition-all duration-300 flex justify-center items-center gap-2 shadow-lg shadow-blue-500/20"
+                disabled={loginState === 'authenticating' || loginState === 'loading'}
+                className="w-full py-3.5 px-4 bg-[#1769FF] hover:bg-[#123C69] disabled:bg-[#1769FF]/60 text-white rounded-lg font-bold transition-all duration-300 flex justify-center items-center gap-2 shadow-lg shadow-blue-500/20 mt-2"
               >
-                {loginState === 'idle' || loginState === 'error' ? (
-                  <>Secure Sign In <ArrowRight className="w-4 h-4" /></>
-                ) : (
+                {loginState === 'authenticating' || loginState === 'loading' ? (
                   <div className="flex items-center gap-2">
                     <Activity className="w-4 h-4 animate-spin" />
-                    <span>
-                      {loginState === 'authenticating' && 'Authenticating...'}
-                      {loginState === 'verifying' && 'Verifying credentials...'}
-                      {loginState === 'loading' && 'Loading workspace...'}
-                    </span>
+                    <span>Verifying with Database Authority...</span>
                   </div>
+                ) : (
+                  <>Secure Administrator Sign In <ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
             </form>
-
-            {/* Quick Demo Helper */}
-            <div className="mt-8 pt-4 border-t border-[#E2E8F0] dark:border-[#243449] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
-              <span className="text-center sm:text-left">Authorized Admin Quick Fill:</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('admin@govscheme.in');
-                    setPassword('password123');
-                    setLoginState('idle');
-                    setErrorMessage('');
-                  }}
-                  className="font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline cursor-pointer bg-transparent border-0 p-0"
-                >
-                  admin@govscheme.in
-                </button>
-                <span>&bull;</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('nitishpriyan1807@gmail.com');
-                    setPassword('password123');
-                    setLoginState('idle');
-                    setErrorMessage('');
-                  }}
-                  className="font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline cursor-pointer bg-transparent border-0 p-0"
-                >
-                  nitishpriyan1807@gmail.com
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </motion.div>
