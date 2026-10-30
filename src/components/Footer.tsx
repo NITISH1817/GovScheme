@@ -1,15 +1,17 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Building2, ShieldCheck, ExternalLink, Phone, Info, Globe2, FileText } from 'lucide-react';
-import { LanguageCode } from '../types';
+import { LanguageCode, UserProfile } from '../types';
+import { isAuthorizedAdminUser } from '../utils/adminAuth';
 import { translations } from '../data/translations';
 
 interface FooterProps {
+  user?: UserProfile | null;
   currentLang: LanguageCode;
   onNavigate: (tab: string) => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate, user }) => {
   const { t } = useTranslation();
 
   return (
@@ -135,7 +137,17 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate }) => {
             <span>•</span>
             <button onClick={() => onNavigate('kiosk')} className="hover:text-slate-300">{t('navKiosk', 'CSC Kiosk Mode')}</button>
             <span>•</span>
-            <button onClick={() => onNavigate('admin')} className="hover:text-slate-300">{t('navAdmin', 'Admin Portal')}</button>
+            {isAuthorizedAdminUser(user) && (
+              <>
+                <button
+                  onClick={() => onNavigate('admin')}
+                  className="hover:text-amber-400 text-amber-500/90 font-medium"
+                  title={`Admin Portal (Authorized: ${user?.email || 'admin@govscheme.in'})`}
+                >
+                  {t('navAdmin', 'Admin Portal')} ({user?.email})
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

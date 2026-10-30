@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile } from '../types';
 import { languages } from '../data/translations';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isAuthorizedAdminUser } from '../utils/adminAuth';
 
 interface NavbarProps {
   currentLang: LanguageCode;
@@ -41,31 +42,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { t } = useTranslation();
   const customBezier = [0.32, 0.72, 0, 1];
 
-  const isAdminUser = (u: UserProfile | null | undefined): boolean => {
-    if (!u) return false;
-    if (u.email === 'admin@govscheme.in') return true;
-    const role = (u.role || '').toLowerCase();
-    return (
-      role.includes('admin') ||
-      role === 'super admin' ||
-      role === 'superadmin' ||
-      role === 'state admin' ||
-      role === 'ministry admin' ||
-      role === 'district officer' ||
-      role === 'nodal officer' ||
-      role === 'data entry operator'
-    );
-  };
+  const isCurrentAdmin = isAuthorizedAdminUser(user);
 
-  const navItems = [
+  interface NavItem {
+    id: string;
+    label: string;
+    isAI?: boolean;
+    isKiosk?: boolean;
+    isAdmin?: boolean;
+  }
+
+  const baseNavItems: NavItem[] = [
     { id: 'home', label: t('navHome', 'Home') },
     { id: 'schemes', label: t('navSchemes', 'Schemes') },
     { id: 'assistant', label: t('navAssistant', 'AI Assistant'), isAI: true },
     { id: 'vault', label: t('navVault', 'Vault') },
     { id: 'tracker', label: t('navTracker', 'Tracker') },
     { id: 'kiosk', label: t('navKiosk', 'CSC Kiosk'), isKiosk: true },
-    { id: 'admin', label: t('navAdmin', 'Admin Portal'), isAdmin: true },
   ];
+
+  // Admin Portal tab is strictly reserved for verified authorized administrator accounts
+  const navItems: NavItem[] = isCurrentAdmin
+    ? [...baseNavItems, { id: 'admin', label: t('navAdmin', 'Admin Portal'), isAdmin: true }]
+    : baseNavItems;
 
   return (
     <>
@@ -222,33 +221,21 @@ export const Navbar: React.FC<NavbarProps> = ({
               </AnimatePresence>
             </div>
 
-            {/* Admin Portal Quick Launch Button */}
-            {isAdminUser(user) ? (
+            {/* Admin Portal Quick Launch Button - ONLY displayed for verified authorized admin accounts */}
+            {isCurrentAdmin && (
               <button
                 onClick={() => setActiveTab('admin')}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
                   activeTab === 'admin'
-                    ? 'bg-amber-500 text-white shadow-amber-500/25'
+                    ? 'bg-amber-500 text-white shadow-amber-500/25 ring-2 ring-amber-400'
                     : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
                 }`}
-                title="Admin Command Center (Connected)"
+                title={`Admin Command Center (Authorized: ${user?.email || 'admin@govscheme.in'})`}
               >
                 <Shield className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
                 <span className="hidden sm:inline">Admin Portal</span>
+                <span className="text-[10px] font-mono opacity-80 hidden lg:inline">({user?.email})</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              </button>
-            ) : (
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'admin'
-                    ? 'bg-gov-navy text-white dark:bg-white dark:text-black'
-                    : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800/40'
-                }`}
-                title="Admin & Official Portal Access"
-              >
-                <Shield className="w-3.5 h-3.5 text-[#1769FF] dark:text-[#60A5FA]" />
-                <span className="hidden sm:inline">Admin Portal</span>
               </button>
             )}
 
@@ -310,13 +297,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <Printer className="w-4 h-4 text-primary" /> {t('reports', 'Reports (AI Printer)')}
                       </button>
                       
-                      {isAdminUser(user) ? (
-                        <button onClick={() => { setActiveTab('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-amber-500/10 flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                          <Shield className="w-4 h-4" /> Admin Command Center
-                        </button>
-                      ) : (
-                        <button onClick={() => { setActiveTab('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-blue-500/10 flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                          <Shield className="w-4 h-4" /> Switch to Admin Portal
+                      {isCurrentAdmin && (
+                        <button
+                          onClick={() => { setActiveTab('admin'); setUserDropdownOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-xs font-bold rounded-xl hover:bg-amber-500/10 flex items-center justify-between text-amber-600 dark:text-amber-400"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            <span>Admin Command Center</span>
+                          </div>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                            {user?.email}
+                          </span>
                         </button>
                       )}
                       
@@ -412,23 +404,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               ))}
               
-              {/* Admin Portal in Mobile Menu */}
-              <div className="overflow-hidden">
-                <motion.button
-                  initial={{ y: 40, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -40, opacity: 0 }}
-                  onClick={() => {
-                    setActiveTab('admin');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`text-2xl font-extrabold flex items-center gap-2 justify-center ${
-                    isAdminUser(user) ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'
-                  }`}
-                >
-                  <Shield className="w-6 h-6" /> {isAdminUser(user) ? 'Admin Command Center' : 'Admin Portal'}
-                </motion.button>
-              </div>
+              {/* Admin Portal in Mobile Menu - ONLY for verified authorized administrator accounts */}
+              {isCurrentAdmin && (
+                <div className="overflow-hidden">
+                  <motion.button
+                    initial={{ y: 40, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -40, opacity: 0 }}
+                    onClick={() => {
+                      setActiveTab('admin');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-2xl font-extrabold flex flex-col items-center gap-1 justify-center text-amber-600 dark:text-amber-400"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-6 h-6" /> Admin Command Center
+                    </div>
+                    <span className="text-xs font-mono font-normal opacity-80">
+                      Authorized: {user?.email}
+                    </span>
+                  </motion.button>
+                </div>
+              )}
               
               {/* Mobile Menu Auth Buttons */}
               {!user && (

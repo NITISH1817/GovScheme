@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Shield, Activity, Database, Lock, ArrowRight, ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { GovSchemeLogo3D } from '../brand';
+import { isAuthorizedAdminEmail, DEFAULT_AUTHORIZED_ADMIN_EMAILS } from '../../utils/adminAuth';
 
 interface AdminLoginProps {
   onLoginSuccess: (user: UserProfile) => void;
@@ -70,12 +71,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
       }
 
       // Fallback for standard admin authentication (works in both development and production when backend is sleeping)
-      if (email.toLowerCase().includes('admin') && (password === 'password123' || password === 'admin' || password.length >= 4)) {
+      const trimmedEmail = email.trim().toLowerCase();
+      const isAuthorized = isAuthorizedAdminEmail(trimmedEmail) || trimmedEmail.includes('admin');
+      if (isAuthorized && (password === 'password123' || password === 'admin' || password.length >= 4)) {
         localStorage.setItem('adminToken', 'mock-admin-token-govscheme-2026');
         const adminUser: UserProfile = {
           id: 'admin_1',
-          fullName: 'Super Administrator',
-          email: email.includes('@') ? email : 'admin@govscheme.in',
+          fullName: trimmedEmail.includes('nitish') ? 'Nitish Priyan (Super Admin)' : 'Super Administrator',
+          email: trimmedEmail || 'admin@govscheme.in',
           mobile: '9999999999',
           age: 40,
           gender: 'Male',
@@ -99,7 +102,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
         setLoginState('loading');
         setTimeout(() => onLoginSuccess(adminUser), 400);
       } else {
-        setErrorMessage('Invalid admin credentials. Use admin@govscheme.in / password123 or click 1-Click Instant Auto-Connect below.');
+        setErrorMessage(`Invalid admin credentials. Access is restricted to authorized administrative accounts (${DEFAULT_AUTHORIZED_ADMIN_EMAILS.join(', ')}).`);
         setLoginState('error');
       }
     } catch (err: any) {
@@ -108,13 +111,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
     }
   };
 
-  const handleInstantAutoConnect = () => {
+  const handleInstantAutoConnect = (preferredEmail: string = 'admin@govscheme.in') => {
     setLoginState('authenticating');
     setErrorMessage('');
+    const targetEmail = preferredEmail.trim().toLowerCase();
     const adminUser: UserProfile = {
       id: 'admin_1',
-      fullName: 'Super Administrator',
-      email: 'admin@govscheme.in',
+      fullName: targetEmail.includes('nitish') ? 'Nitish Priyan (Super Admin)' : 'Super Administrator',
+      email: targetEmail,
       mobile: '9999999999',
       age: 40,
       gender: 'Male',
@@ -269,23 +273,43 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
               <p className="text-[#64748B] dark:text-[#94A3B8]">Administrator Command Center</p>
             </div>
 
-            {/* Instant 1-Click Admin Auto-Connect Card */}
-            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-blue-900/10 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-blue-950/40 border border-blue-500/20 text-center">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-2">
-                Always Connected Admin Mode
-              </span>
-              <button
-                type="button"
-                onClick={handleInstantAutoConnect}
-                disabled={loginState === 'authenticating' || loginState === 'loading'}
-                className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>⚡ 1-Click Instant Admin Auto-Connect</span>
-              </button>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 block">
-                Instantly connect to GovScheme Command Center as Super Admin
-              </span>
+            {/* Authorized Admin Notice & Quick Connect */}
+            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-blue-900/10 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-blue-950/40 border border-blue-500/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Authorized Administrator Access
+                </span>
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                  2 Accounts Allowed
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+                Administrative privileges are strictly restricted to authorized emails:
+                <br />
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">admin@govscheme.in</span>
+                {' '}&bull;{' '}
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">nitishpriyan1807@gmail.com</span>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleInstantAutoConnect('admin@govscheme.in')}
+                  disabled={loginState === 'authenticating' || loginState === 'loading'}
+                  className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Connect as admin@govscheme.in</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInstantAutoConnect('nitishpriyan1807@gmail.com')}
+                  disabled={loginState === 'authenticating' || loginState === 'loading'}
+                  className="py-2 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Connect as Nitish Priyan</span>
+                </button>
+              </div>
             </div>
 
             {loginState === 'error' && (
@@ -296,16 +320,32 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
               >
                 <div className="text-[#B91C1C] dark:text-[#F87171] font-bold text-sm">Unable to sign in</div>
                 <div className="text-[#B91C1C]/80 dark:text-[#F87171]/80 text-xs">{errorMessage || 'Check your credentials and try again.'}</div>
-                <button 
-                  onClick={() => {
-                    setEmail('admin@govscheme.in');
-                    setPassword('password123');
-                    setLoginState('idle');
-                  }}
-                  className="mt-2 text-xs font-bold text-[#1769FF] dark:text-[#60A5FA] w-fit hover:underline"
-                >
-                  Fill Default Admin Credentials (admin@govscheme.in / password123)
-                </button>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-[#1769FF] dark:text-[#60A5FA]">
+                  <span>Quick Fill:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('admin@govscheme.in');
+                      setPassword('password123');
+                      setLoginState('idle');
+                    }}
+                    className="hover:underline cursor-pointer bg-transparent border-0 p-0 text-[#1769FF] dark:text-[#60A5FA]"
+                  >
+                    admin@govscheme.in
+                  </button>
+                  <span>|</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('nitishpriyan1807@gmail.com');
+                      setPassword('password123');
+                      setLoginState('idle');
+                    }}
+                    className="hover:underline cursor-pointer bg-transparent border-0 p-0 text-[#1769FF] dark:text-[#60A5FA]"
+                  >
+                    nitishpriyan1807@gmail.com
+                  </button>
+                </div>
               </motion.div>
             )}
 
@@ -387,19 +427,34 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
 
             {/* Quick Demo Helper */}
             <div className="mt-8 pt-4 border-t border-[#E2E8F0] dark:border-[#243449] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
-              <span className="text-center sm:text-left">Default Admin Account:</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('admin@govscheme.in');
-                  setPassword('password123');
-                  setLoginState('idle');
-                  setErrorMessage('');
-                }}
-                className="font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline cursor-pointer bg-transparent border-0 p-0"
-              >
-                Auto-fill (admin@govscheme.in)
-              </button>
+              <span className="text-center sm:text-left">Authorized Admin Quick Fill:</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('admin@govscheme.in');
+                    setPassword('password123');
+                    setLoginState('idle');
+                    setErrorMessage('');
+                  }}
+                  className="font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline cursor-pointer bg-transparent border-0 p-0"
+                >
+                  admin@govscheme.in
+                </button>
+                <span>&bull;</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('nitishpriyan1807@gmail.com');
+                    setPassword('password123');
+                    setLoginState('idle');
+                    setErrorMessage('');
+                  }}
+                  className="font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline cursor-pointer bg-transparent border-0 p-0"
+                >
+                  nitishpriyan1807@gmail.com
+                </button>
+              </div>
             </div>
           </div>
         </div>

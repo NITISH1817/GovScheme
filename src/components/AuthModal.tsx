@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useGoogleLogin } from '@react-oauth/google';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
 import { calculateProfileCompletion, normalizeUserProfile } from '../utils/profileUtils';
+import { isAuthorizedAdminEmail, DEFAULT_AUTHORIZED_ADMIN_EMAILS } from '../utils/adminAuth';
 import './Auth/AuthModal.css';
 
 function buildNewProfile(opts: {
@@ -293,11 +294,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
 
-      // 2. Fallback for admin credentials
-      if (emailTrimmed.includes('admin') && (loginPassword === 'password123' || loginPassword === 'admin')) {
+      // 2. Fallback for authorized admin credentials
+      const isAuthorizedAdmin = isAuthorizedAdminEmail(emailTrimmed) || emailTrimmed.includes('admin');
+      if (isAuthorizedAdmin && (loginPassword === 'password123' || loginPassword === 'admin')) {
         const adminProfile = normalizeUserProfile({
           id: 'admin_1',
-          fullName: 'Super Administrator',
+          fullName: emailTrimmed.includes('nitish') ? 'Nitish Priyan (Super Admin)' : 'Super Administrator',
           email: emailTrimmed,
           role: 'superadmin',
           token: 'mock-admin-token-govscheme'

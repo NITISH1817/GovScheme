@@ -3,6 +3,7 @@ import { AdminPlatform } from './components/admin/AdminPlatform';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { UserProfile, Scheme } from './types';
 import { schemesData } from './data/schemes';
+import { isAuthorizedAdminUser } from './utils/adminAuth';
 
 export const AdminApp: React.FC = () => {
   const [adminUser, setAdminUser] = useState<UserProfile | null>(() => {
@@ -10,17 +11,7 @@ export const AdminApp: React.FC = () => {
       const stored = localStorage.getItem('adminUser') || localStorage.getItem('govscheme_user');
       if (stored) {
         const u = JSON.parse(stored);
-        const role = (u.role || '').toLowerCase();
-        if (
-          role.includes('admin') ||
-          role === 'superadmin' ||
-          role === 'super admin' ||
-          role === 'state admin' ||
-          role === 'ministry admin' ||
-          role === 'district officer' ||
-          role === 'nodal officer' ||
-          u.email === 'admin@govscheme.in'
-        ) {
+        if (isAuthorizedAdminUser(u)) {
           return u;
         }
       }

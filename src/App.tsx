@@ -9,6 +9,7 @@ import { initialUserProfile, initialApplications, initialNotifications } from '.
 import { evaluateSchemeEligibility } from './engine/ruleEngine';
 import { computeMLRecommendation } from './engine/mlEngine';
 import { calculateProfileCompletion, normalizeUserProfile, isProfileComplete } from './utils/profileUtils';
+import { isAuthorizedAdminUser, getAuthorizedAdminEmails, getAdminAccountMention, DEFAULT_AUTHORIZED_ADMIN_EMAILS } from './utils/adminAuth';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LandingPage } from './components/LandingPage';
@@ -963,19 +964,7 @@ export const App: React.FC = () => {
   }
 
   const isAdminUser = (u: UserProfile | null | undefined): boolean => {
-    if (!u) return false;
-    if (u.email === 'admin@govscheme.in') return true;
-    const role = (u.role || '').toLowerCase();
-    return (
-      role.includes('admin') ||
-      role === 'super admin' ||
-      role === 'superadmin' ||
-      role === 'state admin' ||
-      role === 'ministry admin' ||
-      role === 'district officer' ||
-      role === 'nodal officer' ||
-      role === 'data entry operator'
-    );
+    return isAuthorizedAdminUser(u);
   };
 
   const handleAutoConnectAdmin = () => {
@@ -1051,35 +1040,45 @@ export const App: React.FC = () => {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#07111F] p-4">
-          <div className="max-w-md w-full bg-white dark:bg-[#0F1B2D] rounded-2xl shadow-xl p-8 border border-amber-200 dark:border-amber-900/30 text-center">
-            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#07111F] p-4 font-sans">
+          <div className="max-w-md w-full bg-white dark:bg-[#0F1B2D] rounded-2xl shadow-xl p-8 border border-rose-200 dark:border-rose-900/40 text-center">
+            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShieldAlert className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Admin Command Center</h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-              You are currently signed in as <strong className="text-gray-900 dark:text-white">{user.fullName || user.email}</strong> (Citizen).
-              Connect directly to the GovScheme Administrative Platform below.
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Admin Access Restricted</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 leading-relaxed">
+              The Administrative Command Center is strictly restricted to designated government and system administrators.
             </p>
-            <div className="flex flex-col gap-3">
+
+            <div className="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-[#111C2E] border border-slate-200 dark:border-slate-800 text-left text-xs space-y-1.5">
+              <div className="text-slate-500 dark:text-slate-400">
+                <strong>Current Account:</strong> <span className="font-mono text-slate-800 dark:text-slate-200">{user.email || user.fullName || 'Citizen User'}</span>
+              </div>
+              <div className="text-slate-500 dark:text-slate-400">
+                <strong>Current Role:</strong> <span className="capitalize text-slate-800 dark:text-slate-200">{user.role || 'Citizen'}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-amber-700 dark:text-amber-400 font-semibold">
+                Authorized Administrator Emails:
+                <ul className="list-disc list-inside mt-1 font-mono text-[11px] font-normal text-slate-700 dark:text-slate-300">
+                  {DEFAULT_AUTHORIZED_ADMIN_EMAILS.map((admEmail) => (
+                    <li key={admEmail}>{admEmail}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
               <button
-                onClick={handleAutoConnectAdmin}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                onClick={handleExitAdmin}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-md"
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>⚡ Auto-Connect to Admin Command Center</span>
+                <ArrowLeft className="w-4 h-4" /> Return to Citizen Portal
               </button>
               <button
                 onClick={() => setAdminLoginRequested(true)}
-                className="w-full py-2.5 bg-[#1769FF] hover:bg-[#123C69] text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-md"
+                className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs transition-colors flex items-center justify-center gap-2"
               >
-                Sign In with Different Admin Account
-              </button>
-              <button
-                onClick={handleExitAdmin}
-                className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" /> Return to Citizen Portal
+                Sign In with Authorized Admin Account
               </button>
             </div>
           </div>
@@ -1406,7 +1405,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <Footer currentLang={currentLang} onNavigate={handleNavigateTab} />
+      <Footer currentLang={currentLang} onNavigate={handleNavigateTab} user={user} />
 
       {/* Scheme Details Modal */}
       {selectedSchemeAnalysis && (
