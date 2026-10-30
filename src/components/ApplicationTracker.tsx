@@ -406,7 +406,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                     type="text"
                     value={customAppId}
                     onChange={(e) => setCustomAppId(e.target.value)}
-                    placeholder="e.g. PMK-TN-2026-98124 or AwasSoft Ref ID"
+                    placeholder={t('appRefPlaceholder', 'e.g. PMK-TN-2026-98124 or AwasSoft Ref ID')}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#07111F] text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-[#1769FF]"
                   />
                   <p className="text-[11px] text-gray-500 mt-1">

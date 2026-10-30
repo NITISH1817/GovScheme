@@ -10,7 +10,7 @@ i18n
     fallbackLng: 'en',
     supportedLngs: ['en', 'hi', 'ml', 'ta', 'te', 'mr', 'gu'],
     backend: {
-      loadPath: '/locales/{{lng}}/translation.json?v=19',
+      loadPath: '/locales/{{lng}}/translation.json?v=20',
     },
     interpolation: {
       escapeValue: false,

@@ -25,11 +25,12 @@ const suites = [
   'tests/application_number_integrity.test.js',
   'tests/intelligent_document_vault_ocr.test.js',
   'tests/authorized_admin_portal_access.test.js',
-  'tests/admin_auth_security_hardening.test.js'
+  'tests/admin_auth_security_hardening.test.js',
+  'tests/multilingual_language_parity.test.js'
 ];
 
 console.log('========================================================================');
-console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 19-SUITE RUN      ');
+console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 20-SUITE RUN      ');
 console.log('========================================================================\n');
 
 const results = [];

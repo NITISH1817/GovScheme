@@ -32,17 +32,23 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
   const customBezier = [0.32, 0.72, 0, 1];
 
   // 10 Core Supported Document Types for Rural Welfare Scheme Processing
-  const documentTypes: Array<{ type: DocumentRecord['type']; label: string; desc: string }> = [
-    { type: 'Aadhaar', label: 'Aadhaar Card', desc: 'Proof of identity, age, and biometric uniqueness' },
-    { type: 'PAN', label: 'PAN Card', desc: 'Tax identification and financial verification' },
-    { type: 'Income Certificate', label: 'Income Certificate', desc: 'Official annual household income verification' },
-    { type: 'Ration Card', label: 'Ration Card', desc: 'Family composition and food subsidy eligibility' },
-    { type: 'Voter ID', label: 'Voter ID (EPIC)', desc: 'Electoral identity and constituency residence proof' },
-    { type: 'Community Certificate', label: 'Community / Caste Certificate', desc: 'Social reservation and category verification' },
-    { type: 'Disability Certificate', label: 'Disability Certificate (UDID)', desc: 'Disability percentage and welfare pension eligibility' },
-    { type: 'Residence Certificate', label: 'Residence / Domicile Certificate', desc: 'State domicile for regional welfare schemes' },
-    { type: 'Birth Certificate', label: 'Birth Certificate', desc: 'Proof of age and maternal/child benefits eligibility' },
-    { type: 'Education Certificate', label: 'Education / Skill Certificate', desc: 'Educational qualifications for scholarships and loans' }
+  const documentTypes: Array<{
+    type: DocumentRecord['type'];
+    labelKey: string;
+    defaultLabel: string;
+    descKey: string;
+    defaultDesc: string;
+  }> = [
+    { type: 'Aadhaar', labelKey: 'docTypeAadhaar', defaultLabel: 'Aadhaar Card', descKey: 'docTypeAadhaarDesc', defaultDesc: 'Proof of identity, age, and biometric uniqueness' },
+    { type: 'PAN', labelKey: 'docTypePAN', defaultLabel: 'PAN Card', descKey: 'docTypePANDesc', defaultDesc: 'Tax identification and financial verification' },
+    { type: 'Income Certificate', labelKey: 'docTypeIncome', defaultLabel: 'Income Certificate', descKey: 'docTypeIncomeDesc', defaultDesc: 'Official annual household income verification' },
+    { type: 'Ration Card', labelKey: 'docTypeRation', defaultLabel: 'Ration Card', descKey: 'docTypeRationDesc', defaultDesc: 'Family composition and food subsidy eligibility' },
+    { type: 'Voter ID', labelKey: 'docTypeVoter', defaultLabel: 'Voter ID (EPIC)', descKey: 'docTypeVoterDesc', defaultDesc: 'Electoral identity and constituency residence proof' },
+    { type: 'Community Certificate', labelKey: 'docTypeCommunity', defaultLabel: 'Community / Caste Certificate', descKey: 'docTypeCommunityDesc', defaultDesc: 'Social reservation and category verification' },
+    { type: 'Disability Certificate', labelKey: 'docTypeDisability', defaultLabel: 'Disability Certificate (UDID)', descKey: 'docTypeDisabilityDesc', defaultDesc: 'Disability percentage and welfare pension eligibility' },
+    { type: 'Residence Certificate', labelKey: 'docTypeResidence', defaultLabel: 'Residence / Domicile Certificate', descKey: 'docTypeResidenceDesc', defaultDesc: 'State domicile for regional welfare schemes' },
+    { type: 'Birth Certificate', labelKey: 'docTypeBirth', defaultLabel: 'Birth Certificate', descKey: 'docTypeBirthDesc', defaultDesc: 'Proof of age and maternal/child benefits eligibility' },
+    { type: 'Education Certificate', labelKey: 'docTypeEducation', defaultLabel: 'Education / Skill Certificate', descKey: 'docTypeEducationDesc', defaultDesc: 'Educational qualifications for scholarships and loans' }
   ];
 
   const userDocs = user.documents || [];
@@ -130,11 +136,11 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <h2 className="text-lg font-bold text-slate-900 dark:text-white font-heading">
-                Scheme Application Document Readiness: {readinessPercentage}%
+                {t('schemeDocReadiness', 'Scheme Application Document Readiness: {{percentage}}%', { percentage: readinessPercentage })}
               </h2>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Having your Aadhaar, Income Certificate, and Community/Ration Card stored enables instant one-click eligibility matching across 100% of Central and State welfare programmes.
+              {t('readinessBannerDesc', 'Having your Aadhaar, Income Certificate, and Community/Ration Card stored enables instant one-click eligibility matching across 100% of Central and State welfare programmes.')}
             </p>
             {/* Progress Bar */}
             <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mt-3">
@@ -148,7 +154,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full lg:w-auto">
             <div className="px-5 py-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500 block">
-                Total Documents
+                {t('totalDocuments', 'Total Documents')}
               </span>
               <span className="text-2xl font-black text-slate-900 dark:text-white font-sans">
                 {uploadedCount} <span className="text-xs font-semibold text-slate-400">/ 10</span>
@@ -157,7 +163,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
 
             <div className="px-5 py-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-600 dark:text-emerald-400 block">
-                Format Verified
+                {t('formatVerified', 'Format Verified')}
               </span>
               <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-sans">
                 {verifiedCount}
@@ -166,7 +172,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
 
             <div className="px-5 py-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-600 dark:text-amber-400 block">
-                Pending Upload
+                {t('pendingUpload', 'Pending Upload')}
               </span>
               <span className="text-2xl font-black text-amber-600 dark:text-amber-400 font-sans">
                 {Math.max(0, 10 - uploadedCount)}
@@ -186,7 +192,9 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
         }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        {documentTypes.map(({ type: docType, label, desc }) => {
+        {documentTypes.map(({ type: docType, labelKey, defaultLabel, descKey, defaultDesc }) => {
+          const label = t(labelKey, defaultLabel);
+          const desc = t(descKey, defaultDesc);
           const existingDoc = userDocs.find(
             d => d.type === docType || d.documentType === docType
           );
@@ -234,7 +242,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                             ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 border-emerald-300 dark:border-emerald-700'
                             : 'bg-amber-100 dark:bg-amber-950 text-amber-600 border-amber-300 dark:border-amber-700'
                         }`}
-                        title={isVerified ? 'Format Checks Passed' : 'Verification Incomplete'}
+                        title={isVerified ? t('formatChecksPassed', 'Format Checks Passed') : t('verificationIncomplete', 'Verification Incomplete')}
                       >
                         {isVerified ? (
                           <CheckCircle2 className="w-5 h-5" />
@@ -267,60 +275,60 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                         <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-[11px] space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider text-[10px]">
-                              Extracted Fields
+                              {t('extractedFields', 'Extracted Fields')}
                             </span>
                             {existingDoc.ocrExtracted.confidenceScore !== undefined && (
                               <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                                {existingDoc.ocrExtracted.confidenceScore}% Confidence
+                                {existingDoc.ocrExtracted.confidenceScore}% {t('confidence', 'Confidence')}
                               </span>
                             )}
                           </div>
 
                           {existingDoc.ocrExtracted.fullName && (
                             <p className="text-slate-700 dark:text-slate-300">
-                              Name: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.fullName}</strong>
+                              {t('fieldName', 'Name')}: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.fullName}</strong>
                             </p>
                           )}
 
                           {existingDoc.ocrExtracted.annualIncome !== undefined && (
                             <p className="text-slate-700 dark:text-slate-300">
-                              Income: <strong className="text-slate-900 dark:text-white">₹{Number(existingDoc.ocrExtracted.annualIncome).toLocaleString('en-IN')}</strong>
+                              {t('fieldIncome', 'Income')}: <strong className="text-slate-900 dark:text-white">₹{Number(existingDoc.ocrExtracted.annualIncome).toLocaleString('en-IN')}</strong>
                             </p>
                           )}
 
                           {existingDoc.ocrExtracted.dob && (
                             <p className="text-slate-700 dark:text-slate-300">
-                              DOB: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.dob}</strong>
+                              {t('fieldDOB', 'DOB')}: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.dob}</strong>
                             </p>
                           )}
 
                           {existingDoc.ocrExtracted.category && (
                             <p className="text-slate-700 dark:text-slate-300">
-                              Category: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.category}</strong>
+                              {t('fieldCategory', 'Category')}: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.category}</strong>
                             </p>
                           )}
 
                           {existingDoc.ocrExtracted.disabilityPercentage !== undefined && (
                             <p className="text-slate-700 dark:text-slate-300">
-                              Disability: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.disabilityPercentage}%</strong>
+                              {t('fieldDisability', 'Disability')}: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.disabilityPercentage}%</strong>
                             </p>
                           )}
 
                           {existingDoc.ocrExtracted.state && (
                             <p className="text-slate-700 dark:text-slate-300">
-                              State: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.state}</strong>
+                              {t('fieldState', 'State')}: <strong className="text-slate-900 dark:text-white">{existingDoc.ocrExtracted.state}</strong>
                             </p>
                           )}
 
                           <div className="pt-1 text-[9px] text-slate-500 border-t border-blue-100 dark:border-blue-900/30">
-                            Format verified • Authenticity unverified (no issuer API)
+                            {t('formatVerifiedNotice', 'Format verified • Authenticity unverified (no issuer API)')}
                           </div>
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="py-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Upload or scan this document to unlock schemes requiring {label} verification and auto-fill applications.
+                      {t('uploadOrScanDocDesc', 'Upload or scan this document to unlock schemes requiring verification and auto-fill applications.')}
                     </div>
                   )}
                 </div>
@@ -334,12 +342,12 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                         className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-gov-navy dark:text-white font-bold text-xs transition flex items-center justify-center gap-2"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Rescan</span>
+                        <span>{t('rescan', 'Rescan')}</span>
                       </button>
                       <button
                         onClick={() => onDeleteDoc(existingDoc.id || existingDoc.documentId || existingDoc._id || '')}
                         className="w-10 h-10 rounded-xl border border-red-200 dark:border-red-900/40 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center justify-center transition-colors shrink-0"
-                        title="Delete Document from Vault"
+                        title={t('deleteDocVault', 'Delete Document from Vault')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -349,7 +357,7 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
                       onClick={() => onOpenOCR(docType)}
                       className="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-blue-700 dark:text-blue-300 font-bold text-xs shadow-sm hover:shadow transition flex items-center justify-between"
                     >
-                      <span>Scan with AI OCR</span>
+                      <span>{t('scanWithAI', 'Scan with AI OCR')}</span>
                       <ScanLine className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </button>
                   )}

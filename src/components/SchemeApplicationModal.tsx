@@ -71,25 +71,26 @@ export const SchemeApplicationModal: React.FC<SchemeApplicationModalProps> = ({
   const voterDoc = docs.find(d => (d.documentType || d.type || '').toLowerCase().includes('voter'));
   const communityDoc = docs.find(d => (d.documentType || d.type || '').toLowerCase().includes('community'));
 
-  const applicantName = user?.fullName || aadhaarDoc?.ocrExtracted?.fullName || 'Not Available';
-  const age = user?.age || aadhaarDoc?.ocrExtracted?.age || 'Not Available';
-  const gender = user?.gender || aadhaarDoc?.ocrExtracted?.gender || 'Not Available';
+  const applicantName = user?.fullName || aadhaarDoc?.ocrExtracted?.fullName || t('notAvailable', 'Not Available');
+  const age = user?.age || aadhaarDoc?.ocrExtracted?.age || t('notAvailable', 'Not Available');
+  const rawGender = user?.gender || aadhaarDoc?.ocrExtracted?.gender || '';
+  const gender = rawGender === 'Male' ? t('Male', 'Male') : (rawGender === 'Female' ? t('Female', 'Female') : (rawGender === 'Other' ? t('Other', 'Other') : (rawGender || t('notAvailable', 'Not Available'))));
   const annualIncome = user?.annualIncome !== undefined
     ? `₹${user.annualIncome.toLocaleString('en-IN')}`
-    : (incomeDoc?.ocrExtracted?.annualIncome !== undefined ? `₹${Number(incomeDoc.ocrExtracted.annualIncome).toLocaleString('en-IN')}` : 'Not Available');
-  const socialCategory = user?.category || communityDoc?.ocrExtracted?.category || 'Not Available';
-  const state = user?.state || aadhaarDoc?.ocrExtracted?.state || 'Not Available';
-  const district = user?.district || aadhaarDoc?.ocrExtracted?.district || 'Not Available';
+    : (incomeDoc?.ocrExtracted?.annualIncome !== undefined ? `₹${Number(incomeDoc.ocrExtracted.annualIncome).toLocaleString('en-IN')}` : t('notAvailable', 'Not Available'));
+  const socialCategory = user?.category || communityDoc?.ocrExtracted?.category || t('notAvailable', 'Not Available');
+  const state = user?.state || aadhaarDoc?.ocrExtracted?.state || t('notAvailable', 'Not Available');
+  const district = user?.district || aadhaarDoc?.ocrExtracted?.district || t('notAvailable', 'Not Available');
 
   const maskedAadhaar = aadhaarDoc?.docNumber
     ? (aadhaarDoc.docNumber.length >= 12
         ? `XXXX XXXX ${aadhaarDoc.docNumber.slice(-4)}`
         : aadhaarDoc.docNumber)
-    : 'Not Stored in Vault';
+    : t('notStoredInVault', 'Not Stored in Vault');
 
-  const panNumber = panDoc?.docNumber || 'Not Stored in Vault';
-  const voterNumber = voterDoc?.docNumber || 'Not Stored in Vault';
-  const incomeCertNumber = incomeDoc?.docNumber || 'Not Stored in Vault';
+  const panNumber = panDoc?.docNumber || t('notStoredInVault', 'Not Stored in Vault');
+  const voterNumber = voterDoc?.docNumber || t('notStoredInVault', 'Not Stored in Vault');
+  const incomeCertNumber = incomeDoc?.docNumber || t('notStoredInVault', 'Not Stored in Vault');
 
   const applicationSummaryText = `================================================
 GOVSCHEME PRE-FILLED CITIZEN APPLICATION SUMMARY
@@ -151,7 +152,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
           <div className="flex items-center gap-2 mb-1.5">
             <FileCheck2 className="w-5 h-5 text-emerald-400 print:hidden" />
             <span className="text-xs font-bold text-blue-200 uppercase tracking-wider print:text-black">
-              Intelligent Scheme Pre-Filled Application Form
+              {t('preFilledAppFormTitle', 'Intelligent Scheme Pre-Filled Application Form')}
             </span>
           </div>
           <h2 className="text-2xl font-black font-heading tracking-tight">
@@ -162,7 +163,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
             <span>{scheme.department || scheme.ministry}</span>
             <span>•</span>
             <span className="font-semibold text-emerald-300 print:text-slate-800">
-              {scheme.state === 'Central' ? 'Central Government Scheme' : `${scheme.state} State Scheme`}
+              {scheme.state === 'Central' ? t('centralGovtScheme', 'Central Government Scheme') : `${scheme.state} ${t('stateScheme', 'State Scheme')}`}
             </span>
           </div>
         </div>
@@ -173,8 +174,8 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
           <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 flex items-start gap-3 print:border-black">
             <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5 print:hidden" />
             <div className="text-[11px] leading-relaxed text-blue-900 dark:text-blue-200">
-              <span className="font-bold">Automated Form Filling Assistant: </span>
-              Your verified citizen profile and vault documents have been mapped into the application form below. You can copy or print this pre-filled summary to quickly submit your application on the official government portal.
+              <span className="font-bold">{t('autoFormAssistantTitle', 'Automated Form Filling Assistant')}: </span>
+              {t('autoFormAssistantDesc', 'Your verified citizen profile and vault documents have been mapped into the application form below. You can copy or print this pre-filled summary to quickly submit your application on the official government portal.')}
             </div>
           </div>
 
@@ -183,83 +184,83 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <h3 className="font-extrabold text-sm text-slate-900 dark:text-white font-heading flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-blue-600" />
-                Applicant Pre-Filled Information
+                {t('applicantPreFilledInfo', 'Applicant Pre-Filled Information')}
               </h3>
               <span className="text-[10px] text-slate-500 font-semibold">
-                Auto-Mapped from Profile & Vault
+                {t('autoMappedFromProfile', 'Auto-Mapped from Profile & Vault')}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider mb-0.5">
-                  Full Applicant Name
+                  {t('fullApplicantName', 'Full Applicant Name')}
                 </span>
                 <span className="font-bold text-slate-900 dark:text-white text-xs block">
                   {applicantName}
                 </span>
                 <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                  ✓ Verified by Profile
+                  ✓ {t('verifiedByProfile', 'Verified by Profile')}
                 </span>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider mb-0.5">
-                  Age & Gender
+                  {t('ageAndGender', 'Age & Gender')}
                 </span>
                 <span className="font-bold text-slate-900 dark:text-white text-xs block">
-                  {age} Years • {gender}
+                  {age} {t('years', 'Years')} • {gender}
                 </span>
                 <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                  ✓ Matches Criteria
+                  ✓ {t('matchesCriteria', 'Matches Criteria')}
                 </span>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider mb-0.5">
-                  Annual Household Income
+                  {t('annualHouseholdIncome', 'Annual Household Income')}
                 </span>
                 <span className="font-bold text-slate-900 dark:text-white text-xs block">
                   {annualIncome}
                 </span>
                 <span className="text-[9px] text-blue-600 dark:text-blue-400 font-semibold">
-                  {incomeDoc ? '✓ Extracted from Income Certificate' : 'From Citizen Profile'}
+                  {incomeDoc ? `✓ ${t('extractedFromIncomeCert', 'Extracted from Income Certificate')}` : t('fromCitizenProfile', 'From Citizen Profile')}
                 </span>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider mb-0.5">
-                  Social Category & Reservation
+                  {t('socialCategoryReservation', 'Social Category & Reservation')}
                 </span>
                 <span className="font-bold text-slate-900 dark:text-white text-xs block">
                   {socialCategory}
                 </span>
                 <span className="text-[9px] text-blue-600 dark:text-blue-400 font-semibold">
-                  {communityDoc ? '✓ Extracted from Caste Certificate' : 'From Citizen Profile'}
+                  {communityDoc ? `✓ ${t('extractedFromCasteCert', 'Extracted from Caste Certificate')}` : t('fromCitizenProfile', 'From Citizen Profile')}
                 </span>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider mb-0.5">
-                  State & Domicile
+                  {t('stateAndDomicile', 'State & Domicile')}
                 </span>
                 <span className="font-bold text-slate-900 dark:text-white text-xs block">
                   {state} ({district})
                 </span>
                 <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                  ✓ Resident Verification
+                  ✓ {t('residentVerification', 'Resident Verification')}
                 </span>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider mb-0.5">
-                  Aadhaar Number (Masked)
+                  {t('aadhaarNumberMasked', 'Aadhaar Number (Masked)')}
                 </span>
                 <span className="font-mono font-bold text-slate-900 dark:text-white text-xs block">
                   {maskedAadhaar}
                 </span>
                 <span className="text-[9px] text-slate-500 font-semibold">
-                  {aadhaarDoc ? '✓ Masked for Privacy' : 'Pending Upload'}
+                  {aadhaarDoc ? `✓ ${t('maskedForPrivacy', 'Masked for Privacy')}` : t('pendingUpload', 'Pending Upload')}
                 </span>
               </div>
             </div>
@@ -270,10 +271,10 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <h3 className="font-extrabold text-sm text-slate-900 dark:text-white font-heading flex items-center gap-2">
                 <FileText className="w-4 h-4 text-indigo-600" />
-                Scheme Document Readiness Checklist
+                {t('schemeDocReadinessChecklist', 'Scheme Document Readiness Checklist')}
               </h3>
               <span className="text-[10px] text-slate-500 font-semibold">
-                Required for Portal Approval
+                {t('requiredForPortalApproval', 'Required for Portal Approval')}
               </span>
             </div>
 
@@ -303,8 +304,8 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
                         </span>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400">
                           {isReady
-                            ? `Available in Vault (ID: ${vaultDoc?.docNumber || 'Format Verified'})`
-                            : 'Not uploaded in Vault yet'}
+                            ? `${t('availableInVault', 'Available in Vault')} (ID: ${vaultDoc?.docNumber || t('formatVerified', 'Format Verified')})`
+                            : t('notUploadedInVaultYet', 'Not uploaded in Vault yet')}
                         </span>
                       </div>
                     </div>
@@ -317,7 +318,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
                         }}
                         className="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] shadow-sm transition print:hidden"
                       >
-                        Scan Now
+                        {t('scanNow', 'Scan Now')}
                       </button>
                     )}
                   </div>
@@ -336,7 +337,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
               className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Summary Copied!' : 'Copy Summary'}</span>
+              <span>{copied ? t('summaryCopied', 'Summary Copied!') : t('copySummary', 'Copy Summary')}</span>
             </button>
 
             <button
@@ -345,7 +346,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
               className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"
             >
               <Printer className="w-4 h-4" />
-              <span>Print Form</span>
+              <span>{t('printForm', 'Print Form')}</span>
             </button>
           </div>
 
@@ -367,7 +368,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
               }}
               className="px-6 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
             >
-              <span>Apply on Official Portal</span>
+              <span>{t('applyOnOfficialPortal', 'Apply on Official Portal')}</span>
               <ExternalLink className="w-4 h-4" />
             </button>
           </div>

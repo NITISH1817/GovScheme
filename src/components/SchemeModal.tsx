@@ -622,7 +622,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   {t('preliminaryAdvisoryNotice', 'Preliminary Advisory')}
                 </div>
                 <p className="leading-relaxed text-gray-700 dark:text-gray-300">
-                  {explainableResult.disclaimer}
+                  {t('preliminaryAdvisoryText', explainableResult.disclaimer)}
                 </p>
               </div>
 
@@ -706,7 +706,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   </div>
                 )}
                 <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-                  GovScheme is an independent citizen advisory portal.
+                  {t('independentAdvisoryNotice', 'GovScheme is an independent citizen advisory portal.')}
                 </div>
               </div>
             </div>
