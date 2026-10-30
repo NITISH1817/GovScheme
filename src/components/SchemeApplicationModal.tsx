@@ -156,14 +156,14 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
             </span>
           </div>
           <h2 className="text-2xl font-black font-heading tracking-tight">
-            {scheme.name}
+            {t(`${scheme.id}_name`, scheme.name)}
           </h2>
           <div className="flex items-center gap-2 text-xs text-blue-100/90 mt-1 print:text-slate-600">
             <Building className="w-3.5 h-3.5" />
-            <span>{scheme.department || scheme.ministry}</span>
+            <span>{String(t(scheme.department || scheme.ministry, scheme.department || scheme.ministry))}</span>
             <span>•</span>
             <span className="font-semibold text-emerald-300 print:text-slate-800">
-              {scheme.state === 'Central' ? t('centralGovtScheme', 'Central Government Scheme') : `${scheme.state} ${t('stateScheme', 'State Scheme')}`}
+              {scheme.state === 'Central' ? t('centralGovtScheme', 'Central Government Scheme') : `${String(t(scheme.state, scheme.state))} ${t('stateScheme', 'State Scheme')}`}
             </span>
           </div>
         </div>
@@ -233,7 +233,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
                   {t('socialCategoryReservation', 'Social Category & Reservation')}
                 </span>
                 <span className="font-bold text-slate-900 dark:text-white text-xs block">
-                  {socialCategory}
+                  {String(t(socialCategory, socialCategory))}
                 </span>
                 <span className="text-[9px] text-blue-600 dark:text-blue-400 font-semibold">
                   {communityDoc ? `✓ ${t('extractedFromCasteCert', 'Extracted from Caste Certificate')}` : t('fromCitizenProfile', 'From Citizen Profile')}
@@ -245,7 +245,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
                   {t('stateAndDomicile', 'State & Domicile')}
                 </span>
                 <span className="font-bold text-slate-900 dark:text-white text-xs block">
-                  {state} ({district})
+                  {String(t(state, state))} ({String(t(district, district))})
                 </span>
                 <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
                   ✓ {t('residentVerification', 'Resident Verification')}
@@ -300,7 +300,7 @@ NOTE: This summary is prepared by GovScheme for citizen convenience to facilitat
                       )}
                       <div>
                         <span className="font-bold text-xs text-slate-900 dark:text-white block">
-                          {reqDoc}
+                          {String(t(reqDoc, reqDoc))}
                         </span>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400">
                           {isReady

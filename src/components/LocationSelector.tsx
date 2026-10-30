@@ -132,7 +132,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ state, distr
                 className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2 text-sm ${s === state ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1769FF] font-semibold' : 'text-gray-700 dark:text-gray-200'}`}
               >
                 {s === state ? <MapPinned className="w-4 h-4" /> : <MapPin className="w-4 h-4 opacity-50" />}
-                {s}
+                {t(s, s)}
               </li>
             ))}
           </ul>
@@ -181,7 +181,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({ state, distr
                     }}
                     className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2 text-sm ${d === district ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1769FF] font-semibold' : 'text-gray-700 dark:text-gray-200'}`}
                   >
-                    {d}
+                    {t(d, d)}
                   </li>
                 ))
               ) : (

@@ -643,7 +643,9 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   <div key={idx} className="relative pl-8">
                     <div className="absolute left-[-9px] top-1 w-4 h-4 rounded-full bg-[#123C69] border-4 border-white dark:border-[#07111F]" />
                     <span className="text-xs font-bold text-gray-400 tracking-wider mb-1 block">{idx < 9 ? `0${idx + 1}` : `${idx + 1}`}</span>
-                    <span className="font-semibold text-gray-900 dark:text-white leading-relaxed">{step}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white leading-relaxed">
+                      {t(`${scheme.id}_step_${idx + 1}`, t(step, step))}
+                    </span>
                   </div>
                 ))}
               </div>

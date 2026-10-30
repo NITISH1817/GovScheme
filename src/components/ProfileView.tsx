@@ -330,7 +330,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       {user.age != null && user.age > 0 ? `${user.age} ${t('years', 'years')}` : t('notSpecified', 'Age not set')} • {t(user.gender || 'Not specified', user.gender || 'Gender not set')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {t('category', 'Category')}: <strong className="text-gray-700 dark:text-gray-300">{user.category || 'General'}</strong>
+                      {t('category', 'Category')}: <strong className="text-gray-700 dark:text-gray-300">{user.category ? t(user.category, user.category) : t('General', 'General')}</strong>
                     </p>
                   </div>
                 </div>
@@ -346,7 +346,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       {t(user.state, user.state || 'State not set')}{user.district ? ` • ${t(user.district, user.district)}` : ''}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {t('residenceType', 'Residence')}: <strong className="text-gray-700 dark:text-gray-300">{user.residenceType || 'Rural'}</strong>
+                      {t('residenceType', 'Residence')}: <strong className="text-gray-700 dark:text-gray-300">{user.residenceType ? t(user.residenceType, user.residenceType) : t('Rural', 'Rural')}</strong>
                     </p>
                   </div>
                 </div>
@@ -362,7 +362,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       {t(user.occupation, user.occupation || 'Not specified')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {t('education', 'Education')}: <strong className="text-gray-700 dark:text-gray-300">{user.educationLevel || t('notSpecified', 'Not specified')}</strong>
+                      {t('education', 'Education')}: <strong className="text-gray-700 dark:text-gray-300">{user.educationLevel ? t(user.educationLevel, user.educationLevel) : t('notSpecified', 'Not specified')}</strong>
                     </p>
                   </div>
                 </div>
@@ -391,7 +391,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <div>
                     <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('landHolding', 'Land Holding')}</span>
                     <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
-                      {user.landHoldingAcres ? `${user.landHoldingAcres} Acres` : t('landlessOrNone', '0 Acres (Landless)')}
+                      {user.landHoldingAcres ? `${user.landHoldingAcres} ${t('acresUnit', 'Acres')}` : t('landlessOrNone', '0 Acres (Landless)')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {t('workerStatus', 'Registered Worker')}: <strong className="text-gray-700 dark:text-gray-300">{user.isRegisteredWorker ? t('yes', 'Yes') : t('no', 'No')}</strong>
@@ -407,10 +407,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <div>
                     <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('disabilityStatus', 'Disability Status')}</span>
                     <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
-                      {user.hasDisability ? `Yes (${user.disabilityPercentage || 40}% UDID)` : t('none', 'No Disability')}
+                      {user.hasDisability ? `${t('yes', 'Yes')} (${user.disabilityPercentage || 40}% UDID)` : t('none', 'No Disability')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {t('maritalStatus', 'Marital')}: <strong className="text-gray-700 dark:text-gray-300">{user.maritalStatus || t('notSpecified', 'Not specified')}</strong>
+                      {t('maritalStatus', 'Marital')}: <strong className="text-gray-700 dark:text-gray-300">{user.maritalStatus ? t(user.maritalStatus, user.maritalStatus) : t('Single', 'Single')}</strong>
                     </p>
                   </div>
                 </div>
@@ -634,11 +634,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     >
                       <option value="">{t('selectCategory', 'Select Category')}</option>
-                      <option value="General">General</option>
-                      <option value="OBC">OBC (Other Backward Class)</option>
-                      <option value="SC">SC (Scheduled Caste)</option>
-                      <option value="ST">ST (Scheduled Tribe)</option>
-                      <option value="EWS">EWS (Economically Weaker Section)</option>
+                      <option value="General">{t('General', 'General')}</option>
+                      <option value="OBC">{t('OBC', 'OBC (Other Backward Class)')}</option>
+                      <option value="SC">{t('SC', 'SC (Scheduled Caste)')}</option>
+                      <option value="ST">{t('ST', 'ST (Scheduled Tribe)')}</option>
+                      <option value="EWS">{t('EWS', 'EWS (Economically Weaker Section)')}</option>
                     </select>
                   </div>
 
@@ -695,14 +695,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
                     >
-                      <option value="">Select Education Level</option>
-                      <option value="Below 10th">Below 10th Standard</option>
-                      <option value="10th Pass">10th Standard Pass (SSLC)</option>
-                      <option value="12th Pass">12th Standard Pass (HSC)</option>
-                      <option value="Diploma">Diploma / Polytechnic</option>
-                      <option value="Graduate">Graduate (Bachelor's Degree)</option>
-                      <option value="Post Graduate">Post Graduate (Master's Degree)</option>
-                      <option value="Doctorate">Doctorate / PhD</option>
+                      <option value="">{t('selectEducationLevel', 'Select Education Level')}</option>
+                      <option value="Below 10th">{t('Below 10th', 'Below 10th Standard')}</option>
+                      <option value="10th Pass">{t('10th Pass', '10th Standard Pass (SSLC)')}</option>
+                      <option value="12th Pass">{t('12th Pass', '12th Standard Pass (HSC)')}</option>
+                      <option value="Diploma">{t('Diploma', 'Diploma / Polytechnic')}</option>
+                      <option value="Graduate">{t('Graduate', "Graduate (Bachelor's Degree)")}</option>
+                      <option value="Post Graduate">{t('Post Graduate', "Post Graduate (Master's Degree)")}</option>
+                      <option value="Doctorate">{t('Doctorate', 'Doctorate / PhD')}</option>
                     </select>
                   </div>
 
@@ -725,7 +725,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-bold text-gray-900 dark:text-white text-xs block">{t('hasDisability', 'Person with Disability (Divyangjan)')}</span>
-                      <span className="text-[11px] text-gray-500">Enable if certified with benchmark disability</span>
+                      <span className="text-[11px] text-gray-500">{t('enableIfCertifiedDisability', 'Enable if certified with benchmark disability')}</span>
                     </div>
                     <input
                       type="checkbox"
@@ -737,7 +737,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
                   {formData.hasDisability && (
                     <div className="pl-4 border-l-2 border-blue-500">
-                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Disability Percentage (%)</label>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">{t('disabilityPercentageLabel', 'Disability Percentage (%)')}</label>
                       <input
                         type="number"
                         min={0}
@@ -752,7 +752,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-bold text-gray-900 dark:text-white text-xs block">{t('isRegisteredWorker', 'Registered Construction / Unorganized Worker')}</span>
-                      <span className="text-[11px] text-gray-500">Eligible for e-Shram / BOCW welfare boards</span>
+                      <span className="text-[11px] text-gray-500">{t('eligibleForEShram', 'Eligible for e-Shram / BOCW welfare boards')}</span>
                     </div>
                     <input
                       type="checkbox"

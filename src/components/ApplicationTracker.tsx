@@ -392,7 +392,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                   >
                     {schemes.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.name} ({s.state === 'All' ? 'Central' : s.state})
+                        {t(`${s.id}_name`, s.name)} ({s.state === 'All' || s.state === 'Central' ? t('centralGovtScheme', 'Central') : t(s.state, s.state)})
                       </option>
                     ))}
                   </select>
