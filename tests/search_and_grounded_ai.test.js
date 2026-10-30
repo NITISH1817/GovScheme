@@ -604,7 +604,9 @@ async function runTests() {
   console.log('================================================================\n');
 }
 
-runTests().catch(err => {
+runTests().then(() => {
+  setTimeout(() => process.exit(0), 100);
+}).catch(err => {
   console.error('\n[TEST RUNNER FATAL ERROR]:', err);
   process.exit(1);
 });

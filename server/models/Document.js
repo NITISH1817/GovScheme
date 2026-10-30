@@ -17,6 +17,8 @@ export const VALID_DOCUMENT_TYPES = [
   'birth_certificate',
   'Disability Certificate',
   'disability_certificate',
+  'Voter ID',
+  'voter_id',
   'Farmer Certificate',
   'farmer_certificate',
   'PAN',
@@ -93,6 +95,9 @@ const DocumentSchema = new mongoose.Schema({
     issuingAuthority: { type: String },
     occupation: { type: String },
     fatherName: { type: String },
+    address: { type: String },
+    age: { type: Number },
+    disabilityPercentage: { type: Number },
     rawFields: { type: mongoose.Schema.Types.Mixed, default: {} }
   },
 
@@ -131,7 +136,10 @@ const DocumentSchema = new mongoose.Schema({
     issueDate: { type: String },
     issuingAuthority: { type: String },
     occupation: { type: String },
-    fatherName: { type: String }
+    fatherName: { type: String },
+    address: { type: String },
+    age: { type: Number },
+    disabilityPercentage: { type: Number }
   },
 
   isUserConfirmed: { type: Boolean, default: false },

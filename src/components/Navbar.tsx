@@ -64,6 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'vault', label: t('navVault', 'Vault') },
     { id: 'tracker', label: t('navTracker', 'Tracker') },
     { id: 'kiosk', label: t('navKiosk', 'CSC Kiosk'), isKiosk: true },
+    { id: 'admin', label: t('navAdmin', 'Admin Portal'), isAdmin: true },
   ];
 
   return (
@@ -98,11 +99,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-[#1769FF]/10 text-[#1769FF] dark:text-[#60A5FA]' 
                     : (item as any).isKiosk
                     ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-500/10'
+                    : (item as any).isAdmin
+                    ? 'text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 font-bold'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
               >
                 {item.isAI && <Sparkles className="w-4 h-4 text-[#F59E0B]" />}
                 {(item as any).isKiosk && <Monitor className="w-4 h-4 text-[#F59E0B]" />}
+                {(item as any).isAdmin && <Shield className="w-4 h-4 text-amber-500" />}
                 {item.label}
               </button>
             ))}
@@ -227,10 +231,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-amber-500 text-white shadow-amber-500/25'
                     : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
                 }`}
-                title="Admin Command Center"
+                title="Admin Command Center (Connected)"
               >
                 <Shield className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
                 <span className="hidden sm:inline">Admin Portal</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               </button>
             ) : (
               <button

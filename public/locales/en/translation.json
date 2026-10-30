@@ -129,15 +129,15 @@
   "online": "Online",
   "askAboutSchemes": "Ask about schemes, eligibility, or required documents...",
   "send": "Send",
-  "liveTracking": "Live Government DBT Tracking",
+  "liveTracking": "Application & Verification Status Tracker",
   "citizenAppTracker": "Citizen Application Tracker",
-  "trackerDesc": "Real-time status updates on submitted welfare applications across official government portals.",
+  "trackerDesc": "Status updates on submitted welfare applications across official portals.",
   "applyNewScheme": "Apply For New Scheme",
   "status": "Status",
   "appId": "Application ID",
   "appliedDate": "Applied Date",
   "trackOfficial": "Track on Official Portal",
-  "timelineProgress": "Official Verification Timeline Stage Progress:",
+  "timelineProgress": "Application & Verification Timeline Progress:",
   "stage": "Stage",
   "digilockerVault": "Official DigiLocker-Style Vault",
   "verifiedCitizenVault": "Verified Citizen Document Vault",
@@ -1671,5 +1671,8 @@
   "serverUnavailable": "Backend server is temporarily unavailable. Please retry in a moment.",
   "retry": "Retry",
   "clearSearch": "Clear Search",
-  "operatingOfflineMode": "Operating with cached scheme catalog. Real-time updates may be delayed."
+  "operatingOfflineMode": "Operating with cached scheme catalog. Real-time updates may be delayed.",
+  "trackerBadge": "Application & Verification Status Tracker",
+  "trackerOperationalDisclaimer": "GovScheme records application information and status updates entered by citizens or authorized administrators. For official application and benefit disbursement status, visit the relevant government portal.",
+  "verifiedVault": "Verified in Citizen Vault"
 }

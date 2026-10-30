@@ -254,7 +254,11 @@ async function runProfileSchemesNavigationTests() {
   console.log('================================================================\n');
 }
 
-runProfileSchemesNavigationTests().catch(err => {
-  console.error('Test Suite Failed:', err);
-  process.exit(1);
-});
+runProfileSchemesNavigationTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch(err => {
+    console.error('Test Suite Failed:', err);
+    process.exit(1);
+  });

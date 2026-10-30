@@ -1,49 +1,57 @@
+import path from 'path';
+import fs from 'fs';
+import { extractStructuredFields, extractRawTextFromFile } from '../services/ocrEngine.js';
+
 export const processOCR = async (req, res) => {
   try {
-    const { docType, imageUrl } = req.body;
-    
-    // In a real production system, we would:
-    // 1. Download the image from Cloudinary (imageUrl)
-    // 2. Pass it to a Cloud Vision API or tesseract.js
-    // 3. Extract the text and enhance the image
-    // 4. Calculate a confidence score
-    
-    // Since this is a demo environment, we'll mock the extraction process 
-    // with realistic data based on docType
-    
-    let extracted = { verified: true };
-    let confidenceScore = 95;
-    let docNumber = '';
+    const { docType, imageUrl, text, rawText, language } = req.body;
+    const documentType = docType || 'Aadhaar';
 
-    if (docType === 'Aadhaar') {
-      extracted.fullName = req.user.fullName || 'Ramesh Kumar';
-      extracted.state = req.user.profile?.state || 'Tamil Nadu';
-      docNumber = Math.floor(100000000000 + Math.random() * 900000000000).toString().match(/.{1,4}/g).join(' ');
-    } else if (docType === 'PAN') {
-      extracted.fullName = req.user.fullName || 'Ramesh Kumar';
-      docNumber = 'ABCDE1234F';
-      confidenceScore = 98;
-    } else if (docType === 'Income Certificate') {
-      extracted.fullName = req.user.fullName || 'Ramesh Kumar';
-      extracted.annualIncome = 120000;
-      docNumber = 'INC/2026/982341';
-    } else {
-      docNumber = 'DOC-' + Date.now();
-      confidenceScore = 85;
+    // 1. If raw text is provided directly, extract structured fields deterministically
+    const inputText = text || rawText;
+    if (inputText && typeof inputText === 'string' && inputText.trim().length > 0) {
+      const structured = extractStructuredFields(inputText, documentType);
+      return res.json({
+        success: true,
+        docType: documentType,
+        docNumber: structured.fields.docNumber || '',
+        confidenceScore: structured.confidences.overall || 75,
+        extracted: structured.fields,
+        fieldConfidences: structured.confidences,
+        fieldFlags: structured.flags
+      });
     }
 
-    // Simulate delay for OCR processing
-    setTimeout(() => {
-      res.json({
-        success: true,
-        docType: docType || 'Aadhaar',
-        docNumber,
-        confidenceScore,
-        extracted
-      });
-    }, 1500);
+    // 2. If a local file path is provided in imageUrl (e.g. /uploads/...)
+    if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/')) {
+      const fileName = path.basename(imageUrl);
+      const physicalPath = path.resolve('uploads', fileName);
+      if (fs.existsSync(physicalPath)) {
+        const mimeType = fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+        const ocrResult = await extractRawTextFromFile(physicalPath, mimeType, language || 'eng');
+        const structured = extractStructuredFields(ocrResult.rawText, documentType);
+
+        return res.json({
+          success: true,
+          docType: documentType,
+          docNumber: structured.fields.docNumber || '',
+          confidenceScore: structured.confidences.overall || ocrResult.meanConfidence,
+          rawText: ocrResult.rawText,
+          extracted: structured.fields,
+          fieldConfidences: structured.confidences,
+          fieldFlags: structured.flags
+        });
+      }
+    }
+
+    // 3. Fallback when neither text nor valid file is provided
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide valid document text or upload a document file to perform OCR extraction.'
+    });
 
   } catch (error) {
+    console.error('[OCR Controller Error]:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

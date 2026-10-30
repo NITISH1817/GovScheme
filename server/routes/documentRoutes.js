@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import rateLimit from 'express-rate-limit';
 import { 
   uploadAndProcessDocument,
   getUserDocuments,
@@ -16,6 +17,18 @@ import {
 import { getDocuments as getAdminDocuments, verifyDocument as updateAdminVerification } from '../controllers/documentController.js';
 import { protect, adminOnly } from '../middleware/authMiddleware.js';
 import { auditLog } from '../middleware/auditMiddleware.js';
+
+// Dedicated Upload Rate Limiter (Protects against storage exhaustion & DoS)
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 40,
+  message: {
+    success: false,
+    message: 'Upload rate limit exceeded. Please wait a few minutes before uploading more documents.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Ensure uploads directory exists
 const uploadDir = path.resolve('uploads');
@@ -65,8 +78,49 @@ const handleMulterUpload = (req, res, next) => {
   });
 };
 
+/**
+ * File Signature (Magic Bytes) Verification Middleware
+ * Never trusts extension or client-reported MIME type alone.
+ */
+export const validateFileSignature = (req, res, next) => {
+  if (!req.file || !req.file.path) {
+    return next();
+  }
+
+  try {
+    const fd = fs.openSync(req.file.path, 'r');
+    const buffer = Buffer.alloc(16);
+    fs.readSync(fd, buffer, 0, 16, 0);
+    fs.closeSync(fd);
+
+    const isPdf = buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46; // %PDF
+    const isJpg = buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF; // JPEG
+    const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47; // PNG
+
+    if (!isPdf && !isJpg && !isPng) {
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Security validation failed: File binary signature does not match a valid PDF or image format.'
+      });
+    }
+
+    next();
+  } catch (err) {
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+    return res.status(400).json({
+      success: false,
+      message: 'Failed to verify file integrity.'
+    });
+  }
+};
+
 // MODULE 11: Document Endpoints for Citizens & Admins
-router.post('/upload', protect, handleMulterUpload, uploadAndProcessDocument);
+router.post('/upload', protect, uploadLimiter, handleMulterUpload, validateFileSignature, uploadAndProcessDocument);
 router.post('/manual', protect, createManualDocument);
 router.get('/', protect, (req, res, next) => {
   const adminRoles = ['Super Admin', 'Ministry Admin', 'State Admin', 'District Officer', 'Nodal Officer', 'Data Entry Operator'];

@@ -4,7 +4,7 @@ import Scheme from '../models/Scheme.js';
 
 export const createApplication = async (req, res) => {
   try {
-    const { schemeId, uploadedDocuments, remarks } = req.body;
+    const { schemeId, uploadedDocuments, remarks, applicationNumber } = req.body;
     const userId = req.user._id;
 
     // Verify scheme exists by _id, schemeId, or id
@@ -19,9 +19,22 @@ export const createApplication = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Scheme not found' });
     }
 
+    // Determine dedicated applicationNumber (if passed or if embedded in remarks)
+    let cleanAppNumber = typeof applicationNumber === 'string' && applicationNumber.trim()
+      ? applicationNumber.trim().slice(0, 100)
+      : undefined;
+
+    if (!cleanAppNumber && remarks && typeof remarks === 'string') {
+      const match = remarks.match(/Ack Number:\s*([^\n\r]+)/i);
+      if (match && match[1] && match[1].trim()) {
+        cleanAppNumber = match[1].trim().slice(0, 100);
+      }
+    }
+
     const newApp = await Application.create({
       userId,
       schemeId: scheme._id,
+      applicationNumber: cleanAppNumber,
       status: 'Submitted',
       remarks: remarks || 'Application submitted via GovScheme Portal',
       uploadedDocuments: uploadedDocuments || [],
@@ -97,7 +110,7 @@ export const updateApplicationStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid application ID format' });
     }
 
-    const { status, remarks } = req.body;
+    const { status, remarks, applicationNumber } = req.body;
     const application = await Application.findById(id);
     
     if (!application) {
@@ -106,6 +119,9 @@ export const updateApplicationStatus = async (req, res) => {
     
     application.status = status || application.status;
     application.remarks = remarks || application.remarks;
+    if (typeof applicationNumber === 'string' && applicationNumber.trim()) {
+      application.applicationNumber = applicationNumber.trim().slice(0, 100);
+    }
     application.assignedOfficerId = req.user._id;
     
     application.timeline.push({

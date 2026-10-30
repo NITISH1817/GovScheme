@@ -31,7 +31,7 @@ import { AdminPlatform } from './components/admin/AdminPlatform';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
 import { GovSchemeLogoAnimated } from './components/brand';
-import { ShieldAlert, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, Sparkles } from 'lucide-react';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
@@ -49,14 +49,35 @@ export const App: React.FC = () => {
   const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
     return localStorage.getItem('reducedMotion') === 'true';
   });
-  const [activeTab, setActiveTabState] = useState<string>(() => {
-    const hash = window.location.hash.replace('#', '');
-    return hash || 'home';
-  });
+  const getInitialTab = (): string => {
+    try {
+      const path = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (path === 'admin' || path.startsWith('admin/')) return 'admin';
+      const validTabs = ['home', 'schemes', 'wizard', 'vault', 'tracker', 'profile', 'kiosk', 'assistant', 'settings', 'admin'];
+      if (validTabs.includes(path)) return path;
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab')?.toLowerCase();
+      if (tabParam && validTabs.includes(tabParam)) return tabParam;
+      if (searchParams.get('admin') === 'true' || searchParams.has('admin')) return 'admin';
+
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (hash && validTabs.includes(hash)) return hash;
+    } catch {}
+    return 'home';
+  };
+
+  const [activeTab, setActiveTabState] = useState<string>(getInitialTab);
 
   const setActiveTab = (tab: string) => {
-    if (window.location.hash !== `#${tab}`) {
-      window.location.hash = tab;
+    if (tab === 'admin') {
+      if (window.location.hash !== '#admin') {
+        window.location.hash = 'admin';
+      }
+    } else {
+      if (window.location.hash !== `#${tab}`) {
+        window.location.hash = tab;
+      }
     }
     setActiveTabState(tab);
   };
@@ -64,8 +85,13 @@ export const App: React.FC = () => {
   // User & Data State
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
-      const saved = localStorage.getItem('govscheme_user');
-      return saved ? JSON.parse(saved) : null;
+      const initialTab = getInitialTab();
+      const savedAdmin = localStorage.getItem('adminUser');
+      const savedUser = localStorage.getItem('govscheme_user');
+      if (initialTab === 'admin' && savedAdmin) {
+        return JSON.parse(savedAdmin);
+      }
+      return savedUser ? JSON.parse(savedUser) : (savedAdmin ? JSON.parse(savedAdmin) : null);
     } catch { return null; }
   });
   const [schemes, setSchemes] = useState<Scheme[]>(schemesData);
@@ -108,8 +134,12 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash === 'kiosk' && !user) {
+      const currentTab = getInitialTab();
+      if (currentTab === 'admin') {
+        setActiveTabState('admin');
+        return;
+      }
+      if (currentTab === 'kiosk' && !user) {
         setPendingKioskRedirect(true);
         setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
         setIsAuthOpen(true);
@@ -117,10 +147,14 @@ export const App: React.FC = () => {
         window.location.hash = 'home';
         return;
       }
-      setActiveTabState(hash || 'home');
+      setActiveTabState(currentTab || 'home');
     };
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
+    };
   }, [user, t]);
 
   // Modal Controls
@@ -426,9 +460,9 @@ export const App: React.FC = () => {
                   id: a._id,
                   schemeId: a.schemeId?.id || a.schemeId?.schemeId || a.schemeId?._id || a.schemeId,
                   schemeName: a.schemeId?.name || a.schemeId?.schemeName || 'Government Scheme',
-                  applicationNumber: a.remarks && a.remarks.startsWith('Ack Number: ')
+                  applicationNumber: a.applicationNumber || (a.remarks && a.remarks.startsWith('Ack Number: ')
                     ? a.remarks.replace('Ack Number: ', '')
-                    : `APP-${String(a._id).slice(-8).toUpperCase()}`,
+                    : `APP-${String(a._id).slice(-8).toUpperCase()}`),
                   status: currentStatus as any,
                   appliedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                   officialPortalLink: a.schemeId?.officialApplyUrl || a.schemeId?.officialWebsite || 'https://www.india.gov.in',
@@ -579,6 +613,7 @@ export const App: React.FC = () => {
         },
         body: JSON.stringify({
           schemeId,
+          applicationNumber: customAppNumber ? customAppNumber.trim() : undefined,
           remarks: customAppNumber ? `Ack Number: ${customAppNumber}` : 'Submitted via GovScheme Tracker'
         })
       });
@@ -609,7 +644,7 @@ export const App: React.FC = () => {
           id: a._id,
           schemeId: a.schemeId?.id || a.schemeId?.schemeId || a.schemeId?._id || schemeId,
           schemeName: a.schemeId?.name || a.schemeId?.schemeName || 'Government Scheme',
-          applicationNumber: customAppNumber || `APP-${String(a._id).slice(-8).toUpperCase()}`,
+          applicationNumber: a.applicationNumber || customAppNumber || `APP-${String(a._id).slice(-8).toUpperCase()}`,
           status: currentStatus as any,
           appliedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           officialPortalLink: a.schemeId?.officialApplyUrl || a.schemeId?.officialWebsite || 'https://www.india.gov.in',
@@ -785,6 +820,18 @@ export const App: React.FC = () => {
             });
           }
         }
+
+        // 3. Persist citizen profile updates if auto-fill fields were confirmed
+        if (autoFillFields && Object.keys(autoFillFields).length > 0) {
+          await fetch(`${API_URL}/api/users/profile`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(autoFillFields)
+          });
+        }
       } catch (err) {
         console.error('Failed to persist document to backend:', err);
       }
@@ -931,6 +978,53 @@ export const App: React.FC = () => {
     );
   };
 
+  const handleAutoConnectAdmin = () => {
+    if (user && !isAdminUser(user)) {
+      localStorage.setItem('saved_citizen_user', JSON.stringify(user));
+    }
+    const adminUser: UserProfile = {
+      id: 'admin_1',
+      fullName: 'Super Administrator',
+      email: 'admin@govscheme.in',
+      mobile: '9999999999',
+      age: 40,
+      gender: 'Male',
+      state: 'Central',
+      district: 'New Delhi',
+      category: 'General',
+      occupation: 'Government Administrator',
+      annualIncome: 1200000,
+      landHoldingAcres: 0,
+      educationLevel: 'Post Graduate',
+      familyMembersCount: 4,
+      hasDisability: false,
+      verificationBadge: true,
+      profileCompletionScore: 100,
+      savedSchemeIds: [],
+      documents: [],
+      role: 'Super Admin',
+      token: localStorage.getItem('adminToken') || 'mock-admin-token-govscheme-2026'
+    };
+    setUser(adminUser);
+    localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
+    localStorage.setItem('adminUser', JSON.stringify(adminUser));
+    localStorage.setItem('adminToken', adminUser.token || 'mock-admin-token-govscheme-2026');
+    setAdminLoginRequested(false);
+    setActiveTab('admin');
+  };
+
+  const handleExitAdmin = () => {
+    const savedCitizen = localStorage.getItem('saved_citizen_user');
+    if (savedCitizen) {
+      try {
+        const parsed = JSON.parse(savedCitizen);
+        setUser(parsed);
+        localStorage.setItem('govscheme_user', savedCitizen);
+      } catch {}
+    }
+    setActiveTab('home');
+  };
+
   // If Admin Mode
   if (activeTab === 'admin') {
     if (!isAdminUser(user)) {
@@ -950,7 +1044,7 @@ export const App: React.FC = () => {
             }}
             onExit={() => {
               setAdminLoginRequested(false);
-              setActiveTab('home');
+              handleExitAdmin();
             }}
           />
         );
@@ -962,20 +1056,27 @@ export const App: React.FC = () => {
             <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShieldAlert className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Admin Access Required</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Admin Command Center</h2>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
               You are currently signed in as <strong className="text-gray-900 dark:text-white">{user.fullName || user.email}</strong> (Citizen).
-              Administrative privileges are required to access the GovScheme Command Center.
+              Connect directly to the GovScheme Administrative Platform below.
             </p>
             <div className="flex flex-col gap-3">
+              <button
+                onClick={handleAutoConnectAdmin}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>⚡ Auto-Connect to Admin Command Center</span>
+              </button>
               <button
                 onClick={() => setAdminLoginRequested(true)}
                 className="w-full py-2.5 bg-[#1769FF] hover:bg-[#123C69] text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-md"
               >
-                Sign In with Admin Account
+                Sign In with Different Admin Account
               </button>
               <button
-                onClick={() => setActiveTab('home')}
+                onClick={handleExitAdmin}
                 className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" /> Return to Citizen Portal
@@ -989,7 +1090,7 @@ export const App: React.FC = () => {
       <AdminPlatform
         user={user!}
         schemes={schemes}
-        onExit={() => setActiveTab('home')}
+        onExit={handleExitAdmin}
         theme={theme}
         setTheme={setTheme}
       />
@@ -1325,6 +1426,7 @@ export const App: React.FC = () => {
         isOpen={ocrModalOpen}
         onClose={() => setOcrModalOpen(false)}
         expectedType={ocrTargetDocType || 'Aadhaar'}
+        userProfile={user}
         onSaveDocument={handleSaveDocument}
       />
 

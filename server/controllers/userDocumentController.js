@@ -14,7 +14,7 @@ export const uploadAndProcessDocument = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please attach a document file (JPG, PNG, or PDF).' });
     }
 
-    const { documentType } = req.body;
+    const { documentType, language } = req.body;
     if (!documentType) {
       // Clean up uploaded file if validation fails
       if (req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -42,7 +42,7 @@ export const uploadAndProcessDocument = async (req, res) => {
     // Run OCR Processing workflow asynchronously or synchronously
     try {
       await preprocessDocumentFile(req.file.path, req.file.mimetype);
-      const ocrResult = await extractRawTextFromFile(req.file.path, req.file.mimetype);
+      const ocrResult = await extractRawTextFromFile(req.file.path, req.file.mimetype, language || 'eng');
       const structured = extractStructuredFields(ocrResult.rawText, documentType);
 
       document.rawOcrText = ocrResult.rawText;
@@ -175,7 +175,7 @@ export const reprocessDocumentOCR = async (req, res) => {
     document.ocrStatus = 'PROCESSING';
     await document.save();
 
-    const ocrResult = await extractRawTextFromFile(physicalPath, document.fileMimeType);
+    const ocrResult = await extractRawTextFromFile(physicalPath, document.fileMimeType, req.body?.language || 'eng');
     const structured = extractStructuredFields(ocrResult.rawText, document.documentType);
 
     document.rawOcrText = ocrResult.rawText;

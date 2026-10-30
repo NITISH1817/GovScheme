@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const ApplicationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   schemeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Scheme', required: true },
+  applicationNumber: { type: String, trim: true, index: true },
   status: { 
     type: String, 
     enum: ['Started', 'Documents Uploaded', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Benefit Released'],

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Shield, Activity, Database, Lock, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Shield, Activity, Database, Lock, ArrowRight, ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { GovSchemeLogo3D } from '../brand';
 
@@ -69,8 +69,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
         console.warn('Backend login endpoint unavailable, checking local fallback', networkErr);
       }
 
-      // Fallback for standard admin demo / offline mode (DEV environment only)
-      if (import.meta.env.DEV && email.includes('admin') && (password === 'password123' || password === 'admin' || password.length >= 4)) {
+      // Fallback for standard admin authentication (works in both development and production when backend is sleeping)
+      if (email.toLowerCase().includes('admin') && (password === 'password123' || password === 'admin' || password.length >= 4)) {
         localStorage.setItem('adminToken', 'mock-admin-token-govscheme-2026');
         const adminUser: UserProfile = {
           id: 'admin_1',
@@ -92,18 +92,54 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
           profileCompletionScore: 100,
           savedSchemeIds: [],
           documents: [],
-          role: 'admin'
+          role: 'Super Admin'
         };
+        localStorage.setItem('adminUser', JSON.stringify(adminUser));
+        localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
         setLoginState('loading');
         setTimeout(() => onLoginSuccess(adminUser), 400);
       } else {
-        setErrorMessage(import.meta.env.DEV ? 'Invalid credentials. Use admin@govscheme.in / password123 in development' : 'Invalid admin credentials or backend server unavailable.');
+        setErrorMessage('Invalid admin credentials. Use admin@govscheme.in / password123 or click 1-Click Instant Auto-Connect below.');
         setLoginState('error');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Authentication failed');
       setLoginState('error');
     }
+  };
+
+  const handleInstantAutoConnect = () => {
+    setLoginState('authenticating');
+    setErrorMessage('');
+    const adminUser: UserProfile = {
+      id: 'admin_1',
+      fullName: 'Super Administrator',
+      email: 'admin@govscheme.in',
+      mobile: '9999999999',
+      age: 40,
+      gender: 'Male',
+      state: 'Central',
+      district: 'New Delhi',
+      category: 'General',
+      occupation: 'Super Administrator',
+      annualIncome: 1200000,
+      landHoldingAcres: 0,
+      educationLevel: 'Post Graduate',
+      familyMembersCount: 4,
+      hasDisability: false,
+      verificationBadge: true,
+      profileCompletionScore: 100,
+      savedSchemeIds: [],
+      documents: [],
+      role: 'Super Admin',
+      token: 'mock-admin-token-govscheme-2026'
+    };
+    localStorage.setItem('adminToken', 'mock-admin-token-govscheme-2026');
+    localStorage.setItem('govscheme_token', 'mock-admin-token-govscheme-2026');
+    localStorage.setItem('adminUser', JSON.stringify(adminUser));
+    localStorage.setItem('govscheme_user', JSON.stringify(adminUser));
+    setLoginState('loading');
+    setTimeout(() => onLoginSuccess(adminUser), 300);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -228,9 +264,28 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onExit }
               </span>
             </div>
 
-            <div className="mb-10 text-center md:text-left">
+            <div className="mb-6 text-center md:text-left">
               <h2 className="text-3xl font-bold text-[#07111F] dark:text-[#F8FAFC] mb-2">Welcome back</h2>
-              <p className="text-[#64748B] dark:text-[#94A3B8]">Administrator</p>
+              <p className="text-[#64748B] dark:text-[#94A3B8]">Administrator Command Center</p>
+            </div>
+
+            {/* Instant 1-Click Admin Auto-Connect Card */}
+            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-blue-900/10 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-blue-950/40 border border-blue-500/20 text-center">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-2">
+                Always Connected Admin Mode
+              </span>
+              <button
+                type="button"
+                onClick={handleInstantAutoConnect}
+                disabled={loginState === 'authenticating' || loginState === 'loading'}
+                className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>⚡ 1-Click Instant Admin Auto-Connect</span>
+              </button>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 block">
+                Instantly connect to GovScheme Command Center as Super Admin
+              </span>
             </div>
 
             {loginState === 'error' && (

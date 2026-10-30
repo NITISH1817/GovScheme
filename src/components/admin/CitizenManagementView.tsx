@@ -485,7 +485,14 @@ export const CitizenManagementView: React.FC = () => {
                       {citizenDetails?.applications.map((app: any) => (
                         <div key={app._id} className="p-3 bg-[#F8FAFC] dark:bg-[#101D31] border border-[#E2E8F0] dark:border-[#243449] rounded-xl flex items-center justify-between">
                           <div>
-                            <div className="font-bold text-sm text-[#07111F] dark:text-[#F8FAFC]">{app.schemeId?.name || 'Government Scheme'}</div>
+                            <div className="font-bold text-sm text-[#07111F] dark:text-[#F8FAFC] flex items-center gap-2">
+                              <span>{app.schemeId?.name || 'Government Scheme'}</span>
+                              {app.applicationNumber && (
+                                <span className="font-mono text-xs text-[#1769FF] font-semibold bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">
+                                  {app.applicationNumber}
+                                </span>
+                              )}
+                            </div>
                             <div className="text-xs text-[#64748B] dark:text-[#94A3B8]">{app.schemeId?.department || 'National Ministry'}</div>
                           </div>
                           <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#1769FF]/10 text-[#1769FF] dark:text-[#60A5FA]">

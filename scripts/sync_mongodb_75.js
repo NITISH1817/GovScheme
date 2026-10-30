@@ -24,6 +24,23 @@ export function buildSchemePayload(s) {
   const maxAge = er.maxAge ?? 120;
   const maxIncome = er.maxAnnualIncome ?? null;
 
+  const isCentral = s.state === 'Central' || s.state === 'All';
+  const governmentLevel = isCentral ? 'Central' : 'State';
+  let residenceRequirements = isCentral ? 'Citizen of India' : `Resident of ${s.state}`;
+
+  // Evidence-backed statutory residence scopes for Central schemes
+  if (isCentral) {
+    if (s.id === 'mgnrega' || s.id === 'pmay-g' || s.id === 'pm-svamitva-property-card' || s.id === 'house-swachh-bharat-ग्रामीण-toilet') {
+      residenceRequirements = 'Resident of Rural India';
+    } else if (s.id === 'deendayal-antodaya-shelter' || s.id === 'affordable-rental-housing' || s.id === 'house-pmay-urban-2') {
+      residenceRequirements = 'Resident of Urban Area';
+    } else if (s.id === 'pm-svanidhi') {
+      residenceRequirements = 'Resident of Urban / Peri-Urban Area';
+    } else if (s.id === 'pmjay-ayushman' || s.id === 'nsap-old-age-pension' || s.id === 'post-matric-scholarship') {
+      residenceRequirements = 'Citizen of India (State Domicile / Ration Card Linked)';
+    }
+  }
+
   return {
     schemeId: s.id,
     id: s.id,
@@ -36,7 +53,7 @@ export function buildSchemePayload(s) {
     ministry: s.ministry || '',
     category: s.category,
     state: s.state,
-    governmentLevel: s.state === 'All' ? 'Central' : 'State',
+    governmentLevel: governmentLevel,
     benefits: s.benefitsSummary,
     benefitsSummary: s.benefitsSummary,
     benefitAmount: s.financialBenefitAmount || '',
@@ -53,7 +70,7 @@ export function buildSchemePayload(s) {
     disabilityRequirements: er.disabilityRequired ? 'Yes' : 'All',
     studentRequirements: s.category === 'Education' || (er.allowedOccupations && er.allowedOccupations.includes('Student')) ? 'Yes' : 'No',
     farmerRequirements: s.category === 'Agriculture' || (er.allowedOccupations && er.allowedOccupations.some(o => /farmer|cultivator/i.test(o))) ? 'Yes' : 'No',
-    residenceRequirements: s.state === 'All' ? 'Citizen of India' : `Resident of ${s.state}`,
+    residenceRequirements: residenceRequirements,
 
     // Complete canonical nested eligibilityRules block
     eligibilityRules: {

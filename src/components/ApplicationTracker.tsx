@@ -87,15 +87,21 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
         className="flex flex-col md:flex-row items-center justify-between gap-8 text-center sm:text-left"
       >
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gov-navy/5 dark:bg-white/10 text-gov-navy dark:text-white text-xs font-bold border border-gov-navy/10 dark:border-white/10">
-            <Clock className="w-4 h-4 text-gov-saffron animate-pulse" /> {t('liveTracking', 'Live Government DBT Tracking')}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-white/10 text-[#1769FF] dark:text-blue-300 text-xs font-bold border border-blue-200/60 dark:border-white/10">
+            <Clock className="w-4 h-4 text-[#1769FF]" /> {t('trackerBadge', 'Application & Verification Status Tracker')}
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold font-sans tracking-tight text-gov-navy dark:text-white">
             {t('citizenAppTracker', 'Application Tracker')}
           </h1>
           <p className="text-lg text-gov-textMuted dark:text-gray-400 max-w-xl">
-            {t('trackerDesc', 'Real-time status updates on submitted welfare applications across official portals.')}
+            {t('trackerDesc', 'Status updates on submitted welfare applications across official portals.')}
           </p>
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-950 dark:text-blue-300 max-w-2xl">
+            <AlertCircle className="w-4 h-4 text-[#1769FF] shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              {t('trackerOperationalDisclaimer', 'GovScheme records application information and status updates entered by citizens or authorized administrators. For official application and benefit disbursement status, visit the relevant government portal.')}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -249,7 +255,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                           <div className="min-w-0">
                             <span className="block text-sm font-bold text-gray-900 dark:text-white truncate">{doc.type || doc.documentType}</span>
                             <span className="text-xs text-green-700 dark:text-green-400">
-                              {doc.status === 'Verified' ? t('verifiedDigiLocker', 'Verified via DigiLocker / Vault') : t('uploadedLinked', 'Uploaded & Linked')}
+                              {doc.status === 'Verified' ? t('verifiedVault', 'Verified in Citizen Vault') : t('uploadedLinked', 'Uploaded & Linked')}
                             </span>
                           </div>
                         </div>

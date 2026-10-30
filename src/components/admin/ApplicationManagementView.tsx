@@ -8,6 +8,7 @@ import { apiClient } from '../../api/apiClient';
 
 interface ApplicationItem {
   _id: string;
+  applicationNumber?: string;
   userId?: {
     fullName?: string;
     email?: string;
@@ -122,7 +123,8 @@ export const ApplicationManagementView: React.FC = () => {
     const citizen = a.userId?.fullName?.toLowerCase() || '';
     const scheme = a.schemeId?.name?.toLowerCase() || '';
     const id = a._id.toLowerCase();
-    return citizen.includes(q) || scheme.includes(q) || id.includes(q);
+    const appNum = a.applicationNumber?.toLowerCase() || '';
+    return citizen.includes(q) || scheme.includes(q) || id.includes(q) || appNum.includes(q);
   });
 
   return (
@@ -235,7 +237,7 @@ export const ApplicationManagementView: React.FC = () => {
                     className="hover:bg-[#F5F7FA] dark:hover:bg-[#101D31]/50 transition-colors cursor-pointer group"
                   >
                     <td className="px-6 py-4 font-mono text-xs font-bold text-[#1769FF] dark:text-[#60A5FA]">
-                      #{app._id.slice(-6).toUpperCase()}
+                      {app.applicationNumber || `#${app._id.slice(-6).toUpperCase()}`}
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-[#07111F] dark:text-[#F8FAFC]">
@@ -298,7 +300,7 @@ export const ApplicationManagementView: React.FC = () => {
               <div className="p-6 border-b border-[#E2E8F0] dark:border-[#243449] flex justify-between items-start">
                 <div>
                   <div className="text-xs font-bold text-[#1769FF] dark:text-[#60A5FA] uppercase tracking-wider mb-1">
-                    Application Details #{selectedApp._id.slice(-6).toUpperCase()}
+                    Application Details {selectedApp.applicationNumber ? `(${selectedApp.applicationNumber})` : `#${selectedApp._id.slice(-6).toUpperCase()}`}
                   </div>
                   <h2 className="text-xl font-bold text-[#07111F] dark:text-[#F8FAFC]">
                     {selectedApp.schemeId?.name || 'National Scheme'}

@@ -24,6 +24,89 @@ const TAMIL_NADU_DISTRICTS = [
 ];
 
 /**
+ * Normalizes Indic numerals (Devanagari, Tamil, Telugu, Gujarati, Malayalam)
+ * into standard Arabic numerals (0-9).
+ */
+export function normalizeIndicNumerals(text) {
+  if (!text) return '';
+  const devanagari = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+  const tamil = ['௦', '௧', '௨', '௩', '௪', '௫', '௬', '௭', '௮', '௯'];
+  const telugu = ['౦', '౧', '౨', '౩', '౪', '౫', '౬', '౭', '౮', '౯'];
+  const gujarati = ['૦', '૧', '૨', '૩', '૪', '૫', '૬', '૭', '૮', '૯'];
+  const malayalam = ['൦', '൧', '൨', '൩', '൪', '൫', '൬', '൭', '൮', '൯'];
+
+  let res = text;
+  for (let i = 0; i <= 9; i++) {
+    res = res.replace(new RegExp(devanagari[i], 'g'), String(i));
+    res = res.replace(new RegExp(tamil[i], 'g'), String(i));
+    res = res.replace(new RegExp(telugu[i], 'g'), String(i));
+    res = res.replace(new RegExp(gujarati[i], 'g'), String(i));
+    res = res.replace(new RegExp(malayalam[i], 'g'), String(i));
+  }
+  return res;
+}
+
+/**
+ * Calculate age based on ISO YYYY-MM-DD birthdate string
+ */
+export function calculateAge(dobString) {
+  if (!dobString) return null;
+  let y, m, d;
+  if (dobString.includes('-')) {
+    const parts = dobString.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      } else {
+        d = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        y = parseInt(parts[2], 10);
+      }
+    }
+  } else if (dobString.includes('/')) {
+    const parts = dobString.split('/');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      } else {
+        d = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        y = parseInt(parts[2], 10);
+      }
+    }
+  }
+  if (y !== undefined && m !== undefined && d !== undefined) {
+    const birthDate = new Date(y, m, d);
+    if (!isNaN(birthDate.getTime())) {
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const mDiff = today.getMonth() - birthDate.getMonth();
+      if (mDiff < 0 || (mDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age >= 0 && age <= 125 ? age : null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Mask Aadhaar number to display XXXX XXXX 1234 for citizen privacy
+ */
+export function maskAadhaarNumber(aadhaarNumber) {
+  if (!aadhaarNumber) return '';
+  const digits = aadhaarNumber.replace(/[^\d]/g, '');
+  if (digits.length >= 12) {
+    return `XXXX XXXX ${digits.slice(-4)}`;
+  }
+  return aadhaarNumber;
+}
+
+/**
  * Image preprocessing helper:
  * Analyzes image buffer and provides recommendations/metadata.
  */
@@ -39,9 +122,9 @@ export async function preprocessDocumentFile(filePath, mimeType) {
 }
 
 /**
- * Core OCR text extraction using Tesseract.js with English + Tamil language fallback
+ * Core OCR text extraction using Tesseract.js with multilingual support and graceful fallback
  */
-export async function extractRawTextFromFile(filePath, mimeType) {
+export async function extractRawTextFromFile(filePath, mimeType, lang = 'eng') {
   const isPdf = mimeType === 'application/pdf' || (filePath && filePath.toLowerCase().endsWith('.pdf'));
 
   // If PDF, process using pdfjs-dist
@@ -51,7 +134,7 @@ export async function extractRawTextFromFile(filePath, mimeType) {
       const pdfText = await extractTextFromPdfBuffer(pdfBuffer);
       if (pdfText && pdfText.trim().length > 0) {
         return {
-          rawText: pdfText.trim(),
+          rawText: normalizeIndicNumerals(pdfText.trim()),
           meanConfidence: 90,
           engine: 'pdfjs-native'
         };
@@ -60,7 +143,6 @@ export async function extractRawTextFromFile(filePath, mimeType) {
       console.warn('[PDF Extract Notice] Direct PDF text stream unavailable:', pdfErr.message);
     }
 
-    // Do NOT pass PDF paths to Tesseract (Tesseract only supports image buffers/formats)
     return {
       rawText: 'PDF document uploaded. Please verify or complete fields manually.',
       meanConfidence: 65,
@@ -68,29 +150,39 @@ export async function extractRawTextFromFile(filePath, mimeType) {
     };
   }
 
-  // Tesseract OCR worker for image formats (JPG, PNG)
+  // Tesseract OCR worker for image formats (JPG, PNG) with language fallback
   let worker = null;
-  try {
-    worker = await createWorker('eng');
-    const ret = await worker.recognize(filePath);
-    await worker.terminate();
-    worker = null;
+  const targetLangs = [lang, 'eng'];
+  const uniqueLangs = Array.from(new Set(targetLangs.filter(Boolean)));
 
-    return {
-      rawText: ret.data.text || '',
-      meanConfidence: typeof ret.data.confidence === 'number' ? Math.round(ret.data.confidence) : 75,
-      words: ret.data.words?.map(w => ({ text: w.text, confidence: w.confidence })) || [],
-      engine: 'tesseract-eng'
-    };
-  } catch (err) {
-    if (worker) await worker.terminate().catch(() => {});
-    console.error('[OCR Worker Processing Warning]:', err.message);
-    return {
-      rawText: '',
-      meanConfidence: 40,
-      engine: 'tesseract-fallback'
-    };
+  for (const l of uniqueLangs) {
+    try {
+      worker = await createWorker(l);
+      const ret = await worker.recognize(filePath);
+      await worker.terminate();
+      worker = null;
+
+      const rawExtracted = ret.data.text || '';
+      return {
+        rawText: normalizeIndicNumerals(rawExtracted),
+        meanConfidence: typeof ret.data.confidence === 'number' ? Math.round(ret.data.confidence) : 75,
+        words: ret.data.words?.map(w => ({ text: w.text, confidence: w.confidence })) || [],
+        engine: `tesseract-${l}`
+      };
+    } catch (err) {
+      if (worker) {
+        await worker.terminate().catch(() => {});
+        worker = null;
+      }
+      console.warn(`[OCR Engine Warning] Language '${l}' OCR failed, trying fallback:`, err.message);
+    }
   }
+
+  return {
+    rawText: '',
+    meanConfidence: 40,
+    engine: 'tesseract-fallback'
+  };
 }
 
 /**
@@ -102,7 +194,6 @@ async function extractTextFromPdfBuffer(buffer) {
     const uint8Array = new Uint8Array(buffer);
     const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
     const pdfDocument = await loadingTask.promise;
-    
     let textContent = '';
     const numPages = Math.min(pdfDocument.numPages, 5); // Process up to first 5 pages for efficiency
     for (let i = 1; i <= numPages; i++) {
@@ -121,16 +212,15 @@ async function extractTextFromPdfBuffer(buffer) {
  * Structured field extractors per document type with defensible confidence & validation checks
  */
 export function extractStructuredFields(rawText, documentType) {
-  const text = rawText || '';
-  const upper = text.toUpperCase();
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const normalizedText = normalizeIndicNumerals(rawText || '');
+  const lines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
 
   const fields = {};
   const confidences = {};
   const flags = [];
 
   // 1. Full Name Extraction
-  const nameResult = extractName(text, lines, documentType);
+  const nameResult = extractName(normalizedText, lines, documentType);
   if (nameResult.value) {
     fields.fullName = nameResult.value;
     confidences.fullName = nameResult.confidence;
@@ -141,24 +231,29 @@ export function extractStructuredFields(rawText, documentType) {
     flags.push({ field: 'fullName', type: 'MISSING', message: 'Name could not be detected automatically.' });
   }
 
-  // 2. Date of Birth Extraction
-  const dobResult = extractDOB(text);
+  // 2. Date of Birth Extraction & Age Calculation
+  const dobResult = extractDOB(normalizedText);
   if (dobResult.value) {
     fields.dob = dobResult.value;
     confidences.dob = dobResult.confidence;
-  } else if (['Aadhaar', 'Birth Certificate', 'Community Certificate'].includes(documentType)) {
+    const computedAge = calculateAge(dobResult.value);
+    if (computedAge !== null) {
+      fields.age = computedAge;
+      confidences.age = dobResult.confidence;
+    }
+  } else if (['Aadhaar', 'Birth Certificate', 'Community Certificate', 'Voter ID'].includes(documentType)) {
     flags.push({ field: 'dob', type: 'MISSING', message: 'Date of birth not clearly legible in document.' });
   }
 
   // 3. Gender Extraction
-  const genderResult = extractGender(text);
+  const genderResult = extractGender(normalizedText);
   if (genderResult.value) {
     fields.gender = genderResult.value;
     confidences.gender = genderResult.confidence;
   }
 
   // 4. State & District Extraction
-  const locationResult = extractLocation(text);
+  const locationResult = extractLocation(normalizedText);
   if (locationResult.state) {
     fields.state = locationResult.state;
     confidences.state = locationResult.confidence;
@@ -168,8 +263,15 @@ export function extractStructuredFields(rawText, documentType) {
     confidences.district = locationResult.confidence;
   }
 
-  // 5. Document Number Extraction based on Document Type
-  const docNumResult = extractDocumentNumber(text, documentType);
+  // 5. Address Extraction
+  const addressResult = extractAddress(normalizedText, lines);
+  if (addressResult.value) {
+    fields.address = addressResult.value;
+    confidences.address = addressResult.confidence;
+  }
+
+  // 6. Document Number Extraction based on Document Type
+  const docNumResult = extractDocumentNumber(normalizedText, documentType);
   if (docNumResult.value) {
     fields.docNumber = docNumResult.value;
     confidences.docNumber = docNumResult.confidence;
@@ -180,9 +282,9 @@ export function extractStructuredFields(rawText, documentType) {
     flags.push({ field: 'docNumber', type: 'MISSING', message: `${documentType} certificate / ID number not recognized.` });
   }
 
-  // 6. Annual Income Extraction (for Income Certificate, Farmer Cert, Ration Card)
+  // 7. Annual Income Extraction (for Income Certificate, Farmer Cert, Ration Card)
   if (['Income Certificate', 'Ration Card', 'Farmer Certificate'].includes(documentType)) {
-    const incomeResult = extractIncome(text);
+    const incomeResult = extractIncome(normalizedText);
     if (incomeResult.value !== undefined) {
       fields.annualIncome = incomeResult.value;
       confidences.annualIncome = incomeResult.confidence;
@@ -191,9 +293,9 @@ export function extractStructuredFields(rawText, documentType) {
     }
   }
 
-  // 7. Community / Caste Category Extraction (for Community Certificate, First Graduate)
-  if (['Community Certificate', 'First Graduate Certificate'].includes(documentType)) {
-    const categoryResult = extractCategory(text);
+  // 8. Community / Caste Category Extraction
+  if (['Community Certificate', 'First Graduate Certificate', 'Ration Card'].includes(documentType)) {
+    const categoryResult = extractCategory(normalizedText);
     if (categoryResult.value) {
       fields.category = categoryResult.value;
       confidences.category = categoryResult.confidence;
@@ -202,17 +304,29 @@ export function extractStructuredFields(rawText, documentType) {
     }
   }
 
-  // 8. Issuing Authority Extraction
-  const authorityResult = extractIssuingAuthority(text, lines);
+  // 9. Disability Details (for Disability Certificate / UDID)
+  if (['Disability Certificate'].includes(documentType)) {
+    const disResult = extractDisability(normalizedText);
+    if (disResult.percentage !== undefined) {
+      fields.disabilityPercentage = disResult.percentage;
+      confidences.disabilityPercentage = disResult.confidence;
+    }
+    if (disResult.type) {
+      fields.disabilityType = disResult.type;
+      confidences.disabilityType = disResult.confidence;
+    }
+  }
+
+  // 10. Issuing Authority Extraction
+  const authorityResult = extractIssuingAuthority(normalizedText, lines);
   if (authorityResult.value) {
     fields.issuingAuthority = authorityResult.value;
     confidences.issuingAuthority = authorityResult.confidence;
   }
 
-  // Calculate defensible overall confidence score
+  // Calculate overall confidence score
   const scoreKeys = Object.keys(confidences);
-  const overall = scoreKeys.length > 0 
-    ? Math.round(scoreKeys.reduce((acc, k) => acc + confidences[k], 0) / scoreKeys.length)
+  const overall = scoreKeys.length > 0    ? Math.round(scoreKeys.reduce((acc, k) => acc + confidences[k], 0) / scoreKeys.length)
     : 45;
   confidences.overall = overall;
 
@@ -232,11 +346,13 @@ export function parseDocumentStructuredFields(documentType, rawText) {
   if (normalizedType.includes('aadhaar')) docTypeParam = 'Aadhaar';
   else if (normalizedType.includes('pan')) docTypeParam = 'PAN';
   else if (normalizedType.includes('income')) docTypeParam = 'Income Certificate';
-  else if (normalizedType.includes('community')) docTypeParam = 'Community Certificate';
+  else if (normalizedType.includes('community') || normalizedType.includes('caste')) docTypeParam = 'Community Certificate';
   else if (normalizedType.includes('ration')) docTypeParam = 'Ration Card';
+  else if (normalizedType.includes('voter')) docTypeParam = 'Voter ID';
   else if (normalizedType.includes('first graduate')) docTypeParam = 'First Graduate Certificate';
-  else if (normalizedType.includes('disability')) docTypeParam = 'Disability Certificate';
+  else if (normalizedType.includes('disability') || normalizedType.includes('udid')) docTypeParam = 'Disability Certificate';
   else if (normalizedType.includes('birth')) docTypeParam = 'Birth Certificate';
+  else if (normalizedType.includes('residence') || normalizedType.includes('nativity') || normalizedType.includes('domicile')) docTypeParam = 'Residence Certificate';
 
   const res = extractStructuredFields(rawText, docTypeParam);
 
@@ -250,12 +366,18 @@ export function parseDocumentStructuredFields(documentType, rawText) {
     extractedFields: {
       fullName: res.fields.fullName || null,
       docNumber: res.fields.docNumber || null,
-      annualIncome: res.fields.annualIncome || null,
+      panNumber: res.fields.panNumber || res.fields.docNumber || null,
+      voterId: res.fields.voterId || res.fields.docNumber || null,
+      rationCardNumber: res.fields.rationCardNumber || res.fields.docNumber || null,
+      annualIncome: res.fields.annualIncome !== undefined ? res.fields.annualIncome : null,
       dob: res.fields.dob || null,
+      age: res.fields.age !== undefined ? res.fields.age : null,
       gender: res.fields.gender || null,
       category: res.fields.category || null,
       state: res.fields.state || null,
       district: res.fields.district || null,
+      address: res.fields.address || null,
+      disabilityPercentage: res.fields.disabilityPercentage !== undefined ? res.fields.disabilityPercentage : null,
       issuingAuthority: res.fields.issuingAuthority || null
     },
     fieldConfidences: res.confidences,
@@ -266,9 +388,8 @@ export function parseDocumentStructuredFields(documentType, rawText) {
 // ----------------- Individual Field Parsing Logic ----------------- //
 
 function extractName(text, lines, documentType) {
-  // Regex patterns: Name: <value>, Shri/Smt/Thiru <value>
   const patterns = [
-    /(?:Name|Full Name|பெயர்|नाम)\s*[:\-–]?\s*([A-Za-z\s.]{3,40})/i,
+    /(?:Name|Full Name|பெயர்|नाम|പേര്|नाव|નામ|పేరు)\s*[:\-–]?\s*([A-Za-z\s.]{3,40})/i,
     /(?:This is to certify that|certify that)\s+(?:Thiru|Selvi|Tmt|Mr|Ms|Mrs)?\.?\s*([A-Za-z\s.]{3,40})/i,
     /(?:Son of|Daughter of|Wife of|S\/o|D\/o|W\/o)\s+([A-Za-z\s.]{3,35})/i
   ];
@@ -287,7 +408,7 @@ function extractName(text, lines, documentType) {
   for (let i = 0; i < Math.min(lines.length, 12); i++) {
     const line = lines[i];
     const up = line.toUpperCase();
-    if (up.includes('GOVERNMENT OF INDIA') || up.includes('UNIQUE IDENTIFICATION') || up.includes('GOVERNMENT OF TAMIL NADU')) {
+    if (up.includes('GOVERNMENT OF INDIA') || up.includes('UNIQUE IDENTIFICATION') || up.includes('GOVERNMENT OF TAMIL NADU') || up.includes('ELECTION COMMISSION')) {
       if (i + 1 < lines.length) {
         const candidate = cleanName(lines[i + 1]);
         if (isValidName(candidate)) {
@@ -302,30 +423,28 @@ function extractName(text, lines, documentType) {
 
 function cleanName(raw) {
   return raw
-    .replace(/(?:Father|Mother|DOB|Year|Male|Female|Address|UIDAI|Govt).*/i, '')
+    .replace(/(?:Father|Mother|DOB|Year|Male|Female|Address|UIDAI|Govt|Election).*/i, '')
     .replace(/[^A-Za-z\s.]/g, '')
     .trim();
 }
 
 function isValidName(name) {
-  return name && name.length >= 3 && !/^(government|department|revenue|certificate|officer|tamil|india)$/i.test(name);
+  return name && name.length >= 3 && !/^(government|department|revenue|certificate|officer|tamil|india|election|commission)$/i.test(name);
 }
 
 function extractDOB(text) {
-  // DD/MM/YYYY or YYYY/MM/DD
+  // DD/MM/YYYY or YYYY/MM/DD with separators
   const m = text.match(/\b(\d{2}[\/\-.]\d{2}[\/\-.]\d{4}|\d{4}[\/\-.]\d{2}[\/\-.]\d{2})\b/);
   if (m) {
     const parts = m[1].replace(/[\/.]/g, '-').split('-');
     if (parts.length === 3) {
-      const formatted = parts[0].length === 4 
-        ? `${parts[0]}-${parts[1]}-${parts[2]}` 
-        : `${parts[2]}-${parts[1]}-${parts[0]}`;
+      const formatted = parts[0].length === 4        ? `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`        : `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
       return { value: formatted, confidence: 92 };
     }
   }
 
   // Year of Birth fallback
-  const yob = text.match(/(?:Year of Birth|YOB|DOB|Birth Year)\s*[:\-]?\s*(19\d{2}|20\d{2})/i);
+  const yob = text.match(/(?:Year of Birth|YOB|DOB|Birth Year|பிறந்த ஆண்டு|जन्म वर्ष)\s*[:\-]?\s*(19\d{2}|20\d{2})/i);
   if (yob) {
     return { value: `${yob[1]}-01-01`, confidence: 75 };
   }
@@ -335,13 +454,13 @@ function extractDOB(text) {
 
 function extractGender(text) {
   const lower = text.toLowerCase();
-  if (/\b(female|woman|stree|mahila|பெண்)\b/.test(lower)) {
+  if (/\b(female|woman|stree|mahila|பெண்|महिला|സ്ത്രീ|મહિલા|స్త్రీ)\b/.test(lower)) {
     return { value: 'Female', confidence: 95 };
   }
-  if (/\b(male|man|purush|ஆண்)\b/.test(lower) && !/\bfemale\b/.test(lower)) {
+  if (/\b(male|man|purush|ஆண்|पुरुष|പുരുഷൻ|પુરુષ|పురుషుడు)\b/.test(lower) && !/\bfemale\b/.test(lower)) {
     return { value: 'Male', confidence: 95 };
   }
-  if (/\b(transgender|thirunangai|திருநங்கை)\b/.test(lower)) {
+  if (/\b(transgender|thirunangai|திருநங்கை|तृतीय पंथी|ട്രാൻസ്‌ജെൻഡർ)\b/.test(lower)) {
     return { value: 'Transgender', confidence: 95 };
   }
   return { value: '', confidence: 0 };
@@ -374,6 +493,32 @@ function extractLocation(text) {
   };
 }
 
+function extractAddress(text, lines) {
+  const patterns = [
+    /(?:Address|Full Address|முகவரி|पता|ವಿಳಾಸ|చిరునామా|മേൽവിലാസം)\s*[:\-–]?\s*([A-Za-z0-9\s,.\/-]{10,120})/i,
+    /(?:Village|Taluk|District|Pin\s*Code|Pincode)[\s\S]{5,80}?(?:\d{6})/i
+  ];
+
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m && m[1]) {
+      const cleaned = m[1].replace(/[\r\n]+/g, ' ').trim();
+      if (cleaned.length >= 8) {
+        return { value: cleaned, confidence: 82 };
+      }
+    }
+  }
+
+  // Look for a line containing 6-digit pin code
+  for (const line of lines) {
+    if (/\b[1-9][0-9]{5}\b/.test(line) && line.length > 15) {
+      return { value: line.trim(), confidence: 78 };
+    }
+  }
+
+  return { value: '', confidence: 0 };
+}
+
 function extractDocumentNumber(text, documentType) {
   const cleaned = text.replace(/[\r\n]+/g, ' ');
 
@@ -395,6 +540,15 @@ function extractDocumentNumber(text, documentType) {
       break;
     }
 
+    case 'Voter ID': {
+      // EPIC format: 3 letters + 7 numbers e.g. ABC1234567 or WB/01/012/123456
+      const epicMatch = cleaned.match(/\b([A-Z]{3}[0-9]{7})\b/i) || cleaned.match(/\b([A-Z]{2}\/[0-9]{2}\/[0-9]{3}\/[0-9]{6})\b/i);
+      if (epicMatch) {
+        return { value: epicMatch[1].toUpperCase(), confidence: 95, isAmbiguous: false };
+      }
+      break;
+    }
+
     case 'Ration Card': {
       // Smart Card / PDS Ration format: e.g. 05/G/0123456 or 12 alphanumeric
       const match = cleaned.match(/\b(\d{2}\/[A-Z0-9]\/\d{7}|\d{10,14})\b/i);
@@ -402,11 +556,18 @@ function extractDocumentNumber(text, documentType) {
       break;
     }
 
+    case 'Birth Certificate': {
+      const birthMatch = cleaned.match(/(?:Registration\s*No|Reg\s*No|Certificate\s*No|ப\s*எண்)[.:\s]+([A-Z0-9\/-]{4,20})/i) || cleaned.match(/\b([A-Z0-9]{2,5}[-/][0-9]{4}[-/][0-9]{4,8})\b/i);
+      if (birthMatch) {
+        return { value: birthMatch[1].toUpperCase(), confidence: 90, isAmbiguous: false };
+      }
+      break;
+    }
+
     case 'Income Certificate':
     case 'Community Certificate':
     case 'Residence Certificate':
     case 'First Graduate Certificate': {
-      // Common e-District / e-Sevai formats: TN-520240123456, REV/2026/89124, etc.
       const match = cleaned.match(/\b((?:TN[-/]?\d{10,14})|(?:(?:INC|COMM|RES|FGC|REV)[-/][A-Z0-9/]{6,16}))\b/i);
       if (match) return { value: match[1].toUpperCase(), confidence: 90, isAmbiguous: false };
       break;
@@ -421,7 +582,7 @@ function extractDocumentNumber(text, documentType) {
   }
 
   // Generic fallback: check for "Certificate No:" or "Reg No:"
-  const genMatch = cleaned.match(/(?:Certificate\s*No|Reg\s*No|Application\s*No|Ref\s*No|Doc\s*No)[.:\s]+([A-Z0-9\/-]{6,24})/i);
+  const genMatch = cleaned.match(/(?:Certificate\s*No|Reg\s*No|Application\s*No|Ref\s*No|Doc\s*No|சான்றிதழ்\s*எண்|प्रमाण\s*पत्र\s*क्रमांक)[.:\s]+([A-Z0-9\/-]{6,24})/i);
   if (genMatch) {
     return { value: genMatch[1].trim(), confidence: 75, isAmbiguous: true };
   }
@@ -431,9 +592,10 @@ function extractDocumentNumber(text, documentType) {
 
 function extractIncome(text) {
   const patterns = [
-    /(?:Annual\s*Income|Family\s*Income|வருமானம்|Income\s*is|Total\s*Income)\s*[:\-–]?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+)/i,
-    /(?:Rs\.?|INR|₹)\s*([0-9,]{4,10})\s*(?:\/-|\/year|per\s*annum|only)/i,
-    /\b([1-9][0-9]{4,6})\s*(?:\/-|\s*rupees)/i
+    /(?:Annual\s*Income|Family\s*Income|வருமானம்|वार्षिक आय|Total\s*Income|आय)[^0-9\n]{0,50}(?:Rs\.?|INR|₹)?\s*([0-9,]+)/i,
+    /(?:Rs\.?|INR|₹)\s*([0-9,]{4,10})/i,
+    /(?:income|amount)\s*(?:is|of)?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]{4,10})/i,
+    /\b([1-9][0-9]{4,6})\s*(?:\/-|\s*rupees|\s*only)/i
   ];
 
   for (const p of patterns) {
@@ -450,31 +612,48 @@ function extractIncome(text) {
 
 function extractCategory(text) {
   const upper = text.toUpperCase();
-  if (upper.includes('MOST BACKWARD') || upper.includes('MBC')) {
-    return { value: 'OBC', confidence: 94 }; // In central/common categorization, MBC is under OBC
+  if (upper.includes('MOST BACKWARD') || upper.includes('MBC') || upper.includes('மிகவும் பிற்படுத்தப்பட்ட')) {
+    return { value: 'OBC', confidence: 94 };
   }
-  if (upper.includes('BACKWARD CLASS') || upper.includes('OBC') || upper.includes('BC')) {
+  if (upper.includes('BACKWARD CLASS') || upper.includes('OBC') || upper.includes('BC') || upper.includes('பிற்படுத்தப்பட்ட') || upper.includes('अन्य पिछड़ा')) {
     return { value: 'OBC', confidence: 92 };
   }
-  if (upper.includes('SCHEDULED CASTE') || upper.includes('SC')) {
+  if (upper.includes('SCHEDULED CASTE') || upper.includes('SC') || upper.includes('ஆதி திராவிடர்') || upper.includes('अनुसूचित जाति')) {
     return { value: 'SC', confidence: 96 };
   }
-  if (upper.includes('SCHEDULED TRIBE') || upper.includes('ST')) {
+  if (upper.includes('SCHEDULED TRIBE') || upper.includes('ST') || upper.includes('பழங்குடியினர்') || upper.includes('अनुसूचित जनजाति')) {
     return { value: 'ST', confidence: 96 };
   }
-  if (upper.includes('ECONOMICALLY WEAKER') || upper.includes('EWS')) {
+  if (upper.includes('ECONOMICALLY WEAKER') || upper.includes('EWS') || upper.includes('आर्थिक रूप से कमजोर')) {
     return { value: 'EWS', confidence: 90 };
   }
-  if (upper.includes('GENERAL') || upper.includes('OPEN CATEGORY')) {
+  if (upper.includes('GENERAL') || upper.includes('OPEN CATEGORY') || upper.includes('सामान्य')) {
     return { value: 'General', confidence: 85 };
   }
   return { value: '', confidence: 0 };
 }
 
+function extractDisability(text) {
+  const percentMatch = text.match(/([0-9]{2,3})\s*%/);
+  const percentage = percentMatch ? parseInt(percentMatch[1], 10) : undefined;
+  let type = '';
+  const lower = text.toLowerCase();
+  if (lower.includes('locomotor') || lower.includes('orthopedic')) type = 'Locomotor Disability';
+  else if (lower.includes('visual') || lower.includes('blind')) type = 'Visual Impairment';
+  else if (lower.includes('hearing') || lower.includes('deaf')) type = 'Hearing Impairment';
+  else if (lower.includes('intellectual') || lower.includes('mental')) type = 'Intellectual Disability';
+
+  return {
+    percentage: percentage && percentage <= 100 ? percentage : undefined,
+    type,
+    confidence: percentage ? 90 : (type ? 80 : 0)
+  };
+}
+
 function extractIssuingAuthority(text, lines) {
   const patterns = [
-    /(?:Issuing Authority|Issued by|வழங்கியவர்|Tahsildar|Revenue Divisional Officer|District Collector)/i,
-    /(?:Revenue Department|Government of Tamil Nadu|UIDAI|Income Tax Department)/i
+    /(?:Issuing Authority|Issued by|வழங்கியவர்|Tahsildar|Revenue Divisional Officer|District Collector|Medical Board)/i,
+    /(?:Revenue Department|Government of Tamil Nadu|UIDAI|Income Tax Department|Election Commission)/i
   ];
 
   for (const p of patterns) {
