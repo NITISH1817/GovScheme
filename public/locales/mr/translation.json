@@ -2591,5 +2591,12 @@
   "retryExtractionBtn": "पुन्हा प्रयत्न करा",
   "enterDetailsManuallyBtn": "तपशील मॅन्युअली प्रविष्ट करा",
   "ocrAuthenticityNotice": "अस्सलता सूचना",
-  "walkthroughHighlightingLabel": "लक्ष्य विभाग हायलाइट केला"
+  "walkthroughHighlightingLabel": "लक्ष्य विभाग हायलाइट केला",
+  "saveAndScanNext": "कागदपत्र जतन करा आणि पुढील अपलोड करा",
+  "saveAndUploadAnother": "सध्याचे कागदपत्र जतन करा आणि लगेच पुढील कागदपत्र अपलोड करा",
+  "docSavedNextReady": "✓ {{doc}} व्हॉल्टमध्ये जतन केले! आता तुम्ही {{next}} अपलोड करू शकता.",
+  "removeFile": "निवडलेली फाइल काढा",
+  "remove": "काढा",
+  "invalidFileError": "असमर्थित किंवा अवैध फाइल स्वरूप."
 }
+

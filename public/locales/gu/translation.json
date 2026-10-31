@@ -2591,5 +2591,12 @@
   "retryExtractionBtn": "ફરીથી પ્રયાસ કરો",
   "enterDetailsManuallyBtn": "વિગતો મેન્યુઅલી દાખલ કરો",
   "ocrAuthenticityNotice": "અધિકૃતતા નોટિસ",
-  "walkthroughHighlightingLabel": "લક્ષ્ય વિભાગ હાઇલાઇટ થયેલ છે"
+  "walkthroughHighlightingLabel": "લક્ષ્ય વિભાગ હાઇલાઇટ થયેલ છે",
+  "saveAndScanNext": "દસ્તાવેજ સાચવો અને આગામી અપલોડ કરો",
+  "saveAndUploadAnother": "વર્તમાન દસ્તાવેજ સાચવો અને તરત જ આગામી દસ્તાવેજ અપલોડ કરો",
+  "docSavedNextReady": "✓ {{doc}} વૉલ્ટમાં સાચવવામાં આવ્યો! હવે તમે {{next}} અપલોડ કરી શકો છો.",
+  "removeFile": "પસંદ કરેલી ફાઇલ દૂર કરો",
+  "remove": "દૂર કરો",
+  "invalidFileError": "બિનસપોર્ટેડ અથવા અમાન્ય ફાઇલ ફોર્મેટ."
 }
+

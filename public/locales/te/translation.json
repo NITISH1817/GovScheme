@@ -2570,5 +2570,12 @@
   "retryExtractionBtn": "మళ్లీ ప్రయత్నించండి",
   "enterDetailsManuallyBtn": "వివరాలను మాన్యువల్‌గా నమోదు చేయండి",
   "ocrAuthenticityNotice": "ప్రామాణికత నోటీసు",
-  "walkthroughHighlightingLabel": "లక్ష్య విభాగం హైలైట్ చేయబడింది"
+  "walkthroughHighlightingLabel": "లక్ష్య విభాగం హైలైట్ చేయబడింది",
+  "saveAndScanNext": "పత్రాన్ని సేవ్ చేసి తర్వాతి పత్రాన్ని అప్‌లోడ్ చేయండి",
+  "saveAndUploadAnother": "ప్రస్తుత పత్రాన్ని సేవ్ చేసి వెంటనే తర్వాతి పత్రాన్ని అప్‌లోడ్ చేయండి",
+  "docSavedNextReady": "✓ {{doc}} వాల్ట్‌లో భద్రపరచబడింది! ఇప్పుడు మీరు {{next}} అప్‌లోడ్ చేయవచ్చు.",
+  "removeFile": "ఎంచుకున్న ఫైల్‌ను తీసివేయండి",
+  "remove": "తీసివేయి",
+  "invalidFileError": "మద్దతు లేని లేదా చెల్లని ఫైల్ ఫార్మాట్."
 }
+

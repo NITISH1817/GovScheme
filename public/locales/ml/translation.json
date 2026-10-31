@@ -2570,5 +2570,12 @@
   "retryExtractionBtn": "വീണ്ടും ശ്രമിക്കുക",
   "enterDetailsManuallyBtn": "വിവരങ്ങൾ നേരിട്ട് നൽകുക",
   "ocrAuthenticityNotice": "ആധികാരികത അറിയിപ്പ്",
-  "walkthroughHighlightingLabel": "ലക്ഷ്യ വിഭാഗം ഹൈലൈറ്റ് ചെയ്തു"
+  "walkthroughHighlightingLabel": "ലക്ഷ്യ വിഭാഗം ഹൈലൈറ്റ് ചെയ്തു",
+  "saveAndScanNext": "രേഖ സംരക്ഷിച്ച് അടുത്തത് അപ്‌ലോഡ് ചെയ്യുക",
+  "saveAndUploadAnother": "നിലവിലെ രേഖ സംരക്ഷിച്ച് ഉടൻ അടുത്ത രേഖ അപ്‌ലോഡ് ചെയ്യുക",
+  "docSavedNextReady": "✓ {{doc}} വോൾട്ടിൽ സംരക്ഷിച്ചു! ഇപ്പോൾ നിങ്ങൾക്ക് {{next}} അപ്‌ലോഡ് ചെയ്യാം.",
+  "removeFile": "തിരഞ്ഞെടുത്ത ഫയൽ നീക്കം ചെയ്യുക",
+  "remove": "നീക്കം ചെയ്യുക",
+  "invalidFileError": "പിന്തുണയ്‌ക്കാത്ത അല്ലെങ്കിൽ അസാധുവായ ഫയൽ ഫോർമാറ്റ്."
 }
+

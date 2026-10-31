@@ -22,22 +22,45 @@ export const uploadAndProcessDocument = async (req, res) => {
     }
 
     // Generate strict unique documentId (DOC-timestamp-random)
-    const documentId = `DOC-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const relativeUrl = `/uploads/${req.file.filename}`;
 
-    // Create Document record strictly isolated for the authenticated user
-    const document = await Document.create({
-      documentId,
+    // Find if user already has an existing document record for this documentType to update without duplicates
+    let document = await Document.findOne({
       userId: req.user._id,
-      documentType,
-      type: documentType,
-      originalFileName: req.file.originalname,
-      fileMimeType: req.file.mimetype,
-      fileSize: req.file.size,
-      fileUrl: relativeUrl,
-      ocrStatus: 'PROCESSING',
-      verificationStatus: 'PENDING'
+      $or: [{ documentType }, { type: documentType }]
     });
+
+    if (document) {
+      // Safely unlink previous physical file if different
+      if (document.fileUrl) {
+        const oldFile = path.resolve('uploads', path.basename(document.fileUrl));
+        if (fs.existsSync(oldFile) && oldFile !== req.file.path) {
+          try { fs.unlinkSync(oldFile); } catch (e) {}
+        }
+      }
+      document.originalFileName = req.file.originalname;
+      document.fileMimeType = req.file.mimetype;
+      document.fileSize = req.file.size;
+      document.fileUrl = relativeUrl;
+      document.ocrStatus = 'PROCESSING';
+      document.verificationStatus = 'PENDING';
+      await document.save();
+    } else {
+      // Generate strict unique documentId (DOC-timestamp-random)
+      const documentId = `DOC-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+      document = await Document.create({
+        documentId,
+        userId: req.user._id,
+        documentType,
+        type: documentType,
+        originalFileName: req.file.originalname,
+        fileMimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        fileUrl: relativeUrl,
+        ocrStatus: 'PROCESSING',
+        verificationStatus: 'PENDING'
+      });
+    }
 
     // Run OCR Processing workflow asynchronously or synchronously
     try {
@@ -414,24 +437,44 @@ export const createManualDocument = async (req, res) => {
       createdAt: new Date()
     }, null, 2), 'utf8');
 
-    const document = await Document.create({
-      documentId,
+    let document = await Document.findOne({
       userId: req.user._id,
-      documentType: docType,
-      type: docType,
-      originalFileName: `${docType}_manual_record.json`,
-      fileMimeType: 'application/json',
-      fileSize: fs.statSync(physicalPath).size,
-      fileUrl: `/uploads/${safeFileName}`,
-      ocrStatus: 'COMPLETED',
-      extractedFields: {
+      $or: [{ documentType: docType }, { type: docType }]
+    });
+
+    if (document) {
+      document.docNumber = docNumber || document.docNumber || '';
+      document.extractedFields = {
         documentNumber: docNumber,
         ...(extractedFields || {})
-      },
-      verificationStatus: 'PENDING',
-      isUserConfirmed: true,
-      userConfirmedAt: new Date()
-    });
+      };
+      document.fileUrl = `/uploads/${safeFileName}`;
+      document.fileSize = fs.statSync(physicalPath).size;
+      document.ocrStatus = 'COMPLETED';
+      document.verificationStatus = 'PENDING';
+      document.isUserConfirmed = true;
+      document.userConfirmedAt = new Date();
+      await document.save();
+    } else {
+      document = await Document.create({
+        documentId,
+        userId: req.user._id,
+        documentType: docType,
+        type: docType,
+        originalFileName: `${docType}_manual_record.json`,
+        fileMimeType: 'application/json',
+        fileSize: fs.statSync(physicalPath).size,
+        fileUrl: `/uploads/${safeFileName}`,
+        ocrStatus: 'COMPLETED',
+        extractedFields: {
+          documentNumber: docNumber,
+          ...(extractedFields || {})
+        },
+        verificationStatus: 'PENDING',
+        isUserConfirmed: true,
+        userConfirmedAt: new Date()
+      });
+    }
 
     res.status(201).json({
       success: true,

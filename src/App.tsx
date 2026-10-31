@@ -913,7 +913,7 @@ export const App: React.FC = () => {
       if (!prev) return prev;
       // Replace existing document slot of the same type or matching documentId
       const existingFiltered = (prev.documents || []).filter(
-        d => (d.documentId || d.id || d._id) !== (newDoc.documentId || newDoc.id || newDoc._id) && d.type !== newDoc.type
+        d => (d.documentId || d.id || d._id) !== (newDoc.documentId || newDoc.id || newDoc._id) && (d.type || d.documentType) !== (newDoc.type || newDoc.documentType)
       );
       return {
         ...prev,
@@ -978,7 +978,7 @@ export const App: React.FC = () => {
             setUser(prev => {
               if (!prev) return prev;
               const existingFiltered = (prev.documents || []).filter(
-                d => (d.documentId || d.id || d._id) !== (mappedDoc.documentId || mappedDoc.id || mappedDoc._id) && d.type !== mappedDoc.type
+                d => (d.documentId || d.id || d._id) !== (mappedDoc.documentId || mappedDoc.id || mappedDoc._id) && (d.type || d.documentType) !== (mappedDoc.type || mappedDoc.documentType)
               );
               return {
                 ...prev,

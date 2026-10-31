@@ -19,7 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { DocumentRecord, UserProfile } from '../types';
-import { performOCRScan, OCRScanResult } from '../services/ocrService';
+import { performOCRScan, OCRScanResult, validateDocumentFile } from '../services/ocrService';
 import { GovSchemeLogoLoader } from './brand';
 
 const SUPPORTED_DOC_TYPES: Array<{ type: DocumentRecord['type']; label: string }> = [
@@ -83,6 +83,46 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   const isScanningRef = useRef(false);
   const timerRef = useRef<any>(null);
   const isCancelledRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [successNotice, setSuccessNotice] = useState<string>('');
+
+  const resetScanner = (nextType?: DocumentRecord['type']) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    isScanningRef.current = false;
+    isCancelledRef.current = false;
+    setIsScanning(false);
+    setSelectedFile(null);
+    if (filePreviewUrl && filePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
+    setFilePreviewUrl(null);
+    setScanResult(null);
+    setManualMode(false);
+    setRawTextCopied(false);
+    setOcrStage('idle');
+    setElapsedSeconds(0);
+    setFailureReason('');
+    setDocNumber('');
+    setFullName('');
+    setDob('');
+    setAge(undefined);
+    setGender('');
+    setAnnualIncome(undefined);
+    setCategory('');
+    setState('');
+    setDistrict('');
+    setAddress('');
+    setDisabilityPercentage(undefined);
+    setCitizenConsentApproved(false);
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+
+    if (nextType && nextType !== 'Unknown') {
+      setSelectedType(nextType);
+    }
+  };
 
   // Field Review States
   const [docNumber, setDocNumber] = useState('');
@@ -113,12 +153,16 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   // Citizen Explicit Consent
   const [citizenConsentApproved, setCitizenConsentApproved] = useState(false);
 
-  // Sync expectedType when modal opens
+  // Reset scanner state when modal opens or expectedType changes
   useEffect(() => {
-    if (expectedType && expectedType !== 'Unknown') {
-      setSelectedType(expectedType);
+    if (isOpen) {
+      resetScanner(expectedType !== 'Unknown' ? expectedType : 'Aadhaar');
+      setSuccessNotice('');
+    } else {
+      resetScanner();
+      setSuccessNotice('');
     }
-  }, [expectedType]);
+  }, [isOpen, expectedType]);
 
   // Clean up preview object URL
   useEffect(() => {
@@ -131,7 +175,34 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
 
   if (!isOpen) return null;
 
+  const handleClearSelectedFile = () => {
+    setSelectedFile(null);
+    if (filePreviewUrl && filePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
+    setFilePreviewUrl(null);
+    setOcrStage('idle');
+    setFailureReason('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
   const handleFileSelection = (file: File) => {
+    setSuccessNotice('');
+    const validation = validateDocumentFile(file);
+    if (!validation.isValid) {
+      setFailureReason(validation.error || t('invalidFileError', 'Unsupported or invalid file format.'));
+      setOcrStage('failed');
+      setSelectedFile(null);
+      if (filePreviewUrl && filePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(filePreviewUrl);
+      }
+      setFilePreviewUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+      return;
+    }
+
     setSelectedFile(file);
     setScanResult(null);
     setManualMode(false);
@@ -149,6 +220,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     if (e.target.files && e.target.files[0]) {
       handleFileSelection(e.target.files[0]);
     }
+    e.target.value = '';
   };
 
   const handleCancelScan = () => {
@@ -260,7 +332,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     }
   };
 
-  const handleSaveToVault = () => {
+  const handleSaveToVault = (closeAfterSave: boolean = true) => {
     if (!scanResult && !manualMode) return;
 
     const finalDocNumber = docNumber.trim() || `DOC-${Date.now()}`;
@@ -314,7 +386,29 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     }
 
     onSaveDocument(newDoc, Object.keys(autoFill).length > 0 ? autoFill : undefined, selectedFile);
-    onClose();
+
+    if (closeAfterSave) {
+      resetScanner();
+      onClose();
+    } else {
+      // Find next un-uploaded document type
+      const currentSavedType = selectedType;
+      const uploadedTypes = new Set(
+        (userProfile?.documents || []).map(d => d.type || d.documentType)
+      );
+      uploadedTypes.add(currentSavedType);
+
+      const nextSupported = SUPPORTED_DOC_TYPES.find(dt => !uploadedTypes.has(dt.type));
+      const nextType = nextSupported ? nextSupported.type : (currentSavedType === 'Aadhaar' ? 'PAN' : 'Aadhaar');
+
+      resetScanner(nextType);
+      setSuccessNotice(
+        t('docSavedNextReady', '✓ {{doc}} saved to vault! You can now upload {{next}}.', {
+          doc: currentSavedType,
+          next: nextType
+        })
+      );
+    }
   };
 
   const getConfidenceBadge = (confidence: number) => {
@@ -433,6 +527,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                     accept="image/*,.pdf"
                     onChange={handleFileChange}
                     className="hidden"
+                    ref={fileInputRef}
                     id="ocr-file-input"
                   />
                   <label
@@ -449,6 +544,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                     capture="environment"
                     onChange={handleFileChange}
                     className="hidden"
+                    ref={cameraInputRef}
                     id="ocr-camera-input"
                   />
                   <label
@@ -460,32 +556,44 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                   </label>
                 </div>
 
-                {/* File Preview */}
+                {/* File Preview with Clear Action */}
                 {selectedFile && (
-                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-center gap-4 text-left">
-                    {filePreviewUrl ? (
-                      <img
-                        src={filePreviewUrl}
-                        alt="Document Preview"
-                        className="w-24 h-24 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center border border-blue-200 dark:border-blue-800">
-                        <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>{selectedFile.name}</span>
-                      </div>
-                      <div className="text-slate-500 text-xs">
-                        Size: {(selectedFile.size / 1024).toFixed(1)} KB • Type: {selectedFile.type || 'Document'}
-                      </div>
-                      <div className="text-emerald-700 dark:text-emerald-400 font-semibold text-[11px]">
-                        ✓ Ready for OCR Processing
+                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4 text-left p-3.5 rounded-2xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-3">
+                      {filePreviewUrl ? (
+                        <img
+                          src={filePreviewUrl}
+                          alt="Document Preview"
+                          className="w-16 h-16 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center border border-blue-200 dark:border-blue-800 shrink-0">
+                          <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        </div>
+                      )}
+                      <div className="space-y-0.5 overflow-hidden">
+                        <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="truncate max-w-[200px] sm:max-w-xs">{selectedFile.name}</span>
+                        </div>
+                        <div className="text-slate-500 text-[11px]">
+                          Size: {(selectedFile.size / 1024).toFixed(1)} KB • {selectedFile.type || 'Document'}
+                        </div>
+                        <div className="text-emerald-700 dark:text-emerald-400 font-semibold text-[10px]">
+                          ✓ Ready for OCR Processing
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleClearSelectedFile}
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 text-slate-600 hover:text-rose-600 dark:text-slate-300 font-bold text-xs flex items-center gap-1 transition cursor-pointer self-end sm:self-center"
+                      title={t('removeFile', 'Remove selected file')}
+                      aria-label={t('removeFile', 'Remove selected file')}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>{t('remove', 'Remove')}</span>
+                    </button>
                   </div>
                 )}
 
@@ -1155,21 +1263,33 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                 type="button"
                 onClick={handleStartScan}
                 disabled={!selectedFile || isScanning}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-xs shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-xs shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
               >
                 <span>{t('startAIExtraction', 'Start AI Extraction')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={handleSaveToVault}
-                disabled={!citizenConsentApproved && !manualMode}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>{t('saveDocumentAutoFill', 'Save Document & Update Profile')}</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleSaveToVault(false)}
+                  disabled={!citizenConsentApproved && !manualMode}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-emerald-600 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 disabled:opacity-50 font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px]"
+                  title={t('saveAndUploadAnother', 'Save current document and immediately upload next document')}
+                >
+                  <UploadCloud className="w-4 h-4 text-emerald-600" />
+                  <span>{t('saveAndScanNext', 'Save & Upload Next Document')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveToVault(true)}
+                  disabled={!citizenConsentApproved && !manualMode}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{t('saveDocumentAutoFill', 'Save Document & Close')}</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

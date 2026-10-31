@@ -2570,5 +2570,12 @@
   "retryExtractionBtn": "पुनः प्रयास करें",
   "enterDetailsManuallyBtn": "विवरण मैन्युअल रूप से दर्ज करें",
   "ocrAuthenticityNotice": "प्रामाणिकता सूचना",
-  "walkthroughHighlightingLabel": "लक्षित अनुभाग हाइलाइट किया गया"
+  "walkthroughHighlightingLabel": "लक्षित अनुभाग हाइलाइट किया गया",
+  "saveAndScanNext": "दस्तावेज़ सहेजें और अगला अपलोड करें",
+  "saveAndUploadAnother": "वर्तमान दस्तावेज़ सहेजें और तुरंत अगला दस्तावेज़ अपलोड करें",
+  "docSavedNextReady": "✓ {{doc}} वॉल्ट में सहेजा गया! अब आप {{next}} अपलोड कर सकते हैं।",
+  "removeFile": "चयनित फ़ाइल हटाएं",
+  "remove": "हटाएं",
+  "invalidFileError": "असमर्थित या अमान्य फ़ाइल प्रारूप।"
 }
+

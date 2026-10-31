@@ -2563,5 +2563,12 @@
   "retryExtractionBtn": "Retry Extraction",
   "enterDetailsManuallyBtn": "Enter Details Manually",
   "ocrAuthenticityNotice": "Authenticity Notice",
-  "walkthroughHighlightingLabel": "Target Section Highlighted"
+  "walkthroughHighlightingLabel": "Target Section Highlighted",
+  "saveAndScanNext": "Save & Upload Next Document",
+  "saveAndUploadAnother": "Save current document and immediately upload next document",
+  "docSavedNextReady": "✓ {{doc}} saved to vault! You can now upload {{next}}.",
+  "removeFile": "Remove selected file",
+  "remove": "Remove",
+  "invalidFileError": "Unsupported or invalid file format."
 }
+

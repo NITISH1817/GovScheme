@@ -55,19 +55,23 @@ export const isAuthorizedAdminRole = (role?: string | null): boolean => {
 export const isAuthorizedAdminUser = (u?: Partial<UserProfile> | null): boolean => {
   if (!u) return false;
 
-  // Officially designated administrator email accounts immediately qualify
-  if (u.email && isAuthorizedAdminEmail(u.email)) {
-    return true;
+  const role = (u.role || '').trim().toLowerCase();
+  if (role === 'citizen' || role === 'guest') {
+    return false;
   }
 
   // Token check (from user profile or persistent storage)
-  const token = u.token || (typeof localStorage !== 'undefined' ? (localStorage.getItem('adminToken') || localStorage.getItem('govscheme_token')) : null);
+  const token = u.token || (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function' ? (localStorage.getItem('adminToken') || localStorage.getItem('govscheme_token')) : null);
   if (!token || typeof token !== 'string' || token.startsWith('mock-') || token.includes('mock')) {
     return false;
   }
 
-  const role = (u.role || '').trim().toLowerCase();
-  if (!isAuthorizedAdminRole(role) || role === 'citizen') {
+  // Officially designated administrator email accounts qualify with valid token and administrative role
+  if (u.email && isAuthorizedAdminEmail(u.email)) {
+    return true;
+  }
+
+  if (!isAuthorizedAdminRole(role)) {
     return false;
   }
 

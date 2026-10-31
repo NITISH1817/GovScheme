@@ -34,11 +34,12 @@ const suites = [
   'tests/voice_assistant_multilingual.test.js',
   'tests/admin_citizen_portal_sync.test.js',
   'tests/homepage_user_guidance.test.js',
-  'tests/document_vault_ocr_reliability.test.js'
+  'tests/document_vault_ocr_reliability.test.js',
+  'tests/document_vault_multi_upload.test.js'
 ];
 
 console.log('========================================================================');
-console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 28-SUITE RUN      ');
+console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 29-SUITE RUN      ');
 console.log('========================================================================\n');
 
 const results = [];

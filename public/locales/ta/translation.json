@@ -2573,5 +2573,12 @@
   "retryExtractionBtn": "மீண்டும் முயற்சிக்கவும்",
   "enterDetailsManuallyBtn": "கைமுறையாக விவரங்களை உள்ளிடவும்",
   "ocrAuthenticityNotice": "உண்மைத்தன்மை அறிவிப்பு",
-  "walkthroughHighlightingLabel": "இலக்கு பிரிவு முன்னிலைப்படுத்தப்பட்டது"
+  "walkthroughHighlightingLabel": "இலக்கு பிரிவு முன்னிலைப்படுத்தப்பட்டது",
+  "saveAndScanNext": "ஆவணத்தை சேமித்து அடுத்ததை பதிவேற்றவும்",
+  "saveAndUploadAnother": "தற்போதைய ஆவணத்தை சேமித்து உடனடியாக அடுத்த ஆவணத்தை பதிவேற்றவும்",
+  "docSavedNextReady": "✓ {{doc}} பெட்டகத்தில் சேமிக்கப்பட்டது! இப்போது நீங்கள் {{next}} பதிவேற்றலாம்.",
+  "removeFile": "தேர்ந்தெடுக்கப்பட்ட கோப்பை நீக்கு",
+  "remove": "நீக்கு",
+  "invalidFileError": "ஆதரிக்கப்படாத அல்லது தவறான கோப்பு வடிவம்."
 }
+
