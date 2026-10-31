@@ -1387,6 +1387,10 @@ export const App: React.FC = () => {
             }}
             topSchemes={schemes}
             user={user}
+            onOpenAuth={() => {
+              setAuthNotice(undefined);
+              setIsAuthOpen(true);
+            }}
           />
         )}
 

@@ -2385,5 +2385,13 @@
   "officialEligibilityRuleNote": "*Note: Official scheme eligibility is always determined by deterministic rules.*",
   "qMoreEligibility": "Tell me more about the eligibility criteria",
   "qWhatDocsPrepare": "What documents do I need to prepare?",
-  "qHowTrackApp": "How do I track my application?"
+  "qHowTrackApp": "How do I track my application?",
+  "aiPoweredWelfarePortal": "AI-Powered Citizen Welfare Discovery Engine",
+  "freePublicAdvisory": "100% Free Public Advisory",
+  "instantMatching": "Instant Eligibility Match",
+  "instantMatchPillar": "Filter 75+ schemes against your exact demographic profile with zero paperwork.",
+  "docVaultPillar": "Secure client-side OCR for Aadhaar, Income & Caste certificates with masked privacy.",
+  "multiLangVoice": "7 Regional Languages",
+  "voiceAssistantPillar": "Voice commands and native translations across Tamil, Hindi, Telugu, and more.",
+  "kioskPillar": "Accessible touch interface with instant thermal receipt generation for rural CSCs."
 }

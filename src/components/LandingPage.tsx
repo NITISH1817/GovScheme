@@ -18,7 +18,8 @@ import {
   Rocket,
   IndianRupee,
   Monitor,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
@@ -33,6 +34,7 @@ interface LandingPageProps {
   topSchemes: Scheme[];
   user: UserProfile | null;
   onLiveDemo?: () => void;
+  onOpenAuth?: () => void;
 }
 
 // Magnetic Button Component
@@ -92,7 +94,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onSelectCategory,
   topSchemes,
   user,
-  onLiveDemo: _onLiveDemo
+  onLiveDemo: _onLiveDemo,
+  onOpenAuth
 }) => {
   const { t } = useTranslation();
 
@@ -117,104 +120,212 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 space-y-8 sm:space-y-10">
 
-        {/* 1. GOOD MORNING, CITIZEN WELCOME & RECOMMENDATIONS BANNER */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white dark:bg-[#0B1220]/70 p-6 sm:p-8 rounded-3xl border border-[#DCE5EF] dark:border-white/10 shadow-sm"
-        >
-          <div className="space-y-2 text-center md:text-left">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#12365B] dark:text-white font-sans tracking-tight">
-              {t('goodMorningCitizen', 'Good morning, Citizen').replace('Citizen', user?.fullName ? user.fullName.split(' ')[0] : 'Citizen')}
-            </h1>
-            <p className="text-[#64748B] dark:text-gray-400 text-base sm:text-lg">
-              {user ? (
-                <>
+        {user ? (
+          <>
+            {/* 1. GOOD MORNING, CITIZEN WELCOME & RECOMMENDATIONS BANNER */}
+            <motion.section
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white dark:bg-[#0B1220]/70 p-6 sm:p-8 rounded-3xl border border-[#DCE5EF] dark:border-white/10 shadow-sm"
+            >
+              <div className="space-y-2 text-center md:text-left">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#12365B] dark:text-white font-sans tracking-tight">
+                  {t('goodMorningCitizen', 'Good morning, Citizen').replace('Citizen', user.fullName ? user.fullName.split(' ')[0] : 'Citizen')}
+                </h1>
+                <p className="text-[#64748B] dark:text-gray-400 text-base sm:text-lg">
                   {t('basedOnProfileIn', 'Based on your profile in')}{' '}
                   <span className="font-bold text-[#12365B] dark:text-white">
                     {user.state ? (t(user.state, t(`state_${user.state.replace(/\s+/g, '')}`, user.state))) : t('India', 'India')}
                   </span>{' '}
                   {t('andYourInterests', 'and your interests:')}
-                </>
-              ) : (
-                t('heroSubtitle', 'Discover central and state government schemes relevant to your age, income, occupation and location.')
-              )}
-            </p>
-            <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <span className="px-4 py-1.5 bg-[#16A34A]/10 text-[#16A34A] font-bold text-sm rounded-full border border-[#16A34A]/20">
-                {topSchemes.length > 0 ? `${topSchemes.length}` : '75'}+ {t('schemesMayBeRelevant', 'schemes may be relevant to you')}
-              </span>
-              {user?.verificationBadge && (
-                <span className="px-3 py-1 bg-[#2563EB]/10 text-[#2563EB] font-bold text-xs rounded-full border border-[#2563EB]/20 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  {t('verifiedCitizen', 'Verified Citizen')}
-                </span>
-              )}
-            </div>
-          </div>
-          <MagneticButton
-            onClick={() => onNavigateTab('schemes')}
-            className="group relative overflow-hidden rounded-full bg-[#12365B] dark:bg-white p-2 flex items-center justify-between shadow-lg shrink-0 w-full sm:w-auto min-w-[240px]"
-          >
-            <span className="text-white dark:text-black font-bold text-sm pl-6 pr-4">
-              {t('viewMyRecommendations', 'View My Recommendations')}
-            </span>
-            <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform group-hover:scale-105">
-              <ArrowRight className="w-5 h-5 text-white dark:text-black group-hover:translate-x-1 transition-transform" />
-            </div>
-          </MagneticButton>
-        </motion.section>
-
-        {/* 2. COMPLETE YOUR PROFILE CARD/BOX */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.05 }}
-          className="bg-white dark:bg-[#0F1B2D] p-6 sm:p-7 rounded-2xl border border-[#DCE5EF] dark:border-white/10 shadow-sm"
-        >
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#F59E0B]/10 flex items-center justify-center shrink-0">
-                <UserCheck className="w-7 h-7 text-[#F59E0B]" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl sm:text-2xl font-bold text-[#12365B] dark:text-white">
-                    {t('completeYourProfile', 'Complete Your Profile')}
-                  </h2>
-                  {user && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">
-                      {user.profileCompletionScore}%
+                </p>
+                <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                  <span className="px-4 py-1.5 bg-[#16A34A]/10 text-[#16A34A] font-bold text-sm rounded-full border border-[#16A34A]/20">
+                    {topSchemes.length > 0 ? `${topSchemes.length}` : '75'}+ {t('schemesMayBeRelevant', 'schemes may be relevant to you')}
+                  </span>
+                  {user.verificationBadge && (
+                    <span className="px-3 py-1 bg-[#2563EB]/10 text-[#2563EB] font-bold text-xs rounded-full border border-[#2563EB]/20 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      {t('verifiedCitizen', 'Verified Citizen')}
                     </span>
                   )}
                 </div>
-                <p className="text-sm sm:text-base text-[#64748B] dark:text-gray-400 max-w-2xl">
-                  {t('unlockMoreAccurateAI', 'Unlock more accurate AI recommendations by updating your details.')}
-                </p>
-                {user && (
-                  <div className="pt-2 max-w-md w-full">
-                    <div className="w-full bg-[#EAF2FF] dark:bg-gray-800 rounded-full h-2">
-                      <div
-                        className="bg-[#F59E0B] h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(10, user.profileCompletionScore)}%` }}
-                      />
+              </div>
+              <MagneticButton
+                onClick={() => onNavigateTab('schemes')}
+                className="group relative overflow-hidden rounded-full bg-[#12365B] dark:bg-white p-2 flex items-center justify-between shadow-lg shrink-0 w-full sm:w-auto min-w-[240px]"
+              >
+                <span className="text-white dark:text-black font-bold text-sm pl-6 pr-4">
+                  {t('viewMyRecommendations', 'View My Recommendations')}
+                </span>
+                <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform group-hover:scale-105">
+                  <ArrowRight className="w-5 h-5 text-white dark:text-black group-hover:translate-x-1 transition-transform" />
+                </div>
+              </MagneticButton>
+            </motion.section>
+
+            {/* 2. COMPLETE YOUR PROFILE CARD/BOX */}
+            <motion.section
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.05 }}
+              className="bg-white dark:bg-[#0F1B2D] p-6 sm:p-7 rounded-2xl border border-[#DCE5EF] dark:border-white/10 shadow-sm"
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#F59E0B]/10 flex items-center justify-center shrink-0">
+                    <UserCheck className="w-7 h-7 text-[#F59E0B]" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-xl sm:text-2xl font-bold text-[#12365B] dark:text-white">
+                        {t('completeYourProfile', 'Complete Your Profile')}
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">
+                        {user.profileCompletionScore}%
+                      </span>
+                    </div>
+                    <p className="text-sm sm:text-base text-[#64748B] dark:text-gray-400 max-w-2xl">
+                      {t('unlockMoreAccurateAI', 'Unlock more accurate AI recommendations by updating your details.')}
+                    </p>
+                    <div className="pt-2 max-w-md w-full">
+                      <div className="w-full bg-[#EAF2FF] dark:bg-gray-800 rounded-full h-2">
+                        <div
+                          className="bg-[#F59E0B] h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.max(10, user.profileCompletionScore)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                )}
+                </div>
+                <div className="w-full md:w-auto shrink-0 flex items-center gap-3">
+                  <button
+                    onClick={() => onNavigateTab('profile')}
+                    className="w-full md:w-auto px-6 py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>{t('updateProfile', 'Update Profile')}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.section>
+          </>
+        ) : (
+          /* PUBLIC VISITOR HERO BANNER (BEFORE SIGN IN) */
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="relative bg-gradient-to-br from-white via-blue-50/40 to-indigo-50/40 dark:from-[#0B1220] dark:via-[#0F1B2D] dark:to-[#0B1220] p-6 sm:p-10 rounded-3xl border border-[#DCE5EF] dark:border-white/10 shadow-sm overflow-hidden"
+          >
+            {/* Subtle background glow */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -mr-28 -mt-28 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl -ml-24 -mb-24 pointer-events-none" />
+
+            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600/10 dark:bg-blue-400/10 border border-blue-600/20 dark:border-blue-400/20 text-[#12365B] dark:text-blue-300 text-xs font-bold shadow-sm">
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>{t('aiPoweredWelfarePortal', 'AI-Powered Citizen Welfare Discovery Engine')}</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#12365B] dark:text-white font-sans tracking-tight leading-tight">
+                {t('tagline', "Find Government Schemes You're Eligible For")}
+              </h1>
+
+              <p className="text-[#64748B] dark:text-gray-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+                {t('heroSubtitle', 'Helping Indian citizens & rural households discover welfare schemes in minutes using Artificial Intelligence & Rule-Based Eligibility Engine.')}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 pt-1">
+                <span className="px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {topSchemes.length > 0 ? `${topSchemes.length}+` : '75+'} {t('Central & State Schemes', 'Central & State Schemes')}
+                </span>
+                <span className="px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-700 dark:text-blue-400 font-bold text-xs flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  {t('freePublicAdvisory', '100% Free Public Advisory')}
+                </span>
+                <span className="px-3.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/25 text-purple-700 dark:text-purple-400 font-bold text-xs flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5" />
+                  {t('instantMatching', 'Instant Eligibility Match')}
+                </span>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5">
+                <button
+                  type="button"
+                  onClick={() => onGetStarted('wizard')}
+                  className="px-6 sm:px-8 py-3.5 rounded-2xl bg-[#1769FF] hover:bg-blue-700 text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group cursor-pointer"
+                >
+                  <span>{t('checkEligibilityWizard', 'Check My Eligibility')}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('schemes')}
+                  className="px-6 py-3.5 rounded-2xl bg-white dark:bg-[#111827] border border-[#DCE5EF] dark:border-white/10 text-[#12365B] dark:text-white font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Search className="w-4 h-4 text-[#1769FF]" />
+                  <span>{t('exploreSchemes', 'Explore Schemes')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onOpenAuth ? onOpenAuth() : onNavigateTab('auth')}
+                  className="px-6 py-3.5 rounded-2xl bg-[#12365B] hover:bg-[#0c243d] dark:bg-white dark:text-slate-900 text-white font-bold text-sm shadow-sm transition flex items-center gap-2 cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>{t('signIn', 'Sign In')} / {t('signUp', 'Sign Up')}</span>
+                </button>
+              </div>
+
+              {/* 4 Feature Value Pillars Before Sign In */}
+              <div className="pt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-left border-t border-[#DCE5EF]/60 dark:border-white/10 mt-6">
+                <div className="p-4 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#12365B] dark:text-white">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    <span>{t('instantMatching', 'Instant Eligibility Match')}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-gray-400">
+                    {t('instantMatchPillar', 'Filter 75+ schemes against your exact demographic profile with zero paperwork.')}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#12365B] dark:text-white">
+                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    <span>{t('verifiedCitizenVault', 'Intelligent Document Vault')}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-gray-400">
+                    {t('docVaultPillar', 'Secure client-side OCR for Aadhaar, Income & Caste certificates with masked privacy.')}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#12365B] dark:text-white">
+                    <Building2 className="w-4 h-4 text-blue-500" />
+                    <span>{t('multiLangVoice', '7 Regional Languages')}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-gray-400">
+                    {t('voiceAssistantPillar', 'Voice commands and native translations across Tamil, Hindi, Telugu, and more.')}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/80 dark:border-white/5 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#12365B] dark:text-white">
+                    <Monitor className="w-4 h-4 text-purple-500" />
+                    <span>{t('cscKioskMode', 'CSC Kiosk Mode')}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-gray-400">
+                    {t('kioskPillar', 'Accessible touch interface with instant thermal receipt generation for rural CSCs.')}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="w-full md:w-auto shrink-0 flex items-center gap-3">
-              <button
-                onClick={() => user ? onNavigateTab('profile') : onGetStarted('wizard')}
-                className="w-full md:w-auto px-6 py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <span>{user ? t('updateProfile', 'Update Profile') : t('getStarted', 'Check My Eligibility')}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </motion.section>
+          </motion.section>
+        )}
 
         {/* 3. BROWSE SCHEMES BY CATEGORY (8 CARDS - POSITIONED IMMEDIATELY AFTER COMPLETE YOUR PROFILE) */}
         <section className="space-y-6">
