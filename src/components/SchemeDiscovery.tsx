@@ -151,11 +151,11 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   };
 
   const predefinedSuggestions = [
-    "Scholarships for students",
-    "Education assistance",
-    "Farmer subsidies",
-    "Women entrepreneurship schemes",
-    "Housing assistance"
+    t('suggestScholarships', "Scholarships for students"),
+    t('suggestEducation', "Education assistance"),
+    t('suggestFarmerSubsidies', "Farmer subsidies"),
+    t('suggestWomenEnt', "Women entrepreneurship schemes"),
+    t('suggestHousing', "Housing assistance")
   ].filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()) && s.toLowerCase() !== searchTerm.toLowerCase());
 
   const filteredSchemes = analyzedSchemes.filter(a => {

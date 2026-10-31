@@ -143,7 +143,7 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   const documents = Array.isArray(u.documents) ? u.documents : (Array.isArray(p.documents) ? p.documents : []);
   let avatarUrl = u.avatarUrl || p.avatarUrl || '';
   if (!avatarUrl || avatarUrl.includes('dicebear.com/7.x/initials')) {
-    avatarUrl = fullName ? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=0369a1` : '';
+    avatarUrl = getUserAvatarUrl({ fullName, email, avatarUrl });
   }
   const token = data.token || u.token || '';
 
@@ -180,11 +180,19 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   return normalized;
 };
 
-export const getUserAvatarUrl = (user?: { fullName?: string; avatarUrl?: string } | null): string => {
-  const name = (user?.fullName || '').trim() || 'Citizen';
-  // If user uploaded a custom data/blob photo, preserve it; otherwise dynamically generate initials
-  if (user?.avatarUrl && (user.avatarUrl.startsWith('data:') || user.avatarUrl.startsWith('blob:') || user.avatarUrl.startsWith('/uploads/'))) {
+export const getUserAvatarUrl = (user?: { fullName?: string; avatarUrl?: string; email?: string } | null): string => {
+  // If user uploaded a custom data/blob photo, preserve it
+  if (user?.avatarUrl && (user.avatarUrl.startsWith('data:image') || user.avatarUrl.startsWith('blob:') || user.avatarUrl.startsWith('/uploads/'))) {
     return user.avatarUrl;
   }
-  return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0284c7`;
+  const rawName = (user?.fullName || '').trim() || (user?.email ? user.email.split('@')[0] : 'Citizen');
+  const words = rawName.split(/\s+/).filter(Boolean);
+  let initials = 'CI';
+  if (words.length >= 2) {
+    initials = (words[0][0] + words[1][0]).toUpperCase();
+  } else if (words.length === 1) {
+    initials = words[0].substring(0, 2).toUpperCase();
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#0284c7"/><text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${initials}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };

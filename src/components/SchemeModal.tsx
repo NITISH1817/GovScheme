@@ -435,36 +435,36 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                     const normalizeRuleKey = (str: string) => str.toLowerCase().replace(/[^a-z]/g, '');
                     const seenNormalized = new Set<string>();
 
-                    const minAgeVal = raw.minAge ?? raw.ageMin ?? raw.age_min ?? raw.min_age;
-                    const maxAgeVal = raw.maxAge ?? raw.ageMax ?? raw.age_max ?? raw.max_age;
-                    const incomeVal = raw.maxAnnualIncome ?? raw.incomeLimit ?? raw.max_annual_income ?? raw.income_limit;
+                    const sAny: any = scheme;
+                    const minAgeVal = raw.minAge ?? raw.ageMin ?? raw.age_min ?? raw.min_age ?? sAny.minimumAge;
+                    const maxAgeVal = raw.maxAge ?? raw.ageMax ?? raw.age_max ?? raw.max_age ?? sAny.maximumAge;
+                    const incomeVal = raw.maxAnnualIncome ?? raw.incomeLimit ?? raw.max_annual_income ?? raw.income_limit ?? sAny.incomeLimit;
 
                     // If universal open age scheme (0 to 100/120)
-                    if (minAgeVal === 0 && (maxAgeVal >= 100 || maxAgeVal === undefined)) {
+                    if ((minAgeVal === 0 || minAgeVal === '0') && (maxAgeVal >= 100 || maxAgeVal === undefined || maxAgeVal === null)) {
                       entries.push(['eligibleAgeGroup', t('allAgesEligible', 'All Ages Eligible')]);
-                      seenNormalized.add('minage');
-                      seenNormalized.add('agemin');
-                      seenNormalized.add('maxage');
-                      seenNormalized.add('agemax');
                     } else {
-                      if (minAgeVal !== undefined && minAgeVal !== null) {
+                      if (minAgeVal !== undefined && minAgeVal !== null && minAgeVal !== '') {
                         entries.push(['minAge', minAgeVal]);
-                        seenNormalized.add('minage');
-                        seenNormalized.add('agemin');
                       }
-                      if (maxAgeVal !== undefined && maxAgeVal !== null) {
+                      if (maxAgeVal !== undefined && maxAgeVal !== null && maxAgeVal !== '') {
                         entries.push(['maxAge', maxAgeVal]);
-                        seenNormalized.add('maxage');
-                        seenNormalized.add('agemax');
                       }
                     }
+                    seenNormalized.add('minage');
+                    seenNormalized.add('agemin');
+                    seenNormalized.add('minimumage');
+                    seenNormalized.add('maxage');
+                    seenNormalized.add('agemax');
+                    seenNormalized.add('maximumage');
 
-                    if (incomeVal !== undefined && incomeVal !== null) {
+                    if (incomeVal !== undefined && incomeVal !== null && incomeVal !== '') {
                       entries.push(['incomeLimit', incomeVal]);
-                      seenNormalized.add('maxannualincome');
-                      seenNormalized.add('incomelimit');
-                      seenNormalized.add('annualincome');
                     }
+                    seenNormalized.add('maxannualincome');
+                    seenNormalized.add('incomelimit');
+                    seenNormalized.add('annualincome');
+                    seenNormalized.add('income');
 
                     for (const [k, v] of Object.entries(raw)) {
                       const norm = normalizeRuleKey(k);
@@ -477,17 +477,17 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                     return entries.map(([key, val], idx) => {
                       const getLocalizedLabel = (k: string) => {
                         const norm = normalizeRuleKey(k);
-                        if (norm === 'minage' || norm === 'agemin') return t('minAge', 'Minimum Age');
-                        if (norm === 'maxage' || norm === 'agemax') return t('maxAge', 'Maximum Age');
-                        if (norm === 'incomelimit' || norm === 'maxannualincome') return t('incomeLimit', 'Annual Income Limit');
+                        if (norm === 'minage' || norm === 'agemin' || norm === 'minimumage') return t('minAge', 'Minimum Age');
+                        if (norm === 'maxage' || norm === 'agemax' || norm === 'maximumage') return t('maxAge', 'Maximum Age');
+                        if (norm === 'incomelimit' || norm === 'maxannualincome' || norm === 'annualincome' || norm === 'income') return t('incomeLimit', 'Annual Income Limit');
                         if (norm === 'gender' || norm === 'eligiblegender') return t('gender', 'Eligible Gender');
-                        if (norm === 'category' || norm === 'allowedcategories') return t('allowedCategories', 'Allowed Categories');
+                        if (norm === 'category' || norm === 'allowedcategories' || norm === 'socialcategory') return t('allowedCategories', 'Allowed Categories');
                         if (norm === 'state' || norm === 'states' || norm === 'eligiblestates') return t('state', 'Eligible States');
                         if (norm === 'requireddocuments' || norm === 'documents') return t('requiredDocuments', 'Required Documents');
-                        if (norm === 'requiresdisability') return t('requiresDisability', 'Disability Status');
-                        if (norm === 'mindisabilitypercentage') return t('minDisabilityPercentage', 'Minimum Disability %');
+                        if (norm === 'requiresdisability' || norm === 'hasdisability') return t('requiresDisability', 'Disability Status');
+                        if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') return t('minDisabilityPercentage', 'Minimum Disability %');
                         if (norm === 'targetoccupations' || norm === 'allowedoccupations' || norm === 'occupation') return t('targetOccupations', 'Target Occupations');
-                        if (norm === 'maxlandholdingacres') return t('maxLandHoldingAcres', 'Maximum Landholding');
+                        if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') return t('maxLandHoldingAcres', 'Maximum Landholding');
                         if (norm === 'eligibleagegroup') return t('eligibleAgeGroup', 'Eligible Age');
                         return t(k, k.replace(/([A-Z])/g, ' $1'));
                       };
@@ -499,17 +499,18 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                         if (typeof val === 'boolean') {
                           return val ? t('yes', 'Yes') : t('no', 'No');
                         }
-                        if (key === 'minAge' || key === 'maxAge' || key === 'ageMin' || key === 'ageMax') {
+                        const norm = normalizeRuleKey(key);
+                        if (norm === 'minage' || norm === 'maxage' || norm === 'agemin' || norm === 'agemax' || norm === 'minimumage' || norm === 'maximumage') {
                           return `${val} ${t('yearsUnit', 'years')}`;
                         }
-                        if (key === 'minDisabilityPercentage') {
+                        if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') {
                           return `${val}%`;
                         }
-                        if (key === 'maxAnnualIncome' || key === 'incomeLimit') {
-                          if (val === 0 || val === '0') return t('noIncomeLimit', 'No income limit');
+                        if (norm === 'maxannualincome' || norm === 'incomelimit' || norm === 'annualincome' || norm === 'income') {
+                          if (val === 0 || val === '0' || val === null) return t('noIncomeLimit', 'No income limit');
                           return `₹${Number(val).toLocaleString('en-IN')}`;
                         }
-                        if (key === 'maxLandHoldingAcres') {
+                        if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') {
                           return `${val} ${t('acresUnit', 'acres')}`;
                         }
                         if (Array.isArray(val)) {

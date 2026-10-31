@@ -186,7 +186,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     {user.verificationBadge && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
                         <ShieldCheck className="w-3 h-3 text-blue-600" />
-                        Verified
+                        {t('verified', 'Verified')}
                       </span>
                     )}
                   </div>
@@ -752,7 +752,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </h4>
                 </div>
                 <p className="text-blue-100 text-xs leading-relaxed">
-                  Completing your education level, family size, and social category attributes will automatically unlock additional targeted state schemes.
+                  {t('profileInsightDesc', 'Completing your education level, family size, and social category attributes will automatically unlock additional targeted state schemes.')}
                 </p>
                 <button
                   type="button"
