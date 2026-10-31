@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FileText, Search, Filter, CheckCircle2, Clock, XCircle, Eye, 
+  FileText, Search, Filter, CheckCircle2, Clock, XCircle, Eye, Download, 
   ChevronRight, Calendar, User, Building, AlertCircle, RefreshCw, X, Check
 } from 'lucide-react';
 import { apiClient } from '../../api/apiClient';
@@ -127,6 +127,27 @@ export const ApplicationManagementView: React.FC = () => {
     return citizen.includes(q) || scheme.includes(q) || id.includes(q) || appNum.includes(q);
   });
 
+  const exportApplicationsCSV = () => {
+    const headers = ['Application ID', 'Scheme Name', 'Citizen Beneficiary', 'Status', 'Registered Date', 'Remarks'];
+    const rows = filteredApps.map(a => [
+      `"${a.applicationNumber || a._id}"`,
+      `"${(a.schemeId?.name || 'Welfare Scheme').replace(/"/g, '""')}"`,
+      `"${(a.userId?.fullName || 'Citizen').replace(/"/g, '""')}"`,
+      `"${a.status}"`,
+      `"${a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ''}"`,
+      `"${(a.remarks || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `govscheme_applications_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col h-full space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -137,6 +158,13 @@ export const ApplicationManagementView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={exportApplicationsCSV}
+            className="flex items-center gap-2 px-3 py-2 bg-[#FFFFFF] dark:bg-[#0B1424] border border-[#E2E8F0] dark:border-[#243449] hover:border-[#1769FF] rounded-lg text-sm font-semibold text-[#07111F] dark:text-[#F8FAFC] transition-colors shadow-sm"
+            title="Export filtered applications to CSV"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
           <button 
             onClick={fetchApplications}
             className="flex items-center gap-2 px-3 py-2 bg-[#FFFFFF] dark:bg-[#0B1424] border border-[#E2E8F0] dark:border-[#243449] hover:border-[#1769FF] rounded-lg text-sm font-semibold text-[#07111F] dark:text-[#F8FAFC] transition-colors shadow-sm"

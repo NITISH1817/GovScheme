@@ -39,17 +39,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
   ];
 
   const navigationCommands = [
-    { id: 'nav-overview', label: 'Dashboard', view: 'overview' },
-    { id: 'nav-schemes', label: 'Scheme Management', view: 'schemes' },
-    { id: 'nav-rules', label: 'Eligibility Rules Builder', view: 'rule-builder' },
-    { id: 'nav-apps', label: 'Application Management', view: 'applications' },
-    { id: 'nav-users', label: 'Citizens & Beneficiaries', view: 'users' },
+    { id: 'nav-overview', label: 'Dashboard Overview', view: 'overview' },
+    { id: 'nav-schemes', label: 'Scheme Management & Catalog', view: 'schemes' },
+    { id: 'nav-rules', label: 'Eligibility Rules Builder & Simulator', view: 'rule-builder' },
+    { id: 'nav-apps', label: 'Application Management & Review', view: 'applications' },
+    { id: 'nav-users', label: 'Citizens & Beneficiary Directory', view: 'users' },
     { id: 'nav-docs', label: 'Document Verification Queue', view: 'document-verification' },
     { id: 'nav-analytics', label: 'Analytics & Reports', view: 'analytics' },
-    { id: 'nav-notifs', label: 'Notification Center', view: 'notifications' },
-    { id: 'nav-content', label: 'Content Management (FAQs)', view: 'content' },
-    { id: 'nav-audit', label: 'Audit & Security Logs', view: 'audit' },
-    { id: 'nav-settings', label: 'Admin Settings', view: 'settings' },
+    { id: 'nav-freshness', label: 'Data Freshness & Trust Center', view: 'freshness' },
+    { id: 'nav-feedback', label: 'Citizen Feedback & Issue Reports', view: 'feedback' },
+    { id: 'nav-notifs', label: 'Notification Center & Broadcasts', view: 'notifications' },
+    { id: 'nav-content', label: 'Content Management (FAQs & Guides)', view: 'content' },
+    { id: 'nav-audit', label: 'Audit & Security Governance Logs', view: 'audit' },
+    { id: 'nav-settings', label: 'Admin Portal Settings', view: 'settings' },
   ];
 
   if (!isOpen) return null;

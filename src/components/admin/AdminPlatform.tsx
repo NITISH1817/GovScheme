@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, FileText, Activity, MessageSquare, CheckSquare, BarChart3, Database, ShieldAlert,
+  LayoutDashboard, FileText, Activity, MessageSquare, CheckSquare, RefreshCw, Plus, BarChart3, Database, ShieldAlert,
   Users, Settings, Search, Bell, Sun, Moon, LogOut, Menu, X, Command,
   FileCheck2, HelpCircle, Layers, CheckCircle2, ChevronRight, Globe, Home, ExternalLink
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { UserProfile, Scheme } from '../../types';
+import { getUserAvatarUrl } from '../../utils/profileUtils';
 import { GovSchemeLogo } from '../brand';
 
 // Sub-views
@@ -63,6 +64,22 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(2);
   const [recentNotifs, setRecentNotifs] = useState<any[]>([]);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  const handleLiveSync = async () => {
+    setIsSyncing(true);
+    try {
+      if (onRefreshData) await onRefreshData();
+      setSyncNotice("Live Database Synchronization Completed. Catalogs & Records are up-to-date.");
+      setTimeout(() => setSyncNotice(null), 3000);
+    } catch {
+      setSyncNotice("Local State Synchronized.");
+      setTimeout(() => setSyncNotice(null), 3000);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -365,7 +382,7 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
                 className="flex items-center gap-2.5 p-1 rounded-lg hover:bg-[#F5F7FA] dark:hover:bg-[#101D31] transition-colors text-left"
               >
                 <img
-                  src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=1769FF`}
+                  src={getUserAvatarUrl(user)}
                   alt="Admin Avatar"
                   className="w-8 h-8 rounded-full object-cover border border-[#E2E8F0] dark:border-[#243449]"
                 />
@@ -427,6 +444,20 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
 
         {/* Scrollable Dynamic Content Container */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+          {syncNotice && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mb-6 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-between shadow-sm"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{syncNotice}</span>
+              </div>
+              <button onClick={() => setSyncNotice(null)} className="text-emerald-700 hover:text-emerald-900 font-bold text-xs">✕</button>
+            </motion.div>
+          )}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}

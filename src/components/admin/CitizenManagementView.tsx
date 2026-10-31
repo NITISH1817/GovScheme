@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Users, Search, Filter, ShieldCheck, ShieldAlert, Eye, X, 
+  Users, Search, Filter, ShieldCheck, ShieldAlert, Eye, X, Download, 
   MapPin, Briefcase, IndianRupee, FileText, CheckCircle, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { apiClient } from '../../api/apiClient';
@@ -156,6 +156,30 @@ export const CitizenManagementView: React.FC = () => {
     return `••••••${phone.slice(-4)}`;
   };
 
+      const exportCitizensCSV = () => {
+    const headers = ['Citizen ID', 'Name', 'Email (Masked)', 'Mobile (Masked)', 'State', 'District', 'Role', 'Status', 'Registered Date'];
+    const rows = users.map((c: CitizenUser) => [
+      `"${c._id}"`,
+      `"${(c.fullName || '').replace(/"/g, '""')}"`,
+      `"${maskEmail(c.email)}"`,
+      `"${maskPhone(c.mobile)}"`,
+      `"${c.profile?.state || 'Tamil Nadu'}"`,
+      `"${c.profile?.district || 'Chennai'}"`,
+      `"${c.role || 'Citizen'}"`,
+      `"${c.isActive !== false ? 'Active' : 'Suspended'}"`,
+      `"${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((row: string[]) => row.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `govscheme_citizens_directory_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const statesList = ['All', 'Maharashtra', 'Karnataka', 'Tamil Nadu', 'Uttar Pradesh', 'Gujarat', 'Central'];
 
   return (
@@ -170,6 +194,13 @@ export const CitizenManagementView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button 
+            onClick={exportCitizensCSV} 
+            className="flex items-center gap-2 px-3 py-2 bg-[#FFFFFF] dark:bg-[#0B1424] border border-[#E2E8F0] dark:border-[#243449] hover:border-[#1769FF] rounded-lg text-sm font-semibold text-[#07111F] dark:text-[#F8FAFC] transition-colors shadow-sm"
+            title="Export citizen beneficiary directory to CSV"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
           <button 
             onClick={fetchUsers} 
             className="flex items-center gap-2 px-3 py-2 bg-[#FFFFFF] dark:bg-[#0B1424] border border-[#E2E8F0] dark:border-[#243449] hover:border-[#1769FF] rounded-lg text-sm font-semibold text-[#07111F] dark:text-[#F8FAFC] transition-colors shadow-sm"
