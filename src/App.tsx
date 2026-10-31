@@ -70,7 +70,7 @@ export const App: React.FC = () => {
 
       const hash = window.location.hash.replace('#', '').toLowerCase();
       if (hash && validTabs.includes(hash)) return hash;
-    } catch {}
+    } catch { }
     return 'home';
   };
 
@@ -89,7 +89,7 @@ export const App: React.FC = () => {
     setActiveTabState(tab);
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch {}
+    } catch { }
   };
 
   // User & Data State
@@ -142,7 +142,7 @@ export const App: React.FC = () => {
             accounts[emailKey].token = validToken;
             localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
           }
-        } catch {}
+        } catch { }
       }
     }
   }, [user]);
@@ -492,7 +492,7 @@ export const App: React.FC = () => {
           let customSchemes: Scheme[] = [];
           try {
             customSchemes = JSON.parse(localStorage.getItem('govscheme_custom_schemes') || '[]');
-          } catch {}
+          } catch { }
 
           customSchemes.forEach(cs => {
             if (!newSchemes.find(s => s.id === cs.id)) {
@@ -558,7 +558,7 @@ export const App: React.FC = () => {
             });
           }
         });
-      } catch {}
+      } catch { }
 
       if (notifList.length > 0) {
         setNotifications(prev => {
@@ -586,7 +586,7 @@ export const App: React.FC = () => {
           }));
           setNotifications(prev => [...mapped, ...prev]);
         }
-      } catch {}
+      } catch { }
     }
   }, [API_URL]);
 
@@ -656,10 +656,10 @@ export const App: React.FC = () => {
 
                 const dynamicDocs = Array.isArray(a.uploadedDocuments) && a.uploadedDocuments.length > 0
                   ? a.uploadedDocuments.map((ud: any) => ({
-                      name: ud.documentId?.documentType || ud.documentId?.type || 'Document',
-                      verified: Boolean(ud.verified || ud.documentId?.verificationStatus === 'CHECKS_PASSED'),
-                      label: ud.verified || ud.documentId?.verificationStatus === 'CHECKS_PASSED' ? 'Verified' : 'Pending Verification'
-                    }))
+                    name: ud.documentId?.documentType || ud.documentId?.type || 'Document',
+                    verified: Boolean(ud.verified || ud.documentId?.verificationStatus === 'CHECKS_PASSED'),
+                    label: ud.verified || ud.documentId?.verificationStatus === 'CHECKS_PASSED' ? 'Verified' : 'Pending Verification'
+                  }))
                   : [];
 
                 return {
@@ -741,7 +741,7 @@ export const App: React.FC = () => {
       setSchemes(prev => prev.filter(s => s.id !== data.schemeId));
     };
 
-  const handleApplicationStatusUpdated = (data: { applicationId: string; status: string; remarks?: string }) => {
+    const handleApplicationStatusUpdated = (data: { applicationId: string; status: string; remarks?: string }) => {
       setApplications(prev => prev.map(app => {
         if (app.id === data.applicationId || (app as any)._id === data.applicationId) {
           const stages = [
@@ -1256,7 +1256,7 @@ export const App: React.FC = () => {
                     authoritativeUser = normalizeUserProfile(fresh.user || fresh.profile);
                   }
                 }
-              } catch (e) {}
+              } catch (e) { }
             }
             setUser(authoritativeUser);
             setIsAuthOpen(false);
@@ -1308,7 +1308,7 @@ export const App: React.FC = () => {
         const parsed = JSON.parse(savedCitizen);
         setUser(parsed);
         localStorage.setItem('govscheme_user', savedCitizen);
-      } catch {}
+      } catch { }
     }
     // Instantly refresh schemes and notifications so Admin changes reflect in Citizen portal
     fetchSchemes();
@@ -1935,7 +1935,7 @@ export const App: React.FC = () => {
                 token: authoritativeUser.token || accounts[emailKey]?.token || localStorage.getItem('govscheme_token') || `token_${Date.now()}`
               };
               localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
-            } catch (e) {}
+            } catch (e) { }
           }
 
           if (isAdminUser(authoritativeUser)) {

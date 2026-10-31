@@ -609,17 +609,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        {/* Citizen User Guidance & Interactive Walkthrough */}
-        <div id="how-to-use-govscheme">
-          <HomepageUserGuidance
-            onNavigateTab={onNavigateTab}
-            onGetStarted={onGetStarted}
-            onTalkToAI={onTalkToAI}
-            isWalkthroughOpen={isWalkthroughOpen}
-            onToggleWalkthrough={setIsWalkthroughOpen}
-          />
-        </div>
-
         {/* Trust Indicators */}
         <section className="pt-8 border-t border-[#DCE5EF] dark:border-white/10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
@@ -639,6 +628,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             ))}
           </div>
         </section>
+
+        {/* Citizen User Guidance & Interactive Walkthrough */}
+        <div id="how-to-use-govscheme">
+          <HomepageUserGuidance
+            onNavigateTab={onNavigateTab}
+            onGetStarted={onGetStarted}
+            onTalkToAI={onTalkToAI}
+            isWalkthroughOpen={isWalkthroughOpen}
+            onToggleWalkthrough={setIsWalkthroughOpen}
+          />
+        </div>
 
       </div>
     </div>
