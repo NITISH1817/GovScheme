@@ -380,14 +380,25 @@ export const App: React.FC = () => {
 
       const data = await response.json();
       if (data.success && Array.isArray(data.schemes)) {
-        // Merge API schemes with local fallback schemesData
+        // Merge API schemes with local fallback schemesData and custom administrator schemes
         setSchemes(prev => {
           const apiSchemes = data.schemes;
           const newSchemes = [...apiSchemes];
 
+          let customSchemes: Scheme[] = [];
+          try {
+            customSchemes = JSON.parse(localStorage.getItem('govscheme_custom_schemes') || '[]');
+          } catch {}
+
+          customSchemes.forEach(cs => {
+            if (!newSchemes.find(s => s.id === cs.id)) {
+              newSchemes.unshift(cs);
+            }
+          });
+
           if (Array.isArray(prev)) {
             prev.forEach(localScheme => {
-              if (!apiSchemes.find((s: any) => s.id === localScheme.id)) {
+              if (!newSchemes.find((s: any) => s.id === localScheme.id)) {
                 newSchemes.push(localScheme);
               }
             });
@@ -413,29 +424,70 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/notifications`);
+      const data = await response.json();
+      let notifList: NotificationItem[] = [];
+      if (data.success && Array.isArray(data.notifications)) {
+        notifList = data.notifications.map((n: any) => ({
+          id: n._id || `notif-${Date.now()}`,
+          title: n.title,
+          description: n.message,
+          category: n.type || 'Broadcast',
+          timestamp: n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Just now',
+          read: Boolean(n.read)
+        }));
+      }
+
+      try {
+        const customNotifs = JSON.parse(localStorage.getItem('govscheme_custom_notifications') || '[]');
+        customNotifs.forEach((cn: any) => {
+          if (!notifList.find(n => n.id === cn._id || n.title === cn.title)) {
+            notifList.unshift({
+              id: cn._id || `notif-${Date.now()}`,
+              title: cn.title,
+              description: cn.message,
+              category: cn.type || 'Broadcast',
+              timestamp: cn.createdAt ? new Date(cn.createdAt).toLocaleString() : 'Just now',
+              read: Boolean(cn.read)
+            });
+          }
+        });
+      } catch {}
+
+      if (notifList.length > 0) {
+        setNotifications(prev => {
+          const merged = [...notifList];
+          prev.forEach(p => {
+            if (!merged.find(m => m.id === p.id || m.title === p.title)) {
+              merged.push(p);
+            }
+          });
+          return merged;
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to fetch notifications from backend:', error);
+      try {
+        const customNotifs = JSON.parse(localStorage.getItem('govscheme_custom_notifications') || '[]');
+        if (customNotifs.length > 0) {
+          const mapped = customNotifs.map((cn: any) => ({
+            id: cn._id,
+            title: cn.title,
+            description: cn.message,
+            category: cn.type || 'Broadcast',
+            timestamp: cn.createdAt ? new Date(cn.createdAt).toLocaleString() : 'Just now',
+            read: Boolean(cn.read)
+          }));
+          setNotifications(prev => [...mapped, ...prev]);
+        }
+      } catch {}
+    }
+  }, [API_URL]);
+
   // Fetch schemes and sync cloud profile from backend on initial load
   useEffect(() => {
-
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/notifications`);
-        const data = await response.json();
-        if (data.success && data.notifications) {
-          const apiNotifs = data.notifications.map((n: any) => ({
-            id: n._id,
-            title: n.title,
-            description: n.message,
-            category: n.type,
-            timestamp: new Date(n.createdAt).toLocaleString(),
-            read: n.read
-          }));
-          setNotifications(apiNotifs);
-        }
-      } catch (error) {
-        console.error('Failed to fetch notifications from backend:', error);
-      }
-    };
-
     // If citizen has stored token, fetch latest persistent profile, documents & applications from cloud backend
     const syncCloudProfile = async () => {
       const token = localStorage.getItem('govscheme_token');
@@ -1113,8 +1165,7 @@ export const App: React.FC = () => {
   };
 
   const handleExitAdmin = () => {
-    setIsAdminSessionVerified(false);
-    setIsAdminVerifying(false);
+    window.location.hash = '';
     const savedCitizen = localStorage.getItem('saved_citizen_user');
     if (savedCitizen) {
       try {
@@ -1123,6 +1174,9 @@ export const App: React.FC = () => {
         localStorage.setItem('govscheme_user', savedCitizen);
       } catch {}
     }
+    // Instantly refresh schemes and notifications so Admin changes reflect in Citizen portal
+    fetchSchemes();
+    fetchNotifications();
     setActiveTab('home');
   };
 
@@ -1248,6 +1302,22 @@ export const App: React.FC = () => {
         user={user!}
         schemes={schemes}
         onExit={handleExitAdmin}
+        onSchemesChange={(updated) => setSchemes(updated)}
+        onNotificationSent={(notif) => {
+          const newNotifItem: NotificationItem = {
+            id: notif._id || `notif-${Date.now()}`,
+            title: notif.title,
+            description: notif.message,
+            category: notif.type || 'Broadcast',
+            timestamp: notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now',
+            read: false
+          };
+          setNotifications(prev => [newNotifItem, ...prev]);
+        }}
+        onRefreshData={() => {
+          fetchSchemes();
+          fetchNotifications();
+        }}
         theme={theme}
         setTheme={setTheme}
       />

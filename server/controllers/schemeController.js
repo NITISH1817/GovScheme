@@ -141,10 +141,6 @@ export const createScheme = async (req, res) => {
     await newScheme.save();
     clearSchemeCache();
 
-    if (updated) {
-      clearSchemeCache();
-    }
-
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEME_CREATED', { scheme: newScheme });
     }
@@ -230,9 +226,7 @@ export const deleteScheme = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Scheme not found' });
     }
 
-    if (updated) {
-      clearSchemeCache();
-    }
+    clearSchemeCache();
 
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEME_DELETED', { schemeId: req.params.id });
@@ -260,10 +254,7 @@ export const duplicateScheme = async (req, res) => {
     copy.status = 'Draft';
 
     const newScheme = await Scheme.create(copy);
-
-    if (updated) {
-      clearSchemeCache();
-    }
+    clearSchemeCache();
 
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEME_CREATED', { scheme: newScheme });
@@ -298,9 +289,7 @@ export const bulkSchemeAction = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Unknown action' });
     }
 
-    if (updated) {
-      clearSchemeCache();
-    }
+    clearSchemeCache();
 
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEMES_BULK_UPDATED', { ids, action });
@@ -350,9 +339,7 @@ export const bulkImportSchemes = async (req, res) => {
     const inserted = await Scheme.insertMany(schemes);
     fs.unlinkSync(req.file.path); // Cleanup
 
-    if (updated) {
-      clearSchemeCache();
-    }
+    clearSchemeCache();
 
     if (req.app.get('io')) {
       req.app.get('io').emit('SCHEMES_BULK_UPDATED', { ids: inserted.map(s => s._id), action: 'import' });

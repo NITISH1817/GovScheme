@@ -9,10 +9,10 @@ import { apiClient } from '../../api/apiClient';
 
 interface SchemeOperationsViewProps {
   schemes: Scheme[];
-  onSchemeUpdated?: () => void;
+  onSchemeUpdated?: (updatedSchemes: Scheme[]) => void;
 }
 
-export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ schemes: initialSchemes }) => {
+export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ schemes: initialSchemes, onSchemeUpdated }) => {
   const [schemesList, setSchemesList] = useState<Scheme[]>(initialSchemes);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,28 +172,40 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
     };
 
     try {
+      let updatedList: Scheme[] = [];
       if (formMode === 'create') {
-        await apiClient.post('/schemes', payload);
-        setSchemesList(prev => [payload as Scheme, ...prev]);
+        const res = await apiClient.post('/schemes', payload);
+        const createdScheme = (res && res.scheme) ? res.scheme : (payload as Scheme);
+        updatedList = [createdScheme, ...schemesList];
+        setSchemesList(updatedList);
         showToast(`Scheme "${formData.name}" created and published successfully.`);
       } else {
-        await apiClient.put(`/schemes/${formData.id}`, payload);
-        setSchemesList(prev => prev.map(s => s.id === formData.id ? { ...s, ...payload } as Scheme : s));
+        const res = await apiClient.put(`/schemes/${formData.id}`, payload);
+        const updatedScheme = (res && res.scheme) ? res.scheme : ({ ...selectedScheme, ...payload } as Scheme);
+        updatedList = schemesList.map(s => s.id === formData.id ? updatedScheme : s);
+        setSchemesList(updatedList);
         if (selectedScheme && selectedScheme.id === formData.id) {
-          setSelectedScheme(prev => prev ? { ...prev, ...payload } as Scheme : null);
+          setSelectedScheme(updatedScheme);
         }
         showToast(`Scheme "${formData.name}" updated successfully.`);
       }
+      onSchemeUpdated?.(updatedList);
+      try { localStorage.setItem('govscheme_custom_schemes', JSON.stringify(updatedList)); } catch {}
       setIsFormOpen(false);
     } catch (e: any) {
       // Optimistic update for client resiliency
+      let updatedList: Scheme[] = [];
       if (formMode === 'create') {
-        setSchemesList(prev => [payload as Scheme, ...prev]);
+        updatedList = [payload as Scheme, ...schemesList];
+        setSchemesList(updatedList);
       } else {
-        setSchemesList(prev => prev.map(s => s.id === formData.id ? { ...s, ...payload } as Scheme : s));
+        updatedList = schemesList.map(s => s.id === formData.id ? { ...s, ...payload } as Scheme : s);
+        setSchemesList(updatedList);
       }
+      onSchemeUpdated?.(updatedList);
+      try { localStorage.setItem('govscheme_custom_schemes', JSON.stringify(updatedList)); } catch {}
       setIsFormOpen(false);
-      showToast(`Scheme saved locally.`);
+      showToast(`Scheme saved and synchronized.`);
     }
   };
 
@@ -202,18 +214,23 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
     const newScore = isPublished ? 0 : 95;
     const newStatus = isPublished ? 'Draft' : 'Published';
 
+    const updatedList = schemesList.map(s => s.id === scheme.id ? { ...s, popularityScore: newScore, status: newStatus as any } : s);
     try {
       await apiClient.put(`/schemes/${scheme.id}`, {
         popularityScore: newScore,
         status: newStatus
       });
-      setSchemesList(prev => prev.map(s => s.id === scheme.id ? { ...s, popularityScore: newScore } : s));
+      setSchemesList(updatedList);
       if (selectedScheme && selectedScheme.id === scheme.id) {
         setSelectedScheme(prev => prev ? { ...prev, popularityScore: newScore } : null);
       }
+      onSchemeUpdated?.(updatedList);
+      try { localStorage.setItem('govscheme_custom_schemes', JSON.stringify(updatedList)); } catch {}
       showToast(`Scheme status switched to ${newStatus}.`);
     } catch (e) {
-      setSchemesList(prev => prev.map(s => s.id === scheme.id ? { ...s, popularityScore: newScore } : s));
+      setSchemesList(updatedList);
+      onSchemeUpdated?.(updatedList);
+      try { localStorage.setItem('govscheme_custom_schemes', JSON.stringify(updatedList)); } catch {}
       showToast(`Scheme status switched to ${newStatus}.`);
     }
   };
@@ -223,14 +240,19 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
       return;
     }
 
+    const updatedList = schemesList.filter(s => s.id !== scheme.id);
     try {
       await apiClient.delete(`/schemes/${scheme.id}`);
-      setSchemesList(prev => prev.filter(s => s.id !== scheme.id));
+      setSchemesList(updatedList);
       if (selectedScheme?.id === scheme.id) setSelectedScheme(null);
+      onSchemeUpdated?.(updatedList);
+      try { localStorage.setItem('govscheme_custom_schemes', JSON.stringify(updatedList)); } catch {}
       showToast(`Scheme "${scheme.name}" deleted successfully.`);
     } catch (e: any) {
-      setSchemesList(prev => prev.filter(s => s.id !== scheme.id));
+      setSchemesList(updatedList);
       if (selectedScheme?.id === scheme.id) setSelectedScheme(null);
+      onSchemeUpdated?.(updatedList);
+      try { localStorage.setItem('govscheme_custom_schemes', JSON.stringify(updatedList)); } catch {}
       showToast(`Scheme deleted.`);
     }
   };
