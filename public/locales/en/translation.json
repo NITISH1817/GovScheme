@@ -2393,5 +2393,10 @@
   "docVaultPillar": "Secure client-side OCR for Aadhaar, Income & Caste certificates with masked privacy.",
   "multiLangVoice": "7 Regional Languages",
   "voiceAssistantPillar": "Voice commands and native translations across Tamil, Hindi, Telugu, and more.",
-  "kioskPillar": "Accessible touch interface with instant thermal receipt generation for rural CSCs."
+  "kioskPillar": "Accessible touch interface with instant thermal receipt generation for rural CSCs.",
+  "guestWizardEvaluated": "Personalized Recommendations from Eligibility Wizard (Guest Mode)",
+  "notLoggedIn": "Not Logged In",
+  "guestWizardEvaluatedDesc": "Schemes below are evaluated against the age, location, and income details you provided. Sign In or Sign Up anytime to save your profile and track applications.",
+  "editWizardAnswers": "Edit Details",
+  "signInToSave": "Sign In to Save"
 }

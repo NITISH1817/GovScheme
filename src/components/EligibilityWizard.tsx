@@ -135,8 +135,13 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
     if (isSubmitting) return;
     if (!validateCurrentStep()) return;
 
+    const dataToSubmit: Partial<UserProfile> = {
+      ...formData,
+      fullName: formData.fullName?.trim() || user?.fullName || 'Guest Citizen'
+    };
+
     if (!isWhatCanIGet && !isLifeEvent) {
-      const missing = getMissingProfileFields(formData);
+      const missing = getMissingProfileFields(dataToSubmit);
       if (missing.length > 0) {
         setValidationError(t('missingRequiredFields', `Please fill all required profile fields before saving: ${missing.join(', ')}`));
         return;
@@ -148,7 +153,7 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
     setIsSubmitting(true);
 
     try {
-      await onComplete(formData);
+      await onComplete(dataToSubmit);
       setSubmitSuccess(true);
     } catch (err: any) {
       console.error('Failed to save citizen profile:', err);

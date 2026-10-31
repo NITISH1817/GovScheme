@@ -12,6 +12,7 @@ import { getMissingProfileFields } from '../utils/profileUtils';
 interface SchemeDiscoveryProps {
   schemes: Scheme[];
   user: UserProfile | null;
+  guestProfile?: Partial<UserProfile> | null;
   currentLang: string;
   initialCategory?: string;
   initialViewMode?: 'recommended' | 'all' | 'ineligible';
@@ -29,6 +30,7 @@ interface SchemeDiscoveryProps {
 export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   schemes,
   user,
+  guestProfile,
   currentLang,
   initialCategory,
   initialViewMode,
@@ -75,14 +77,19 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('');
 
+    // Active profile used for eligibility evaluation (authenticated user or guest details from wizard)
+  const evaluationProfile = useMemo(() => {
+    return user || (guestProfile as UserProfile) || null;
+  }, [user, guestProfile]);
+
   // Compute recommendations
   const analyzedSchemes = useMemo(() => {
     return schemes.map(scheme => {
-      const ruleRes = evaluateSchemeEligibility(user, scheme);
-      const mlRes = computeMLRecommendation(user, scheme, ruleRes, schemes);
+      const ruleRes = evaluateSchemeEligibility(evaluationProfile, scheme);
+      const mlRes = computeMLRecommendation(evaluationProfile, scheme, ruleRes, schemes);
       return { scheme, ruleResult: ruleRes, mlResult: mlRes };
     }).sort((a, b) => b.mlResult.confidenceScore - a.mlResult.confidenceScore);
-  }, [schemes, user, currentLang]);
+  }, [schemes, evaluationProfile, currentLang]);
 
   const { recommendedCount, ineligibleCount, totalCount } = useMemo(() => {
     let rec = 0;
@@ -101,7 +108,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
     };
   }, [analyzedSchemes, schemes.length]);
 
-  const missingFields = useMemo(() => getMissingProfileFields(user), [user]);
+  const missingFields = useMemo(() => getMissingProfileFields(evaluationProfile), [evaluationProfile]);
 
   // Debounced semantic search with out-of-order race cancellation
   const activeSearchIdRef = useRef(0);
@@ -267,8 +274,8 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
                 {viewMode === 'recommended'
-                  ? (user
-                      ? `${t('basedOnInfo', 'Based on your profile, we found')} ${filteredSchemes.length} ${t('matchingSchemes', 'matching schemes.')}`
+                  ? (evaluationProfile
+                      ? `${t('basedOnInfo', 'Based on your details, we found')} ${filteredSchemes.length} ${t('matchingSchemes', 'matching schemes.')}`
                       : t('guestNoticeDesc', 'Showing schemes with general eligibility. Complete your profile to see personalized matches.'))
                   : viewMode === 'ineligible'
                   ? t('showingSchemesIneligible', 'Showing {{count}} schemes where your profile does not meet eligibility requirements. Inspect the mismatch reasons on each card.', { count: filteredSchemes.length })
@@ -335,7 +342,48 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
           </div>
         </div>
 
-        {(!user || missingFields.length > 0) && (
+        {!user && guestProfile && (
+          <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                    {t('guestWizardEvaluated', 'Personalized Recommendations from Eligibility Wizard (Guest Mode)')}
+                  </h4>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-100">
+                    {t('notLoggedIn', 'Not Logged In')}
+                  </span>
+                </div>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                  {t('guestWizardEvaluatedDesc', 'Schemes below are evaluated against the age, location, and income details you provided. Sign In or Sign Up anytime to save your profile and track applications.')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {onNavigateTab && (
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('wizard')}
+                  className="px-3.5 py-1.5 bg-white dark:bg-emerald-900 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-800 text-emerald-800 dark:text-emerald-100 rounded-lg text-xs font-semibold transition cursor-pointer"
+                >
+                  {t('editWizardAnswers', 'Edit Details')}
+                </button>
+              )}
+              {onNavigateTab && (
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('auth')}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition cursor-pointer"
+                >
+                  {t('signInToSave', 'Sign In to Save')}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {((!user && !guestProfile) || (user && missingFields.length > 0)) && (
           <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -355,7 +403,7 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigateTab('wizard')}
-                className="shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition"
+                className="shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition cursor-pointer"
               >
                 {!user ? t('checkEligibilityWizard', 'Check Eligibility Wizard') : t('completeProfileNow', 'Complete Profile Now')}
               </button>

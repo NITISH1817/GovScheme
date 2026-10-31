@@ -96,6 +96,12 @@ export const App: React.FC = () => {
       return savedUser ? JSON.parse(savedUser) : (savedAdmin ? JSON.parse(savedAdmin) : null);
     } catch { return null; }
   });
+  const [guestProfile, setGuestProfile] = useState<UserProfile | null>(() => {
+    try {
+      const savedGuest = localStorage.getItem('govscheme_guest_profile');
+      return savedGuest ? JSON.parse(savedGuest) : null;
+    } catch { return null; }
+  });
   const [schemes, setSchemes] = useState<Scheme[]>(schemesData);
   const [isSchemesLoading, setIsSchemesLoading] = useState<boolean>(false);
   const [schemesError, setSchemesError] = useState<string | null>(null);
@@ -771,13 +777,16 @@ export const App: React.FC = () => {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('adminUser');
     setUser(null);
+    setGuestProfile(null);
+    localStorage.removeItem('govscheme_guest_profile');
     setActiveTab('home');
   };
 
-  // Compute eligible and ineligible schemes count for the user
+  // Compute eligible and ineligible schemes count for the user or guest profile
   const eligibleSchemesCount = schemes.filter(scheme => {
-    if (!user) return true;
-    const res = evaluateSchemeEligibility(user, scheme);
+    const evalProfile = user || guestProfile;
+    if (!evalProfile) return true;
+    const res = evaluateSchemeEligibility(evalProfile, scheme);
     return res.status === 'Eligible' || res.status === 'Conditionally Eligible';
   }).length;
 
@@ -1396,18 +1405,20 @@ export const App: React.FC = () => {
 
         {activeTab === 'wizard' && (
           <EligibilityWizard
-            user={user}
+            user={user || guestProfile || null}
             mode={wizardMode}
             onComplete={async (profileData) => {
               const token = localStorage.getItem('govscheme_token');
-              const mergedPayload = {
-                ...(user || {}),
-                ...profileData
-              };
 
-              let savedUser: UserProfile;
+              if (token && user) {
+                // LOGGED-IN CITIZEN FLOW: Persist to backend and update user state
+                const mergedPayload = {
+                  ...(user || {}),
+                  ...profileData
+                };
 
-              if (token) {
+                let savedUser: UserProfile;
+
                 try {
                   const res = await fetch(`${API_URL}/api/users/profile`, {
                     method: 'PUT',
@@ -1436,40 +1447,59 @@ export const App: React.FC = () => {
                   console.warn('Backend unavailable during wizard completion, saving locally:', networkErr);
                   savedUser = normalizeUserProfile(mergedPayload);
                 }
-              } else {
-                savedUser = normalizeUserProfile(mergedPayload);
-              }
 
-              savedUser.profileCompletionScore = calculateProfileCompletion(savedUser);
+                savedUser.profileCompletionScore = calculateProfileCompletion(savedUser);
 
-              // Update React state and localStorage
-              setUser(savedUser);
-              localStorage.setItem('govscheme_user', JSON.stringify(savedUser));
+                // Update React state and localStorage for logged in user
+                setUser(savedUser);
+                localStorage.setItem('govscheme_user', JSON.stringify(savedUser));
 
-              // Explicitly save into local accounts database so future logins restore these exact details
-              try {
-                const raw = localStorage.getItem('govscheme_accounts_db');
-                const accounts = raw ? JSON.parse(raw) : {};
-                const emailKey = (savedUser.email || '').toLowerCase().trim();
-                if (emailKey) {
-                  accounts[emailKey] = {
-                    ...(accounts[emailKey] || {}),
-                    profile: savedUser,
-                    token: savedUser.token || accounts[emailKey]?.token || localStorage.getItem('govscheme_token') || `token_${Date.now()}`
-                  };
-                  localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+                // Explicitly save into local accounts database so future logins restore these exact details
+                try {
+                  const raw = localStorage.getItem('govscheme_accounts_db');
+                  const accounts = raw ? JSON.parse(raw) : {};
+                  const emailKey = (savedUser.email || '').toLowerCase().trim();
+                  if (emailKey) {
+                    accounts[emailKey] = {
+                      ...(accounts[emailKey] || {}),
+                      profile: savedUser,
+                      token: savedUser.token || accounts[emailKey]?.token || localStorage.getItem('govscheme_token') || `token_${Date.now()}`
+                    };
+                    localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+                  }
+                } catch (e) {
+                  console.warn('Failed to update govscheme_accounts_db:', e);
                 }
-              } catch (e) {
-                console.warn('Failed to update govscheme_accounts_db:', e);
-              }
 
-              // If user came via Kiosk Mode, navigate directly to Kiosk Mode with filled profile
-              if (pendingKioskRedirect) {
-                setPendingKioskRedirect(false);
-                setAuthNotice(undefined);
-                setActiveTab('kiosk');
+                // If user came via Kiosk Mode, navigate directly to Kiosk Mode with filled profile
+                if (pendingKioskRedirect) {
+                  setPendingKioskRedirect(false);
+                  setAuthNotice(undefined);
+                  setActiveTab('kiosk');
+                } else {
+                  setActiveTab('profile');
+                }
               } else {
-                setActiveTab('profile');
+                // GUEST / PUBLIC VISITOR FLOW:
+                // DO NOT automatically log in the user.
+                // Store guest criteria so recommended schemes are evaluated against asked details.
+                const guestData = normalizeUserProfile({
+                  ...profileData,
+                  fullName: profileData.fullName || 'Guest Citizen',
+                  role: 'Citizen'
+                });
+                guestData.profileCompletionScore = calculateProfileCompletion(guestData);
+
+                setGuestProfile(guestData);
+                try {
+                  localStorage.setItem('govscheme_guest_profile', JSON.stringify(guestData));
+                } catch (e) {
+                  console.warn('Failed to save guest profile to localStorage:', e);
+                }
+
+                // Navigate directly to recommended schemes view without logging in!
+                setSchemeDiscoveryMode('recommended');
+                setActiveTab('schemes');
               }
             }}
             onCancel={() => {
@@ -1478,6 +1508,8 @@ export const App: React.FC = () => {
                 setAuthNotice(undefined);
                 setActiveTab('kiosk');
               } else if (user && isProfileComplete(user)) {
+                setActiveTab('schemes');
+              } else if (guestProfile) {
                 setActiveTab('schemes');
               } else {
                 setActiveTab('home');
@@ -1498,6 +1530,7 @@ export const App: React.FC = () => {
           <SchemeDiscovery
             schemes={schemes}
             user={user}
+            guestProfile={guestProfile}
             currentLang={currentLang}
             initialCategory={selectedCategoryFilter}
             initialViewMode={schemeDiscoveryMode}
