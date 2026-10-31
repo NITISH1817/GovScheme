@@ -374,6 +374,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
+        {/* Citizen Dashboard Sections: Visible only when signed in */}
+        {user && (
+          <>
         {/* 4. EXISTING RECOMMENDED SCHEMES & 5. EXISTING UPCOMING DEADLINES */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recommended for You */}
@@ -476,6 +479,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <p className="text-sm text-[#64748B] dark:text-gray-400">{t('kioskCardDesc', 'Assisted mode for operators to generate instant printable beneficiary reports.')}</p>
           </div>
         </div>
+
+          </>
+        )}
 
         {/* 4-Step Interactive Workflow */}
         <section className="space-y-6 pt-4">
