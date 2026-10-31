@@ -252,8 +252,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
               <button
                 type="button"
-                onClick={() => onNavigateTab('report')}
-                className="z-10 w-full md:w-auto px-6 py-3.5 bg-white text-emerald-800 hover:bg-emerald-50 text-xs sm:text-sm font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap flex items-center justify-center gap-2 shrink-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onNavigateTab('report');
+                }}
+                className="z-10 w-full md:w-auto px-6 py-3.5 bg-white text-emerald-800 hover:bg-emerald-50 text-xs sm:text-sm font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap flex items-center justify-center gap-2 shrink-0 cursor-pointer"
               >
                 <FileText className="w-4 h-4 text-emerald-700" />
                 <span>{t('genAssessmentReport', 'Generate Assessment Report')}</span>
@@ -684,8 +688,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <div className="space-y-2 text-xs">
                 <button
                   type="button"
-                  onClick={() => onNavigateTab('report')}
-                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between transition"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onNavigateTab('report');
+                  }}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between transition cursor-pointer"
                 >
                   <span className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-emerald-600" />

@@ -30,6 +30,7 @@ interface LandingPageProps {
   currentLang: LanguageCode;
   onGetStarted: (mode: 'wizard' | 'life-event' | 'what-can-i-get') => void;
   onTalkToAI: () => void;
+  onOpenOCR?: (docType?: string) => void;
   onNavigateTab: (tab: string) => void;
   onSelectCategory?: (category: string) => void;
   topSchemes: Scheme[];
@@ -91,6 +92,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   currentLang: _currentLang,
   onGetStarted,
   onTalkToAI,
+  onOpenOCR,
   onNavigateTab,
   onSelectCategory,
   topSchemes,
@@ -499,14 +501,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div
             id="walkthrough-target-5"
-            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer scroll-mt-24 transition-all duration-300"
-            onClick={onTalkToAI}
+            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer scroll-mt-24 transition-all duration-300 group hover:border-purple-400 dark:hover:border-purple-600"
+            onClick={() => {
+              if (onOpenOCR) {
+                onOpenOCR('Unknown');
+              } else if (user) {
+                onNavigateTab('vault');
+              } else {
+                onTalkToAI();
+              }
+            }}
           >
-            <div className="w-12 h-12 bg-[#9333EA]/10 rounded-full flex items-center justify-center mb-4">
-              <ShieldCheck className="w-6 h-6 text-[#9333EA]" />
+            <div className="w-12 h-12 bg-[#9333EA]/10 rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+              <Sparkles className="w-6 h-6 text-[#9333EA]" />
             </div>
-            <h3 className="font-bold text-[#12365B] dark:text-white mb-2">{t('aiDocAssistant', 'AI Document Assistant (Auto-Detect)')}</h3>
-            <p className="text-sm text-[#64748B] dark:text-gray-400">{t('needHelpIdentifyingDoc', 'Need help identifying or verifying a government document? Ask AI.')}</p>
+            <h3 className="font-bold text-[#12365B] dark:text-white mb-2 flex items-center gap-2">
+              <span>{t('aiDocAssistant', 'AI Document Assistant (Auto-Detect)')}</span>
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300">AI ✨</span>
+            </h3>
+            <p className="text-sm text-[#64748B] dark:text-gray-400">{t('needHelpIdentifyingDoc', 'Upload or capture any official document — AI auto-detects category and extracts citizen fields.')}</p>
           </div>
 
           <div

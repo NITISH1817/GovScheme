@@ -115,13 +115,13 @@ export const DocumentVault: React.FC<DocumentVaultProps> = ({
 
           <button
             onClick={() => onOpenOCR('Unknown')}
-            className="group relative overflow-hidden rounded-[2rem] bg-indigo-600 hover:bg-indigo-700 p-2.5 flex items-center justify-between shadow-lg min-w-[280px] transition-colors"
+            className="group relative overflow-hidden rounded-full bg-gradient-to-r from-[#6366F1] via-[#4F46E5] to-[#4338CA] hover:from-[#4F46E5] hover:to-[#3730A3] px-6 py-3.5 flex items-center justify-between shadow-xl min-w-[290px] transition-all hover:scale-[1.02] active:scale-[0.98] border border-indigo-400/30"
           >
-            <span className="text-white font-bold text-sm pl-6 pr-4 flex-1 text-left">
-              {t('aiDocAssistant', 'Auto-Detect Any Document')}
+            <span className="text-white font-bold text-sm flex-1 text-left tracking-wide">
+              {t('aiDocAssistant', 'AI Document Assistant (Auto-Detect)')}
             </span>
-            <div className="w-10 h-10 shrink-0 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
-              <Sparkles className="w-5 h-5 text-amber-300" />
+            <div className="w-8 h-8 shrink-0 rounded-full bg-white/20 flex items-center justify-center transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 ml-3">
+              <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
             </div>
           </button>
         </div>

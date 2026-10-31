@@ -55,7 +55,7 @@ export const App: React.FC = () => {
     try {
       const path = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
       if (path === 'admin' || path.startsWith('admin/')) return 'admin';
-      const validTabs = ['home', 'schemes', 'wizard', 'vault', 'tracker', 'profile', 'kiosk', 'assistant', 'settings', 'admin'];
+      const validTabs = ['home', 'schemes', 'wizard', 'vault', 'tracker', 'profile', 'kiosk', 'assistant', 'settings', 'admin', 'report', 'kiosk-report', 'analyzing'];
       if (validTabs.includes(path)) return path;
 
       const searchParams = new URLSearchParams(window.location.search);
@@ -82,6 +82,9 @@ export const App: React.FC = () => {
       }
     }
     setActiveTabState(tab);
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {}
   };
 
   // User & Data State

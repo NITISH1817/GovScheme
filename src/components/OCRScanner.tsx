@@ -64,9 +64,10 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
 
-  const [selectedType, setSelectedType] = useState<DocumentRecord['type']>(
-    expectedType === 'Unknown' ? 'Aadhaar' : expectedType
+  const [selectedType, setSelectedType] = useState<DocumentRecord['type'] | 'Unknown'>(
+    expectedType || 'Aadhaar'
   );
+  const isAutoDetectMode = expectedType === 'Unknown' || (selectedType as string) === 'Unknown';
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     OCR_LANGUAGES.some(l => l.code === i18n.language) ? i18n.language : 'en'
   );
@@ -386,6 +387,9 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                     onChange={(e) => setSelectedType(e.target.value as DocumentRecord['type'])}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none"
                   >
+                    {isAutoDetectMode && (
+                      <option value="Unknown">✨ {t('autoDetectOption', 'Auto-Detect Document Category (AI Assisted)')}</option>
+                    )}
                     {SUPPORTED_DOC_TYPES.map((dt) => (
                       <option key={dt.type} value={dt.type}>{t(dt.label, dt.label)}</option>
                     ))}

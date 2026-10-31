@@ -181,10 +181,10 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
 };
 
 export const getUserAvatarUrl = (user?: { fullName?: string; avatarUrl?: string } | null): string => {
-  if (!user) return 'https://api.dicebear.com/7.x/initials/svg?seed=Citizen&backgroundColor=0369a1';
-  const name = user.fullName?.trim() || 'Citizen';
-  if (user.avatarUrl && !user.avatarUrl.includes('dicebear.com/7.x/initials')) {
+  const name = (user?.fullName || '').trim() || 'Citizen';
+  // If user uploaded a custom data/blob photo, preserve it; otherwise dynamically generate initials
+  if (user?.avatarUrl && (user.avatarUrl.startsWith('data:') || user.avatarUrl.startsWith('blob:') || user.avatarUrl.startsWith('/uploads/'))) {
     return user.avatarUrl;
   }
-  return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0369a1`;
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0284c7`;
 };
