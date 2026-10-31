@@ -560,7 +560,7 @@ const getLiveData = (endpoint: string, params: Record<string, any> = {}) => {
     }
 
     const page = Number(params.page) || 1;
-    const limit = Number(params.limit) || 20;
+    const limit = (params.limit !== undefined && params.limit !== null && params.limit !== '') ? Number(params.limit) : 1000;
     const startIndex = (page - 1) * limit;
     const paged = filtered.slice(startIndex, startIndex + limit);
 

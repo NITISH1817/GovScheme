@@ -63,6 +63,7 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
     try {
       setLoading(true);
       const res = await apiClient.get('/schemes', {
+        limit: 1000,
         state: stateFilter !== 'All' ? stateFilter : undefined,
         category: categoryFilter !== 'All' ? categoryFilter : undefined,
         status: statusFilter !== 'All' ? statusFilter : undefined,
