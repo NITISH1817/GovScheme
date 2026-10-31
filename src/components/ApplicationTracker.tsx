@@ -88,7 +88,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
       >
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-white/10 text-[#1769FF] dark:text-blue-300 text-xs font-bold border border-blue-200/60 dark:border-white/10">
-            <Clock className="w-4 h-4 text-[#1769FF]" /> {t('trackerBadge', 'Application & Verification Status Tracker')}
+            <Clock className="w-4 h-4 text-[#1769FF]" /> {t('trackerBadge', 'Personal Application Tracker (Citizen-Maintained)')}
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold font-sans tracking-tight text-gov-navy dark:text-white">
             {t('citizenAppTracker', 'Application Tracker')}
@@ -99,7 +99,7 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
           <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-950 dark:text-blue-300 max-w-2xl">
             <AlertCircle className="w-4 h-4 text-[#1769FF] shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              {t('trackerOperationalDisclaimer', 'GovScheme records application information and status updates entered by citizens or authorized administrators. For official application and benefit disbursement status, visit the relevant government portal.')}
+              {t('trackerOperationalDisclaimer', 'Transparency Disclosure: This personal tracker is maintained by you (the citizen) to record application reference numbers, submission dates, and target milestones. GovScheme does not have direct access to internal government file movement systems. To check the legal status of your application, visit the respective official department portal linked on each card.')}
             </p>
           </div>
         </div>
@@ -214,7 +214,20 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                   </div>
 
                   <button
-                    onClick={() => window.open(app.officialPortalLink, '_blank')}
+                    onClick={() => {
+                      const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
+                      if (skipNotice === 'true') {
+                        window.open(app.officialPortalLink, '_blank', 'noopener,noreferrer');
+                      } else {
+                        window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+                          detail: {
+                            type: 'redirect',
+                            url: app.officialPortalLink,
+                            schemeName: app.schemeName
+                          }
+                        }));
+                      }
+                    }}
                     className="px-6 py-2.5 rounded bg-[#1769FF] text-white font-bold text-xs shadow-sm hover:bg-blue-700 transition-colors flex items-center gap-2 shrink-0"
                   >
                     {t('trackOnOfficialPortal', 'Track on Official Portal')} <ExternalLink className="w-4 h-4" />

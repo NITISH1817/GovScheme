@@ -822,7 +822,24 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                       {compareQueue.find(s => s.id === scheme.id) ? t('added', 'Added') : t('compare', 'Compare')}
                     </button>
                     <button
-                      onClick={() => onApplyScheme ? onApplyScheme(scheme) : window.open(scheme.officialApplyUrl || '#', '_blank')}
+                      onClick={() => {
+                        const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite;
+                        const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
+                        if (skipNotice === 'true') {
+                          window.open(targetUrl || '#', '_blank', 'noopener,noreferrer');
+                        } else if (targetUrl) {
+                          window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+                            detail: {
+                              type: 'redirect',
+                              url: targetUrl,
+                              schemeName: scheme.name,
+                              department: scheme.department
+                            }
+                          }));
+                        } else if (onApplyScheme) {
+                          onApplyScheme(scheme);
+                        }
+                      }}
                       className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center"
                     >
                       <span>{t('apply', 'Apply')}</span> <ExternalLink className="w-4 h-4" />

@@ -132,7 +132,19 @@ Official Apply Portal: ${officialUrl || 'https://www.india.gov.in'}
 
   const handleOpenPortal = () => {
     if (hasValidPortalUrl) {
-      window.open(officialUrl, '_blank', 'noopener,noreferrer');
+      const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
+      if (skipNotice === 'true') {
+        window.open(officialUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+          detail: {
+            type: 'redirect',
+            url: officialUrl,
+            schemeName: scheme.name,
+            department: scheme.department
+          }
+        }));
+      }
       setStep('portal_opened');
       setErrorMsg(null);
     } else {

@@ -9,7 +9,8 @@ import {
   VolumeX,
   User,
   ExternalLink,
-  Info
+  Info,
+  ShieldCheck
 } from 'lucide-react';
 import { ChatMessage, Scheme, UserProfile, LanguageCode } from '../types';
 import { startVoiceListening, speakText, stopSpeaking, isSpeechRecognitionSupported, checkVoiceNavigationCommand } from '../services/voiceService';
@@ -309,16 +310,69 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   <div className={`p-4 text-sm leading-relaxed ${msg.sender === 'user' ? 'bg-[#1769FF] text-white rounded-l rounded-br' : 'bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-gray-100 rounded-r rounded-bl border border-gray-200 dark:border-gray-800'}`}>
                     <p className="whitespace-pre-wrap">{msg.text}</p>
                     
-                    {msg.sender === 'assistant' && msg.text.length > 50 && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2">
-                         <button onClick={() => onNavigateTab('schemes')} className="px-3 py-1.5 rounded bg-white dark:bg-[#0F1B2D] border border-gray-300 dark:border-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1">
-                           <ExternalLink className="w-3 h-3" /> {t('viewScheme', 'View Scheme')}
-                         </button>
-                         <button className="px-3 py-1.5 rounded bg-white dark:bg-[#0F1B2D] border border-gray-300 dark:border-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center gap-1">
-                           <Info className="w-3 h-3" /> {t('viewSource', 'View Source')}
-                         </button>
-                      </div>
-                    )}
+                    {msg.sender === 'assistant' && msg.text.length > 25 && (() => {
+                      const lower = msg.text.toLowerCase();
+                      const referenced = (msg.referencedSchemes && msg.referencedSchemes.length > 0)
+                        ? msg.referencedSchemes
+                        : schemes.filter(s => {
+                            const words = s.name.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+                            return words.some(w => lower.includes(w));
+                          }).slice(0, 2);
+
+                      return (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/60 space-y-2 text-xs">
+                          {/* Grounded Evidence Citations */}
+                          {referenced.length > 0 && (
+                            <div className="space-y-1.5">
+                              <span className="font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                {t('groundedCitations', 'Authoritative Source Citations')}
+                              </span>
+                              <div className="grid grid-cols-1 gap-1.5">
+                                {referenced.map(refScheme => (
+                                  <div key={refScheme.id} className="p-2 rounded bg-white dark:bg-[#0c1626] border border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <div className="font-bold text-gray-800 dark:text-gray-200 truncate text-[11px]">{refScheme.name}</div>
+                                      <div className="text-[10px] text-gray-500 truncate">{refScheme.department} • {refScheme.state || 'Central'}</div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const url = refScheme.officialApplyUrl || refScheme.officialWebsite;
+                                        if (url) {
+                                          window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+                                            detail: {
+                                              type: 'redirect',
+                                              url,
+                                              schemeName: refScheme.name,
+                                              department: refScheme.department
+                                            }
+                                          }));
+                                        } else {
+                                          onNavigateTab('schemes');
+                                        }
+                                      }}
+                                      className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-[10px] hover:underline shrink-0 flex items-center gap-1"
+                                    >
+                                      <ExternalLink className="w-2.5 h-2.5" />
+                                      <span>{t('viewOfficialPortal', 'Official Portal')}</span>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Advisory Non-Affiliation Notice */}
+                          <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-900 dark:text-amber-300 leading-normal flex items-start gap-1.5">
+                            <Info className="w-3 h-3 text-amber-600 shrink-0 mt-0.5" />
+                            <span>
+                              {t('aiAdvisoryNotice', 'Advisory Notice: Responses are synthesized from verified government documentation. Always confirm eligibility rules, deadlines, and required documentation directly with the implementing department.')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   
                   <span className="text-[10px] font-semibold text-gray-400 px-1">{msg.timestamp}</span>

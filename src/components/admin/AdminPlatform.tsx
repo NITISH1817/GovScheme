@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, FileText, CheckSquare, BarChart3, Database, ShieldAlert,
+  LayoutDashboard, FileText, Activity, MessageSquare, CheckSquare, BarChart3, Database, ShieldAlert,
   Users, Settings, Search, Bell, Sun, Moon, LogOut, Menu, X, Command,
   FileCheck2, HelpCircle, Layers, CheckCircle2, ChevronRight, Globe, Home, ExternalLink
 } from 'lucide-react';
@@ -23,6 +23,7 @@ import { NotificationCenterView } from './NotificationCenterView';
 import { ContentManagementView } from './ContentManagementView';
 import { AuditLogsView } from './AuditLogsView';
 import { SettingsView } from './SettingsView';
+import { FeedbackManagementView } from './FeedbackManagementView';
 import { apiClient } from '../../api/apiClient';
 
 interface AdminPlatformProps {
@@ -45,6 +46,8 @@ export type AdminView =
   | 'document-verification'
   | 'analytics'
   | 'notifications'
+  | 'freshness'
+  | 'feedback'
   | 'content'
   | 'audit'
   | 'settings';
@@ -127,7 +130,9 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
     { id: 'document-verification', icon: FileCheck2, label: 'Document Verification', section: 'BENEFICIARY SERVICES', badge: 3 },
 
     { id: 'analytics', icon: BarChart3, label: 'Analytics & Reports', section: 'DATA INTELLIGENCE' },
+    { id: 'freshness', icon: Activity, label: 'Data Freshness & Trust', section: 'DATA INTELLIGENCE' },
     { id: 'notifications', icon: Bell, label: 'Notifications', section: 'COMMUNICATIONS', badge: unreadCount > 0 ? unreadCount : undefined },
+    { id: 'feedback', icon: MessageSquare, label: 'Citizen Feedback', section: 'COMMUNICATIONS' },
     { id: 'content', icon: Globe, label: 'Content Management', section: 'COMMUNICATIONS' },
 
     { id: 'audit', icon: ShieldAlert, label: 'Audit Logs', section: 'SYSTEM GOVERNANCE' },
@@ -451,6 +456,12 @@ export const AdminPlatform: React.FC<AdminPlatformProps> = ({ user, schemes, onE
               )}
               {activeView === 'analytics' && (
                 <AdminAnalytics />
+              )}
+              {activeView === 'freshness' && (
+                <DataHealthCenter />
+              )}
+              {activeView === 'feedback' && (
+                <FeedbackManagementView schemes={schemes} />
               )}
               {activeView === 'notifications' && (
                 <NotificationCenterView onNotificationSent={onNotificationSent} />

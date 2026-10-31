@@ -433,16 +433,19 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
   });
 
   let status: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible' | 'Insufficient Information';
+  let classification: 'LIKELY_ELIGIBLE' | 'POSSIBLY_ELIGIBLE' | 'LIKELY_INELIGIBLE' | 'INSUFFICIENT_INFORMATION' | 'RULES_NEED_VERIFICATION';
   let overallReason = '';
 
   if (failedCriteria.length === 0 && informationNeeded.length === 0 && missingDocuments.length === 0) {
     if (matchedCriteria.length === 0) {
       status = 'Insufficient Information';
+      classification = 'RULES_NEED_VERIFICATION';
       overallReason = i18n.t('ruleNoCriteriaEvaluated', {
         defaultValue: 'No machine-evaluable criteria defined in catalogue. Official guidelines must be consulted.'
       });
     } else {
       status = 'Eligible';
+      classification = 'LIKELY_ELIGIBLE';
       overallReason = i18n.t('ruleEligible', {
         count: matchedCriteria.length,
         defaultValue: `Full eligibility verified! All ${matchedCriteria.length} criteria met and all required documents present in Document Vault.`
@@ -450,6 +453,7 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     }
   } else if (failedCriteria.length === 0 && informationNeeded.length === 0 && missingDocuments.length > 0) {
     status = 'Conditionally Eligible';
+    classification = 'POSSIBLY_ELIGIBLE';
     const docsStr = missingDocuments.map(d => i18n.t(d, d)).join(', ');
     overallReason = i18n.t('ruleConditional', {
       count: missingDocuments.length,
@@ -458,33 +462,40 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
     });
   } else if (failedCriteria.length === 0 && informationNeeded.length > 0) {
     status = 'Insufficient Information';
+    classification = 'INSUFFICIENT_INFORMATION';
     const infoStr = informationNeeded.slice(0, 2).join('; ');
     overallReason = i18n.t('ruleInsufficientInfo', {
       info: infoStr,
       defaultValue: `More profile details needed to confirm eligibility: ${infoStr}. Please update your profile.`
     });
-  } else if (failedCriteria.length === 1) {
-    status = 'Almost Eligible';
-    overallReason = i18n.t('ruleAlmostEligible', {
-      criteria: failedCriteria[0],
-      defaultValue: `Almost eligible! You are missing one requirement: ${failedCriteria[0]}`
-    });
   } else {
+    // Failing 1 or more mandatory criteria classifies as LIKELY_INELIGIBLE
     status = 'Not Eligible';
+    classification = 'LIKELY_INELIGIBLE';
     const critStr = failedCriteria.join('; ');
     overallReason = i18n.t('ruleNotEligible', {
       criteria: critStr,
-      defaultValue: `Does not meet core requirements: ${critStr}`
+      defaultValue: `Does not meet mandatory requirements: ${critStr}`
     });
   }
 
+  const officialSourceUrl = s.officialApplyUrl || s.officialWebsite || s.sourceUrl || '';
+  const lastVerifiedAt = s.lastVerifiedAt || s.lastUpdated || '2026-05-15';
+  const disclaimer = 'GovScheme is an independent information platform. Automated eligibility evaluations are advisory and preliminary. Official determination and sanction belong solely to the relevant government authority.';
+
   return {
     schemeId: s.id || '',
+    eligible: (status === 'Eligible' || status === 'Conditionally Eligible'),
     status,
+    classification,
     matchedCriteria,
     failedCriteria,
     missingDocuments,
     informationNeeded,
+    unknownCriteria: informationNeeded,
+    officialSourceUrl,
+    lastVerifiedAt,
+    disclaimer,
     overallReason
   };
 }

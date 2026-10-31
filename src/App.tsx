@@ -34,6 +34,11 @@ import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
 import { GovSchemeLogoAnimated } from './components/brand';
 import { ShieldAlert, ArrowLeft, Sparkles } from 'lucide-react';
+import { AboutModal } from './components/modals/AboutModal';
+import { PrivacyModal } from './components/modals/PrivacyModal';
+import { TermsModal } from './components/modals/TermsModal';
+import { FeedbackModal } from './components/modals/FeedbackModal';
+import { ExternalRedirectModal } from './components/modals/ExternalRedirectModal';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
@@ -218,6 +223,43 @@ export const App: React.FC = () => {
   const [isListeningGlobalVoice, setIsListeningGlobalVoice] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  // Transparency & Trust Modal Controls
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState<{
+    url: string;
+    schemeName?: string;
+    department?: string;
+  } | null>(null);
+
+  const handleExternalRedirect = useCallback((url: string, schemeName?: string, department?: string) => {
+    if (!url) return;
+    const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
+    if (skipNotice === 'true') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      setRedirectTarget({ url, schemeName, department });
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleModalEvent = (e: any) => {
+      const modalType = e.detail?.type || e.detail;
+      if (modalType === 'about') setIsAboutOpen(true);
+      else if (modalType === 'privacy') setIsPrivacyOpen(true);
+      else if (modalType === 'terms') setIsTermsOpen(true);
+      else if (modalType === 'feedback') setIsFeedbackOpen(true);
+      else if (modalType === 'redirect') {
+        const { url, schemeName, department } = e.detail || {};
+        handleExternalRedirect(url, schemeName, department);
+      }
+    };
+    window.addEventListener('govscheme_open_modal', handleModalEvent);
+    return () => window.removeEventListener('govscheme_open_modal', handleModalEvent);
+  }, [handleExternalRedirect]);
 
   const [isBooting, setIsBooting] = useState(true);
   const [adminLoginRequested, setAdminLoginRequested] = useState(false);
@@ -1757,7 +1799,15 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <Footer currentLang={currentLang} onNavigate={handleNavigateTab} user={user} />
+      <Footer
+        currentLang={currentLang}
+        onNavigate={handleNavigateTab}
+        user={user}
+        onOpenAbout={() => setIsAboutOpen(true)}
+        onOpenPrivacy={() => setIsPrivacyOpen(true)}
+        onOpenTerms={() => setIsTermsOpen(true)}
+        onOpenFeedback={() => setIsFeedbackOpen(true)}
+      />
 
       {/* Scheme Application Journey Modal */}
       <SchemeApplicationModal
@@ -1958,6 +2008,36 @@ export const App: React.FC = () => {
         confirmText={t('logout', 'Logout')}
         cancelText={t('cancel', 'Cancel')}
         destructive={true}
+      />
+
+      {/* Transparency & Trust Modals */}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+        onOpenFeedback={() => {
+          setIsAboutOpen(false);
+          setIsFeedbackOpen(true);
+        }}
+      />
+      <PrivacyModal
+        isOpen={isPrivacyOpen}
+        onClose={() => setIsPrivacyOpen(false)}
+      />
+      <TermsModal
+        isOpen={isTermsOpen}
+        onClose={() => setIsTermsOpen(false)}
+      />
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        schemes={schemes}
+      />
+      <ExternalRedirectModal
+        isOpen={Boolean(redirectTarget)}
+        targetUrl={redirectTarget?.url || ''}
+        schemeName={redirectTarget?.schemeName}
+        department={redirectTarget?.department}
+        onClose={() => setRedirectTarget(null)}
       />
 
       <GlobalUI />

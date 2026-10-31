@@ -150,18 +150,36 @@ export interface Scheme {
   verificationStatus?: 'UNVERIFIED' | 'PENDING' | 'PORTAL_CURATED' | 'ADMIN_VERIFIED' | 'OFFICIALLY_VERIFIED' | 'Verified';
   curationSource?: string;
   sourceUrl?: string;
+  officialSourceUrl?: string;
   lastVerifiedAt?: string;
+  lastSuccessfulSyncAt?: string;
+  dataVersion?: string;
+  eligibilityRulesVersion?: string;
+  freshnessStatus?: 'RECENTLY_VERIFIED' | 'VERIFICATION_DUE' | 'STALE' | 'SOURCE_UNAVAILABLE';
   status?: 'Draft' | 'Published' | 'Archived' | 'Suspended';
   activeStatus?: boolean;
 }
 
+export type StandardEligibilityClassification = 
+  | 'LIKELY_ELIGIBLE'
+  | 'POSSIBLY_ELIGIBLE'
+  | 'LIKELY_INELIGIBLE'
+  | 'INSUFFICIENT_INFORMATION'
+  | 'RULES_NEED_VERIFICATION';
+
 export interface RuleEvaluationResult {
   schemeId: string;
+  eligible?: boolean;
   status: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible' | 'Insufficient Information';
+  classification?: StandardEligibilityClassification;
   matchedCriteria: string[];
   failedCriteria: string[];
   missingDocuments: string[];
   informationNeeded?: string[];
+  unknownCriteria?: string[];
+  officialSourceUrl?: string;
+  lastVerifiedAt?: string;
+  disclaimer?: string;
   overallReason: string;
 }
 
@@ -203,6 +221,7 @@ export interface ExplainableEligibilityResult {
   schemeId: string;
   schemeName: string;
   overallStatus: 'Eligible' | 'Conditionally Eligible' | 'Almost Eligible' | 'Not Eligible' | 'Insufficient Information';
+  classification?: StandardEligibilityClassification;
   satisfied: CriterionEvaluation[];
   notSatisfied: CriterionEvaluation[];
   unknown: CriterionEvaluation[];
@@ -222,6 +241,8 @@ export interface ExplainableEligibilityResult {
   explanations: string[];
   nextSteps: string[];
   officialApplyUrl?: string;
+  officialSourceUrl?: string;
+  lastVerifiedAt?: string;
   helplineNumber?: string;
   disclaimer: string;
 }

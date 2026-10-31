@@ -9,9 +9,13 @@ interface FooterProps {
   user?: UserProfile | null;
   currentLang: LanguageCode;
   onNavigate: (tab: string) => void;
+  onOpenAbout?: () => void;
+  onOpenPrivacy?: () => void;
+  onOpenTerms?: () => void;
+  onOpenFeedback?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate, user }) => {
+export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate, user, onOpenAbout, onOpenPrivacy, onOpenTerms, onOpenFeedback }) => {
   const { t } = useTranslation();
 
   return (
@@ -123,16 +127,40 @@ export const Footer: React.FC<FooterProps> = ({ currentLang, onNavigate, user })
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700 text-[11px] text-slate-400 leading-normal mt-4">
-              <span className="text-amber-400 font-bold block mb-1">{t('transparencyTitle', 'INDEPENDENT SERVICE & TRANSPARENCY DISCLAIMER')}</span>
-              {t('guaranteedDisclaimer')}
+            <div className="p-4 rounded-xl bg-slate-800/90 border border-amber-500/30 text-[11px] text-slate-300 leading-relaxed mt-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                <Info className="w-3.5 h-3.5" />
+                <span>INDEPENDENT PUBLIC INFORMATION PLATFORM</span>
+              </div>
+              <p className="text-slate-400">
+                GovScheme is an independent information platform and is not an official government website. Scheme information is provided for informational purposes. Always verify eligibility, deadlines, and application requirements through the relevant government department.
+              </p>
+              <div className="pt-1 flex flex-wrap gap-2 text-[10px]">
+                {onOpenAbout && (
+                  <button onClick={onOpenAbout} className="text-blue-400 hover:underline font-bold">About Platform</button>
+                )}
+                {onOpenFeedback && (
+                  <>
+                    <span className="text-slate-600">•</span>
+                    <button onClick={onOpenFeedback} className="text-amber-400 hover:underline font-bold">Report Issue / Broken Link</button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
           <p>{t('footerRights', `© ${new Date().getFullYear()} GovScheme AI — Government Scheme Eligibility Recommender Platform. All Rights Reserved.`)}</p>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {onOpenAbout && <button onClick={onOpenAbout} className="hover:text-slate-300">About</button>}
+            {onOpenAbout && <span>•</span>}
+            {onOpenPrivacy && <button onClick={onOpenPrivacy} className="hover:text-slate-300">Privacy Policy</button>}
+            {onOpenPrivacy && <span>•</span>}
+            {onOpenTerms && <button onClick={onOpenTerms} className="hover:text-slate-300">Terms of Use</button>}
+            {onOpenTerms && <span>•</span>}
+            {onOpenFeedback && <button onClick={onOpenFeedback} className="hover:text-amber-400 text-amber-400/90 font-medium">Report an Issue</button>}
+            {onOpenFeedback && <span>•</span>}
             <a href="https://india.gov.in" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300">{t('nationalPortal', 'National Portal of India')}</a>
             <span>•</span>
             <button onClick={() => onNavigate('kiosk')} className="hover:text-slate-300">{t('navKiosk', 'CSC Kiosk Mode')}</button>

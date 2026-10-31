@@ -791,12 +791,25 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => {
-                  if (onApplyScheme) {
+                                onClick={() => {
+                  const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite;
+                  if (targetUrl) {
+                    const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
+                    if (skipNotice === 'true') {
+                      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                    } else {
+                      window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+                        detail: {
+                          type: 'redirect',
+                          url: targetUrl,
+                          schemeName: scheme.name,
+                          department: scheme.department
+                        }
+                      }));
+                    }
+                  } else if (onApplyScheme) {
                     onClose();
                     onApplyScheme(scheme);
-                  } else {
-                    window.open(scheme.officialApplyUrl || '#', '_blank', 'noopener,noreferrer');
                   }
                 }}
                 className="min-h-[44px] px-6 sm:px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"

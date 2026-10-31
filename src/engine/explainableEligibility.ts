@@ -988,7 +988,10 @@ export function evaluateExplainableEligibility(
     documentConflictDetails: docReadiness.documentConflictDetails,
     explanations,
     nextSteps,
+    classification: ruleResult.classification || (overallStatus === 'Eligible' ? 'LIKELY_ELIGIBLE' : overallStatus === 'Not Eligible' ? 'LIKELY_INELIGIBLE' : 'POSSIBLY_ELIGIBLE'),
     officialApplyUrl: s.officialApplyUrl || undefined,
+    officialSourceUrl: s.officialApplyUrl || s.officialWebsite || s.sourceUrl || undefined,
+    lastVerifiedAt: s.lastVerifiedAt || s.lastUpdated || '2026-05-15',
     helplineNumber: s.helplineNumber || undefined,
     disclaimer: PRELIMINARY_DISCLAIMER
   };
