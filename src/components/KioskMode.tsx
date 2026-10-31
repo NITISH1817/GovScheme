@@ -1328,7 +1328,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => setIsThermalReceiptOpen(true)}
+                      onClick={() => { if (onGenerateReport) { onGenerateReport(recFormData); } else { setIsThermalReceiptOpen(true); } }}
                       className="min-h-[46px] px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
                     >
                       <Printer className="w-4 h-4" />

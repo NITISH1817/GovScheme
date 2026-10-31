@@ -1659,7 +1659,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'report' && user && (
+        {activeTab === 'report' && (
           <KioskReport
             key={currentLang}
             currentLang={currentLang}
@@ -1667,9 +1667,9 @@ export const App: React.FC = () => {
               i18n.changeLanguage(lang);
               setCurrentLang(lang);
             }}
-            profile={user}
+            profile={user || kioskProfile || initialUserProfile}
             schemes={schemes}
-            onBack={() => setActiveTab('profile')}
+            onBack={() => setActiveTab(user ? 'profile' : 'home')}
           />
         )}
 
