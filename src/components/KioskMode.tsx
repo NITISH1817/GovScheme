@@ -1058,8 +1058,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                   {/* Section 1: Personal Details */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-extrabold text-[#12365B] uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-[#F1F5F9]">
-                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">1</span>
-                      Personal Details
+                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">1</span> {t('personalDetails', 'Personal Details')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                       <div>
@@ -1104,12 +1103,11 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                   {/* Section 2: Location */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-extrabold text-[#12365B] uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-[#F1F5F9]">
-                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">2</span>
-                      Geographic Location
+                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">2</span> {t('geographicLocation', 'Geographic Location')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">State / Union Territory</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('stateUnionTerritory', 'State / Union Territory')}</label>
                         <select
                           value={recFormData.state || 'Tamil Nadu'}
                           onChange={e => setRecFormData({ ...recFormData, state: e.target.value })}
@@ -1148,12 +1146,11 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                   {/* Section 3: Economic & Social Profile */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-extrabold text-[#12365B] uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-[#F1F5F9]">
-                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">3</span>
-                      Economic & Social Eligibility
+                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">3</span> {t('economicSocialEligibility', 'Economic & Social Eligibility')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Annual Household Income (₹)</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('annualIncomeRupees', 'Annual Household Income (₹)')}</label>
                         <input
                           type="number"
                           required
@@ -1208,8 +1205,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                   {/* Section 4: Occupation & Land Holding */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-extrabold text-[#12365B] uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-[#F1F5F9]">
-                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">4</span>
-                      Occupation & Land Holding
+                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">4</span> {t('occupationLandHolding', 'Occupation & Land Holding')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
@@ -1247,8 +1243,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                   {/* Section 5: Disability & Residence */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-extrabold text-[#12365B] uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-[#F1F5F9]">
-                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">5</span>
-                      Special Needs & Residence
+                      <span className="w-6 h-6 rounded-full bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center text-xs">5</span> {t('specialNeedsResidence', 'Special Needs & Residence')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                       <div>
@@ -1258,8 +1253,8 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                           onChange={e => setRecFormData({ ...recFormData, residenceType: e.target.value as any })}
                           className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#DCE5EF] text-[#12365B] text-sm font-semibold outline-none focus:border-[#2563EB]"
                         >
-                          <option value="Rural">Rural (Village / Panchayat)</option>
-                          <option value="Urban">Urban (City / Municipality)</option>
+                          <option value="Rural">{t('Rural', 'Rural (Village / Panchayat)')}</option>
+                          <option value="Urban">{t('Urban', 'Urban (City / Municipality)')}</option>
                           <option value="Semi-Urban">{t('Semi-Urban', 'Semi-Urban')}</option>
                         </select>
                       </div>
@@ -1273,7 +1268,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                             className="w-5 h-5 rounded text-[#2563EB]"
                           />
                           <span className="text-xs sm:text-sm font-bold text-[#12365B]">
-                            Person with Disability (Divyangjan / UDID Cardholder)
+                            {t('personWithDisability', 'Person with Disability (Divyangjan / UDID Cardholder)')}
                           </span>
                         </label>
                       </div>

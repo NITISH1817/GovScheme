@@ -330,9 +330,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     {SUPPORTED_DOC_TYPES.map((dt) => (
-                      <option key={dt.type} value={dt.type}>
-                        {dt.label}
-                      </option>
+                      <option key={dt.type} value={dt.type}>{t(dt.label, dt.label)}</option>
                     ))}
                   </select>
                 </div>
@@ -904,9 +902,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                     className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
                   >
                     {SUPPORTED_DOC_TYPES.map((dt) => (
-                      <option key={dt.type} value={dt.type}>
-                        {dt.label}
-                      </option>
+                      <option key={dt.type} value={dt.type}>{t(dt.label, dt.label)}</option>
                     ))}
                   </select>
                 </div>

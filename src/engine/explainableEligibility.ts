@@ -874,7 +874,7 @@ export function evaluateExplainableEligibility(
   }
 
   if (docReadiness.missingDocuments.length > 0) {
-    const missingDocs = docReadiness.missingDocuments.join(', ');
+    const missingDocs = docReadiness.missingDocuments.map(d => i18n.t(d, d)).join(', ');
     nextSteps.push(i18n.t('nextStepProcureDocs', {
       missingDocs,
       defaultValue: `Procure or renew required document(s) you reported missing: ${missingDocs}.`
@@ -882,7 +882,7 @@ export function evaluateExplainableEligibility(
   }
 
   if (docReadiness.unconfirmedDocuments.length > 0) {
-    const unconfirmed = docReadiness.unconfirmedDocuments.slice(0, 3).join(', ');
+    const unconfirmed = docReadiness.unconfirmedDocuments.slice(0, 3).map(d => i18n.t(d, d)).join(', ');
     nextSteps.push(i18n.t('nextStepConfirmDocs', {
       unconfirmed,
       defaultValue: `Confirm possession of required documents: ${unconfirmed}.`

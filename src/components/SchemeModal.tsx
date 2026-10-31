@@ -429,37 +429,70 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               <section className="space-y-4">
                 <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('officialEligibility', 'Official Eligibility')}</h3>
                 <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-                  {Object.entries(scheme.eligibilityRules || {}).map(([key, val], idx) => {
-                    if (val === undefined || val === null || (Array.isArray(val) && val.length === 0)) return null;
+                  {(() => {
+                    const raw = scheme.eligibilityRules || {};
+                    // Canonicalize and deduplicate rules
+                    const entries: [string, any][] = [];
+                    const seen = new Set<string>();
 
-                    const renderValue = () => {
-                      if (typeof val === 'boolean') {
-                        return val ? t('yes', 'Yes') : t('no', 'No');
-                      }
-                      if (key === 'minAge' || key === 'maxAge') {
-                        return `${val} ${t('yearsUnit', 'years')}`;
-                      }
-                      if (key === 'minDisabilityPercentage') {
-                        return `${val}%`;
-                      }
-                      if (key === 'maxAnnualIncome' && typeof val === 'number') {
-                        return `₹${val.toLocaleString('en-IN')}`;
-                      }
-                      if (key === 'maxLandHoldingAcres') {
-                        return `${val} ${t('acresUnit', 'acres')}`;
-                      }
-                      if (Array.isArray(val)) {
-                        return val.map(v => t(String(v), String(v))).join(', ');
-                      }
-                      return t(String(val), String(val));
-                    };
+                    const minAgeVal = raw.minAge ?? raw.ageMin;
+                    if (minAgeVal !== undefined && minAgeVal !== null) {
+                      entries.push(['minAge', minAgeVal]);
+                      seen.add('minAge');
+                      seen.add('ageMin');
+                    }
 
-                    return (
-                      <li key={idx}>
-                        <span className="font-semibold">{t(key, key.replace(/([A-Z])/g, ' $1'))}:</span> {renderValue()}
-                      </li>
-                    );
-                  })}
+                    const maxAgeVal = raw.maxAge ?? raw.ageMax;
+                    if (maxAgeVal !== undefined && maxAgeVal !== null) {
+                      entries.push(['maxAge', maxAgeVal]);
+                      seen.add('maxAge');
+                      seen.add('ageMax');
+                    }
+
+                    const incomeVal = raw.maxAnnualIncome ?? raw.incomeLimit;
+                    if (incomeVal !== undefined && incomeVal !== null) {
+                      entries.push(['maxAnnualIncome', incomeVal]);
+                      seen.add('maxAnnualIncome');
+                      seen.add('incomeLimit');
+                    }
+
+                    for (const [k, v] of Object.entries(raw)) {
+                      if (seen.has(k)) continue;
+                      if (v === undefined || v === null || (Array.isArray(v) && v.length === 0)) continue;
+                      entries.push([k, v]);
+                    }
+
+                    return entries.map(([key, val], idx) => {
+                      const renderValue = () => {
+                        if (typeof val === 'boolean') {
+                          return val ? t('yes', 'Yes') : t('no', 'No');
+                        }
+                        if (key === 'minAge' || key === 'maxAge' || key === 'ageMin' || key === 'ageMax') {
+                          return `${val} ${t('yearsUnit', 'years')}`;
+                        }
+                        if (key === 'minDisabilityPercentage') {
+                          return `${val}%`;
+                        }
+                        if (key === 'maxAnnualIncome' || key === 'incomeLimit') {
+                          if (val === 0) return t('noIncomeLimit', 'No income limit');
+                          return `₹${Number(val).toLocaleString('en-IN')}`;
+                        }
+                        if (key === 'maxLandHoldingAcres') {
+                          return `${val} ${t('acresUnit', 'acres')}`;
+                        }
+                        if (Array.isArray(val)) {
+                          return val.map(v => t(String(v), String(v))).join(', ');
+                        }
+                        return t(String(val), String(val));
+                      };
+
+                      return (
+                        <li key={idx}>
+                          <span className="font-semibold">{t(key, key.replace(/([A-Z])/g, ' $1'))}:</span> {renderValue()}
+                        </li>
+                      );
+                    });
+                  })()}
                 </ul>
               </section>
 
@@ -609,9 +642,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                       <span className="w-5 h-5 rounded-full bg-[#123C69] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
-                        {step}
-                      </span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{t(step, step)}</span>
                     </div>
                   ))}
                 </div>
