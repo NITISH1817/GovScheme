@@ -58,18 +58,22 @@ export const App: React.FC = () => {
   });
   const getInitialTab = (): string => {
     try {
-      const path = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
-      if (path === 'admin' || path.startsWith('admin/')) return 'admin';
       const validTabs = ['home', 'schemes', 'wizard', 'vault', 'tracker', 'profile', 'kiosk', 'assistant', 'settings', 'admin', 'report', 'kiosk-report', 'analyzing'];
-      if (validTabs.includes(path)) return path;
 
+      // 1. Prioritize hash for dynamic SPA client tab navigation (#report, #schemes, etc.)
+      const hash = (window.location.hash || '').replace(/^#\/?/, '').toLowerCase();
+      if (hash && validTabs.includes(hash)) return hash;
+
+      // 2. Query param
       const searchParams = new URLSearchParams(window.location.search);
       const tabParam = searchParams.get('tab')?.toLowerCase();
       if (tabParam && validTabs.includes(tabParam)) return tabParam;
       if (searchParams.get('admin') === 'true' || searchParams.has('admin')) return 'admin';
 
-      const hash = window.location.hash.replace('#', '').toLowerCase();
-      if (hash && validTabs.includes(hash)) return hash;
+      // 3. Pathname
+      const path = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (path === 'admin' || path.startsWith('admin/')) return 'admin';
+      if (validTabs.includes(path)) return path;
     } catch { }
     return 'home';
   };
@@ -1548,6 +1552,7 @@ export const App: React.FC = () => {
               if (!user) setIsAuthOpen(true);
               else setActiveTab('assistant');
             }}
+            onOpenOCR={handleOpenOCRForDoc}
             onNavigateTab={handleNavigateTab}
             onSelectCategory={(category) => {
               setSelectedCategoryFilter(category);

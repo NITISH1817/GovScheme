@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Scheme } from '../../types';
 import { apiClient } from '../../api/apiClient';
+import { schemesData } from '../../data/schemes';
 
 interface SchemeOperationsViewProps {
   schemes: Scheme[];
@@ -13,7 +14,9 @@ interface SchemeOperationsViewProps {
 }
 
 export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ schemes: initialSchemes, onSchemeUpdated }) => {
-  const [schemesList, setSchemesList] = useState<Scheme[]>(initialSchemes);
+  const [schemesList, setSchemesList] = useState<Scheme[]>(() => {
+    return (initialSchemes && initialSchemes.length >= schemesData.length) ? initialSchemes : schemesData;
+  });
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
@@ -86,8 +89,9 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
         // Merge remote schemes with authoritative catalog and local custom schemes
         const schemeMap = new Map<string, Scheme>();
         
-        // 1. Authoritative baseline (all 75 schemes from initialSchemes)
-        (initialSchemes || []).forEach(s => {
+        // 1. Authoritative baseline (all 75 authoritative schemes)
+        const baseline = (initialSchemes && initialSchemes.length >= schemesData.length) ? initialSchemes : schemesData;
+        baseline.forEach(s => {
           if (s && s.id) schemeMap.set(s.id, s);
         });
 

@@ -140,40 +140,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 space-y-8 sm:space-y-10">
 
-        {/* Transparent Independent Platform Disclosure Banner */}
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-950 dark:text-amber-200 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="p-1.5 bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg shrink-0 mt-0.5">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold uppercase tracking-wider block sm:inline text-amber-900 dark:text-amber-300 mr-2">
-                {t('independentPlatformLabel', 'Independent Citizen Advisory Platform:')}
-              </span>
-              <span>
-                {t('independentPlatformNotice', 'GovScheme is an independent information platform and is not an official government website. Scheme information is provided for informational purposes. Always verify eligibility, deadlines, and application requirements through the relevant government department.')}
-              </span>
-            </div>
-          </div>
-          <div className="shrink-0 flex items-center gap-3 text-xs font-semibold self-end sm:self-center">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('govscheme_open_modal', { detail: 'about' }))}
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {t('aboutPlatformBtn', 'About Platform')}
-            </button>
-            <span className="text-amber-400/60">•</span>
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('govscheme_open_modal', { detail: 'feedback' }))}
-              className="text-amber-700 dark:text-amber-300 hover:underline"
-            >
-              {t('reportIssueBtn', 'Report Issue')}
-            </button>
-          </div>
-        </div>
-
         {user ? (
           <>
             {/* 1. GOOD MORNING, CITIZEN WELCOME & RECOMMENDATIONS BANNER */}
@@ -608,6 +574,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             ))}
           </div>
         </section>
+
+        {/* Transparent Independent Platform Disclosure Banner */}
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-950 dark:text-amber-200 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="p-1.5 bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg shrink-0 mt-0.5">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold uppercase tracking-wider block sm:inline text-amber-900 dark:text-amber-300 mr-2">
+                {t('independentPlatformLabel', 'Independent Citizen Advisory Platform:')}
+              </span>
+              <span>
+                {t('independentPlatformNotice', 'GovScheme is an independent information platform and is not an official government website. Scheme information is provided for informational purposes. Always verify eligibility, deadlines, and application requirements through the relevant government department.')}
+              </span>
+            </div>
+          </div>
+          <div className="shrink-0 flex items-center gap-3 text-xs font-semibold self-end sm:self-center">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('govscheme_open_modal', { detail: 'about' }))}
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {t('aboutPlatformBtn', 'About Platform')}
+            </button>
+            <span className="text-amber-400/60">•</span>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('govscheme_open_modal', { detail: 'feedback' }))}
+              className="text-amber-700 dark:text-amber-300 hover:underline"
+            >
+              {t('reportIssueBtn', 'Report Issue')}
+            </button>
+          </div>
+        </div>
 
         {/* Trust Indicators */}
         <section className="pt-8 border-t border-[#DCE5EF] dark:border-white/10">

@@ -320,6 +320,7 @@ function detectDocumentType(text: string, expectedType: DocumentRecord['type']):
   const hasDisability = upper.includes('DISABILITY') || upper.includes('UDID') || upper.includes('மாற்றுத்திறனாளி') || upper.includes('दिव्यांग');
   const hasBirth = upper.includes('BIRTH CERTIFICATE') || upper.includes('பிறப்புச் சான்றிதழ்') || upper.includes('जन्म प्रमाणपत्र');
 
+  const isAuto = expectedType === 'Unknown';
   const detected: string = (hasAadhaar ? 'Aadhaar'
     : hasPAN ? 'PAN'
       : hasIncome ? 'Income Certificate'
@@ -328,12 +329,14 @@ function detectDocumentType(text: string, expectedType: DocumentRecord['type']):
             : hasVoter ? 'Voter ID'
               : hasDisability ? 'Disability Certificate'
                 : hasBirth ? 'Birth Certificate'
-                  : expectedType) || 'Unknown';
+                  : (isAuto ? 'Aadhaar' : expectedType)) || 'Aadhaar';
+
+  const isMatch = isAuto ? true : (detected === expectedType);
 
   return {
     detectedType: detected,
-    isValid: detected === expectedType,
-    label: detected === expectedType ? `${detected} (Verified ✓)` : `${detected} detected — expected ${expectedType}`
+    isValid: isMatch,
+    label: isAuto ? `${detected} (Auto-Detected ✨)` : (detected === expectedType ? `${detected} (Verified ✓)` : `${detected} detected — expected ${expectedType}`)
   };
 }
 
@@ -560,8 +563,8 @@ export async function performOCRScan(
   }
 
   // 6. Parse structured fields from extracted normalized text
-  const detected = detectDocumentType(normalizedText, expectedType === 'Unknown' ? 'Aadhaar' : expectedType);
-  const finalDocType = expectedType === 'Unknown' ? (detected.detectedType as DocumentRecord['type']) : expectedType;
+  const detected = detectDocumentType(normalizedText, expectedType);
+  const finalDocType = (expectedType === 'Unknown' || !expectedType) ? (detected.detectedType !== 'Unknown' ? (detected.detectedType as DocumentRecord['type']) : 'Aadhaar') : expectedType;
 
   const fullName = parseName(normalizedText);
   const dob = parseDOB(normalizedText);

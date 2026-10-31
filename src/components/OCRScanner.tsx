@@ -87,7 +87,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [successNotice, setSuccessNotice] = useState<string>('');
 
-  const resetScanner = (nextType?: DocumentRecord['type']) => {
+  const resetScanner = (nextType?: DocumentRecord['type'] | 'Unknown') => {
     if (timerRef.current) clearInterval(timerRef.current);
     isScanningRef.current = false;
     isCancelledRef.current = false;
@@ -119,7 +119,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
 
-    if (nextType && nextType !== 'Unknown') {
+    if (nextType) {
       setSelectedType(nextType);
     }
   };
@@ -156,7 +156,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   // Reset scanner state when modal opens or expectedType changes
   useEffect(() => {
     if (isOpen) {
-      resetScanner(expectedType !== 'Unknown' ? expectedType : 'Aadhaar');
+      resetScanner(expectedType);
       setSuccessNotice('');
     } else {
       resetScanner();
@@ -270,6 +270,9 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
 
       setScanResult(res);
       setOcrStage('completed');
+      if (res.docType && res.docType !== 'Unknown') {
+        setSelectedType(res.docType);
+      }
       setDocNumber(res.docNumber || '');
       setFullName(res.extractedFields.fullName || '');
       setDob(res.extractedFields.dob || '');
