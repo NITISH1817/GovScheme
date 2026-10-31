@@ -5,7 +5,7 @@ import {
   User as UserIcon, Settings, Edit3, MapPin, Briefcase, IndianRupee,
   Activity, GraduationCap, LayoutDashboard, Printer, Sparkles, ShieldCheck,
   X, Loader2, Save, XCircle, Users, Award, Home, Accessibility, Heart,
-  ExternalLink, Lock, CheckSquare, ArrowRight, FolderLock
+  ExternalLink, Lock, CheckSquare, ArrowRight, FolderLock, Shield
 } from 'lucide-react';
 import { UserProfile, Scheme, ApplicationTrackerRecord } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -700,6 +700,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </span>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </button>
+
+                {(isAuthorizedAdminUser(user) || isAuthorizedAdminEmail(user.email)) && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab('admin')}
+                    className="w-full p-3 rounded-xl bg-blue-50 dark:bg-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-800/60 font-bold text-blue-900 dark:text-blue-100 flex items-center justify-between transition border border-blue-200 dark:border-blue-700"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-blue-600" />
+                      {t('navAdmin', 'Admin Portal')}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-blue-500" />
+                  </button>
+                )}
 
                 <button
                   type="button"

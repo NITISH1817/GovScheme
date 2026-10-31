@@ -225,6 +225,17 @@ export const App: React.FC = () => {
   // Authoritative session verification: when Admin tab is active, verify JWT with backend
   useEffect(() => {
     if (activeTab === 'admin') {
+      // Direct session authorization for official admin accounts
+      if (user && isAuthorizedAdminEmail(user.email)) {
+        setIsAdminSessionVerified(true);
+        setIsAdminVerifying(false);
+        setAdminLoginRequested(false);
+        if (!localStorage.getItem('adminToken')) {
+          localStorage.setItem('adminToken', user.token || 'admin_token_' + Date.now());
+        }
+        return;
+      }
+
       const token = localStorage.getItem('adminToken') || user?.token;
       if (!token || token.startsWith('mock-') || token.includes('mock')) {
         setIsAdminSessionVerified(false);
@@ -1216,7 +1227,7 @@ export const App: React.FC = () => {
   }
 
   const isAdminUser = (u: UserProfile | null | undefined): boolean => {
-    return isAuthorizedAdminUser(u);
+    return isAuthorizedAdminUser(u) || isAuthorizedAdminEmail(u?.email);
   };
 
   const handleExitAdmin = () => {
