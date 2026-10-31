@@ -119,7 +119,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           'Content-Type': 'application/json',
           ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
         },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text, language: currentLang })
       }).catch(() => null); // Catch network errors and fallback
 
       let fullText = '';
@@ -172,7 +172,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           }
         }
 
-        const generatedResponse = `[Grounded Knowledge Engine • AI Provider Notice: Live AI service unavailable, grounded in verified local scheme database]\n\nBased on your query, here is what I found in the scheme records:\n\n${matchedSchemes.length > 0 ? `• ${matchedSchemes[0].name}: ${matchedSchemes[0].shortDescription}` : 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.'}\n\n*Note: Official scheme eligibility is always determined by deterministic rules.*`;
+        const notice = t('groundedEngineNotice', '[Grounded Knowledge Engine • AI Provider Notice: Live AI service unavailable, grounded in verified local scheme database]');
+        const foundHeader = t('basedOnQueryFound', 'Based on your query, here is what I found in the verified scheme records:');
+        const legalNote = t('officialEligibilityRuleNote', '*Note: Official scheme eligibility is always determined by deterministic rules.*');
+
+        let schemeDetails = '';
+        if (matchedSchemes.length > 0) {
+          const topS = matchedSchemes[0];
+          const localizedName = t(`${topS.id}_name`, topS.name);
+          const localizedDesc = t(`${topS.id}_desc`, topS.shortDescription);
+          schemeDetails = `• ${localizedName}: ${localizedDesc}`;
+        } else {
+          schemeDetails = t('noSchemeFoundExplore', 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.');
+        }
+
+        const generatedResponse = `${notice}\n\n${foundHeader}\n\n${schemeDetails}\n\n${legalNote}`;
         
         // Stream effect simulation
         const words = generatedResponse.split(' ');
@@ -192,9 +206,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         m.id === aiMsgId ? {
           ...m,
           suggestedPrompts: [
-            "Tell me more about the eligibility criteria",
-            "What documents do I need to prepare?",
-            "How do I track my application?"
+            t('qMoreEligibility', 'Tell me more about the eligibility criteria'),
+            t('qWhatDocsPrepare', 'What documents do I need to prepare?'),
+            t('qHowTrackApp', 'How do I track my application?')
           ]
         } : m
       ));
@@ -233,7 +247,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         if (navCommand) {
           onNavigateTab(navCommand);
           if (voicePlaybackEnabled) {
-            speakText("Navigating to " + navCommand, currentLang);
+            const destName = t(navCommand, navCommand);
+            speakText(t('navigatingTo', 'Navigating to {{destination}}', { destination: destName }), currentLang);
           }
           return;
         }
@@ -356,7 +371,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={isListening ? "Listening... Speak your question now" : t('askAboutSchemes', "Ask about schemes, eligibility, or required documents...")}
+                placeholder={isListening ? t('listeningSpeakNow', 'Listening... Speak your question now') : t('askAboutSchemes', "Ask about schemes, eligibility, or required documents...")}
                 className="flex-1 p-3 rounded bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] focus:ring-1 focus:ring-[#1769FF] outline-none text-gray-900 dark:text-white text-sm"
               />
               

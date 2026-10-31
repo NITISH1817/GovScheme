@@ -30,11 +30,12 @@ const suites = [
   'tests/advanced_csc_touchscreen_kiosk.test.js',
   'tests/homepage_category_repositioning.test.js',
   'tests/critical_functional_bug_fixes.test.js',
-  'tests/assessment_dashboard_thermal.test.js'
+  'tests/assessment_dashboard_thermal.test.js',
+  'tests/voice_assistant_multilingual.test.js'
 ];
 
 console.log('========================================================================');
-console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 24-SUITE RUN      ');
+console.log('       GOVSCHEME AUTOMATED TEST HARNESS: REPRODUCIBLE 25-SUITE RUN      ');
 console.log('========================================================================\n');
 
 const results = [];

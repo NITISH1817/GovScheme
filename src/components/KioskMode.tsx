@@ -351,9 +351,13 @@ export const KioskMode: React.FC<KioskModeProps> = ({
 
     let reply = '';
     if (matched.length > 0) {
-      reply = `I found ${matched.length} schemes matching your query, including ${matched.map(m => m.name).join(', ')}. Touch any scheme card to see benefits and application steps.`;
+      const schemeNames = matched.map((m: Scheme) => t(`${m.id}_name`, m.name)).join(', ');
+      reply = t('kioskFoundSchemes', 'I found {{count}} schemes matching your query, including {{schemes}}. Touch any scheme card to see benefits and application steps.', {
+        count: matched.length,
+        schemes: schemeNames
+      });
     } else {
-      reply = `Thank you for asking. Based on our 75+ central and state schemes, I recommend visiting Scheme Recommendations to check full eligibility criteria for your age, income, and location.`;
+      reply = t('kioskNoSchemesFound', 'Thank you for asking. Based on our 75+ central and state schemes, I recommend visiting Scheme Recommendations to check full eligibility criteria for your age, income, and location.');
     }
 
     const aiMsg = {
