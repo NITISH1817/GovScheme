@@ -12,6 +12,7 @@ import {
   Volume2,
   Globe,
   Users,
+  Shield,
   ShieldCheck,
   CheckCircle2,
   ExternalLink,
@@ -64,6 +65,7 @@ import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { computeMLRecommendation } from '../engine/mlEngine';
 import { evaluateExplainableEligibility } from '../engine/explainableEligibility';
 import { KioskThermalReceiptModal } from './KioskThermalReceiptModal';
+import { isAuthorizedAdminUser, isAuthorizedAdminEmail } from '../utils/adminAuth';
 
 export interface KioskModeProps {
   user?: UserProfile | null;
@@ -82,6 +84,7 @@ export interface KioskModeProps {
   isBookmarked?: (schemeId: string) => boolean;
   currentLang?: LanguageCode;
   onLanguageChange?: (lang: LanguageCode) => void;
+  onOpenAdmin?: () => void;
 }
 
 export type KioskView = 'home' | 'schemes' | 'recommendations' | 'vault' | 'tracker' | 'assistant';
@@ -102,7 +105,8 @@ export const KioskMode: React.FC<KioskModeProps> = ({
   onToggleBookmark,
   isBookmarked,
   currentLang = 'en',
-  onLanguageChange
+  onLanguageChange,
+  onOpenAdmin
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -542,7 +546,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
             {isAccessMenuOpen && (
               <div className="absolute right-0 mt-2 w-64 bg-white border border-[#DCE5EF] rounded-2xl shadow-xl p-3 z-50 text-[#12365B] space-y-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB] px-2 py-1 border-b border-[#DCE5EF]">
-                  Touchscreen Accessibility
+                  {t('touchscreenAccessibility', 'Touchscreen Accessibility')}
                 </div>
                 {/* High Contrast Toggle */}
                 <button
@@ -597,7 +601,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
             {langMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white border border-[#DCE5EF] rounded-2xl shadow-xl p-2 z-50 text-[#12365B] space-y-1 max-h-[80vh] overflow-y-auto">
                 <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#2563EB] border-b border-[#DCE5EF]">
-                  Select Language (7 Languages)
+                  {t('selectLanguageRegional', 'Select Language (7 Languages)')}
                 </div>
                 {languages.map(lang => (
                   <button
@@ -623,6 +627,21 @@ export const KioskMode: React.FC<KioskModeProps> = ({
               </div>
             )}
           </div>
+
+          {/* Admin Portal Quick Switch in Kiosk Mode */}
+          {(isAuthorizedAdminUser(user) || (user?.email && isAuthorizedAdminEmail(user.email))) && (
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenAdmin) onOpenAdmin();
+                else if (onExit) onExit();
+              }}
+              className="min-h-[48px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors active:scale-95 shadow-sm cursor-pointer"
+            >
+              <Shield className="w-4 h-4" />
+              <span>Admin Portal</span>
+            </button>
+          )}
 
           {/* Exit Kiosk Button */}
           <button
@@ -750,10 +769,46 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                   {schemes.length}+ {t('schemesVerified', 'Verified Government Welfare Schemes')}
                 </span>
                 <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#16A34A] border border-emerald-200">
-                  100% Free Public Citizen Service
+                  {t('kioskFreePublicService', '100% Free Public Citizen Service')}
                 </span>
               </div>
             </div>
+
+            {/* Operator Admin Command Card in Kiosk Mode */}
+            {(isAuthorizedAdminUser(user) || (user?.email && isAuthorizedAdminEmail(user.email))) && (
+              <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-white border-2 border-amber-500/30 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-center gap-4 text-left">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-base text-[#12365B]">
+                        {t('adminPortal', 'Admin Portal')}
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                        {user?.email || 'Authorized Admin'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#64748B] mt-0.5">
+                      Switch to Administrator Management Console to manage schemes, view citizen applications, and verify portals.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenAdmin) onOpenAdmin();
+                    else if (onExit) onExit();
+                  }}
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all active:scale-95 shadow-sm shrink-0 cursor-pointer"
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>Launch Admin Portal</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
             {/* 4 PRIMARY SERVICE CARDS (4 COLUMNS ON WIDE SCREENS) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -910,7 +965,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#F59E0B] text-white">
-                      Voice-First AI • Speak in 7 Languages
+                      {t('kioskVoicePill', 'Voice-First AI • Speak in 7 Languages')}
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-[#78350F] mt-0.5">
                       {t('kioskCard5Title', 'Talk to GovScheme AI')}
@@ -922,13 +977,13 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <span className="px-3 py-1 rounded-xl text-xs bg-white text-[#92400E] border border-[#FDE68A] shadow-sm">
-                    🌾 "What schemes are for farmers?"
+                    🌾 {t('kioskVoicePromptFarmers', '"What schemes are for farmers?"')}
                   </span>
                   <span className="px-3 py-1 rounded-xl text-xs bg-white text-[#92400E] border border-[#FDE68A] shadow-sm">
-                    🎓 "Scholarships for students"
+                    🎓 {t('kioskVoicePromptStudents', '"Scholarships for students"')}
                   </span>
                   <span className="px-3 py-1 rounded-xl text-xs bg-white text-[#92400E] border border-[#FDE68A] shadow-sm">
-                    📄 "Documents needed for PM-KISAN"
+                    📄 {t('kioskVoicePromptDocs', '"Documents needed for PM-KISAN"')}
                   </span>
                 </div>
               </div>
@@ -945,10 +1000,10 @@ export const KioskMode: React.FC<KioskModeProps> = ({
             {/* Bottom Terminal Notice */}
             <div className="pt-2 text-center text-xs text-[#64748B] space-y-1">
               <p>
-                GovScheme Public Citizen Service Terminal • Protected by Inactivity Auto-Reset • Authorized Common Service Centre Node
+                {t('kioskTerminalNotice', 'GovScheme Public Citizen Service Terminal • Protected by Inactivity Auto-Reset • Authorized Common Service Centre Node')}
               </p>
               <p className="text-[11px] text-[#94A3B8]">
-                Official National Portal: <a href="https://www.india.gov.in" target="_blank" rel="noreferrer" className="underline text-[#2563EB]">india.gov.in</a> • Technical Support & Inquiries: 14599
+                {t('kioskOfficialPortal', 'Official National Portal')}: <a href="https://www.india.gov.in" target="_blank" rel="noreferrer" className="underline text-[#2563EB]">india.gov.in</a> • {t('kioskTechSupport', 'Technical Support & Inquiries')}: 14599
               </p>
             </div>
 
@@ -1008,7 +1063,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Full Legal Name</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('fullName', 'Full Legal Name')}</label>
                         <input
                           type="text"
                           required
@@ -1019,7 +1074,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Age (Years)</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('ageYears', 'Age (Years)')}</label>
                         <input
                           type="number"
                           required
@@ -1032,15 +1087,15 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Gender</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('gender', 'Gender')}</label>
                         <select
                           value={recFormData.gender || 'Male'}
                           onChange={e => setRecFormData({ ...recFormData, gender: e.target.value as any })}
                           className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#DCE5EF] text-[#12365B] text-sm font-semibold outline-none focus:border-[#2563EB]"
                         >
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Transgender">Transgender</option>
+                          <option value="Male">{t('Male', 'Male')}</option>
+                          <option value="Female">{t('Female', 'Female')}</option>
+                          <option value="Transgender">{t('Transgender', 'Transgender')}</option>
                         </select>
                       </div>
                     </div>
@@ -1077,7 +1132,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">District</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('district', 'District')}</label>
                         <input
                           type="text"
                           required
@@ -1134,17 +1189,17 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Social Category</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('socialCategory', 'Social Category')}</label>
                         <select
                           value={recFormData.category || 'OBC'}
                           onChange={e => setRecFormData({ ...recFormData, category: e.target.value as any })}
                           className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#DCE5EF] text-[#12365B] text-sm font-semibold outline-none focus:border-[#2563EB]"
                         >
-                          <option value="General">General</option>
-                          <option value="OBC">OBC (Other Backward Class)</option>
-                          <option value="SC">SC (Scheduled Caste)</option>
-                          <option value="ST">ST (Scheduled Tribe)</option>
-                          <option value="EWS">EWS (Economically Weaker Section)</option>
+                          <option value="General">{t('General', 'General')}</option>
+                          <option value="OBC">{t('OBC', 'OBC (Other Backward Class)')}</option>
+                          <option value="SC">{t('SC', 'SC (Scheduled Caste)')}</option>
+                          <option value="ST">{t('ST', 'ST (Scheduled Tribe)')}</option>
+                          <option value="EWS">{t('EWS', 'EWS (Economically Weaker Section)')}</option>
                         </select>
                       </div>
                     </div>
@@ -1158,13 +1213,13 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Primary Occupation</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('primaryOccupation', 'Primary Occupation')}</label>
                         <select
                           value={recFormData.occupation || 'Farmer'}
                           onChange={e => setRecFormData({ ...recFormData, occupation: e.target.value })}
                           className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#DCE5EF] text-[#12365B] text-sm font-semibold outline-none focus:border-[#2563EB]"
                         >
-                          <option value="Farmer">Farmer (Agricultural Cultivator)</option>
+                          <option value="Farmer">{t('Farmer', 'Farmer (Agricultural Cultivator)')}</option>
                           <option value="Agricultural Laborer">Agricultural Laborer / Daily Wage</option>
                           <option value="Student">Student / Scholar</option>
                           <option value="Self Employed / Artisan">Artisan / Small Business / Trader</option>
@@ -1175,7 +1230,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Land Holding (Acres)</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('landHoldingAcres', 'Land Holding (Acres)')}</label>
                         <input
                           type="number"
                           step="0.1"
@@ -1197,7 +1252,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                       <div>
-                        <label className="block text-[#12365B] font-bold mb-1">Residence Type</label>
+                        <label className="block text-[#12365B] font-bold mb-1">{t('residenceType', 'Residence Type')}</label>
                         <select
                           value={recFormData.residenceType || 'Rural'}
                           onChange={e => setRecFormData({ ...recFormData, residenceType: e.target.value as any })}
@@ -1205,7 +1260,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                         >
                           <option value="Rural">Rural (Village / Panchayat)</option>
                           <option value="Urban">Urban (City / Municipality)</option>
-                          <option value="Semi-Urban">Semi-Urban</option>
+                          <option value="Semi-Urban">{t('Semi-Urban', 'Semi-Urban')}</option>
                         </select>
                       </div>
 
@@ -1282,7 +1337,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                       className="min-h-[46px] px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
                     >
                       <Printer className="w-4 h-4" />
-                      <span>Print Thermal Receipt</span>
+                      <span>{t('printThermalReceipt', 'Print Thermal Receipt')}</span>
                     </button>
                   </div>
                 </div>
@@ -1338,7 +1393,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                         {/* Benefit Summary Highlight */}
                         <div className="p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
                           <div>
-                            <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Benefit Entitlement</span>
+                            <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">{t('benefitEntitlement', 'Benefit Entitlement')}</span>
                             <span className="font-extrabold text-[#12365B] text-sm">
                               {scheme.benefitsSummary || (scheme.financialBenefitAmount ? `₹${Number(scheme.financialBenefitAmount).toLocaleString('en-IN')} Financial Support` : 'Authorized Welfare Support')}
                             </span>

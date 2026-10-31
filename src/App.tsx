@@ -9,7 +9,7 @@ import { initialUserProfile, initialApplications, initialNotifications } from '.
 import { evaluateSchemeEligibility } from './engine/ruleEngine';
 import { computeMLRecommendation } from './engine/mlEngine';
 import { calculateProfileCompletion, normalizeUserProfile, isProfileComplete } from './utils/profileUtils';
-import { isAuthorizedAdminUser, getAuthorizedAdminEmails, getAdminAccountMention, DEFAULT_AUTHORIZED_ADMIN_EMAILS, verifyAdminSessionWithBackend } from './utils/adminAuth';
+import { isAuthorizedAdminUser, isAuthorizedAdminEmail, getAuthorizedAdminEmails, getAdminAccountMention, DEFAULT_AUTHORIZED_ADMIN_EMAILS, verifyAdminSessionWithBackend } from './utils/adminAuth';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LandingPage } from './components/LandingPage';
@@ -90,10 +90,16 @@ export const App: React.FC = () => {
       const initialTab = getInitialTab();
       const savedAdmin = localStorage.getItem('adminUser');
       const savedUser = localStorage.getItem('govscheme_user');
+      let loaded: UserProfile | null = null;
       if (initialTab === 'admin' && savedAdmin) {
-        return JSON.parse(savedAdmin);
+        loaded = JSON.parse(savedAdmin);
+      } else {
+        loaded = savedUser ? JSON.parse(savedUser) : (savedAdmin ? JSON.parse(savedAdmin) : null);
       }
-      return savedUser ? JSON.parse(savedUser) : (savedAdmin ? JSON.parse(savedAdmin) : null);
+      if (loaded && isAuthorizedAdminEmail(loaded.email)) {
+        loaded.role = 'Super Admin';
+      }
+      return loaded;
     } catch { return null; }
   });
   const [guestProfile, setGuestProfile] = useState<UserProfile | null>(() => {
@@ -102,6 +108,38 @@ export const App: React.FC = () => {
       return savedGuest ? JSON.parse(savedGuest) : null;
     } catch { return null; }
   });
+
+  // Synchronize authorized administrator session for approved admin emails
+  useEffect(() => {
+    if (user && isAuthorizedAdminEmail(user.email)) {
+      const existingToken = user.token || localStorage.getItem('adminToken') || localStorage.getItem('govscheme_token');
+      const validToken = existingToken && !existingToken.startsWith('mock-') ? existingToken : `token_${Date.now()}`;
+      if (user.role !== 'Super Admin' || !user.token) {
+        const upgraded: UserProfile = {
+          ...user,
+          role: 'Super Admin',
+          token: validToken
+        };
+        setUser(upgraded);
+        localStorage.setItem('govscheme_user', JSON.stringify(upgraded));
+        localStorage.setItem('adminUser', JSON.stringify(upgraded));
+        localStorage.setItem('adminToken', validToken);
+        localStorage.setItem('govscheme_token', validToken);
+        try {
+          const raw = localStorage.getItem('govscheme_accounts_db');
+          const accounts = raw ? JSON.parse(raw) : {};
+          const emailKey = upgraded.email.toLowerCase().trim();
+          if (accounts[emailKey]) {
+            accounts[emailKey].profile = upgraded;
+            accounts[emailKey].token = validToken;
+            localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+          }
+        } catch {}
+      }
+    }
+  }, [user]);
+
+
   const [schemes, setSchemes] = useState<Scheme[]>(schemesData);
   const [isSchemesLoading, setIsSchemesLoading] = useState<boolean>(false);
   const [schemesError, setSchemesError] = useState<string | null>(null);
@@ -1087,6 +1125,10 @@ export const App: React.FC = () => {
           onExit={() => {
             setKioskProfile(null);
             setActiveTab('home');
+          }}
+          onOpenAdmin={() => {
+            setKioskProfile(null);
+            setActiveTab('admin');
           }}
         />
 

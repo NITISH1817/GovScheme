@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useGoogleLogin } from '@react-oauth/google';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
 import { calculateProfileCompletion, normalizeUserProfile } from '../utils/profileUtils';
+import { isAuthorizedAdminEmail, isAuthorizedAdminRole } from '../utils/adminAuth';
 import './Auth/AuthModal.css';
 
 function buildNewProfile(opts: {

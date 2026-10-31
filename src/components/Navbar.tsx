@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile } from '../types';
 import { languages } from '../data/translations';
 import { motion, AnimatePresence } from 'framer-motion';
-import { isAuthorizedAdminUser } from '../utils/adminAuth';
+import { isAuthorizedAdminUser, isAuthorizedAdminEmail } from '../utils/adminAuth';
 
 interface NavbarProps {
   currentLang: LanguageCode;
@@ -42,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { t } = useTranslation();
   const customBezier = [0.32, 0.72, 0, 1];
 
-  const isCurrentAdmin = isAuthorizedAdminUser(user);
+  const isCurrentAdmin = isAuthorizedAdminUser(user) || isAuthorizedAdminEmail(user?.email);
 
   interface NavItem {
     id: string;

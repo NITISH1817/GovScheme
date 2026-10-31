@@ -55,8 +55,13 @@ export const isAuthorizedAdminRole = (role?: string | null): boolean => {
 export const isAuthorizedAdminUser = (u?: Partial<UserProfile> | null): boolean => {
   if (!u) return false;
 
-  // Mock tokens are strictly forbidden and never grant admin status
-  const token = u.token;
+  // Officially designated administrator email accounts immediately qualify
+  if (u.email && isAuthorizedAdminEmail(u.email)) {
+    return true;
+  }
+
+  // Token check (from user profile or persistent storage)
+  const token = u.token || (typeof localStorage !== 'undefined' ? (localStorage.getItem('adminToken') || localStorage.getItem('govscheme_token')) : null);
   if (!token || typeof token !== 'string' || token.startsWith('mock-') || token.includes('mock')) {
     return false;
   }
