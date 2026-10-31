@@ -8,6 +8,7 @@ import { LanguageCode, UserProfile } from '../types';
 import { languages } from '../data/translations';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isAuthorizedAdminUser, isAuthorizedAdminEmail } from '../utils/adminAuth';
+import { getUserAvatarUrl } from '../utils/profileUtils';
 
 interface NavbarProps {
   currentLang: LanguageCode;
@@ -259,7 +260,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                 >
                   <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 p-0.5 transition-transform">
-                    <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                    <img src={getUserAvatarUrl(user)} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                   </div>
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 hidden sm:block">{user.fullName.split(' ')[0]}</span>
                   <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 hidden sm:block" />

@@ -141,7 +141,10 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   const interests = Array.isArray(u.interests) ? u.interests : (Array.isArray(p.interests) ? p.interests : []);
   const savedSchemeIds = Array.isArray(u.savedSchemeIds) ? u.savedSchemeIds : (Array.isArray(p.savedSchemeIds) ? p.savedSchemeIds : []);
   const documents = Array.isArray(u.documents) ? u.documents : (Array.isArray(p.documents) ? p.documents : []);
-  const avatarUrl = u.avatarUrl || p.avatarUrl || (fullName ? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=0369a1` : '');
+  let avatarUrl = u.avatarUrl || p.avatarUrl || '';
+  if (!avatarUrl || avatarUrl.includes('dicebear.com/7.x/initials')) {
+    avatarUrl = fullName ? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=0369a1` : '';
+  }
   const token = data.token || u.token || '';
 
   const normalized: UserProfile = {
@@ -175,4 +178,13 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
 
   normalized.profileCompletionScore = calculateProfileCompletion(normalized);
   return normalized;
+};
+
+export const getUserAvatarUrl = (user?: { fullName?: string; avatarUrl?: string } | null): string => {
+  if (!user) return 'https://api.dicebear.com/7.x/initials/svg?seed=Citizen&backgroundColor=0369a1';
+  const name = user.fullName?.trim() || 'Citizen';
+  if (user.avatarUrl && !user.avatarUrl.includes('dicebear.com/7.x/initials')) {
+    return user.avatarUrl;
+  }
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0369a1`;
 };

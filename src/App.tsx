@@ -8,7 +8,7 @@ import { schemesData } from './data/schemes';
 import { initialUserProfile, initialApplications, initialNotifications } from './data/initialUserData';
 import { evaluateSchemeEligibility } from './engine/ruleEngine';
 import { computeMLRecommendation } from './engine/mlEngine';
-import { calculateProfileCompletion, normalizeUserProfile, isProfileComplete } from './utils/profileUtils';
+import { calculateProfileCompletion, normalizeUserProfile, isProfileComplete, getUserAvatarUrl } from './utils/profileUtils';
 import { isAuthorizedAdminUser, isAuthorizedAdminEmail, getAuthorizedAdminEmails, getAdminAccountMention, DEFAULT_AUTHORIZED_ADMIN_EMAILS, verifyAdminSessionWithBackend } from './utils/adminAuth';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -1068,10 +1068,35 @@ export const App: React.FC = () => {
   }
 
   const handleUpdateProfile = async (updated: Partial<UserProfile>) => {
-    const merged = { ...(user || {}), ...updated } as UserProfile;
+    const newName = (updated.fullName || user?.fullName || '').trim();
+    const newAvatar = getUserAvatarUrl({ fullName: newName, avatarUrl: updated.avatarUrl || user?.avatarUrl });
+
+    const merged = {
+      ...(user || {}),
+      ...updated,
+      fullName: newName || user?.fullName || '',
+      avatarUrl: newAvatar
+    } as UserProfile;
     merged.profileCompletionScore = calculateProfileCompletion(merged);
     setUser(merged);
     localStorage.setItem('govscheme_user', JSON.stringify(merged));
+
+    // Persist to local accounts database so future logins restore these exact updated details
+    try {
+      const raw = localStorage.getItem('govscheme_accounts_db');
+      const accounts = raw ? JSON.parse(raw) : {};
+      const emailKey = (merged.email || '').toLowerCase().trim();
+      if (emailKey) {
+        accounts[emailKey] = {
+          ...(accounts[emailKey] || {}),
+          profile: merged,
+          token: merged.token || accounts[emailKey]?.token || localStorage.getItem('govscheme_token') || `token_${Date.now()}`
+        };
+        localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+      }
+    } catch (e) {
+      console.warn('Failed to update govscheme_accounts_db in handleUpdateProfile:', e);
+    }
 
     const token = localStorage.getItem('govscheme_token');
     if (token) {
@@ -1840,10 +1865,30 @@ export const App: React.FC = () => {
           setUser(authoritativeUser);
           localStorage.setItem('govscheme_user', JSON.stringify(authoritativeUser));
 
+          // Ensure avatar reflects current name accurately
+          authoritativeUser.avatarUrl = getUserAvatarUrl(authoritativeUser);
+          authoritativeUser.profileCompletionScore = calculateProfileCompletion(authoritativeUser);
+          setUser(authoritativeUser);
+          localStorage.setItem('govscheme_user', JSON.stringify(authoritativeUser));
+
+          // Also keep govscheme_accounts_db synchronized with authoritativeUser
+          if (emailKey) {
+            try {
+              const raw = localStorage.getItem('govscheme_accounts_db');
+              const accounts = raw ? JSON.parse(raw) : {};
+              accounts[emailKey] = {
+                ...(accounts[emailKey] || {}),
+                profile: authoritativeUser,
+                token: authoritativeUser.token || accounts[emailKey]?.token || localStorage.getItem('govscheme_token') || `token_${Date.now()}`
+              };
+              localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+            } catch (e) {}
+          }
+
           if (isAdminUser(authoritativeUser)) {
             setActiveTab('admin');
-          } else if (isNewRegistration || !isProfileComplete(authoritativeUser)) {
-            // When citizen signs up (or profile is incomplete), automatically prompt user to fill their profile
+          } else if (isNewRegistration) {
+            // ONLY ask details when the citizen signs up for the first time
             setWizardMode('wizard');
             setActiveTab('wizard');
           } else if (pendingKioskRedirect) {
@@ -1851,7 +1896,7 @@ export const App: React.FC = () => {
             setAuthNotice(undefined);
             setActiveTab('kiosk');
           } else {
-            // Complete citizen profile: show the user's profile details
+            // Existing user sign-in: NEVER ask details twice, directly open their Citizen Profile!
             setActiveTab('profile');
           }
         }}

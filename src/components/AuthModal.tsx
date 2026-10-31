@@ -3,7 +3,7 @@ import { Eye, EyeOff, X, Loader2, Monitor, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGoogleLogin } from '@react-oauth/google';
 import { UserProfile, LanguageCode, CategorySocial, TargetGender } from '../types';
-import { calculateProfileCompletion, normalizeUserProfile } from '../utils/profileUtils';
+import { calculateProfileCompletion, normalizeUserProfile, getUserAvatarUrl } from '../utils/profileUtils';
 import { isAuthorizedAdminEmail, isAuthorizedAdminRole } from '../utils/adminAuth';
 import './Auth/AuthModal.css';
 
@@ -234,19 +234,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const data = await response.json().catch(() => null);
 
       if (response.ok && data && data.success) {
-        const profile = createProfileFromAuthData(data, 'User', emailTrimmed);
         const localAccounts = getLocalAccounts();
         const existing = localAccounts[emailTrimmed];
+        const profile = createProfileFromAuthData(data, existing?.profile?.fullName || 'User', emailTrimmed);
         let mergedProfile = profile;
         if (existing && existing.profile) {
-          const mergedObj: any = { ...existing.profile, ...profile };
+          const mergedObj: any = { ...profile };
           for (const [k, v] of Object.entries(existing.profile)) {
-            if (v !== undefined && v !== null && v !== '' && ((profile as any)[k] === undefined || (profile as any)[k] === null || (profile as any)[k] === '')) {
-              mergedObj[k] = v;
+            if (v !== undefined && v !== null && v !== '') {
+              if (
+                mergedObj[k] === undefined ||
+                mergedObj[k] === null ||
+                mergedObj[k] === '' ||
+                (k === 'fullName' && (mergedObj[k] === 'User' || mergedObj[k] === 'Citizen User'))
+              ) {
+                mergedObj[k] = v;
+              }
             }
           }
           mergedProfile = normalizeUserProfile(mergedObj);
         }
+        mergedProfile.avatarUrl = getUserAvatarUrl(mergedProfile);
         saveLocalAccount(emailTrimmed, loginPassword, mergedProfile, data.token);
 
         if (data.token) {
@@ -266,6 +274,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const localAcc = localAccounts[emailTrimmed];
         if (localAcc && localAcc.password === loginPassword) {
           const profile = localAcc.profile;
+          profile.avatarUrl = getUserAvatarUrl(profile);
           const token = localAcc.token || `token_${Date.now()}`;
           localStorage.setItem('govscheme_token', token);
           localStorage.setItem('govscheme_user', JSON.stringify(profile));
@@ -286,6 +295,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const localAcc = localAccounts[emailTrimmed];
       if (localAcc && (!localAcc.password || localAcc.password === loginPassword)) {
         const profile = localAcc.profile;
+        profile.avatarUrl = getUserAvatarUrl(profile);
         const token = localAcc.token || `token_${Date.now()}`;
         localStorage.setItem('govscheme_token', token);
         localStorage.setItem('govscheme_user', JSON.stringify(profile));

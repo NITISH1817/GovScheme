@@ -13,6 +13,7 @@ import { LocationSelector } from './LocationSelector';
 import { CitizenAssessmentModal } from './CitizenAssessmentModal';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
 import { isAuthorizedAdminEmail, isAuthorizedAdminUser } from '../utils/adminAuth';
+import { getUserAvatarUrl } from '../utils/profileUtils';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -92,8 +93,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
     setIsSubmitting(true);
     try {
+      const newName = (formData.fullName || user.fullName || '').trim();
+      const newAvatar = getUserAvatarUrl({ fullName: newName, avatarUrl: user.avatarUrl });
       await onUpdateProfile({
         ...formData,
+        fullName: newName,
+        avatarUrl: newAvatar,
         age: Number(formData.age),
         annualIncome: Number(formData.annualIncome),
         familyMembersCount: Number(formData.familyMembersCount || 1),
@@ -164,7 +169,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   title={t('clickToEdit', 'Click to edit profile')}
                 >
                   <img
-                    src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=0369a1`}
+                    src={getUserAvatarUrl(user)}
                     alt="Avatar"
                     className="w-full h-full rounded-full object-cover"
                   />
