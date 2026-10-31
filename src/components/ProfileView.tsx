@@ -70,6 +70,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       .slice(0, 3);
   }, [user, schemes]);
 
+  const formattedMobile = useMemo(() => {
+    if (!user.mobile) return null;
+    const trimmed = String(user.mobile).trim();
+    if (!trimmed || trimmed === '—' || trimmed === '-' || trimmed === '+91' || trimmed === '+91 —') return null;
+    const cleaned = trimmed.replace(/^(\+91\s*)+/, '').trim();
+    return cleaned ? `+91 ${cleaned}` : null;
+  }, [user.mobile]);
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
@@ -192,7 +200,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </div>
 
                   <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-                    {user.email || t('notProvided', 'No email provided')} • +91 {user.mobile || '—'}
+                    {user.email || t('notProvided', 'No email provided')}{formattedMobile ? ` • ${formattedMobile}` : ''}
                   </p>
 
                   <div className="pt-2">

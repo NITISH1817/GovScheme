@@ -51,8 +51,14 @@ const seedAdmin = async () => {
 const seedMockData = async () => {
   try {
     const schemeCount = await Scheme.countDocuments();
+    if (schemeCount < schemesData.length) {
+      console.log(`[Seed] Authoritative catalogue check: DB has ${schemeCount}, catalog has ${schemesData.length}. Synchronizing...`);
+      for (const scheme of schemesData) {
+        await Scheme.updateOne({ id: scheme.id }, { $set: scheme }, { upsert: true });
+      }
+      console.log(`[Seed] Database successfully synchronized with all ${schemesData.length} schemes.`);
+    }
     if (schemeCount === 0) {
-      await Scheme.insertMany(schemesData);
       
       const mockCitizen = await User.create({
         fullName: 'John Doe',

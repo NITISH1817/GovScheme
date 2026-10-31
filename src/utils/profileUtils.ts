@@ -181,18 +181,40 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
 };
 
 export const getUserAvatarUrl = (user?: { fullName?: string; avatarUrl?: string; email?: string } | null): string => {
-  // If user uploaded a custom data/blob photo, preserve it
-  if (user?.avatarUrl && (user.avatarUrl.startsWith('data:image') || user.avatarUrl.startsWith('blob:') || user.avatarUrl.startsWith('/uploads/'))) {
+  // If user uploaded a genuine custom raster photo (base64 png/jpeg/webp, blob:, or local upload path), preserve it
+  if (
+    user?.avatarUrl &&
+    !user.avatarUrl.startsWith('data:image/svg+xml') &&
+    !user.avatarUrl.includes('dicebear.com') &&
+    !user.avatarUrl.includes('images.unsplash.com') &&
+    (
+      user.avatarUrl.startsWith('data:image/png') ||
+      user.avatarUrl.startsWith('data:image/jpeg') ||
+      user.avatarUrl.startsWith('data:image/jpg') ||
+      user.avatarUrl.startsWith('data:image/webp') ||
+      user.avatarUrl.startsWith('blob:') ||
+      user.avatarUrl.startsWith('/uploads/')
+    )
+  ) {
     return user.avatarUrl;
   }
+
+  // Derive initials dynamically from the user's actual current full name
   const rawName = (user?.fullName || '').trim() || (user?.email ? user.email.split('@')[0] : 'Citizen');
   const words = rawName.split(/\s+/).filter(Boolean);
   let initials = 'CI';
   if (words.length >= 2) {
     initials = (words[0][0] + words[1][0]).toUpperCase();
   } else if (words.length === 1) {
-    initials = words[0].substring(0, 2).toUpperCase();
+    initials = words[0].substring(0, Math.min(2, words[0].length)).toUpperCase();
   }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#0284c7"/><text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${initials}</text></svg>`;
+
+  // Pick deterministic theme background based on name
+  const colors = ['#0284c7', '#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626'];
+  let charCodeSum = 0;
+  for (let i = 0; i < rawName.length; i++) charCodeSum += rawName.charCodeAt(i);
+  const bgColor = colors[charCodeSum % colors.length];
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="${bgColor}"/><text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${initials}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };

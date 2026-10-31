@@ -71,7 +71,7 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
       });
       if (res && res.schemes && res.schemes.length > 0) {
         // Map backend schemes format into Scheme type format
-        const mapped = res.schemes.map((s: any) => ({
+        const remoteMapped = res.schemes.map((s: any) => ({
           ...s,
           id: s.id || s._id,
           benefitsSummary: s.benefitsSummary || s.benefits || 'Government citizen assistance program',
@@ -82,7 +82,50 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
             requiredDocuments: s.documentsRequired || ['Aadhaar']
           }
         }));
-        setSchemesList(mapped);
+
+        // Merge remote schemes with authoritative catalog and local custom schemes
+        const schemeMap = new Map<string, Scheme>();
+        
+        // 1. Authoritative baseline (all 75 schemes from initialSchemes)
+        (initialSchemes || []).forEach(s => {
+          if (s && s.id) schemeMap.set(s.id, s);
+        });
+
+        // 2. Overwrite / enrich with remote schemes
+        remoteMapped.forEach((s: any) => {
+          if (s && s.id) {
+            const existing = schemeMap.get(s.id);
+            schemeMap.set(s.id, { ...(existing || {}), ...s });
+          }
+        });
+
+        // 3. Apply custom created / edited schemes from localStorage
+        try {
+          const customRaw = localStorage.getItem('govscheme_custom_schemes');
+          if (customRaw) {
+            const custom = JSON.parse(customRaw);
+            if (Array.isArray(custom)) {
+              custom.forEach(cs => {
+                if (cs && cs.id) schemeMap.set(cs.id, { ...(schemeMap.get(cs.id) || {}), ...cs });
+              });
+            }
+          }
+        } catch {}
+
+        // 4. Exclude deleted schemes
+        try {
+          const deletedRaw = localStorage.getItem('govscheme_deleted_schemes');
+          if (deletedRaw) {
+            const deletedIds = JSON.parse(deletedRaw);
+            if (Array.isArray(deletedIds)) {
+              deletedIds.forEach((delId: string) => schemeMap.delete(delId));
+            }
+          }
+        } catch {}
+
+        const mergedCatalog = Array.from(schemeMap.values());
+        setSchemesList(mergedCatalog);
+        onSchemeUpdated?.(mergedCatalog);
       }
     } catch (e) {
       console.warn('Fallback to local schemes catalog', e);
