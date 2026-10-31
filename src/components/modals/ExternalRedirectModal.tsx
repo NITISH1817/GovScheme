@@ -65,10 +65,10 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
               </div>
               <div>
                 <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">
-                  Leaving GovScheme
+                  {t('leavingGovScheme', 'Leaving GovScheme')}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Redirecting to official external portal
+                  {t('redirectingExternal', 'Redirecting to official external portal')}
                 </p>
               </div>
             </div>
@@ -85,16 +85,16 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
             {/* Destination Preview Card */}
             <div className="p-4 rounded-2xl bg-gray-50 dark:bg-[#0B1424] border border-gray-200 dark:border-gray-800 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Destination Website</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{t('destinationWebsite', 'Destination Website')}</span>
                 {isVerifiedOfficial ? (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Verified Government Portal
+                    {t('verifiedGovPortal', 'Verified Government Portal')}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-800">
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                    Department / Agency Portal
+                    {t('deptAgencyPortal', 'Department / Agency Portal')}
                   </span>
                 )}
               </div>
@@ -137,7 +137,7 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
                   onChange={(e) => setDontShowAgain(e.target.checked)}
                   className="rounded border-gray-300 text-[#1769FF] focus:ring-[#1769FF]"
                 />
-                <span>Don't show this confirmation for verified .gov.in portals</span>
+                <span>{t('dontShowAgainNotice', "Don't show this confirmation for verified .gov.in portals")}</span>
               </label>
             )}
           </div>
@@ -154,7 +154,7 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
               onClick={handleProceed}
               className="px-6 py-2.5 rounded-xl bg-[#1769FF] hover:bg-blue-700 text-white font-bold text-xs shadow flex items-center gap-1.5 transition"
             >
-              <span>Proceed to Official Portal</span>
+              <span>{t('proceedToOfficialPortal', 'Proceed to Official Portal')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

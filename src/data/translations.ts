@@ -108,6 +108,17 @@ export const languages: { code: LanguageCode; name: string; nativeName: string }
 export const translations: Record<LanguageCode, TranslationDict> = {
 
   en: {
+    "independentPlatformLabel": "Independent Citizen Advisory Platform:",
+    "independentPlatformNotice": "GovScheme is an independent information platform and is not an official government website. Scheme information is provided for informational purposes. Always verify eligibility, deadlines, and application requirements through the relevant government department.",
+    "aboutPlatformBtn": "About Platform",
+    "reportIssueBtn": "Report Issue",
+    "aboutPlatform": "About Platform",
+    "reportIssueBrokenLink": "Report Issue / Broken Link",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfUse": "Terms of Use",
+    "reportAnIssue": "Report an Issue",
+    "independentPublicPlatform": "INDEPENDENT PUBLIC INFORMATION PLATFORM",
+
     appName: "GovScheme AI",
     tagline: "Find Government Schemes You're Eligible For",
     heroSubtitle: "Helping Indian citizens & rural households discover welfare schemes in minutes using Artificial Intelligence & Rule-Based Eligibility Engine.",
@@ -321,6 +332,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   hi: {
+    "independentPlatformLabel": "स्वतंत्र नागरिक सलाहकार मंच:",
+    "independentPlatformNotice": "GovScheme एक स्वतंत्र सूचना मंच है और यह आधिकारिक सरकारी वेबसाइट नहीं है। योजना की जानकारी केवल सूचनात्मक उद्देश्यों के लिए प्रदान की जाती है। पात्रता, समय-सीमा और आवेदन आवश्यकताओं को हमेशा संबंधित सरकारी विभाग के माध्यम से सत्यापित करें।",
+    "aboutPlatformBtn": "मंच के बारे में",
+    "reportIssueBtn": "समस्या की रिपोर्ट करें",
+    "aboutPlatform": "मंच के बारे में",
+    "reportIssueBrokenLink": "समस्या / टूटी लिंक की रिपोर्ट करें",
+    "privacyPolicy": "गोपनीयता नीति",
+    "termsOfUse": "उपयोग की शर्तें",
+    "reportAnIssue": "समस्या दर्ज करें",
+    "independentPublicPlatform": "स्वतंत्र सार्वजनिक सूचना मंच",
+
     appName: "GovScheme AI",
     tagline: "उन सरकारी योजनाओं को खोजें जिनके आप पात्र हैं",
     heroSubtitle: "कृत्रिम बुद्धिमत्ता और नियम-आधारित पात्रता इंजन का उपयोग करके मिनटों में कल्याणकारी योजनाओं की खोज करने में भारतीय नागरिकों की सहायता करना।",
@@ -534,6 +556,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   ta: {
+    "independentPlatformLabel": "சுயாதீன குடிமக்கள் ஆலோசனை தளம்:",
+    "independentPlatformNotice": "GovScheme ஒரு சுயாதீன தகவல் தளம் மற்றும் இது அதிகாரப்பூர்வ அரசு வலைத்தளம் அல்ல. நலத்திட்ட தகவல்கள் தகவல் நோக்கங்களுக்காக மட்டுமே வழங்கப்படுகின்றன. தகுதி, காலக்கெடு மற்றும் விண்ணப்ப நடைமுறைகளை எப்போதும் தொடர்புடைய அரசுத் துறையின் மூலம் சரிபார்க்கவும்.",
+    "aboutPlatformBtn": "தளத்தைப் பற்றி",
+    "reportIssueBtn": "சிக்கலைப் புகாரளிக்கவும்",
+    "aboutPlatform": "தளத்தைப் பற்றி",
+    "reportIssueBrokenLink": "சிக்கல் / உடைந்த இணைப்பைப் புகாரளிக்கவும்",
+    "privacyPolicy": "தனியுரிமைக் கொள்கை",
+    "termsOfUse": "பயன்பாட்டு விதிமுறைகள்",
+    "reportAnIssue": "சிக்கலைப் புகாரளிக்கவும்",
+    "independentPublicPlatform": "சுயாதீன பொது தகவல் தளம்",
+
     appName: "GovScheme AI",
     tagline: "நீங்கள் தகுதியுள்ள அரசுத் திட்டங்களைக் கண்டறியவும்",
     heroSubtitle: "செயற்கை நுண்ணறிவு மற்றும் தகுதி இயந்திரத்தைப் பயன்படுத்தி நிமிடங்களில் அரசு நலத்திட்டங்களைக் கண்டறிய இந்தியக் குடிமக்களுக்கு உதவுகிறது.",
@@ -748,6 +781,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   te: {
+    "independentPlatformLabel": "స్వతంత్ర పౌర సలహా వేదిక:",
+    "independentPlatformNotice": "GovScheme అనేది ఒక స్వతంత్ర సమాచార వేదిక మరియు ఇది అధికారిక ప్రభుత్వ వెబ్‌సైట్ కాదు. పథకం సమాచారం కేవలం సమాచార ప్రయోజనాల కొరకు మాత్రమే అందించబడుతుంది. అర్హత, గడువులు మరియు దరఖాస్తు నిబంధనలను ఎల్లప్పుడూ సంబంధిత ప్రభుత్వ శాఖ ద్వారా ధృవీకరించుకోండి.",
+    "aboutPlatformBtn": "వేదిక గురించి",
+    "reportIssueBtn": "సమస్యను నివేదించండి",
+    "aboutPlatform": "వేదిక గురించి",
+    "reportIssueBrokenLink": "సమస్య / పని చేయని లింక్‌ను నివేదించండి",
+    "privacyPolicy": "గోప్యతా విధానం",
+    "termsOfUse": "వినియోగ నిబంధనలు",
+    "reportAnIssue": "సమస్యను నివేదించండి",
+    "independentPublicPlatform": "స్వతంత్ర ప్రజా సమాచార వేదిక",
+
     appName: "GovScheme AI",
     tagline: "మీరు అర్హులైన ప్రభుత్వ పథకాలను కనుగొనండి",
     heroSubtitle: "ఆర్టిఫిషియల్ ఇంటెలిజెన్స్ ఉపయోగించి నిమిషాల్లో సంక్షేమ పథకాలను కనుగొనడంలో భారతీయ పౌరులకు సహాయం చేయడం.",
@@ -1129,6 +1173,17 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   ml: {
+    "independentPlatformLabel": "സ്വതന്ത്ര പൗര ഉപദേശക പ്ലാറ്റ്ഫോം:",
+    "independentPlatformNotice": "GovScheme ഒരു സ്വതന്ത്ര വിവര പ്ലാറ്റ്‌ഫോമാണ്, ഇത് ഒരു ഔദ്യോഗിക സർക്കാർ വെബ്‌സൈറ്റല്ല. പദ്ധതി വിവരങ്ങൾ വിവര ആവശ്യങ്ങൾക്കായി മാത്രമാണ് നൽകുന്നത്. അർഹത, അവസാന തീയതികൾ, അപേക്ഷാ ആവശ്യകതകൾ എന്നിവ എപ്പോഴും ബന്ധപ്പെട്ട സർക്കാർ വകുപ്പ് വഴി സ്ഥിരീകരിക്കുക.",
+    "aboutPlatformBtn": "പ്ലാറ്റ്‌ഫോമിനെക്കുറിച്ച്",
+    "reportIssueBtn": "പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക",
+    "aboutPlatform": "പ്ലാറ്റ്‌ഫോമിനെക്കുറിച്ച്",
+    "reportIssueBrokenLink": "പ്രശ്നം / തകരാറിലായ ലിങ്ക് റിപ്പോർട്ട് ചെയ്യുക",
+    "privacyPolicy": "സ്വകാര്യതാ നയം",
+    "termsOfUse": "ഉപയോഗ നിബന്ധനകൾ",
+    "reportAnIssue": "പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക",
+    "independentPublicPlatform": "സ്വതന്ത്ര പൊതുവിവര പ്ലാറ്റ്ഫോം",
+
     appName: "GovScheme AI",
     tagline: "നിങ്ങൾക്ക് അർഹതയുള്ള സർക്കാർ പദ്ധതികൾ കണ്ടെത്തൂ",
     heroSubtitle: "ആർട്ടിഫിഷ്യൽ ഇന്റലിജൻസ് ഉപയോഗിച്ച് മിനിറ്റുകൾക്കുള്ളിൽ ക്ഷേമപദ്ധതികൾ കണ്ടെത്താൻ ഇന്ത്യൻ പൗരന്മാരെ സഹായിക്കുന്നു.",
@@ -1318,7 +1373,18 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     "opensInNewTab": "പുതിയ ടാബിൽ തുറക്കുന്നു",
   },
 
-  mr: { "All": "All",
+  mr: {
+    "independentPlatformLabel": "स्वतंत्र नागरिक सल्लागार मंच:",
+    "independentPlatformNotice": "GovScheme हे एक स्वतंत्र माहिती व्यासपीठ आहे आणि अधिकृत सरकारी संकेतस्थळ नाही. योजनेची माहिती केवळ माहितीच्या उद्देशाने दिली जाते. पात्रता, मुदत आणि अर्ज आवश्यकतांची पडताळणी नेहमी संबंधित सरकारी विभागामार्फत करा.",
+    "aboutPlatformBtn": "प्लॅटफॉर्मबद्दल",
+    "reportIssueBtn": "समस्येची तक्रार करा",
+    "aboutPlatform": "प्लॅटफॉर्मबद्दल",
+    "reportIssueBrokenLink": "समस्या / तुटलेली लिंक कळवा",
+    "privacyPolicy": "गोपनीयता धोरण",
+    "termsOfUse": "वापराच्या अटी",
+    "reportAnIssue": "समस्या कळवा",
+    "independentPublicPlatform": "स्वतंत्र सार्वजनिक माहिती मंच",
+ "All": "All",
     appName: "GovScheme AI",
     tagline: "तुम्ही पात्र असलेल्या सरकारी योजना शोधा",
     heroSubtitle: "कृत्रिम बुद्धिमत्ता आणि नियम-आधारित पात्रता इंजिन वापरून मिनिटांत कल्याणकारी योजना शोधण्यात भारतीय नागरिकांना मदत करणे.",
@@ -1507,7 +1573,18 @@ export const translations: Record<LanguageCode, TranslationDict> = {
     "opensInNewTab": "नवीन टॅबमध्ये उघडेल",
   },
 
-  gu: { "All": "All",
+  gu: {
+    "independentPlatformLabel": "સ્વતંત્ર નાગરિક સલાહકાર મંચ:",
+    "independentPlatformNotice": "GovScheme એક સ્વતંત્ર માહિતી મંચ છે અને તે સત્તાવાર સરકારી વેબસાઇટ નથી. યોજનાની માહિતી માત્ર માહિતીના હેતુ માટે આપવામાં આવે છે. પાત્રતા, સમયમર્યાદા અને અરજીની આવશ્યકતાઓની ચકાસણી હંમેશા સંબંધિત સરકારી વિભાગ દ્વારા કરો.",
+    "aboutPlatformBtn": "પ્લેટફોર્મ વિશે",
+    "reportIssueBtn": "સમસ્યાની જાણ કરો",
+    "aboutPlatform": "પ્લેટફોર્મ વિશે",
+    "reportIssueBrokenLink": "સમસ્યા / અમાન્ય લિંક જણાવો",
+    "privacyPolicy": "ગોપનીયતા નીતિ",
+    "termsOfUse": "ઉપયોગની શરતો",
+    "reportAnIssue": "સમસ્યા જણાવો",
+    "independentPublicPlatform": "સ્વતંત્ર જાહેર માહિતી મંચ",
+ "All": "All",
     appName: "GovScheme AI",
     tagline: "તમે પાત્ર છો તેવી સરકારી યોજનાઓ શોધો",
     heroSubtitle: "કૃત્રિમ બુદ્ધિમત્તાનો ઉપયોગ કરીને મિનિટોમાં સરકારી યોજનાઓ શોધવામાં ભારતીય નાગરિકોને મદદ કરવી.",
