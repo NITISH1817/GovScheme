@@ -28,6 +28,11 @@ export interface OCRScanResult {
   isValidDocType: boolean;
   detectedTypeLabel: string;
   rawTextPreview: string;
+  status?: 'COMPLETED' | 'EMPTY_OUTPUT' | 'FAILED' | 'UNREADABLE' | 'NEEDS_REVIEW' | 'TIMEOUT';
+  elapsedSeconds?: number;
+  errorMessage?: string;
+  canRetry?: boolean;
+  isEncrypted?: boolean;
 }
 
 const INDIAN_STATES = [
@@ -37,6 +42,67 @@ const INDIAN_STATES = [
   'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
   'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Puducherry'
 ];
+
+export const TESSERACT_LANG_MAP: Record<string, string> = {
+  en: 'eng',
+  eng: 'eng',
+  hi: 'hin',
+  hin: 'hin',
+  ta: 'tam',
+  tam: 'tam',
+  te: 'tel',
+  tel: 'tel',
+  ml: 'mal',
+  mal: 'mal',
+  mr: 'mar',
+  mar: 'mar',
+  gu: 'guj',
+  guj: 'guj'
+};
+
+/**
+ * Maps short UI language codes to Tesseract 3-letter language identifiers.
+ */
+export function getTesseractLang(code?: string): string {
+  if (!code) return 'eng';
+  const clean = code.toLowerCase().trim();
+  return TESSERACT_LANG_MAP[clean] || 'eng';
+}
+
+/**
+ * Validates document file type, magic signatures, and size.
+ */
+export function validateDocumentFile(file: File): { isValid: boolean; error?: string } {
+  if (!file) {
+    return { isValid: false, error: 'No file provided.' };
+  }
+  const maxBytes = 15 * 1024 * 1024; // 15MB
+  if (file.size > maxBytes) {
+    return { isValid: false, error: 'File size exceeds maximum allowable limit of 15MB.' };
+  }
+  if (file.size === 0) {
+    return { isValid: false, error: 'Uploaded file is empty (0 bytes).' };
+  }
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  const isImage = file.type.startsWith('image/') || /\.(jpe?g|png)$/i.test(file.name);
+  if (!isPdf && !isImage) {
+    return { isValid: false, error: 'Unsupported file format. Please upload a valid PDF, JPG, or PNG document.' };
+  }
+  return { isValid: true };
+}
+
+/**
+ * Wraps any promise in an explicit timeout to prevent indefinite UI loading states.
+ */
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMsg: string): Promise<T> {
+  let timer: any;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(timeoutMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 
 /**
  * Normalizes Indic numerals (Devanagari, Tamil, Telugu, Gujarati, Malayalam) to standard Arabic numerals.
@@ -115,7 +181,7 @@ function parseVoterID(text: string): string {
 
 function parseName(text: string): string {
   const patterns = [
-    /(?:Name|Full Name|பெயர்|नाम|नाव|નામ|പേര്|పేరు)\s*[:\-–]?\s*([A-Za-z\s.]{3,40})/i,
+    /(?:Name|Full Name|பெயர்|नाम|పేరు|പേര്|નામ)\s*[:\-–]?\s*([A-Za-z\s.]{3,40})/i,
     /(?:This is to certify that|certify that)\s+(?:Thiru|Selvi|Tmt|Mr|Ms|Mrs)?\.?\s*([A-Za-z\s.]{3,40})/i,
     /(?:Son of|Daughter of|Wife of|S\/o|D\/o|W\/o)\s+([A-Za-z\s.]{3,35})/i
   ];
@@ -159,7 +225,7 @@ function parseDOB(text: string): string {
 
 function parseGender(text: string): string {
   const lower = text.toLowerCase();
-  if (/\b(female|woman|stree|mahila|பெண்|महिला|മഹിള|મહિલા)\b/.test(lower)) return 'Female';
+  if (/\b(female|woman|stree|mahila|பெண்|महिला|സ്ത്രീ|સ્ત્રી)\b/.test(lower)) return 'Female';
   if (/\b(male|man|purush|ஆண்|पुरुष|പുരുഷൻ|પુરુષ)\b/.test(lower) && !/\bfemale\b/.test(lower)) return 'Male';
   if (/\b(transgender|thirunangai|திருநங்கை|तृतीय पंथी)\b/.test(lower)) return 'Transgender';
   return '';
@@ -175,7 +241,7 @@ function parseState(text: string): string {
 
 function parseIncome(text: string): number | undefined {
   const patterns = [
-    /(?:Annual\s*Income|Family\s*Income|வருமானம்|वार्षिक आय|Total\s*Income)\s*[:\-–]?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+)/i,
+    /(?:Annual\s*Income|Family\s*Income|வருமானம்|आय|வருடாந்திர\s*வருமானம்|Total\s*Income)\s*[:\-–]?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+)/i,
     /(?:Rs\.?|INR|₹)\s*([0-9,]{4,10})\s*(?:\/-|\/year|per\s*annum|only)/i,
     /\b([1-9][0-9]{4,6})\s*(?:\/-|\s*rupees)/i
   ];
@@ -191,12 +257,12 @@ function parseIncome(text: string): number | undefined {
 
 function parseCategory(text: string): string {
   const upper = text.toUpperCase();
-  if (upper.includes('MOST BACKWARD') || upper.includes('MBC') || upper.includes('மிகவும் பிற்படுத்தப்பட்ட')) return 'OBC';
-  if (upper.includes('BACKWARD CLASS') || upper.includes('OBC') || upper.includes('BC') || upper.includes('பிற்படுத்தப்பட்ட') || upper.includes('अन्य पिछड़ा')) return 'OBC';
-  if (upper.includes('SCHEDULED CASTE') || upper.includes('SC') || upper.includes('ஆதி திராவிடர்') || upper.includes('अनुसूचित जाति')) return 'SC';
+  if (upper.includes('MOST BACKWARD') || upper.includes('MBC') || upper.includes('மிகவும் பிற்படுத்தப்பட்டோர்')) return 'OBC';
+  if (upper.includes('BACKWARD CLASS') || upper.includes('OBC') || upper.includes('BC') || upper.includes('பிற்படுத்தப்பட்டோர்') || upper.includes('अन्य पिछड़ा वर्ग')) return 'OBC';
+  if (upper.includes('SCHEDULED CASTE') || upper.includes('SC') || upper.includes('ஆதிதிராவிடர்') || upper.includes('अनुसूचित जाति')) return 'SC';
   if (upper.includes('SCHEDULED TRIBE') || upper.includes('ST') || upper.includes('பழங்குடியினர்') || upper.includes('अनुसूचित जनजाति')) return 'ST';
   if (upper.includes('ECONOMICALLY WEAKER') || upper.includes('EWS') || upper.includes('आर्थिक रूप से कमजोर')) return 'EWS';
-  if (upper.includes('GENERAL') || upper.includes('OPEN CATEGORY') || upper.includes('सामान्य')) return 'General';
+  if (upper.includes('GENERAL') || upper.includes('OPEN CATEGORY') || upper.includes('பொதுப் பிரிவு')) return 'General';
   return '';
 }
 
@@ -216,7 +282,7 @@ function parseDisability(text: string): { percentage?: number; type?: string } {
 
 function parseAddress(text: string): string {
   const patterns = [
-    /(?:Address|Full Address|முகவரி|पता|ವಿಳಾಸ|చిరునామా|മേൽവിലാസം)\s*[:\-–]?\s*([A-Za-z0-9\s,.\/-]{10,120})/i,
+    /(?:Address|Full Address|முகவரி|पता|చిరునామా|മേൽവിലാസം|સરનામું)\s*[:\-–]?\s*([A-Za-z0-9\s,.\/-]{10,120})/i,
     /(?:Village|Taluk|District|Pin\s*Code|Pincode)[\s\S]{5,80}?(?:\d{6})/i
   ];
   for (const p of patterns) {
@@ -235,7 +301,7 @@ function parseGenericDocNumber(text: string, docType: string): string {
     const match = cleaned.match(/\b((?:TN[-/]?\d{10,14})|(?:(?:INC|COMM|RES|FGC|REV)[-/][A-Z0-9/]{6,16}))\b/i);
     if (match) return match[1].toUpperCase();
   }
-  const genMatch = cleaned.match(/(?:Certificate\s*No|Reg\s*No|Application\s*No|Ref\s*No|Doc\s*No|சான்றிதழ்\s*எண்|प्रमाण\s*पत्र\s*क्रमांक)[.:\s]+([A-Z0-9\/-]{6,24})/i);
+  const genMatch = cleaned.match(/(?:Certificate\s*No|Reg\s*No|Application\s*No|Ref\s*No|Doc\s*No|சான்றிதழ்\s*எண்|प्रमाणपत्र\s*संख्या)[.:\s]+([A-Z0-9\/-]{6,24})/i);
   return genMatch ? genMatch[1].trim() : '';
 }
 
@@ -245,14 +311,14 @@ function detectDocumentType(text: string, expectedType: DocumentRecord['type']):
   detectedType: string;
 } {
   const upper = text.toUpperCase();
-  const hasAadhaar = upper.includes('UIDAI') || upper.includes('AADHAAR') || upper.includes('UNIQUE IDENTIFICATION') || upper.includes('आधार') || upper.includes('ஆதார்') || /\b\d{4}\s\d{4}\s\d{4}\b/.test(text);
+  const hasAadhaar = upper.includes('UIDAI') || upper.includes('AADHAAR') || upper.includes('UNIQUE IDENTIFICATION') || upper.includes('ஆதார்') || /\b\d{4}\s\d{4}\s\d{4}\b/.test(text);
   const hasPAN = upper.includes('INCOME TAX') || upper.includes('PERMANENT ACCOUNT NUMBER') || /\b[A-Z]{5}[0-9]{4}[A-Z]\b/.test(text);
-  const hasIncome = upper.includes('INCOME CERTIFICATE') || upper.includes('ANNUAL INCOME') || upper.includes('வருமானச் சான்றிதழ்') || upper.includes('आय प्रमाण पत्र');
-  const hasCommunity = upper.includes('COMMUNITY CERTIFICATE') || upper.includes('CASTE CERTIFICATE') || upper.includes('சாதிச் சான்றிதழ்') || upper.includes('जाति प्रमाण पत्र');
+  const hasIncome = upper.includes('INCOME CERTIFICATE') || upper.includes('ANNUAL INCOME') || upper.includes('வருமானச் சான்றிதழ்') || upper.includes('आय प्रमाणपत्र');
+  const hasCommunity = upper.includes('COMMUNITY CERTIFICATE') || upper.includes('CASTE CERTIFICATE') || upper.includes('சாதிச் சான்றிதழ்') || upper.includes('जाति प्रमाणपत्र');
   const hasRation = upper.includes('RATION CARD') || upper.includes('FAIR PRICE') || upper.includes('குடும்ப அட்டை') || upper.includes('राशन कार्ड');
   const hasVoter = upper.includes('ELECTION COMMISSION') || upper.includes('ELECTOR') || upper.includes('VOTER') || /\b[A-Z]{3}[0-9]{7}\b/.test(text);
   const hasDisability = upper.includes('DISABILITY') || upper.includes('UDID') || upper.includes('மாற்றுத்திறனாளி') || upper.includes('दिव्यांग');
-  const hasBirth = upper.includes('BIRTH CERTIFICATE') || upper.includes('பிறப்புச் சான்றிதழ்') || upper.includes('जन्म प्रमाण पत्र');
+  const hasBirth = upper.includes('BIRTH CERTIFICATE') || upper.includes('பிறப்புச் சான்றிதழ்') || upper.includes('जन्म प्रमाणपत्र');
 
   const detected: string = (hasAadhaar ? 'Aadhaar'
     : hasPAN ? 'PAN'
@@ -273,22 +339,51 @@ function detectDocumentType(text: string, expectedType: DocumentRecord['type']):
 
 /**
  * Intelligent OCR Scan supporting text-based PDFs, scanned image PDFs, multi-page PDFs, and images.
+ * Guarantees bounded timeouts, normalized language codes, safe retries, and comprehensive error reporting.
  */
 export async function performOCRScan(
   file: File,
   expectedType: DocumentRecord['type'] | 'Unknown',
-  lang: string = 'eng'
+  lang: string = 'eng',
+  onProgress?: (stage: 'uploading' | 'processing' | 'extracting', elapsedSeconds: number) => void
 ): Promise<OCRScanResult> {
+  const startTime = Date.now();
+  const getElapsed = () => Math.max(1, Math.round((Date.now() - startTime) / 1000));
+
+  // 1. Validate File Size, MIME, and Non-Empty content
+  const validation = validateDocumentFile(file);
+  if (!validation.isValid) {
+    return {
+      docType: expectedType === 'Unknown' ? 'Aadhaar' : expectedType,
+      docNumber: '',
+      extractedFields: { confidenceScore: 0 },
+      isValidDocType: false,
+      detectedTypeLabel: 'File Validation Failed',
+      rawTextPreview: validation.error || 'Invalid file format or size.',
+      status: 'FAILED',
+      errorMessage: validation.error,
+      canRetry: false,
+      elapsedSeconds: getElapsed()
+    };
+  }
+
+  const normalizedLang = getTesseractLang(lang);
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-  const isImage = file.type.startsWith('image/');
+  const isImage = file.type.startsWith('image/') || /\.(jpe?g|png)$/i.test(file.name);
   let rawText = '';
   let confidence = 75;
   let pageCount = 1;
 
-  // 1. PDF Processing Pipeline (Embedded text extraction + scanned image page rendering fallback)
+  onProgress?.('processing', getElapsed());
+
+  // 2. PDF Processing Pipeline (Embedded text extraction + scanned image page rendering fallback)
   if (isPdf) {
     try {
-      const pdfRes = await extractPDFTextAndImages(file);
+      const pdfRes = await withTimeout(
+        extractPDFTextAndImages(file),
+        15000,
+        'PDF document processing timed out after 15 seconds.'
+      );
       pageCount = pdfRes.pageCount || 1;
 
       if (pdfRes.error) {
@@ -297,9 +392,14 @@ export async function performOCRScan(
           docNumber: '',
           extractedFields: { confidenceScore: 0 },
           isValidDocType: false,
-          detectedTypeLabel: pdfRes.isEncrypted ? 'Password-Protected PDF' : 'Invalid PDF Document',
+          detectedTypeLabel: pdfRes.isEncrypted ? 'Password-Protected PDF' : 'Unreadable PDF Document',
           rawTextPreview: pdfRes.error,
-          pageCount
+          pageCount,
+          status: pdfRes.isEncrypted ? 'FAILED' : 'UNREADABLE',
+          errorMessage: pdfRes.error,
+          isEncrypted: pdfRes.isEncrypted,
+          canRetry: !pdfRes.isEncrypted,
+          elapsedSeconds: getElapsed()
         };
       }
 
@@ -308,13 +408,24 @@ export async function performOCRScan(
         confidence = 90;
       }
 
-      // If scanned pages exist, apply Tesseract OCR
-      if (pdfRes.pageImages && pdfRes.pageImages.length > 0) {
+      // If scanned pages exist and embedded text is insufficient, apply Tesseract OCR
+      if (!rawText && pdfRes.pageImages && pdfRes.pageImages.length > 0) {
+        onProgress?.('extracting', getElapsed());
+        let worker: any = null;
         try {
-          const worker = await createWorker(lang || 'eng');
-          for (let p = 0; p < pdfRes.pageImages.length; p++) {
+          worker = await withTimeout(
+            createWorker(normalizedLang),
+            10000,
+            `OCR worker initialization timed out for language ${normalizedLang}.`
+          );
+          const maxPages = Math.min(pdfRes.pageImages.length, 3);
+          for (let p = 0; p < maxPages; p++) {
             const pageDataUrl = pdfRes.pageImages[p];
-            const ret = await worker.recognize(pageDataUrl);
+            const ret: any = await withTimeout<any>(
+              worker.recognize(pageDataUrl),
+              10000,
+              `Page ${p + 1} OCR extraction timed out.`
+            );
             const pageText = ret.data.text || '';
             if (pageText.trim().length > 0) {
               rawText += `\n--- Page ${p + 1} (Scanned OCR) ---\n${pageText}`;
@@ -323,45 +434,66 @@ export async function performOCRScan(
               }
             }
           }
-          await worker.terminate();
-        } catch (tessErr) {
-          console.warn('[OCR Service] PDF page image OCR fallback note:', tessErr);
+        } catch (tessErr: any) {
+          console.warn('[OCR Service] PDF page image OCR fallback note:', tessErr.message || tessErr);
+        } finally {
+          if (worker) {
+            await worker.terminate().catch(() => {});
+          }
         }
       }
-    } catch (pdfErr) {
-      console.warn('[OCR Service] Client-side PDF processing note:', pdfErr);
+    } catch (pdfErr: any) {
+      console.warn('[OCR Service] Client-side PDF processing note:', pdfErr.message || pdfErr);
     }
   }
 
-  // 2. Image Processing Pipeline
-  if (isImage) {
+  // 3. Image Processing Pipeline
+  if (isImage && !rawText) {
+    onProgress?.('extracting', getElapsed());
+    let worker: any = null;
     try {
-      const worker = await createWorker(lang || 'eng');
-      const ret = await worker.recognize(file);
-      await worker.terminate();
+      worker = await withTimeout(
+        createWorker(normalizedLang),
+        12000,
+        `OCR worker initialization timed out for language ${normalizedLang}.`
+      );
+      const ret: any = await withTimeout<any>(
+        worker.recognize(file),
+        15000,
+        'Image OCR recognition timed out after 15 seconds.'
+      );
       rawText = normalizeIndicNumerals(ret.data.text || '');
       confidence = typeof ret.data.confidence === 'number' ? Math.round(ret.data.confidence) : 75;
-    } catch (clientErr) {
-      console.warn('[OCR Service] Client-side Tesseract.js note:', clientErr);
+    } catch (clientErr: any) {
+      console.warn('[OCR Service] Client-side Tesseract.js note:', clientErr.message || clientErr);
+    } finally {
+      if (worker) {
+        await worker.terminate().catch(() => {});
+      }
     }
   }
 
-  // 3. Fallback / Synchronize with Backend upload endpoint if authenticated
+  // 4. Synchronize with Backend upload endpoint if authenticated
   if (!rawText && typeof window !== 'undefined') {
     const token = localStorage.getItem('govscheme_token');
     if (token) {
       try {
+        onProgress?.('uploading', getElapsed());
         const formData = new FormData();
         formData.append('document', file);
         formData.append('documentType', String(expectedType === 'Unknown' ? 'Aadhaar' : (expectedType || 'Aadhaar')));
-        formData.append('language', lang || 'eng');
+        formData.append('language', normalizedLang);
 
         const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
         const resp = await fetch(`${apiUrl}/api/documents/upload`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
-          body: formData
-        });
+          body: formData,
+          signal: controller.signal
+        }).finally(() => clearTimeout(timeoutId));
 
         if (resp.ok) {
           const data = await resp.json();
@@ -369,6 +501,7 @@ export async function performOCRScan(
             const doc = data.document;
             const ext = doc.extractedFields || {};
             const docNum = ext.docNumber || '';
+            const isOcrSuccess = doc.ocrStatus !== 'FAILED';
             return {
               docType: (doc.documentType || expectedType) as DocumentRecord['type'],
               docNumber: docNum,
@@ -385,26 +518,48 @@ export async function performOCRScan(
                 category: ext.category,
                 address: ext.address,
                 disabilityPercentage: ext.disabilityPercentage,
-                confidenceScore: doc.fieldConfidences?.overall || 85,
+                confidenceScore: doc.fieldConfidences?.overall || (isOcrSuccess ? 85 : 0),
                 issueDate: ext.issueDate,
                 issuingAuthority: ext.issuingAuthority,
                 fieldConfidences: doc.fieldConfidences,
                 fieldFlags: doc.fieldFlags
               },
-              isValidDocType: doc.verificationStatus === 'CHECKS_PASSED' || (doc.ocrStatus !== 'FAILED'),
-              detectedTypeLabel: `${doc.documentType || expectedType} (Processed ✓)`,
-              rawTextPreview: doc.rawOcrText ? doc.rawOcrText.slice(0, 300) : 'Document text extracted successfully.'
+              isValidDocType: doc.verificationStatus === 'CHECKS_PASSED' || isOcrSuccess,
+              detectedTypeLabel: isOcrSuccess
+                ? `${doc.documentType || expectedType} (Processed ✓)`
+                : `${doc.documentType || expectedType} (Manual Review Required)`,
+              rawTextPreview: doc.rawOcrText ? doc.rawOcrText.slice(0, 300) : 'Document stored. Automated text extraction unavailable.',
+              status: isOcrSuccess ? 'COMPLETED' : 'EMPTY_OUTPUT',
+              canRetry: true,
+              elapsedSeconds: getElapsed()
             };
           }
         }
-      } catch (uploadErr) {
-        console.warn('[OCR Service] Backend upload OCR error:', uploadErr);
+      } catch (uploadErr: any) {
+        console.warn('[OCR Service] Backend upload note:', uploadErr.message || uploadErr);
       }
     }
   }
 
-  // 4. Parse structured fields from extracted rawText
-  const normalizedText = normalizeIndicNumerals(rawText || '');
+  // 5. Check for Empty or Unreadable Document Content
+  const normalizedText = normalizeIndicNumerals(rawText || '').trim();
+  if (!normalizedText || normalizedText.length < 8) {
+    return {
+      docType: expectedType === 'Unknown' ? 'Aadhaar' : expectedType,
+      docNumber: '',
+      extractedFields: { confidenceScore: 0 },
+      isValidDocType: false,
+      detectedTypeLabel: `${expectedType} (No Text Detected)`,
+      rawTextPreview: 'No machine-readable text could be identified. The document image may be blurred, faint, or low resolution. You may retry or enter details manually.',
+      pageCount,
+      status: 'EMPTY_OUTPUT',
+      errorMessage: 'No readable text identified in document.',
+      canRetry: true,
+      elapsedSeconds: getElapsed()
+    };
+  }
+
+  // 6. Parse structured fields from extracted normalized text
   const detected = detectDocumentType(normalizedText, expectedType === 'Unknown' ? 'Aadhaar' : expectedType);
   const finalDocType = expectedType === 'Unknown' ? (detected.detectedType as DocumentRecord['type']) : expectedType;
 
@@ -442,10 +597,13 @@ export async function performOCRScan(
       address: address || undefined,
       disabilityPercentage: disability.percentage,
       disabilityType: disability.type,
-      confidenceScore: rawText ? confidence : 0
+      confidenceScore: Math.max(confidence, 60)
     },
-    isValidDocType: Boolean(rawText && rawText.length > 10),
-    detectedTypeLabel: rawText ? `${finalDocType} (OCR Complete)` : `${finalDocType} (Manual Entry Required)`,
-    rawTextPreview: rawText ? rawText.slice(0, 400) : 'No machine-readable text detected. You may enter details manually.'
+    isValidDocType: detected.isValid || Boolean(docNumber || fullName),
+    detectedTypeLabel: detected.label,
+    rawTextPreview: normalizedText.slice(0, 400),
+    status: 'COMPLETED',
+    canRetry: true,
+    elapsedSeconds: getElapsed()
   };
 }

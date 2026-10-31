@@ -6,6 +6,39 @@ import { createWorker } from 'tesseract.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const TESSERACT_LANG_MAP = {
+  en: 'eng',
+  eng: 'eng',
+  hi: 'hin',
+  hin: 'hin',
+  ta: 'tam',
+  tam: 'tam',
+  te: 'tel',
+  tel: 'tel',
+  ml: 'mal',
+  mal: 'mal',
+  mr: 'mar',
+  mar: 'mar',
+  gu: 'guj',
+  guj: 'guj'
+};
+
+export function getTesseractLang(code) {
+  if (!code) return 'eng';
+  const clean = String(code).toLowerCase().trim();
+  return TESSERACT_LANG_MAP[clean] || 'eng';
+}
+
+function withTimeout(promise, timeoutMs, timeoutMsg) {
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(timeoutMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
   'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
@@ -177,8 +210,9 @@ export async function extractRawTextFromFile(filePath, mimeType, lang = 'eng') {
         for (const imgBuf of images.slice(0, 5)) {
           let worker = null;
           try {
-            worker = await createWorker(lang || 'eng');
-            const ret = await worker.recognize(imgBuf);
+            const normalizedLang = getTesseractLang(lang);
+            worker = await withTimeout(createWorker(normalizedLang), 8000, 'Worker init timeout');
+            const ret = await withTimeout(worker.recognize(imgBuf), 8000, 'Page OCR timeout');
             await worker.terminate();
             worker = null;
             if (ret.data.text && ret.data.text.trim()) {

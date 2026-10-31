@@ -24,6 +24,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { LanguageCode, UserProfile, Scheme } from '../types';
+import { HomepageUserGuidance } from './HomepageUserGuidance';
 
 interface LandingPageProps {
   currentLang: LanguageCode;
@@ -98,6 +99,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenAuth
 }) => {
   const { t } = useTranslation();
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = React.useState(false);
+  const isLaunchingWalkthroughRef = React.useRef(false);
+
+  const handleLaunchWalkthrough = () => {
+    if (isWalkthroughOpen) return;
+    if (isLaunchingWalkthroughRef.current) return;
+    isLaunchingWalkthroughRef.current = true;
+    setIsWalkthroughOpen(true);
+    // Smooth scroll anchor to how-to-use-govscheme
+    const el = document.getElementById('how-to-use-govscheme');
+    if (el && window.innerWidth < 768) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+    setTimeout(() => {
+      isLaunchingWalkthroughRef.current = false;
+    }, 400);
+  };
 
   // 8 Specific Scheme Categories with exact specified hex accent colours
   const categories = [
@@ -152,21 +170,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   )}
                 </div>
               </div>
-              <MagneticButton
-                onClick={() => onNavigateTab('schemes')}
-                className="group relative overflow-hidden rounded-full bg-[#12365B] dark:bg-white p-2 flex items-center justify-between shadow-lg shrink-0 w-full sm:w-auto min-w-[240px]"
-              >
-                <span className="text-white dark:text-black font-bold text-sm pl-6 pr-4">
-                  {t('viewMyRecommendations', 'View My Recommendations')}
-                </span>
-                <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform group-hover:scale-105">
-                  <ArrowRight className="w-5 h-5 text-white dark:text-black group-hover:translate-x-1 transition-transform" />
-                </div>
-              </MagneticButton>
+              <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleLaunchWalkthrough}
+                  className="px-5 py-3 rounded-full border-2 border-[#2563EB] text-[#2563EB] hover:bg-[#2563EB]/5 font-bold text-sm flex items-center justify-center gap-2 transition-all min-h-[44px] w-full sm:w-auto focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                  aria-label={t('startWalkthroughBtn', 'Show Me How (Interactive Guide)')}
+                >
+                  <Sparkles className="w-4 h-4 text-[#2563EB]" />
+                  <span>{t('startWalkthroughBtn', 'Show Me How (Interactive Guide)')}</span>
+                </button>
+                <MagneticButton
+                  onClick={() => onNavigateTab('schemes')}
+                  className="group relative overflow-hidden rounded-full bg-[#12365B] dark:bg-white p-2 flex items-center justify-between shadow-lg shrink-0 w-full sm:w-auto min-w-[220px]"
+                >
+                  <span className="text-white dark:text-black font-bold text-sm pl-6 pr-4">
+                    {t('viewMyRecommendations', 'View My Recommendations')}
+                  </span>
+                  <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center transition-transform group-hover:scale-105">
+                    <ArrowRight className="w-5 h-5 text-white dark:text-black group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </MagneticButton>
+              </div>
             </motion.section>
 
             {/* 2. COMPLETE YOUR PROFILE CARD/BOX */}
-            <motion.section
+            <motion.section id="walkthrough-target-2"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.05 }}
@@ -264,6 +293,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 <button
                   type="button"
+                  onClick={handleLaunchWalkthrough}
+                  className="px-6 py-3.5 rounded-2xl border-2 border-[#2563EB] text-[#2563EB] hover:bg-[#2563EB]/5 font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                  aria-label={t('startWalkthroughBtn', 'Show Me How (Interactive Guide)')}
+                >
+                  <Sparkles className="w-4 h-4 text-[#2563EB]" />
+                  <span>{t('startWalkthroughBtn', 'Show Me How (Interactive Guide)')}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => onNavigateTab('schemes')}
                   className="px-6 py-3.5 rounded-2xl bg-white dark:bg-[#111827] border border-[#DCE5EF] dark:border-white/10 text-[#12365B] dark:text-white font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition flex items-center gap-2 cursor-pointer"
                 >
@@ -328,7 +367,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         )}
 
         {/* 3. BROWSE SCHEMES BY CATEGORY (8 CARDS - POSITIONED IMMEDIATELY AFTER COMPLETE YOUR PROFILE) */}
-        <section className="space-y-6">
+        <section id="walkthrough-target-1" className="space-y-6 scroll-mt-24 transition-all duration-300">
           <div className="text-center space-y-2">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#12365B] dark:text-white font-sans">
               {t('exploreByCategoryTitle', 'Explore Government Schemes by Category')}
@@ -447,7 +486,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Quick Action Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div
-            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            id="walkthrough-target-4"
+            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer scroll-mt-24 transition-all duration-300"
             onClick={() => onNavigateTab('tracker')}
           >
             <div className="w-12 h-12 bg-[#2563EB]/10 rounded-full flex items-center justify-center mb-4">
@@ -458,7 +498,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           <div
-            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            id="walkthrough-target-5"
+            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer scroll-mt-24 transition-all duration-300"
             onClick={onTalkToAI}
           >
             <div className="w-12 h-12 bg-[#9333EA]/10 rounded-full flex items-center justify-center mb-4">
@@ -469,7 +510,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           <div
-            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            id="walkthrough-target-6"
+            className="bg-white dark:bg-[#0F1B2D] p-6 rounded-2xl border border-[#DCE5EF] dark:border-white/5 shadow-sm hover:shadow-md transition-shadow cursor-pointer scroll-mt-24 transition-all duration-300"
             onClick={() => onNavigateTab('kiosk')}
           >
             <div className="w-12 h-12 bg-[#F59E0B]/10 rounded-full flex items-center justify-center mb-4">
@@ -519,6 +561,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             ))}
           </div>
         </section>
+
+        {/* Citizen User Guidance & Interactive Walkthrough */}
+        <div id="how-to-use-govscheme">
+          <HomepageUserGuidance
+            onNavigateTab={onNavigateTab}
+            onGetStarted={onGetStarted}
+            onTalkToAI={onTalkToAI}
+            isWalkthroughOpen={isWalkthroughOpen}
+            onToggleWalkthrough={setIsWalkthroughOpen}
+          />
+        </div>
 
         {/* Trust Indicators */}
         <section className="pt-8 border-t border-[#DCE5EF] dark:border-white/10">

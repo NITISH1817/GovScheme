@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   X,
@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   AlertCircle,
   Copy,
-  Check
+  Check,
+  Clock
 } from 'lucide-react';
 import { DocumentRecord, UserProfile } from '../types';
 import { performOCRScan, OCRScanResult } from '../services/ocrService';
@@ -52,6 +53,8 @@ interface OCRScannerProps {
   onSaveDocument: (doc: DocumentRecord, autoFillFields?: Partial<UserProfile>, file?: File | null) => void;
 }
 
+export type OCRStage = 'idle' | 'uploading' | 'uploaded' | 'processing' | 'extracting' | 'completed' | 'failed' | 'manual';
+
 export const OCRScanner: React.FC<OCRScannerProps> = ({
   isOpen,
   onClose,
@@ -73,6 +76,12 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
   const [scanResult, setScanResult] = useState<OCRScanResult | null>(null);
   const [manualMode, setManualMode] = useState(false);
   const [rawTextCopied, setRawTextCopied] = useState(false);
+  const [ocrStage, setOcrStage] = useState<OCRStage>('idle');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [failureReason, setFailureReason] = useState<string>('');
+  const isScanningRef = useRef(false);
+  const timerRef = useRef<any>(null);
+  const isCancelledRef = useRef(false);
 
   // Field Review States
   const [docNumber, setDocNumber] = useState('');
@@ -125,6 +134,8 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     setSelectedFile(file);
     setScanResult(null);
     setManualMode(false);
+    setFailureReason('');
+    setOcrStage('uploaded');
     if (file.type.startsWith('image/')) {
       const url = URL.createObjectURL(file);
       setFilePreviewUrl(url);
@@ -139,12 +150,53 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
     }
   };
 
+  const handleCancelScan = () => {
+    isCancelledRef.current = true;
+    if (timerRef.current) clearInterval(timerRef.current);
+    isScanningRef.current = false;
+    setIsScanning(false);
+    setOcrStage(selectedFile ? 'uploaded' : 'idle');
+  };
+
   const handleStartScan = async () => {
     if (!selectedFile) return;
+    if (isScanningRef.current) return;
+    isScanningRef.current = true;
+    isCancelledRef.current = false;
     setIsScanning(true);
+    setOcrStage('uploading');
+    setFailureReason('');
+    setElapsedSeconds(0);
+
+    const startTime = Date.now();
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.max(1, Math.round((Date.now() - startTime) / 1000)));
+    }, 1000);
+
     try {
-      const res = await performOCRScan(selectedFile, selectedType, selectedLanguage);
+      const res = await performOCRScan(
+        selectedFile,
+        selectedType,
+        selectedLanguage,
+        (stage, elapsed) => {
+          if (!isCancelledRef.current) {
+            setOcrStage(stage);
+            setElapsedSeconds(elapsed);
+          }
+        }
+      );
+
+      if (isCancelledRef.current) return;
+
+      if (res.status === 'FAILED' || res.status === 'UNREADABLE') {
+        setFailureReason(res.errorMessage || t('ocrFailureExplanation', 'The document could not be read clearly. You can retry with enhanced contrast or enter your information manually.'));
+        setOcrStage('failed');
+        return;
+      }
+
       setScanResult(res);
+      setOcrStage('completed');
       setDocNumber(res.docNumber || '');
       setFullName(res.extractedFields.fullName || '');
       setDob(res.extractedFields.dob || '');
@@ -172,10 +224,15 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
 
       // Default consent to true if confidence is high, but citizen can review
       setCitizenConsentApproved(res.extractedFields.confidenceScore >= 60);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[OCRScanner] Scan failed:', err);
-      setManualMode(true);
+      if (!isCancelledRef.current) {
+        setFailureReason(err?.message || t('ocrFailureExplanation', 'The document could not be read clearly. You can retry with enhanced contrast or enter your information manually.'));
+        setOcrStage('failed');
+      }
     } finally {
+      if (timerRef.current) clearInterval(timerRef.current);
+      isScanningRef.current = false;
       setIsScanning(false);
     }
   };
@@ -316,7 +373,7 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
         {/* Modal Scrollable Body */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1 text-slate-800 dark:text-slate-200 text-xs">
           {/* STEP 1: UPLOAD & SETTINGS */}
-          {!scanResult && !isScanning && !manualMode && (
+          {!scanResult && !isScanning && !manualMode && ocrStage !== 'failed' && (
             <div className="space-y-6">
               {/* Type and Language Selectors */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -449,11 +506,81 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                 <GovSchemeLogoLoader size={64} />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white font-heading">
-                AI OCR Extracting & Analyzing Document...
+                {ocrStage === 'uploading' && t('ocrStateUploading', 'Uploading document to secure processing sandbox...')}
+                {ocrStage === 'processing' && t('ocrStateProcessing', 'Analyzing document layout and extracting candidate text...')}
+                {ocrStage === 'extracting' && t('ocrStateExtracting', 'Normalizing Indic scripts and parsing eligibility fields...')}
+                {ocrStage !== 'uploading' && ocrStage !== 'processing' && ocrStage !== 'extracting' && t('ocrStateProcessing', 'Analyzing document layout and extracting candidate text...')}
               </h3>
+              <div className="flex items-center justify-center gap-2 text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 py-1.5 px-4 rounded-full max-w-xs mx-auto border border-blue-200 dark:border-blue-800">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{elapsedSeconds}s elapsed</span>
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                Normalizing Indic numerals, detecting document signatures, parsing citizen identifiers, and computing confidence scores.
+                {t('ocrExtractDetails', 'Normalizing Indic numerals, detecting document signatures, parsing citizen identifiers, and computing confidence scores.')}
               </p>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleCancelScan}
+                  className="px-4 py-2 rounded-xl border border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold text-xs transition"
+                  aria-label={t('cancelScanBtn', 'Cancel Scan')}
+                >
+                  {t('cancelScanBtn', 'Cancel Scan')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2b: DEDICATED FAILURE RECOVERY CARD */}
+          {ocrStage === 'failed' && (
+            <div className="py-8 text-center space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <div className="space-y-2 max-w-md mx-auto">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white font-heading">
+                  {t('ocrExtractionFailed', 'OCR Extraction Could Not Complete')}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {failureReason || t('ocrFailureExplanation', 'The document could not be read clearly. You can retry with enhanced contrast or enter your information manually.')}
+                </p>
+              </div>
+
+              {/* Preserved File Preview */}
+              {selectedFile && (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 max-w-md mx-auto flex items-center gap-3 text-left">
+                  <FileText className="w-8 h-8 text-slate-500 shrink-0" />
+                  <div className="overflow-hidden">
+                    <p className="font-bold text-slate-900 dark:text-white text-xs truncate">{selectedFile.name}</p>
+                    <p className="text-[11px] text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB • Preserved for manual entry</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions: Retry vs Manual */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto pt-2">
+                <button
+                  type="button"
+                  onClick={handleStartScan}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5 min-h-[44px]"
+                  aria-label={t('retryExtractionBtn', 'Retry Extraction')}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>{t('retryExtractionBtn', 'Retry Extraction')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManualMode(true);
+                    setOcrStage('manual');
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition flex items-center justify-center gap-1.5 min-h-[44px]"
+                  aria-label={t('enterDetailsManuallyBtn', 'Enter Details Manually')}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>{t('enterDetailsManuallyBtn', 'Enter Details Manually')}</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -503,8 +630,8 @@ export const OCRScanner: React.FC<OCRScannerProps> = ({
                 <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold">Trust & Integrity Notice: </span>
-                    Extracted text has passed format and pattern checks. Official legal verification requires DigiLocker or UIDAI API integration. Please review all fields carefully before approving.
+                    <span className="font-bold">{t('ocrAuthenticityNotice', 'Authenticity Notice')}: </span>
+                    {t('ocrAuthenticityDisclaimer', 'OCR extracts candidate text for your convenience. GovScheme does not certify the statutory or legal authenticity of uploaded documents.')}
                   </div>
                 </div>
               </div>
