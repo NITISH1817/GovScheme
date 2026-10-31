@@ -26,14 +26,14 @@ async function verify() {
     console.log('   Active JS bundle:', bundleUrl);
     const bundle = await get(bundleUrl);
     console.log('   Bundle HTTP:', bundle.status, '| Size:', bundle.data.length, 'bytes');
-    console.log('   Contains i18n v=22 cache tag:', bundle.data.includes('?v=22') ? 'YES' : 'NO');
+    console.log('   Contains i18n v=23 cache tag:', bundle.data.includes('?v=23') ? 'YES' : 'NO');
     console.log('   Contains step_1 translation key lookup:', bundle.data.includes('_step_') ? 'YES' : 'NO');
   }
 
   // 2. Locale JSON on Vercel
   console.log('\n2. Translation Bundles on Vercel:');
   for (const lng of ['ta', 'hi', 'te', 'ml', 'mr', 'gu', 'en']) {
-    const loc = await get(`https://govhelp.vercel.app/locales/${lng}/translation.json?v=22`);
+    const loc = await get(`https://govhelp.vercel.app/locales/${lng}/translation.json?v=23`);
     let keys = 0;
     let kki = 'N/A';
     try {
