@@ -104,6 +104,24 @@ export const App: React.FC = () => {
       } else {
         loaded = savedUser ? JSON.parse(savedUser) : (savedAdmin ? JSON.parse(savedAdmin) : null);
       }
+
+      // Seamless restore from persistent local accounts registry if govscheme_user is blank on refresh
+      if (!loaded) {
+        try {
+          const rawAccounts = localStorage.getItem('govscheme_accounts_db');
+          const lastEmail = localStorage.getItem('govscheme_last_email');
+          if (rawAccounts) {
+            const accounts = JSON.parse(rawAccounts);
+            if (lastEmail && accounts[lastEmail.toLowerCase().trim()]?.profile) {
+              loaded = accounts[lastEmail.toLowerCase().trim()].profile;
+            } else {
+              const firstEntry = Object.values(accounts)[0] as any;
+              if (firstEntry?.profile) loaded = firstEntry.profile;
+            }
+          }
+        } catch {}
+      }
+
       if (loaded && isAuthorizedAdminEmail(loaded.email)) {
         loaded.role = 'Super Admin';
       }
@@ -693,9 +711,23 @@ export const App: React.FC = () => {
             localStorage.setItem('govscheme_user', JSON.stringify(normalized));
           }
         } else if (profileRes.status === 401) {
-          localStorage.removeItem('govscheme_token');
-          localStorage.removeItem('govscheme_user');
-          setUser(null);
+          // If remote cloud token fails or expired, check if user exists in persistent local accounts
+          const savedUserRaw = localStorage.getItem('govscheme_user');
+          let hasLocalAccount = false;
+          if (savedUserRaw) {
+            try {
+              const parsed = JSON.parse(savedUserRaw);
+              if (parsed && (parsed.email || parsed.fullName)) {
+                hasLocalAccount = true;
+                setUser(parsed);
+              }
+            } catch {}
+          }
+          if (!hasLocalAccount) {
+            localStorage.removeItem('govscheme_token');
+            localStorage.removeItem('govscheme_user');
+            setUser(null);
+          }
         }
       } catch (err) {
         console.warn('Could not sync profile from cloud backend on launch:', err);

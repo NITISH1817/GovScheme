@@ -129,7 +129,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                   {t('reportIssueTitle', 'Report an Issue / Suggest Correction')}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Help keep government scheme records accurate, verified, and updated.
+                  {t('reportIssueSubtitle', 'Help keep government scheme records accurate, verified, and updated.')}
                 </p>
               </div>
             </div>
@@ -150,24 +150,24 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-xl font-extrabold text-gray-900 dark:text-white">
-                    Report Received & Logged
+                    {t('reportReceivedTitle', 'Report Received & Logged')}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Your reference tracking code is:
+                    {t('trackingCodeNotice', 'Your reference tracking code is:')}
                   </p>
                   <div className="inline-block px-4 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 font-mono font-bold text-sm text-[#1769FF]">
                     {submittedRef}
                   </div>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                  Our verification team cross-references citizen feedback against official state and central gazettes. If verified, the scheme catalogue will be updated in the next synchronization cycle.
+                  {t('reportSuccessDesc', 'Our verification team cross-references citizen feedback against official state and central gazettes. If verified, the scheme catalogue will be updated in the next synchronization cycle.')}
                 </p>
                 <div className="pt-4">
                   <button
                     onClick={handleReset}
                     className="px-6 py-2.5 rounded-xl bg-[#1769FF] hover:bg-blue-700 text-white font-bold text-xs shadow transition-colors"
                   >
-                    Done
+                    {t('doneBtn', 'Done')}
                   </button>
                 </div>
               </div>
@@ -183,34 +183,34 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 {/* Category Selection */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Issue Category *
+                    {t('issueCategoryLabel', 'Issue Category *')}
                   </label>
                   <select
                     value={category}
                     onChange={(e: any) => setCategory(e.target.value)}
                     className="w-full p-2.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-900 dark:text-white outline-none focus:border-[#1769FF]"
                   >
-                    <option value="incorrect_rule">Incorrect Eligibility Rule / Age / Income Ceiling</option>
-                    <option value="outdated_info">Outdated Scheme Details / Benefit Amount Changed</option>
-                    <option value="broken_link">Broken Official Application Portal Link (404/Error)</option>
-                    <option value="missing_scheme">Missing Government Scheme (Request Addition)</option>
-                    <option value="translation_error">Language / Multilingual Translation Error</option>
-                    <option value="privacy_security">Privacy / Security / Personal Data Concern</option>
-                    <option value="other">General Platform Feedback</option>
+                    <option value="incorrect_rule">{t('catIncorrectRule', 'Incorrect Eligibility Rule / Age / Income Ceiling')}</option>
+                    <option value="outdated_info">{t('catOutdatedInfo', 'Outdated Scheme Details / Benefit Amount Changed')}</option>
+                    <option value="broken_link">{t('catBrokenLink', 'Broken Official Application Portal Link (404/Error)')}</option>
+                    <option value="missing_scheme">{t('catMissingScheme', 'Missing Government Scheme (Request Addition)')}</option>
+                    <option value="translation_error">{t('catTranslationError', 'Language / Multilingual Translation Error')}</option>
+                    <option value="privacy_security">{t('catPrivacySecurity', 'Privacy / Security / Personal Data Concern')}</option>
+                    <option value="other">{t('catOther', 'General Platform Feedback')}</option>
                   </select>
                 </div>
 
                 {/* Related Scheme */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Affected Scheme (Optional)
+                    {t('affectedSchemeLabel', 'Affected Scheme (Optional)')}
                   </label>
                   <select
                     value={selectedSchemeId}
                     onChange={(e) => setSelectedSchemeId(e.target.value)}
                     className="w-full p-2.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-900 dark:text-white outline-none focus:border-[#1769FF]"
                   >
-                    <option value="">-- General / Not Scheme Specific --</option>
+                    <option value="">{t('generalSchemeOption', '-- General / Not Scheme Specific --')}</option>
                     {schemes.map(s => (
                       <option key={s.id} value={s.id}>
                         {s.name} ({s.state})
@@ -222,13 +222,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 {/* Issue Description */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Description of Issue *
+                    {t('descriptionLabel', 'Description of Issue *')}
                   </label>
                   <textarea
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe what is incorrect, broken, or outdated..."
+                    placeholder={t('descriptionPlaceholder', 'Describe what is incorrect, broken, or outdated...')}
                     required
                     className="w-full p-2.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-900 dark:text-white outline-none focus:border-[#1769FF]"
                   />
@@ -237,13 +237,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 {/* Suggested Correction */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Suggested Correction (Optional)
+                    {t('suggestedCorrectionLabel', 'Suggested Correction (Optional)')}
                   </label>
                   <input
                     type="text"
                     value={suggestedCorrection}
                     onChange={(e) => setSuggestedCorrection(e.target.value)}
-                    placeholder="e.g. Income ceiling has been raised to ₹2,50,000 as per latest GO"
+                    placeholder={t('suggestedCorrectionPlaceholder', 'e.g. Income ceiling has been raised to ₹2,50,000 as per latest GO')}
                     className="w-full p-2.5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-900 dark:text-white outline-none focus:border-[#1769FF]"
                   />
                 </div>
@@ -251,7 +251,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 {/* Supporting Source URL */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Official Government Gazette / Order Link (Optional)
+                    {t('officialProofLabel', 'Official Government Gazette / Order Link (Optional)')}
                   </label>
                   <div className="relative">
                     <input
@@ -268,7 +268,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 {/* Citizen Email */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Your Email (Optional, if you wish to receive update notification)
+                    {t('yourEmailLabel', 'Your Email (Optional, if you wish to receive update notification)')}
                   </label>
                   <input
                     type="email"
@@ -286,7 +286,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                     onClick={onClose}
                     className="px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-semibold transition"
                   >
-                    Cancel
+                    {t('cancelBtn', 'Cancel')}
                   </button>
                   <button
                     type="submit"
@@ -294,7 +294,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                     className="px-6 py-2.5 rounded-xl bg-[#1769FF] hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow flex items-center gap-1.5 transition"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                    {isSubmitting ? t('submittingBtn', 'Submitting...') : t('submitReportBtn', 'Submit Report')}
                   </button>
                 </div>
               </form>

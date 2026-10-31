@@ -960,7 +960,10 @@ const handleResponse = async (response: Response) => {
       localStorage.removeItem('adminUser');
       window.location.href = '/#admin';
     } else {
-      localStorage.removeItem('govscheme_token');
+      const savedUser = localStorage.getItem('govscheme_user');
+      if (!savedUser) {
+        localStorage.removeItem('govscheme_token');
+      }
     }
     throw new Error('Session expired. Please log in again.');
   }

@@ -69,10 +69,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onOpenF
                 {t('aboutPurposeTitle', 'Our Mission & Objective')}
               </h3>
               <p className="text-xs sm:text-sm">
-                GovScheme AI was built to solve the widespread challenge of government scheme opacity in India. Over 800+ welfare initiatives are launched by Central and State Governments, yet millions of eligible citizens—especially smallholder farmers, rural women, marginalized categories, and students in Tamil Nadu and across India—miss out due to scattered information, complex criteria, and language barriers.
+                {t('aboutMissionP1', 'GovScheme AI was built to solve the widespread challenge of government scheme opacity in India. Over 800+ welfare initiatives are launched by Central and State Governments, yet millions of eligible citizens—especially smallholder farmers, rural women, marginalized categories, and students in Tamil Nadu and across India—miss out due to scattered information, complex criteria, and language barriers.')}
               </p>
               <p className="text-xs sm:text-sm">
-                We organize publicly available welfare guidelines into a structured, multilingual knowledge base powered by deterministic eligibility rules and explainable AI recommendations.
+                {t('aboutMissionP2', 'We organize publicly available welfare guidelines into a structured, multilingual knowledge base powered by deterministic eligibility rules and explainable AI recommendations.')}
               </p>
             </section>
 
@@ -83,7 +83,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onOpenF
                 {t('aboutMethodologyTitle', 'How Eligibility is Determined')}
               </h3>
               <p className="text-xs sm:text-sm">
-                We reject "black-box" decision making. Our platform uses a <strong>deterministic, rule-based eligibility engine</strong> that evaluates exact criteria (age bounds, annual income ceilings, district/state domicile, education tier, and required documents) against authoritative scheme rules. AI is used solely for natural-language search, semantic term mapping, and multilingual translation—never to invent eligibility requirements.
+                {t('aboutMethodologyDesc', 'We reject "black-box" decision making. Our platform uses a deterministic, rule-based eligibility engine that evaluates exact criteria (age bounds, annual income ceilings, district/state domicile, education tier, and required documents) against authoritative scheme rules. AI is used solely for natural-language search, semantic term mapping, and multilingual translation—never to invent eligibility requirements.')}
               </p>
             </section>
 
@@ -94,16 +94,16 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onOpenF
                 {t('aboutSourcingTitle', 'Data Sources & Verification')}
               </h3>
               <p className="text-xs sm:text-sm">
-                Every scheme on GovScheme links directly to traceable official sources:
+                {t('aboutSourcingDesc', 'Every scheme on GovScheme links directly to traceable official sources:')}
               </p>
               <ul className="list-disc pl-5 space-y-1 text-xs">
-                <li>Official Government of India portal: <a href="https://www.myscheme.gov.in" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold">myScheme.gov.in</a></li>
-                <li>Government of Tamil Nadu portal: <a href="https://www.tn.gov.in" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold">tn.gov.in</a></li>
-                <li>Central Ministries: Agriculture (pmkisan.gov.in), Health (pmjay.gov.in), Education (scholarships.gov.in)</li>
-                <li>Designated statutory agencies: Protean eGov, DDRC, and District Collectorates</li>
+                <li><a href="https://www.myscheme.gov.in" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold">{t('aboutSourcingPoint1', 'Official Government of India portal: myScheme.gov.in')}</a></li>
+                <li><a href="https://www.tn.gov.in" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold">{t('aboutSourcingPoint2', 'Government of Tamil Nadu portal: tn.gov.in')}</a></li>
+                <li>{t('aboutSourcingPoint3', 'Central Ministries: Agriculture (pmkisan.gov.in), Health (pmjay.gov.in), Education (scholarships.gov.in)')}</li>
+                <li>{t('aboutSourcingPoint4', 'Designated statutory agencies: Protean eGov, DDRC, and District Collectorates')}</li>
               </ul>
               <p className="text-xs">
-                Each record displays its <strong>Last Verified Date</strong>, <strong>Implementing Department</strong>, and <strong>Data Version</strong>. Records older than 90 days are flagged for re-verification.
+                {t('aboutVerificationNote', 'Each record displays its Last Verified Date, Implementing Department, and Data Version. Records older than 90 days are flagged for re-verification.')}
               </p>
             </section>
 
@@ -114,9 +114,9 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onOpenF
                 {t('platformLimitationsHeader', 'Important Limitations to Note')}
               </h4>
               <ul className="space-y-1.5 text-xs text-gray-600 dark:text-gray-300">
-                <li>• GovScheme is <strong>not an application processing body</strong>. We do not approve, process, or release financial subsidies.</li>
-                <li>• No government employee or officer is bound by automated assessments generated on this platform.</li>
-                <li>• Citizens must submit applications through verified official government portals or at their nearest Common Service Centre (CSC) / e-Sevai centre.</li>
+                <li>• {t('limitationsPoint1', 'GovScheme is not an application processing body. We do not approve, process, or release financial subsidies.')}</li>
+                <li>• {t('limitationsPoint2', 'No government employee or officer is bound by automated assessments generated on this platform.')}</li>
+                <li>• {t('limitationsPoint3', 'Citizens must submit applications through verified official government portals or at their nearest Common Service Centre (CSC) / e-Sevai centre.')}</li>
               </ul>
             </section>
           </div>
@@ -130,7 +130,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onOpenF
               }}
               className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1"
             >
-              Report an Issue or Incorrect Scheme Information &rarr;
+              {t('reportAnIssueLink', 'Report an Issue or Incorrect Scheme Information →')}
             </button>
             <button
               onClick={onClose}

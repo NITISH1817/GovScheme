@@ -197,6 +197,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         token: token || accounts[key]?.token || profile.token || `token_${Date.now()}`
       };
       localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
+      localStorage.setItem('govscheme_last_email', key);
     } catch (e) {
       console.warn('Failed to save to local accounts database', e);
     }
