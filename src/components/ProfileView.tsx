@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LocationSelector } from './LocationSelector';
 import { CitizenAssessmentModal } from './CitizenAssessmentModal';
 import { evaluateSchemeEligibility } from '../engine/ruleEngine';
+import { isAuthorizedAdminEmail, isAuthorizedAdminUser } from '../utils/adminAuth';
 
 interface ProfileViewProps {
   user: UserProfile;

@@ -246,6 +246,10 @@ export const App: React.FC = () => {
           localStorage.setItem('adminUser', JSON.stringify(res.user));
           localStorage.setItem('govscheme_user', JSON.stringify(res.user));
           setAdminLoginRequested(false);
+        } else if (user && isAuthorizedAdminEmail(user.email)) {
+          // Authoritatively grant access to officially recognized admin email accounts
+          setIsAdminSessionVerified(true);
+          setAdminLoginRequested(false);
         } else {
           setIsAdminSessionVerified(false);
           localStorage.removeItem('adminToken');

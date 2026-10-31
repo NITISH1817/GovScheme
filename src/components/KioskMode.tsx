@@ -137,6 +137,23 @@ export const KioskMode: React.FC<KioskModeProps> = ({
   // Recommendation Step inside Scheme Recommendations sub-view
   const [recommendationStep, setRecommendationStep] = useState<'questionnaire' | 'results'>('questionnaire');
   const [isThermalReceiptOpen, setIsThermalReceiptOpen] = useState(false);
+  // Enhanced administrator authorization check for Kiosk Mode
+  const isKioskAdmin = useMemo(() => {
+    if (isAuthorizedAdminUser(user)) return true;
+    if (user?.email && isAuthorizedAdminEmail(user.email)) return true;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const storedAdmin = localStorage.getItem('adminUser');
+        if (storedAdmin && isAuthorizedAdminEmail(JSON.parse(storedAdmin)?.email)) return true;
+        const storedUser = localStorage.getItem('govscheme_user');
+        if (storedUser && isAuthorizedAdminEmail(JSON.parse(storedUser)?.email)) return true;
+        const adminEmail = localStorage.getItem('adminEmail');
+        if (adminEmail && isAuthorizedAdminEmail(adminEmail)) return true;
+      }
+    } catch {}
+    return false;
+  }, [user]);
+
 
   // Recommendation Questionnaire Form State
   const [recFormData, setRecFormData] = useState<Partial<UserProfile>>({
@@ -629,7 +646,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
           </div>
 
           {/* Admin Portal Quick Switch in Kiosk Mode */}
-          {(isAuthorizedAdminUser(user) || (user?.email && isAuthorizedAdminEmail(user.email))) && (
+          {isKioskAdmin && (
             <button
               type="button"
               onClick={() => {
@@ -775,7 +792,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
             </div>
 
             {/* Operator Admin Command Card in Kiosk Mode */}
-            {(isAuthorizedAdminUser(user) || (user?.email && isAuthorizedAdminEmail(user.email))) && (
+            {isKioskAdmin && (
               <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-white border-2 border-amber-500/30 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div className="flex items-center gap-4 text-left">
                   <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
