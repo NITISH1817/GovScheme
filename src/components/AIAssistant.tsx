@@ -233,10 +233,18 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         );
         
         if (matchedSchemes.length === 0) {
-          if (lowerText.includes('farmer') || lowerText.includes('agriculture') || lowerText.includes('விவசாய') || lowerText.includes('किसान') || lowerText.includes('రైతు')) {
+          if (lowerText.includes('farmer') || lowerText.includes('agriculture') || lowerText.includes('விவசாய') || lowerText.includes('किसान') || lowerText.includes('రైతు') || lowerText.includes('ಕೃಷಿ') || lowerText.includes('കർഷക') || lowerText.includes('शेतकरी') || lowerText.includes('ખેડૂત')) {
             matchedSchemes = schemes.filter(s => s.category.includes('Agriculture'));
-          } else if (lowerText.includes('student') || lowerText.includes('education') || lowerText.includes('மாணவ') || lowerText.includes('छात्र') || lowerText.includes('విద్యార్థి')) {
+          } else if (lowerText.includes('student') || lowerText.includes('education') || lowerText.includes('மாணவ') || lowerText.includes('छात्र') || lowerText.includes('విద్యార్థి') || lowerText.includes('ವಿದ್ಯಾರ್ಥಿ') || lowerText.includes('വിദ്യാർത്ഥി') || lowerText.includes('विद्यार्थी') || lowerText.includes('વિદ્યાર્થી')) {
             matchedSchemes = schemes.filter(s => s.category.includes('Education'));
+          } else if (lowerText.includes('women') || lowerText.includes('female') || lowerText.includes('பெண்') || lowerText.includes('மகளிர்') || lowerText.includes('महिला') || lowerText.includes('మహిళ') || lowerText.includes('ಮಹಿಳೆ') || lowerText.includes('സ്ത്രീ') || lowerText.includes('મહિલા')) {
+            matchedSchemes = schemes.filter(s => s.category.includes('Women') || s.eligibilityRules?.gender === 'Female' || (s.eligibilityRules as any)?.eligibleGender === 'Female');
+          } else if (lowerText.includes('health') || lowerText.includes('hospital') || lowerText.includes('மருத்துவ') || lowerText.includes('சுகாதார') || lowerText.includes('स्वास्थ्य') || lowerText.includes('ఆరోగ్య') || lowerText.includes('ಆರೋಗ್ಯ') || lowerText.includes('ആരോഗ്യ') || lowerText.includes('आरोग्य')) {
+            matchedSchemes = schemes.filter(s => s.category.includes('Healthcare'));
+          } else if (lowerText.includes('pension') || lowerText.includes('senior') || lowerText.includes('ஓய்வூதிய') || lowerText.includes('பென்ஷன்') || lowerText.includes('पेंशन') || lowerText.includes('పింఛను') || lowerText.includes('ಪೆನ್ಷನ್') || lowerText.includes('പെൻഷൻ')) {
+            matchedSchemes = schemes.filter(s => s.category.includes('Social Empowerment') || s.category.includes('Pensions'));
+          } else if (lowerText.includes('house') || lowerText.includes('housing') || lowerText.includes('வீடு') || lowerText.includes('ஆவாஸ்') || lowerText.includes('आवास') || lowerText.includes('ఇల్లు') || lowerText.includes('ಮನೆ') || lowerText.includes('വീട്')) {
+            matchedSchemes = schemes.filter(s => s.category.includes('Housing'));
           } else {
             matchedSchemes = schemes.slice(0, 2);
           }

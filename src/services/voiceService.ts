@@ -177,51 +177,191 @@ export function getBestMatchingVoice(langCode: string): SpeechSynthesisVoice | n
   return null;
 }
 
-export function speakText(text: string, langCode: string = 'en', onEnd?: () => void) {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    console.warn("Speech Synthesis not supported");
+// Active HTMLAudioElement for online streaming TTS
+let activeAudio: HTMLAudioElement | null = null;
+let audioQueue: string[] = [];
+let isQueueProcessing = false;
+
+/**
+ * Splits text into natural sentence / phrase chunks suitable for TTS streaming (max ~160 chars per chunk)
+ */
+export function splitTextIntoChunks(text: string, maxChunkLength: number = 160): string[] {
+  if (!text) return [];
+  const sentences = text.match(/[^.!?\n|;]+[.!?\n|;]+|[^.!?\n|;]+$/g) || [text];
+  const chunks: string[] = [];
+
+  for (const sentence of sentences) {
+    const trimmed = sentence.trim();
+    if (!trimmed) continue;
+    if (trimmed.length <= maxChunkLength) {
+      chunks.push(trimmed);
+    } else {
+      const parts = trimmed.split(/([,:]\s+)/);
+      let current = '';
+      for (const part of parts) {
+        if ((current + part).length <= maxChunkLength) {
+          current += part;
+        } else {
+          if (current.trim()) chunks.push(current.trim());
+          current = part;
+        }
+      }
+      if (current.trim()) chunks.push(current.trim());
+    }
+  }
+
+  return chunks.filter(c => c.length > 0);
+}
+
+/**
+ * Checks if the browser has a genuine native speech synthesis voice installed for this language.
+ */
+export function hasNativeVoiceForLang(langCode: string): boolean {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+  if (langCode === 'en') return true;
+  const voice = getBestMatchingVoice(langCode);
+  if (!voice) return false;
+  const langPrefix = langCode.toLowerCase().split('-')[0];
+  const voiceLang = (voice.lang || '').toLowerCase().replace('_', '-');
+  const voiceName = (voice.name || '').toLowerCase();
+  return voiceLang.startsWith(`${langPrefix}-`) || voiceLang === langPrefix || voiceName.includes(langPrefix);
+}
+
+function processAudioQueue(langCode: string, onEnd?: () => void) {
+  if (audioQueue.length === 0) {
+    isQueueProcessing = false;
+    activeAudio = null;
+    if (onEnd) onEnd();
     return;
   }
+
+  isQueueProcessing = true;
+  const nextChunk = audioQueue.shift()!;
+  const targetLang = langCode.toLowerCase().split('-')[0];
+  const encoded = encodeURIComponent(nextChunk);
+
+  const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL)
+    ? String(import.meta.env.VITE_API_URL).replace(/\/+$/, '')
+    : '';
+  const backendUrl = `${apiBase}/api/ai/tts?lang=${encodeURIComponent(targetLang)}&text=${encoded}`;
+  const directGoogleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(targetLang)}&client=tw-ob&q=${encoded}`;
+
+  let hasTriedDirect = false;
+  const audio = new Audio(backendUrl);
+  activeAudio = audio;
+
+  audio.onended = () => {
+    processAudioQueue(langCode, onEnd);
+  };
+
+  const tryDirectFallback = () => {
+    if (!hasTriedDirect) {
+      hasTriedDirect = true;
+      audio.src = directGoogleUrl;
+      audio.play().catch(err => {
+        console.warn(`[TTS Audio Autoplay] Browser prevented autoplay or direct audio error:`, err);
+        processAudioQueue(langCode, onEnd);
+      });
+    } else {
+      console.warn(`[TTS Audio Playback] All audio streams failed for chunk in [${targetLang}], proceeding.`);
+      processAudioQueue(langCode, onEnd);
+    }
+  };
+
+  audio.onerror = () => {
+    tryDirectFallback();
+  };
+
+  audio.play().catch(err => {
+    tryDirectFallback();
+  });
+}
+
+export function playOnlineTTSAudio(text: string, langCode: string, onEnd?: () => void) {
+  stopSpeaking();
+  const chunks = splitTextIntoChunks(text);
+  if (chunks.length === 0) {
+    if (onEnd) onEnd();
+    return;
+  }
+  audioQueue = [...chunks];
+  processAudioQueue(langCode, onEnd);
+}
+
+export function speakText(text: string, langCode: string = 'en', onEnd?: () => void) {
+  if (typeof window === 'undefined') return;
 
   const cleanText = cleanTextForSpeech(text);
   if (!cleanText) return;
 
-  try {
-    window.speechSynthesis.cancel(); // Stop any active speech
-    window.speechSynthesis.resume(); // Chromium pause-bug workaround
-  } catch (e) {
-    // ignore
+  stopSpeaking();
+
+  const targetLangPrefix = (langCode || 'en').toLowerCase().split('-')[0];
+
+  // 1. For non-English languages (Tamil, Hindi, Telugu, Malayalam, Marathi, Gujarati, Kannada, Bengali, Punjabi):
+  // Check if browser has a true native voice installed for this language.
+  // Standard Chrome/Edge on Windows lacks Indic language voices by default.
+  // Without a native voice, SpeechSynthesis defaults to Microsoft David (English US), producing English speech.
+  // We automatically stream authentic native Indic voice speech audio instead!
+  const nativeVoice = getBestMatchingVoice(targetLangPrefix);
+  const hasGenuineVoice = nativeVoice && (
+    nativeVoice.lang.toLowerCase().replace('_', '-').startsWith(`${targetLangPrefix}-`) ||
+    nativeVoice.lang.toLowerCase() === targetLangPrefix ||
+    nativeVoice.name.toLowerCase().includes(targetLangPrefix)
+  );
+
+  if (targetLangPrefix !== 'en' && !hasGenuineVoice) {
+    playOnlineTTSAudio(cleanText, targetLangPrefix, onEnd);
+    return;
   }
 
-  const utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.lang = LANG_BCP47_MAP[langCode] || `${langCode}-IN`;
-  utterance.rate = 0.95; // Deliberate & clear pacing for Indian languages
-  utterance.pitch = 1.0;
+  // 2. Browser has native voice (or English requested): use Web Speech Synthesis
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.resume();
+    } catch {}
 
-  const matchedVoice = getBestMatchingVoice(langCode);
-  if (matchedVoice) {
-    utterance.voice = matchedVoice;
-  }
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = LANG_BCP47_MAP[targetLangPrefix] || `${targetLangPrefix}-IN`;
+    utterance.rate = 0.95; // Deliberate & clear pacing for Indian languages
+    utterance.pitch = 1.0;
 
-  if (onEnd) {
-    utterance.onend = () => onEnd();
-    utterance.onerror = () => onEnd();
-  }
+    if (nativeVoice) {
+      utterance.voice = nativeVoice;
+    }
 
-  try {
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    console.error("Speech synthesis speak error:", e);
+    if (onEnd) {
+      utterance.onend = () => onEnd();
+      utterance.onerror = () => onEnd();
+    }
+
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error("Speech synthesis speak error:", e);
+      playOnlineTTSAudio(cleanText, targetLangPrefix, onEnd);
+    }
+  } else {
+    playOnlineTTSAudio(cleanText, targetLangPrefix, onEnd);
   }
 }
 
 export function stopSpeaking() {
+  if (activeAudio) {
+    try {
+      activeAudio.pause();
+      activeAudio.currentTime = 0;
+      activeAudio.src = '';
+    } catch {}
+    activeAudio = null;
+  }
+  audioQueue = [];
+  isQueueProcessing = false;
+
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
       window.speechSynthesis.cancel();
-    } catch (e) {
-      // ignore
-    }
+    } catch {}
   }
 }
 

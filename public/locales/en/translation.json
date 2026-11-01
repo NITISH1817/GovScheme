@@ -2740,5 +2740,6 @@
   "Visual": "Visual Impairment",
   "Hearing": "Hearing & Speech",
   "Intellectual": "Intellectual Disability",
-  "Multiple": "Multiple Disabilities"
+  "Multiple": "Multiple Disabilities",
+  "askingAssistant": "Connecting to AI Assistant"
 }

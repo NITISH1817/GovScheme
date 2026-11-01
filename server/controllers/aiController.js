@@ -194,6 +194,63 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 *કાનૂની સૂચના: સત્તાવાર પાત્રતા નિર્ધારિત નિયમો અને સરકારી વિભાગો દ્વારા જ નક્કી કરવામાં આવે છે.*`;
   }
 
+  if (language === 'kn') {
+    const ageStr = (primary.eligibilityRules?.minAge !== undefined || primary.eligibilityRules?.maxAge !== undefined)
+      ? `ವಯಸ್ಸು ${primary.eligibilityRules.minAge ?? 0}–${primary.eligibilityRules.maxAge ?? 120} ವರ್ಷಗಳು`
+      : 'ಎಲ್ಲಾ ವಯೋಮಾನದವರು ಅರ್ಹರು';
+    const incStr = primary.eligibilityRules?.maxAnnualIncome
+      ? `ಆದಾಯ ಮಿತಿ: ₹${primary.eligibilityRules.maxAnnualIncome}/ವರ್ಷ`
+      : 'ಆದಾಯ ಮಿತಿ ಇಲ್ಲ';
+
+    return `[ಪರಿಶೀಲಿಸಿದ ಜ್ಞಾನ ಎಂಜಿನ್ • ${statusTag}]
+
+**ಯೋಜನೆ:** ${primary.name}
+**ವರ್ಗ:** ${primary.category} (${primary.state})
+**ಪ್ರಯೋಜನಗಳು:** ${primary.benefitsSummary || primary.shortDescription}
+**ಪ್ರಮುಖ ಅರ್ಹತೆ:** ${ageStr}; ${incStr}
+**ಅಧಿಕೃತ ಅರ್ಜಿ ಪೋರ್ಟಲ್:** ${portalUrl}
+
+*ಕಾನೂನು ಸೂಚನೆ: ಅಧಿಕೃತ ಅರ್ಹತೆಯನ್ನು ನಿಯಮಗಳು ಮತ್ತು ಸರ್ಕಾರಿ ಇಲಾಖೆಗಳು ಮಾತ್ರ ನಿರ್ಧರಿಸುತ್ತವೆ.*`;
+  }
+
+  if (language === 'bn') {
+    const ageStr = (primary.eligibilityRules?.minAge !== undefined || primary.eligibilityRules?.maxAge !== undefined)
+      ? `বয়স ${primary.eligibilityRules.minAge ?? 0}–${primary.eligibilityRules.maxAge ?? 120} বছর`
+      : 'সমস্ত বয়সের জন্য যোগ্য';
+    const incStr = primary.eligibilityRules?.maxAnnualIncome
+      ? `আয় সীমা: ₹${primary.eligibilityRules.maxAnnualIncome}/বছর`
+      : 'কোনো নির্দিষ্ট আয়ের সীমা নেই';
+
+    return `[যাচাইকৃত জ্ঞান ইঞ্জিন • ${statusTag}]
+
+**প্রকল্প:** ${primary.name}
+**বিভাগ:** ${primary.category} (${primary.state})
+**সুবিধা:** ${primary.benefitsSummary || primary.shortDescription}
+**মূল যোগ্যতা:** ${ageStr}; ${incStr}
+**অফিসিয়াল আবেদন পোর্টাল:** ${portalUrl}
+
+*আইনি বিজ্ঞপ্তি: অফিসিয়াল যোগ্যতা সরকারি বিভাগ দ্বারা নির্ধারিত হয়।*`;
+  }
+
+  if (language === 'pa') {
+    const ageStr = (primary.eligibilityRules?.minAge !== undefined || primary.eligibilityRules?.maxAge !== undefined)
+      ? `ਉਮਰ ${primary.eligibilityRules.minAge ?? 0}–${primary.eligibilityRules.maxAge ?? 120} ਸਾਲ`
+      : 'ਸਾਰੇ ਉਮਰ ਵਰਗ ਯੋਗ';
+    const incStr = primary.eligibilityRules?.maxAnnualIncome
+      ? `ਆਮਦਨ ਸੀਮਾ: ₹${primary.eligibilityRules.maxAnnualIncome}/ਸਾਲ`
+      : 'ਕੋਈ ਆਮਦਨ ਸੀਮਾ ਨਹੀਂ';
+
+    return `[ਤਸਦੀਕਸ਼ੁਦਾ ਗਿਆਨ ਇੰਜਣ • ${statusTag}]
+
+**ਯੋਜਨਾ:** ${primary.name}
+**ਸ਼੍ਰੇਣੀ:** ${primary.category} (${primary.state})
+**ਲਾਭ:** ${primary.benefitsSummary || primary.shortDescription}
+**ਮੁੱਖ ਯੋਗਤਾ:** ${ageStr}; ${incStr}
+**ਅਧਿਕਾਰਤ ਅਰਜ਼ੀ ਪੋਰਟਲ:** ${portalUrl}
+
+*ਕਾਨੂੰਨੀ ਨੋਟਿਸ: ਅਧਿਕਾਰਤ ਯੋਗਤਾ ਨਿਯਮਾਂ ਅਤੇ ਸਰਕਾਰੀ ਵਿਭਾਗਾਂ ਦੁਆਰਾ ਹੀ ਨਿਰਧਾਰਤ ਕੀਤੀ ਜਾਂਦੀ ਹੈ।*`;
+  }
+
   // Default: English
   const ageStr = (primary.eligibilityRules?.minAge !== undefined || primary.eligibilityRules?.maxAge !== undefined)
     ? `Age ${primary.eligibilityRules.minAge ?? 0}–${primary.eligibilityRules.maxAge ?? 120} yrs`
@@ -378,5 +435,39 @@ export const streamChatWithAI = async (req, res) => {
     console.error('[AI Stream Error]:', error.message || error);
     res.write(`data: ${JSON.stringify({ error: "Failed to communicate with AI model. Please try again." })}\n\n`);
     res.end();
+  }
+};
+
+export const streamTTSAudio = async (req, res) => {
+  try {
+    const { text, lang = 'en' } = req.query;
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ success: false, message: 'Text query parameter is required.' });
+    }
+
+    const cleanText = text.slice(0, 300).trim();
+    const targetLang = (lang || 'en').toLowerCase().split('-')[0];
+    const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(targetLang)}&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+
+    const response = await fetch(googleTTSUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://translate.google.com/'
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ success: false, message: 'Upstream TTS service error' });
+    }
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.end(buffer);
+  } catch (error) {
+    console.error('[TTS Audio Error]:', error.message || error);
+    res.status(500).json({ success: false, message: 'Failed to stream TTS audio.' });
   }
 };
