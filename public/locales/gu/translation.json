@@ -2700,5 +2700,18 @@
   "trackingCodeNotice": "તમારો સંદર્ભ ટ્રેકિંગ કોડ છે:",
   "reportSuccessDesc": "ચકાસણી પછી આગામી ચક્રમાં માહિતી અપડેટ કરવામાં આવશે.",
   "doneBtn": "પૂર્ણ",
-  "provideIssueDescError": "કૃપા કરીને સમસ્યાનું વર્ણન આપો."
+  "provideIssueDescError": "કૃપા કરીને સમસ્યાનું વર્ણન આપો.",
+  "mobile": "મોબાઇલ નંબર",
+  "residenceArea": "રહેઠાણનો વિસ્તાર",
+  "saveProfileViewRecs": "પ્રોફાઇલ સાચવો અને યોજનાઓ જુઓ",
+  "targetOccupations": "લક્ષિત વ્યવસાયો",
+  "disabilityRequired": "દિવ્યાંગતા જરૂરી",
+  "familySizeMax": "મહત્તમ પરિવારનું કદ",
+  "namePlaceholder": "દા.ત. રમેશ કુમાર",
+  "agePlaceholder": "દા.ત. 25",
+  "mobilePlaceholder": "દા.ત. 9876543210",
+  "whereCanIApply": "હું ક્યાં અરજી કરી શકું?",
+  "whoCanApplyForScheme": "{{name}} માટે કોણ અરજી કરી શકે છે?",
+  "faqApplyAnswer": "અરજીઓ {{url}} પર ઑનલાઇન અથવા નજીકના કોમન સર્વિસ સેન્ટર (CSC) પર સબમિટ કરવામાં આવે છે.",
+  "faqEligibilityAnswer": "પાત્ર ભારતીય નાગરિકો (રાજ્ય: {{state}}) આ યોજના માટે અરજી કરી શકે છે."
 }

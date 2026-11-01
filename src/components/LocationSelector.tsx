@@ -10,6 +10,64 @@ interface LocationSelectorProps {
   onDistrictChange: (district: string) => void;
 }
 
+
+const TN_DISTRICT_COORDS = [
+  { name: 'Chennai', lat: 13.0827, lng: 80.2707 },
+  { name: 'Chengalpattu', lat: 12.6939, lng: 79.9757 },
+  { name: 'Tiruvallur', lat: 13.1433, lng: 79.9079 },
+  { name: 'Kanchipuram', lat: 12.8342, lng: 79.7036 },
+  { name: 'Vellore', lat: 12.9165, lng: 79.1325 },
+  { name: 'Ranipet', lat: 12.9229, lng: 79.3326 },
+  { name: 'Tirupathur', lat: 12.4925, lng: 78.5678 },
+  { name: 'Tiruvannamalai', lat: 12.2253, lng: 79.0747 },
+  { name: 'Viluppuram', lat: 11.9401, lng: 79.4861 },
+  { name: 'Kallakurichi', lat: 11.7384, lng: 78.9639 },
+  { name: 'Cuddalore', lat: 11.7480, lng: 79.7714 },
+  { name: 'Dharmapuri', lat: 12.1211, lng: 78.1582 },
+  { name: 'Krishnagiri', lat: 12.5186, lng: 78.2137 },
+  { name: 'Salem', lat: 11.6643, lng: 78.1460 },
+  { name: 'Namakkal', lat: 11.2189, lng: 78.1674 },
+  { name: 'Erode', lat: 11.3410, lng: 77.7172 },
+  { name: 'Tiruppur', lat: 11.1085, lng: 77.3411 },
+  { name: 'Coimbatore', lat: 11.0168, lng: 76.9558 },
+  { name: 'Nilgiris', lat: 11.4102, lng: 76.6950 },
+  { name: 'Karur', lat: 10.9601, lng: 78.0766 },
+  { name: 'Tiruchirappalli', lat: 10.7905, lng: 78.7047 },
+  { name: 'Perambalur', lat: 11.2342, lng: 78.8820 },
+  { name: 'Ariyalur', lat: 11.1401, lng: 79.0786 },
+  { name: 'Thanjavur', lat: 10.7870, lng: 79.1378 },
+  { name: 'Tiruvarur', lat: 10.7725, lng: 79.6365 },
+  { name: 'Nagapattinam', lat: 10.7672, lng: 79.8449 },
+  { name: 'Mayiladuthurai', lat: 11.1018, lng: 79.6522 },
+  { name: 'Pudukkottai', lat: 10.3797, lng: 78.8208 },
+  { name: 'Dindigul', lat: 10.3673, lng: 77.9803 },
+  { name: 'Madurai', lat: 9.9252, lng: 78.1198 },
+  { name: 'Theni', lat: 10.0104, lng: 77.4768 },
+  { name: 'Virudhunagar', lat: 9.5872, lng: 77.9514 },
+  { name: 'Sivaganga', lat: 9.8433, lng: 78.4809 },
+  { name: 'Ramanathapuram', lat: 9.3639, lng: 78.8395 },
+  { name: 'Thoothukudi', lat: 8.7642, lng: 78.1348 },
+  { name: 'Tirunelveli', lat: 8.7139, lng: 77.7567 },
+  { name: 'Tenkasi', lat: 8.9594, lng: 77.3152 },
+  { name: 'Kanyakumari', lat: 8.0883, lng: 77.5385 }
+];
+
+function getClosestTNDistrict(lat: number, lng: number): string | null {
+  if (lat >= 7.8 && lat <= 13.8 && lng >= 76.0 && lng <= 80.6) {
+    let closest = TN_DISTRICT_COORDS[0].name;
+    let minDistance = Infinity;
+    for (const d of TN_DISTRICT_COORDS) {
+      const dist = (lat - d.lat) ** 2 + (lng - d.lng) ** 2;
+      if (dist < minDistance) {
+        minDistance = dist;
+        closest = d.name;
+      }
+    }
+    return closest;
+  }
+  return null;
+}
+
 export const LocationSelector: React.FC<LocationSelectorProps> = ({ 
   state, 
   district, 
@@ -107,9 +165,18 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       }) || '';
     }
 
-    if (!matchedDistrict && districtList.length > 0) {
-      matchedDistrict = districtList[0];
-    } else if (!matchedDistrict) {
+    if (!matchedDistrict) {
+      // Direct case-insensitive search or contains
+      const cleanRaw = rawDistLower.replace(/(district|city|corporation|circle|zone)/g, '').trim();
+      if (cleanRaw && districtList.length > 0) {
+        matchedDistrict = districtList.find(d => {
+          const dl = d.toLowerCase();
+          return dl === cleanRaw || dl.includes(cleanRaw) || cleanRaw.includes(dl);
+        }) || '';
+      }
+    }
+
+    if (!matchedDistrict) {
       matchedDistrict = rawDistrict || '';
     }
 
@@ -130,7 +197,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       // 1. Try BigDataCloud Client IP Reverse Geocoder (Free, high reliability in India)
       try {
-        const res = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en');
+        const res = await fetch('https://api-bdc.io/data/reverse-geocode-client?localityLanguage=en');
         if (res.ok) {
           const data = await res.json();
           stateName = data.principalSubdivision || '';
@@ -182,18 +249,27 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
             let detectedState = '';
             let detectedDistrict = '';
 
-            // A) BigDataCloud Coordinate Reverse Geocoding
-            try {
-              const res = await fetch(
-                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-              );
-              if (res.ok) {
-                const data = await res.json();
-                detectedState = data.principalSubdivision || '';
-                detectedDistrict = data.locality || data.city || '';
+            // A) Direct high-precision Tamil Nadu centroid calculation
+            const tnDistrict = getClosestTNDistrict(latitude, longitude);
+            if (tnDistrict) {
+              detectedState = 'Tamil Nadu';
+              detectedDistrict = tnDistrict;
+            }
+
+            // B) Modern BigDataCloud Coordinate Reverse Geocoding (api-bdc.io avoids 307 redirect CORS)
+            if (!detectedDistrict) {
+              try {
+                const res = await fetch(
+                  `https://api-bdc.io/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+                );
+                if (res.ok) {
+                  const data = await res.json();
+                  detectedState = data.principalSubdivision || detectedState || '';
+                  detectedDistrict = data.locality || data.city || detectedDistrict || '';
+                }
+              } catch (err) {
+                console.warn('api-bdc coords lookup failed:', err);
               }
-            } catch (err) {
-              console.warn('BigDataCloud coords lookup failed:', err);
             }
 
             // B) Nominatim Fallback

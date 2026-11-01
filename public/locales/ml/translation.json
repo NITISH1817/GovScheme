@@ -1901,7 +1901,7 @@
   "loggingIn": "സൈൻ ഇൻ ചെയ്യുന്നു...",
   "Rural": "ഗ്രാമീണ",
   "Urban": "നഗര",
-  "Semi-Urban": "അർദ്ധ-നഗരം",
+  "Semi-Urban": "അർദ്ധ നഗര",
   "Separated": "വേർപിരിഞ്ഞത്",
   "Below 10th": "പത്താം ക്ലാസിന് താഴെ",
   "10th Pass": "എസ്എസ്എൽസി പാസ്സായി",
@@ -2679,5 +2679,18 @@
   "trackingCodeNotice": "നിങ്ങളുടെ റഫറൻസ് ട്രാക്കിംഗ് കോഡ്:",
   "reportSuccessDesc": "സ്ഥിരീകരിച്ച ശേഷം അടുത്ത അപ്‌ഡേറ്റിൽ വിവരങ്ങൾ പുതുക്കും.",
   "doneBtn": "പൂർത്തിയായി",
-  "provideIssueDescError": "പ്രശ്നത്തിന്റെ വിവരണം നൽകുക."
+  "provideIssueDescError": "പ്രശ്നത്തിന്റെ വിവരണം നൽകുക.",
+  "mobile": "മൊബൈൽ നമ്പർ",
+  "residenceArea": "താമസ പ്രദേശം",
+  "saveProfileViewRecs": "പ്രൊഫൈൽ സംരക്ഷിച്ച് പദ്ധതികൾ കാണുക",
+  "targetOccupations": "ലക്ഷ്യമിടുന്ന തൊഴിലുകൾ",
+  "disabilityRequired": "ഭിന്നശേഷി ആവശ്യമാണ്",
+  "familySizeMax": "പരമാവധി കുടുംബാംഗങ്ങൾ",
+  "namePlaceholder": "ഉദാ. രമേഷ് കുമാർ",
+  "agePlaceholder": "ഉദാ. 25",
+  "mobilePlaceholder": "ഉദാ. 9876543210",
+  "whereCanIApply": "എനിക്ക് എവിടെ അപേക്ഷിക്കാം?",
+  "whoCanApplyForScheme": "{{name}} പദ്ധതിക്ക് ആർക്കൊക്കെ അപേക്ഷിക്കാം?",
+  "faqApplyAnswer": "അപേക്ഷകൾ ഓൺലൈനായി {{url}} എന്ന വെബ്‌സൈറ്റിലോ അടുത്തുള്ള കോമൺ സർവീസ് സെന്ററിലോ (CSC) സമർപ്പിക്കാം.",
+  "faqEligibilityAnswer": "യോഗ്യരായ ഇന്ത്യൻ പൗരന്മാർക്ക് (സംസ്ഥാനം: {{state}}) ഈ പദ്ധതിയിലേക്ക് അപേക്ഷിക്കാം."
 }

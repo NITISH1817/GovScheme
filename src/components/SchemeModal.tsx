@@ -83,7 +83,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
   onApplyScheme
 }) => {
   const { scheme } = analysis;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
   React.useEffect(() => {
@@ -484,11 +484,12 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                         if (norm === 'category' || norm === 'allowedcategories' || norm === 'socialcategory') return t('allowedCategories', 'Allowed Categories');
                         if (norm === 'state' || norm === 'states' || norm === 'eligiblestates') return t('state', 'Eligible States');
                         if (norm === 'requireddocuments' || norm === 'documents') return t('requiredDocuments', 'Required Documents');
-                        if (norm === 'requiresdisability' || norm === 'hasdisability') return t('requiresDisability', 'Disability Status');
+                        if (norm === 'requiresdisability' || norm === 'hasdisability' || norm === 'disabilityrequired') return t('disabilityRequired', 'Disability Required');
                         if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') return t('minDisabilityPercentage', 'Minimum Disability %');
                         if (norm === 'targetoccupations' || norm === 'allowedoccupations' || norm === 'occupation') return t('targetOccupations', 'Target Occupations');
                         if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') return t('maxLandHoldingAcres', 'Maximum Landholding');
                         if (norm === 'eligibleagegroup') return t('eligibleAgeGroup', 'Eligible Age');
+                        if (norm === 'familysizemax' || norm === 'maxfamilysize' || norm === 'familysize') return t('familySizeMax', 'Maximum Family Size');
                         return t(k, k.replace(/([A-Z])/g, ' $1'));
                       };
 
@@ -725,31 +726,56 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                   {t('frequentlyAskedQuestions', 'Frequently Asked Questions')}
                 </h3>
                 <div className="space-y-2">
-                  {scheme.faqs.map((faq, idx) => (
-                    <div key={idx} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-[#0F1B2D]">
-                      <button
-                        className="w-full px-6 py-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-[#16243A] transition"
-                        onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
-                      >
-                        <span className="font-bold text-gray-900 dark:text-white text-left">{t(faq.question, faq.question)}</span>
-                        {openFaqIndex === idx ? <ChevronUp className="w-5 h-5 text-gray-500 shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />}
-                      </button>
-                      <AnimatePresence>
-                        {openFaqIndex === idx && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="px-6 pb-4 pt-2 text-gray-700 dark:text-gray-300">
-                              {t(faq.answer, faq.answer)}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
+                  {scheme.faqs.map((faq, idx) => {
+                    const getLocalizedFaq = () => {
+                      let q = faq.question;
+                      let a = faq.answer;
+                      if (i18n.exists(q)) {
+                        q = t(q, q);
+                      } else if (q.toLowerCase().startsWith('who can apply for')) {
+                        const schemePart = q.replace(/who can apply for/i, '').replace(/\?$/, '').trim();
+                        q = t('whoCanApplyForScheme', 'Who can apply for {{name}}?', { name: schemePart || scheme.name });
+                      } else if (q.trim().toLowerCase() === 'where can i apply?') {
+                        q = t('whereCanIApply', 'Where can I apply?');
+                      }
+                      if (i18n.exists(a)) {
+                        a = t(a, a);
+                      } else if (a.includes('submitted online at') || a.includes('Common Service Centre')) {
+                        const urlMatch = a.match(/https?:\/\/[^\s]+/);
+                        const url = urlMatch ? urlMatch[0] : (scheme.officialApplyUrl || 'https://india.gov.in');
+                        a = t('faqApplyAnswer', 'Applications are submitted online at {{url}} or nearest official Common Service Centre (CSC).', { url });
+                      } else if (a.includes('Eligible Indian citizens meeting criteria')) {
+                        a = t('faqEligibilityAnswer', 'Eligible Indian citizens meeting criteria (State: {{state}}) can apply.', { state: scheme.state || 'All' });
+                      }
+                      return { question: q, answer: a };
+                    };
+                    const locFaq = getLocalizedFaq();
+                    return (
+                      <div key={idx} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-[#0F1B2D]">
+                        <button
+                          className="w-full px-6 py-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-[#16243A] transition"
+                          onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                        >
+                          <span className="font-bold text-gray-900 dark:text-white text-left">{locFaq.question}</span>
+                          {openFaqIndex === idx ? <ChevronUp className="w-5 h-5 text-gray-500 shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-500 shrink-0" />}
+                        </button>
+                        <AnimatePresence>
+                          {openFaqIndex === idx && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-6 pb-4 pt-2 text-gray-700 dark:text-gray-300">
+                                {locFaq.answer}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}

@@ -2672,5 +2672,18 @@
   "trackingCodeNotice": "Your reference tracking code is:",
   "reportSuccessDesc": "Our verification team cross-references citizen feedback against official state and central gazettes. If verified, the scheme catalogue will be updated in the next synchronization cycle.",
   "doneBtn": "Done",
-  "provideIssueDescError": "Please provide a description of the issue or suggested correction."
+  "provideIssueDescError": "Please provide a description of the issue or suggested correction.",
+  "mobile": "Mobile Number",
+  "residenceArea": "Area of Residence",
+  "saveProfileViewRecs": "Save Profile & View Schemes",
+  "targetOccupations": "Target Occupations",
+  "disabilityRequired": "Disability Required",
+  "familySizeMax": "Maximum Family Size",
+  "namePlaceholder": "e.g. Ramesh Kumar",
+  "agePlaceholder": "e.g. 25",
+  "mobilePlaceholder": "e.g. 9876543210",
+  "whereCanIApply": "Where can I apply?",
+  "whoCanApplyForScheme": "Who can apply for {{name}}?",
+  "faqApplyAnswer": "Applications are submitted online at {{url}} or nearest official Common Service Centre (CSC).",
+  "faqEligibilityAnswer": "Eligible Indian citizens meeting criteria (State: {{state}}) can apply."
 }

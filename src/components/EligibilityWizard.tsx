@@ -363,11 +363,11 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('age', 'Age')} *</label>
-                        <input type="number" name="age" min="1" max="120" value={formData.age ?? ''} onChange={handleAgeChange} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none transition-all" placeholder="e.g. 25" required />
+                        <input type="number" name="age" min="1" max="120" value={formData.age ?? ''} onChange={handleAgeChange} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none transition-all" placeholder={t('agePlaceholder', 'e.g. 25')} required />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('mobile', 'Mobile Number')}</label>
-                        <input type="tel" name="mobile" value={formData.mobile || ''} onChange={e => updateForm('mobile', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none transition-all" placeholder="e.g. 9876543210" />
+                        <input type="tel" name="mobile" value={formData.mobile || ''} onChange={e => updateForm('mobile', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none transition-all" placeholder={t('mobilePlaceholder', 'e.g. 9876543210')} />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

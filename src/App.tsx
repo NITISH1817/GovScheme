@@ -2031,7 +2031,6 @@ export const App: React.FC = () => {
           }}
         />
       )}
-
       {/* Logout Confirmation */}
       <ConfirmationModal
         isOpen={logoutConfirmOpen}

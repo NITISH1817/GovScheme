@@ -1921,7 +1921,7 @@
   "officialAdminAccess": "सरकारी अधिकारी किंवा प्रशासक? अ‍ॅडमिन पोर्टलमध्ये प्रवेश करा →",
   "loggingIn": "साइन इन करत आहे...",
   "Rural": "ग्रामीण",
-  "Urban": "नागरी",
+  "Urban": "शहरी",
   "Semi-Urban": "निम-शहरी",
   "Separated": "विभक्त",
   "Below 10th": "दहावीच्या खाली",
@@ -2700,5 +2700,18 @@
   "trackingCodeNotice": "तुमचा संदर्भ ट्रॅकिंग कोड आहे:",
   "reportSuccessDesc": "पडताळणी झाल्यानंतर पुढील चक्रात माहिती अपडेट केली जाईल.",
   "doneBtn": "झाले",
-  "provideIssueDescError": "कृपया समस्येचे वर्णन द्या."
+  "provideIssueDescError": "कृपया समस्येचे वर्णन द्या.",
+  "mobile": "मोबाइल नंबर",
+  "residenceArea": "निवासाचे क्षेत्र",
+  "saveProfileViewRecs": "प्रोफाइल सेव्ह करा आणि योजना पहा",
+  "targetOccupations": "लक्षित व्यवसाय",
+  "disabilityRequired": "दिव्यांगत्व आवश्यक",
+  "familySizeMax": "कमाल कुटुंब आकार",
+  "namePlaceholder": "उदा. रमेश कुमार",
+  "agePlaceholder": "उदा. 25",
+  "mobilePlaceholder": "उदा. 9876543210",
+  "whereCanIApply": "मी कुठे अर्ज करू शकतो?",
+  "whoCanApplyForScheme": "{{name}} साठी कोण अर्ज करू शकतो?",
+  "faqApplyAnswer": "अर्ज {{url}} वर ऑनलाइन किंवा जवळच्या कॉमन सर्व्हिस सेंटर (CSC) वर सबमिट केले जातात.",
+  "faqEligibilityAnswer": "पात्र भारतीय नागरिक (राज्य: {{state}}) या योजनेसाठी अर्ज करू शकतात."
 }

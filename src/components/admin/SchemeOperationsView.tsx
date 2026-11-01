@@ -30,7 +30,14 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
+
+  // Sync state whenever initialSchemes updates from parent
+  useEffect(() => {
+    if (initialSchemes && initialSchemes.length >= schemesData.length) {
+      setSchemesList(initialSchemes);
+    }
+  }, [initialSchemes]);
 
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -89,11 +96,15 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
         // Merge remote schemes with authoritative catalog and local custom schemes
         const schemeMap = new Map<string, Scheme>();
         
-        // 1. Authoritative baseline (all 75 authoritative schemes)
-        const baseline = (initialSchemes && initialSchemes.length >= schemesData.length) ? initialSchemes : schemesData;
-        baseline.forEach(s => {
+        // 1. Authoritative baseline (all 75+ authoritative schemes)
+        schemesData.forEach(s => {
           if (s && s.id) schemeMap.set(s.id, s);
         });
+        if (initialSchemes && Array.isArray(initialSchemes)) {
+          initialSchemes.forEach(s => {
+            if (s && s.id) schemeMap.set(s.id, { ...(schemeMap.get(s.id) || {}), ...s });
+          });
+        }
 
         // 2. Overwrite / enrich with remote schemes
         remoteMapped.forEach((s: any) => {
@@ -575,10 +586,25 @@ export const SchemeOperationsView: React.FC<SchemeOperationsViewProps> = ({ sche
         </div>
 
         {/* Pagination Footer */}
-        <div className="px-6 py-4 border-t border-[#E2E8F0] dark:border-[#243449] flex items-center justify-between text-sm bg-[#FFFFFF] dark:bg-[#0B1424]">
-          <span className="text-[#64748B] dark:text-[#94A3B8]">
-            Showing {paginatedSchemes.length} of {filteredSchemes.length} schemes
-          </span>
+        <div className="px-6 py-4 border-t border-[#E2E8F0] dark:border-[#243449] flex flex-wrap items-center justify-between gap-3 text-sm bg-[#FFFFFF] dark:bg-[#0B1424]">
+          <div className="flex items-center gap-3">
+            <span className="text-[#64748B] dark:text-[#94A3B8]">
+              Showing {filteredSchemes.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredSchemes.length)} of {filteredSchemes.length} schemes
+            </span>
+            <div className="flex items-center gap-1.5 text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <span>Per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                className="px-2 py-1 bg-[#F8FAFC] dark:bg-[#101D31] border border-[#E2E8F0] dark:border-[#243449] rounded text-xs font-semibold text-[#07111F] dark:text-[#F8FAFC] outline-none"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}

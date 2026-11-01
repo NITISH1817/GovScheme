@@ -13,7 +13,7 @@ export const clearSchemeCache = () => {
 // @access  Public (Citizen) & Private (Admin)
 export const getSchemes = async (req, res) => {
   try {
-    const { state, category, q, status, department, verificationStatus, page = 1, limit = 20, sort = '-createdAt' } = req.query;
+    const { state, category, q, status, department, verificationStatus, page = 1, limit = 100, sort = '-createdAt' } = req.query;
 
     let filter = {};
 
@@ -26,7 +26,7 @@ export const getSchemes = async (req, res) => {
     );
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, parseInt(limit, 10) || 20);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 100);
     const skip = (pageNum - 1) * limitNum;
 
     // Check in-memory cache for public queries

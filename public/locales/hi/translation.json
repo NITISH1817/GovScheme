@@ -2679,5 +2679,18 @@
   "trackingCodeNotice": "आपका संदर्भ ट्रैकिंग कोड है:",
   "reportSuccessDesc": "हमारी टीम आधिकारिक राजपत्रों के साथ मिलान करती है। सत्यापित होने पर अगले चक्र में अपडेट किया जाएगा।",
   "doneBtn": "पूर्ण",
-  "provideIssueDescError": "कृपया समस्या या सुझाए गए सुधार का विवरण दें।"
+  "provideIssueDescError": "कृपया समस्या या सुझाए गए सुधार का विवरण दें।",
+  "mobile": "मोबाइल नंबर",
+  "residenceArea": "निवास का क्षेत्र",
+  "saveProfileViewRecs": "प्रोफ़ाइल सहेजें और योजनाएं देखें",
+  "targetOccupations": "लक्षित व्यवसाय",
+  "disabilityRequired": "दिव्यांगता आवश्यक",
+  "familySizeMax": "अधिकतम परिवार का आकार",
+  "namePlaceholder": "उदा. रमेश कुमार",
+  "agePlaceholder": "उदा. 25",
+  "mobilePlaceholder": "उदा. 9876543210",
+  "whereCanIApply": "मैं कहाँ आवेदन कर सकता हूँ?",
+  "whoCanApplyForScheme": "{{name}} के लिए कौन आवेदन कर सकता है?",
+  "faqApplyAnswer": "आवेदन ऑनलाइन {{url}} पर या निकटतम कॉमन सर्विस सेंटर (CSC) पर जमा किए जाते हैं।",
+  "faqEligibilityAnswer": "पात्र भारतीय नागरिक (राज्य: {{state}}) इस योजना के लिए आवेदन कर सकते हैं।"
 }
