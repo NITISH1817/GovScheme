@@ -95,10 +95,41 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [voicePlaybackEnabled, setVoicePlaybackEnabled] = useState(true);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [menuAlign, setMenuAlign] = useState<'left' | 'right'>('right');
 
+  const langMenuRef = useRef<HTMLDivElement>(null);
+  const langButtonRef = useRef<HTMLButtonElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionStopRef = useRef<(() => void) | null>(null);
   const isInitialMount = useRef(true);
+
+  const toggleLangMenu = () => {
+    if (!langMenuOpen && langButtonRef.current) {
+      const rect = langButtonRef.current.getBoundingClientRect();
+      // If button is close to left edge (< 220px) or in left half of screen, anchor left so menu doesn't get cut off
+      if (rect.left < 220 || rect.left < window.innerWidth / 2) {
+        setMenuAlign('left');
+      } else {
+        setMenuAlign('right');
+      }
+    }
+    setLangMenuOpen(prev => !prev);
+  };
+
+  // Close language menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    };
+    if (langMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [langMenuOpen]);
 
   // Synchronize when current language changes
   useEffect(() => {
@@ -459,21 +490,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           
           {/* Chat Header */}
           <div className="border-b border-gray-200 dark:border-gray-800 p-4 flex flex-wrap items-center justify-between gap-3 bg-gray-50 dark:bg-[#16243A]/50">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded bg-white dark:bg-black/20 text-[#123C69] dark:text-white flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-800 shrink-0">
                 <GovSchemeLogoMark size={24} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  {t('askSchemeAssistant', 'Ask Scheme Assistant')}
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider">
+                  <span className="truncate">{t('askSchemeAssistant', 'Ask Scheme Assistant')}</span>
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-700 text-[10px] uppercase font-bold tracking-wider shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> {t('online', 'Online')}
                   </span>
                 </h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('nlSemanticEnabled', 'Natural language semantic analysis enabled')}</p>
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
-                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="truncate hidden sm:inline">{t('nlSemanticEnabled', 'Natural language semantic analysis enabled')}</span>
+                  <span className="text-gray-300 dark:text-gray-600 hidden sm:inline">•</span>
+                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 shrink-0">
                     🗣️ {getLanguageNativeName(currentLang)} ({LANG_BCP47_MAP[currentLang] || currentLang})
                   </span>
                 </div>
@@ -482,10 +513,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
             <div className="flex items-center gap-2">
               {/* Language Switcher inside Assistant */}
-              <div className="relative">
+              <div className="relative" ref={langMenuRef}>
                 <button
                   type="button"
-                  onClick={() => setLangMenuOpen(!langMenuOpen)}
+                  ref={langButtonRef}
+                  onClick={toggleLangMenu}
                   className="px-2.5 py-1.5 rounded text-xs font-bold border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111827] text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1.5 transition-colors shadow-sm"
                   title="Switch Voice Assistant Language"
                 >
@@ -495,7 +527,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 </button>
 
                 {langMenuOpen && (
-                  <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-1.5 z-30">
+                  <div className={`absolute ${menuAlign === 'left' ? 'left-0' : 'right-0'} mt-1 w-52 max-w-[calc(100vw-32px)] bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-1.5 z-50`}>
                     <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                       Select Voice Language
                     </div>
@@ -513,12 +545,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                         }}
                         className={`w-full text-left px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center justify-between ${
                           currentLang === l.code
-                            ? 'bg-[#1769FF] text-white'
+                            ? 'bg-[#1769FF] text-white shadow-sm'
                             : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
                         }`}
                       >
                         <span>{l.nativeName}</span>
-                        <span className="text-[10px] opacity-75 font-mono">{LANG_BCP47_MAP[l.code] || l.code}</span>
+                        <span className={`text-[10px] font-mono ${currentLang === l.code ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {LANG_BCP47_MAP[l.code] || l.code}
+                        </span>
                       </button>
                     ))}
                   </div>
