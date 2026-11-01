@@ -2719,5 +2719,6 @@
   "eligibleGender": "Eligible Gender",
   "allCategories": "All Categories",
   "allAgeGroupsEligible": "All age groups eligible",
-  "officialCriteria": "Official Eligibility Criteria"
+  "officialCriteria": "Official Eligibility Criteria",
+  "dontHaveAccount": "Don't have an account?"
 }

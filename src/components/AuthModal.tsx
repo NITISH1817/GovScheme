@@ -680,21 +680,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             {error && <div className="text-red-500 text-xs mb-2 text-center font-medium bg-red-50 py-1.5 px-3 rounded-lg border border-red-200">{t(error, error)}</div>}
 
-            {/* Quick Demo Helper */}
-            <div className="mb-3 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginEmail('citizen@govscheme.in');
-                  setLoginPassword('password123');
-                  setError(null);
-                }}
-                className="text-[11px] font-bold text-[#1769FF] dark:text-[#60A5FA] hover:underline bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800/40 inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>Fill Demo Citizen (citizen@govscheme.in / password123)</span>
-              </button>
-            </div>
-
             <button type="submit" disabled={isSubmitting} className="auth-submit-btn">
               {isSubmitting ? (
                 <>

@@ -2747,5 +2747,6 @@
   "eligibleGender": "पात्र लिंग",
   "allCategories": "सर्व प्रवर्ग",
   "allAgeGroupsEligible": "सर्व वयोगटातील नागरिक पात्र",
-  "officialCriteria": "अधिकृत पात्रता निकष"
+  "officialCriteria": "अधिकृत पात्रता निकष",
+  "dontHaveAccount": "खाते नाही का?"
 }

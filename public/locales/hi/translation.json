@@ -2726,5 +2726,6 @@
   "eligibleGender": "पात्र लिंग",
   "allCategories": "सभी श्रेणियां",
   "allAgeGroupsEligible": "सभी आयु वर्ग के नागरिक पात्र हैं",
-  "officialCriteria": "आधिकारिक पात्रता मानदंड"
+  "officialCriteria": "आधिकारिक पात्रता मानदंड",
+  "dontHaveAccount": "खाता नहीं है?"
 }
