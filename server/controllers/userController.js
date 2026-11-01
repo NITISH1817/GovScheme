@@ -99,12 +99,14 @@ export const formatUserProfile = (user) => {
     district: p.district || '',
     annualIncome: p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? Number(p.annualIncome) : undefined,
     category: p.category || '',
+    religion: p.religion || '',
     occupation: p.occupation || '',
     educationLevel: p.educationLevel || '',
     landHoldingAcres: p.landHoldingAcres !== undefined && p.landHoldingAcres !== null && p.landHoldingAcres !== '' ? Number(p.landHoldingAcres) : 0,
     familyMembersCount: p.familyMembersCount !== undefined && p.familyMembersCount !== null && p.familyMembersCount !== '' ? Number(p.familyMembersCount) : 1,
     hasDisability: Boolean(p.hasDisability),
     disabilityPercentage: p.disabilityPercentage !== undefined && p.disabilityPercentage !== null && p.disabilityPercentage !== '' ? Number(p.disabilityPercentage) : 0,
+    disabilityType: p.disabilityType || '',
     isRegisteredWorker: Boolean(p.isRegisteredWorker),
     verificationBadge: Boolean(p.verificationBadge),
     profileCompletionScore: p.profileCompletionScore !== undefined && p.profileCompletionScore !== null ? Number(p.profileCompletionScore) : 0,
@@ -224,9 +226,11 @@ export const updateUserProfile = async (req, res) => {
     if (p.state !== undefined) user.profile.state = String(p.state).trim();
     if (p.district !== undefined) user.profile.district = String(p.district).trim();
     if (p.category !== undefined) user.profile.category = String(p.category).trim();
+    if (p.religion !== undefined) user.profile.religion = String(p.religion).trim();
     if (p.occupation !== undefined) user.profile.occupation = String(p.occupation).trim();
     if (p.educationLevel !== undefined) user.profile.educationLevel = String(p.educationLevel).trim();
     if (p.hasDisability !== undefined) user.profile.hasDisability = Boolean(p.hasDisability);
+    if (p.disabilityType !== undefined) user.profile.disabilityType = String(p.disabilityType).trim();
     if (p.isRegisteredWorker !== undefined) user.profile.isRegisteredWorker = Boolean(p.isRegisteredWorker);
     if (p.verificationBadge !== undefined) user.profile.verificationBadge = Boolean(p.verificationBadge);
     if (Array.isArray(p.interests)) user.profile.interests = p.interests;

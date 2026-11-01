@@ -189,7 +189,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      {t(user.fullName, user.fullName)}
+                      {user.fullName || user.email?.split('@')[0] || t('citizen', 'Citizen')}
                     </h2>
                     {user.verificationBadge && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
@@ -484,7 +484,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       {user.age != null && user.age > 0 ? `${user.age} ${t('years', 'years')}` : t('notSpecified', 'Age not set')} • {t(user.gender || 'Not specified', user.gender || 'Gender not set')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {t('category', 'Category')}: <strong className="text-gray-700 dark:text-gray-300">{user.category ? t(user.category, user.category) : t('General', 'General')}</strong>
+                      {t('category', 'Category')}: <strong className="text-gray-700 dark:text-gray-300">{user.category ? t(user.category, user.category) : t('General', 'General')}</strong>{user.religion ? <> • {t('religion', 'Religion')}: <strong className="text-gray-700 dark:text-gray-300">{t(user.religion, user.religion)}</strong></> : null}
                     </p>
                   </div>
                 </div>
@@ -561,7 +561,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <div>
                     <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">{t('disabilityStatus', 'Disability Status')}</span>
                     <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">
-                      {user.hasDisability ? `${t('yes', 'Yes')} (${user.disabilityPercentage || 40}% UDID)` : t('none', 'No Disability')}
+                      {user.hasDisability ? `${t('yes', 'Yes')} (${user.disabilityPercentage || 40}%${user.disabilityType ? ` • ${t(user.disabilityType, user.disabilityType)}` : ''})` : t('none', 'No Disability')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {t('maritalStatus', 'Marital')}: <strong className="text-gray-700 dark:text-gray-300">{user.maritalStatus ? t(user.maritalStatus, user.maritalStatus) : t('Single', 'Single')}</strong>
@@ -887,6 +887,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     </select>
                   </div>
 
+                  {/* Religion */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('religion', 'Religion')}</label>
+                    <select
+                      value={formData.religion || ''}
+                      onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-[#1769FF] outline-none"
+                    >
+                      <option value="">{t('selectReligion', 'Select Religion')}</option>
+                      <option value="Hindu">{t('Hindu', 'Hindu')}</option>
+                      <option value="Muslim">{t('Muslim', 'Muslim')}</option>
+                      <option value="Christian">{t('Christian', 'Christian')}</option>
+                      <option value="Sikh">{t('Sikh', 'Sikh')}</option>
+                      <option value="Buddhist">{t('Buddhist', 'Buddhist')}</option>
+                      <option value="Jain">{t('Jain', 'Jain')}</option>
+                      <option value="Parsi">{t('Parsi', 'Parsi')}</option>
+                      <option value="Other">{t('Other', 'Other')}</option>
+                    </select>
+                  </div>
+
                   {/* Occupation */}
                   <div>
                     <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1.5">{t('occupation', 'Occupation')}</label>
@@ -980,16 +1000,34 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </div>
 
                   {formData.hasDisability && (
-                    <div className="pl-4 border-l-2 border-blue-500">
-                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">{t('disabilityPercentageLabel', 'Disability Percentage (%)')}</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={formData.disabilityPercentage ?? 40}
-                        onChange={(e) => setFormData({ ...formData, disabilityPercentage: Number(e.target.value) })}
-                        className="w-32 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white text-xs font-bold"
-                      />
+                    <div className="pl-4 border-l-2 border-blue-500 space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">{t('disabilityPercentageLabel', 'Disability Percentage (%)')}</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={formData.disabilityPercentage ?? 40}
+                          onChange={(e) => setFormData({ ...formData, disabilityPercentage: Number(e.target.value) })}
+                          className="w-32 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">{t('disabilityType', 'Disability Category / Type')}</label>
+                        <select
+                          value={formData.disabilityType || ''}
+                          onChange={(e) => setFormData({ ...formData, disabilityType: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-white text-xs font-bold"
+                        >
+                          <option value="">{t('selectType', 'Select Type')}</option>
+                          <option value="Locomotor">{t('Locomotor', 'Locomotor / Orthopedic')}</option>
+                          <option value="Visual">{t('Visual', 'Visual Impairment / Blindness')}</option>
+                          <option value="Hearing">{t('Hearing', 'Hearing Impairment')}</option>
+                          <option value="Intellectual">{t('Intellectual', 'Intellectual / Developmental')}</option>
+                          <option value="Multiple">{t('Multiple', 'Multiple Disabilities')}</option>
+                          <option value="Other">{t('Other', 'Other')}</option>
+                        </select>
+                      </div>
                     </div>
                   )}
 

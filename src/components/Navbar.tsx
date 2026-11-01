@@ -262,7 +262,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 p-0.5 transition-transform">
                     <img src={getUserAvatarUrl(user)} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 hidden sm:block">{user.fullName.split(' ')[0]}</span>
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 hidden sm:block">{(user.fullName || user.email?.split('@')[0] || t('citizen', 'Citizen')).split(' ')[0]}</span>
                   <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
                 </button>
                 <AnimatePresence>
@@ -275,7 +275,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="absolute right-0 mt-3 w-64 bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xl border border-gov-border dark:border-white/10 rounded-2xl p-2 shadow-2xl"
                     >
                       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 mb-2">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.fullName}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.fullName || user.email?.split('@')[0] || t('citizen', 'Citizen')}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email || 'user@email.com'}</p>
                       </div>
                       

@@ -74,6 +74,7 @@ export interface UserProfile {
   district: string;
   residenceType?: 'Rural' | 'Urban' | 'Semi-Urban';
   category: CategorySocial;
+  religion?: string;
   interests?: string[];
   occupation: string;
   annualIncome: number; // In INR ₹
@@ -82,6 +83,7 @@ export interface UserProfile {
   familyMembersCount: number;
   hasDisability: boolean;
   disabilityPercentage?: number;
+  disabilityType?: string;
   isRegisteredWorker?: boolean;
   avatarUrl?: string;
   verificationBadge: boolean;

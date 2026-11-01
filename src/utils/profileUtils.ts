@@ -73,6 +73,7 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
       state: '',
       district: '',
       category: '' as CategorySocial,
+      religion: '',
       occupation: '',
       annualIncome: undefined as any,
       landHoldingAcres: 0,
@@ -80,6 +81,7 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
       familyMembersCount: 1,
       hasDisability: false,
       disabilityPercentage: 0,
+      disabilityType: '',
       isRegisteredWorker: false,
       verificationBadge: false,
       profileCompletionScore: 0,
@@ -121,6 +123,8 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
   const category = (u.category || p.category || '') as CategorySocial;
   const occupation = String(u.occupation || p.occupation || '').trim();
   const educationLevel = String(u.educationLevel || p.educationLevel || '').trim();
+  const religion = String(u.religion || p.religion || '').trim();
+  const disabilityType = String(u.disabilityType || p.disabilityType || '').trim();
 
   const rawIncome = u.annualIncome !== undefined && u.annualIncome !== null && u.annualIncome !== '' ? u.annualIncome : (p.annualIncome !== undefined && p.annualIncome !== null && p.annualIncome !== '' ? p.annualIncome : undefined);
   const annualIncome = rawIncome !== undefined && rawIncome !== null && !isNaN(Number(rawIncome)) ? Number(rawIncome) : (undefined as any);
@@ -158,6 +162,7 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
     state,
     district,
     category,
+    religion,
     occupation,
     annualIncome,
     landHoldingAcres,
@@ -165,6 +170,7 @@ export const normalizeUserProfile = (data: any, fallbackName = '', fallbackEmail
     familyMembersCount,
     hasDisability,
     disabilityPercentage,
+    disabilityType,
     isRegisteredWorker,
     verificationBadge,
     interests,

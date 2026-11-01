@@ -389,7 +389,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
       if (response.ok && data && data.success) {
         const profile = createProfileFromAuthData(data, nameTrimmed, emailTrimmed);
+        profile.fullName = nameTrimmed;
         saveLocalAccount(emailTrimmed, registerPassword, profile, data.token);
+        localStorage.setItem('govscheme_last_email', emailTrimmed);
         if (data.token) {
           localStorage.setItem('govscheme_token', data.token);
           localStorage.setItem('govscheme_user', JSON.stringify(profile));
@@ -433,8 +435,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         fullName: nameTrimmed,
         email: emailTrimmed
       });
+      newProfile.fullName = nameTrimmed;
       newProfile.token = mockToken;
       saveLocalAccount(emailTrimmed, registerPassword, newProfile, mockToken);
+      localStorage.setItem('govscheme_last_email', emailTrimmed);
       localStorage.setItem('govscheme_token', mockToken);
       localStorage.setItem('govscheme_user', JSON.stringify(newProfile));
       onLoginSuccess(newProfile, true);

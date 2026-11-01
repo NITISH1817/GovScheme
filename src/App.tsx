@@ -114,13 +114,11 @@ export const App: React.FC = () => {
         try {
           const rawAccounts = localStorage.getItem('govscheme_accounts_db');
           const lastEmail = localStorage.getItem('govscheme_last_email');
-          if (rawAccounts) {
+          if (rawAccounts && lastEmail) {
             const accounts = JSON.parse(rawAccounts);
-            if (lastEmail && accounts[lastEmail.toLowerCase().trim()]?.profile) {
-              loaded = accounts[lastEmail.toLowerCase().trim()].profile;
-            } else {
-              const firstEntry = Object.values(accounts)[0] as any;
-              if (firstEntry?.profile) loaded = firstEntry.profile;
+            const userAcc = accounts[lastEmail.toLowerCase().trim()];
+            if (userAcc?.profile) {
+              loaded = userAcc.profile;
             }
           }
         } catch {}
@@ -705,6 +703,22 @@ export const App: React.FC = () => {
           if (profileData.success && (profileData.user || profileData.profile || profileData.fullName)) {
             const rawUser = profileData.user || profileData.profile || profileData;
             const normalized = normalizeUserProfile(rawUser);
+            // Protect citizen name and details if remote server profile returns blank
+            const localSavedRaw = localStorage.getItem('govscheme_user');
+            if (localSavedRaw) {
+              try {
+                const localParsed = JSON.parse(localSavedRaw);
+                if (!normalized.fullName && localParsed?.fullName) {
+                  normalized.fullName = localParsed.fullName;
+                }
+                if (!normalized.religion && localParsed?.religion) {
+                  normalized.religion = localParsed.religion;
+                }
+                if (!normalized.disabilityType && localParsed?.disabilityType) {
+                  normalized.disabilityType = localParsed.disabilityType;
+                }
+              } catch {}
+            }
             if (backendDocs.length > 0) {
               normalized.documents = backendDocs;
             }
@@ -1569,7 +1583,7 @@ export const App: React.FC = () => {
 
         {activeTab === 'wizard' && (
           <EligibilityWizard
-            user={user || guestProfile || null}
+            user={user || null}
             mode={wizardMode}
             onComplete={async (profileData) => {
               const token = localStorage.getItem('govscheme_token');
@@ -1578,7 +1592,8 @@ export const App: React.FC = () => {
                 // LOGGED-IN CITIZEN FLOW: Persist to backend and update user state
                 const mergedPayload = {
                   ...(user || {}),
-                  ...profileData
+                  ...profileData,
+                  fullName: (profileData.fullName || user.fullName || '').trim()
                 };
 
                 let savedUser: UserProfile;
@@ -1612,6 +1627,12 @@ export const App: React.FC = () => {
                   savedUser = normalizeUserProfile(mergedPayload);
                 }
 
+                if (!savedUser.fullName && (mergedPayload.fullName || user?.fullName)) {
+                  savedUser.fullName = (mergedPayload.fullName || user?.fullName || '').trim();
+                }
+                if (savedUser.email) {
+                  localStorage.setItem('govscheme_last_email', savedUser.email.toLowerCase().trim());
+                }
                 savedUser.profileCompletionScore = calculateProfileCompletion(savedUser);
 
                 // Update React state and localStorage for logged in user
@@ -1905,6 +1926,10 @@ export const App: React.FC = () => {
         }}
         onLoginSuccess={async (loggedInUser, isNewRegistration = false) => {
           let authoritativeUser = loggedInUser;
+          if (isNewRegistration) {
+            setGuestProfile(null);
+            localStorage.removeItem('govscheme_guest_profile');
+          }
           const token = localStorage.getItem('govscheme_token');
           if (token) {
             try {
@@ -1933,6 +1958,9 @@ export const App: React.FC = () => {
           // Merge with stored local account details to guarantee all previously entered profile details are restored
           const emailKey = authoritativeUser.email?.toLowerCase().trim();
           if (emailKey) {
+            localStorage.setItem('govscheme_last_email', emailKey);
+          }
+          if (emailKey && !isNewRegistration) {
             try {
               const raw = localStorage.getItem('govscheme_accounts_db');
               const accounts = raw ? JSON.parse(raw) : {};
@@ -1949,6 +1977,9 @@ export const App: React.FC = () => {
             } catch (e) {
               console.warn('Error reading local accounts database:', e);
             }
+          }
+          if (loggedInUser.fullName && !authoritativeUser.fullName) {
+            authoritativeUser.fullName = loggedInUser.fullName;
           }
 
           authoritativeUser.profileCompletionScore = calculateProfileCompletion(authoritativeUser);

@@ -151,7 +151,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               <div className="space-y-2 text-center md:text-left">
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-[#12365B] dark:text-white font-sans tracking-tight">
-                  {t('goodMorningCitizen', 'Good morning, Citizen').replace('Citizen', user.fullName ? user.fullName.split(' ')[0] : 'Citizen')}
+                  {(() => {
+                    const firstName = (user.fullName || user.email?.split('@')[0] || '').trim().split(' ')[0];
+                    const greeting = t('goodMorning', 'Good morning');
+                    return `${greeting}, ${firstName || t('citizen', 'Citizen')}`;
+                  })()}
                 </h1>
                 <p className="text-[#64748B] dark:text-gray-400 text-base sm:text-lg">
                   {t('basedOnProfileIn', 'Based on your profile in')}{' '}

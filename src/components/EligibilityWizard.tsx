@@ -28,12 +28,14 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
     district: user?.district || '',
     annualIncome: user?.annualIncome !== undefined && user?.annualIncome !== null ? user.annualIncome : ('' as any),
     category: user?.category || ('' as any),
+    religion: user?.religion || '',
     occupation: user?.occupation || '',
     educationLevel: user?.educationLevel || '',
     landHoldingAcres: user?.landHoldingAcres ?? 0,
     familyMembersCount: user?.familyMembersCount ?? 1,
     hasDisability: user?.hasDisability ?? false,
     disabilityPercentage: user?.disabilityPercentage ?? 0,
+    disabilityType: user?.disabilityType || '',
     isRegisteredWorker: user?.isRegisteredWorker ?? false,
     residenceType: user?.residenceType || 'Rural',
     interests: user?.interests || [],
@@ -54,12 +56,14 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
         district: user.district || prev.district,
         annualIncome: user.annualIncome !== undefined ? user.annualIncome : prev.annualIncome,
         category: user.category || prev.category,
+        religion: user.religion !== undefined ? user.religion : prev.religion,
         occupation: user.occupation || prev.occupation,
         educationLevel: user.educationLevel || prev.educationLevel,
         landHoldingAcres: user.landHoldingAcres !== undefined ? user.landHoldingAcres : prev.landHoldingAcres,
         familyMembersCount: user.familyMembersCount || prev.familyMembersCount,
         hasDisability: user.hasDisability !== undefined ? user.hasDisability : prev.hasDisability,
         disabilityPercentage: user.disabilityPercentage !== undefined ? user.disabilityPercentage : prev.disabilityPercentage,
+        disabilityType: user.disabilityType !== undefined ? user.disabilityType : prev.disabilityType,
         isRegisteredWorker: user.isRegisteredWorker !== undefined ? user.isRegisteredWorker : prev.isRegisteredWorker,
         residenceType: user.residenceType || prev.residenceType || 'Rural',
         interests: Array.isArray(user.interests) && user.interests.length > 0 ? user.interests : prev.interests
@@ -439,17 +443,88 @@ export const EligibilityWizard: React.FC<EligibilityWizardProps> = ({ user, mode
                       <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('annualHouseholdIncome', 'Annual Household Income (₹)')} *</label>
                       <input type="number" min="0" name="annualIncome" value={formData.annualIncome ?? ''} onChange={handleIncomeChange} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none transition-all" placeholder={t('egIncome', 'e.g. 150000')} required />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('socialCategory', 'Social Category')} *</label>
-                      <select name="category" value={formData.category || ''} onChange={e => updateForm('category', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none" required>
-                        <option value="">{t('selectCategory', 'Select Category')}</option>
-                        <option value="General">{t('General', 'General')}</option>
-                        <option value="OBC">{t('OBC', 'OBC')}</option>
-                        <option value="SC">{t('SC', 'SC')}</option>
-                        <option value="ST">{t('ST', 'ST')}</option>
-                        <option value="EWS">{t('EWS', 'EWS')}</option>
-                        <option value="Minority">{t('Minority', 'Minority')}</option>
-                      </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('socialCategory', 'Social Category')} *</label>
+                        <select name="category" value={formData.category || ''} onChange={e => updateForm('category', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none" required>
+                          <option value="">{t('selectCategory', 'Select Category')}</option>
+                          <option value="General">{t('General', 'General')}</option>
+                          <option value="OBC">{t('OBC', 'OBC')}</option>
+                          <option value="SC">{t('SC', 'SC')}</option>
+                          <option value="ST">{t('ST', 'ST')}</option>
+                          <option value="EWS">{t('EWS', 'EWS')}</option>
+                          <option value="Minority">{t('Minority', 'Minority')}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('religion', 'Religion')}</label>
+                        <select name="religion" value={formData.religion || ''} onChange={e => updateForm('religion', e.target.value)} className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none">
+                          <option value="">{t('selectReligion', 'Select Religion')}</option>
+                          <option value="Hindu">{t('Hindu', 'Hindu')}</option>
+                          <option value="Muslim">{t('Muslim', 'Muslim')}</option>
+                          <option value="Christian">{t('Christian', 'Christian')}</option>
+                          <option value="Sikh">{t('Sikh', 'Sikh')}</option>
+                          <option value="Buddhist">{t('Buddhist', 'Buddhist')}</option>
+                          <option value="Jain">{t('Jain', 'Jain')}</option>
+                          <option value="Parsi">{t('Parsi', 'Parsi')}</option>
+                          <option value="Other">{t('Other', 'Other')}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Disability Section */}
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-800 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100">{t('hasDisability', 'Person with Disability (Divyangjan)?')}</label>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{t('hasDisabilityDesc', 'Enables special welfare schemes, reservations, and assistive aid.')}</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          name="hasDisability"
+                          checked={Boolean(formData.hasDisability)}
+                          onChange={e => updateForm('hasDisability', e.target.checked)}
+                          className="w-5 h-5 text-[#1769FF] rounded focus:ring-[#1769FF] cursor-pointer"
+                        />
+                      </div>
+
+                      {formData.hasDisability && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('disabilityPercentage', 'Disability Percentage (%)')}</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="100"
+                              name="disabilityPercentage"
+                              value={formData.disabilityPercentage ?? ''}
+                              onChange={e => {
+                                const val = e.target.value;
+                                updateForm('disabilityPercentage', val === '' ? '' : parseInt(val, 10));
+                              }}
+                              className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none"
+                              placeholder="e.g. 40"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('disabilityType', 'Disability Category / Type')}</label>
+                            <select
+                              name="disabilityType"
+                              value={formData.disabilityType || ''}
+                              onChange={e => updateForm('disabilityType', e.target.value)}
+                              className="w-full px-4 py-3 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0F1B2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#1769FF] outline-none"
+                            >
+                              <option value="">{t('selectType', 'Select Type')}</option>
+                              <option value="Locomotor">{t('Locomotor', 'Locomotor / Orthopedic')}</option>
+                              <option value="Visual">{t('Visual', 'Visual Impairment / Blindness')}</option>
+                              <option value="Hearing">{t('Hearing', 'Hearing Impairment')}</option>
+                              <option value="Intellectual">{t('Intellectual', 'Intellectual / Developmental')}</option>
+                              <option value="Multiple">{t('Multiple', 'Multiple Disabilities')}</option>
+                              <option value="Other">{t('Other', 'Other')}</option>
+                            </select>
+                          </div>
+                        </motion.div>
+                      )}
                     </div>
                   </div>
                 </div>
