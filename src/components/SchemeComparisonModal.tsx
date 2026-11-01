@@ -182,14 +182,16 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                         {t(`${s.id}_name`, s.name)}
                       </h3>
 
-                      <button
-                        type="button"
+                      <a
+                        href={s.officialApplyUrl || s.officialWebsite || (s.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in')}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         onClick={() => handleApply(s)}
-                        className="mt-3 w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow flex items-center justify-center gap-1.5"
+                        className="mt-3 w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow flex items-center justify-center gap-1.5 no-underline cursor-pointer"
                       >
                         <span>{t('applyNow', 'Apply Now')}</span>
                         <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
+                      </a>
                     </th>
                   ))}
                 </tr>
@@ -401,14 +403,16 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                     return (
                       <td key={s.id} className="p-3 sm:p-4">
                         {portalUrl ? (
-                          <button
-                            type="button"
+                          <a
+                            href={portalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             onClick={() => handleApply(s)}
-                            className="text-blue-600 dark:text-blue-400 hover:underline font-bold inline-flex items-center gap-1 text-xs break-all text-left"
+                            className="text-blue-600 dark:text-blue-400 hover:underline font-bold inline-flex items-center gap-1 text-xs break-all text-left no-underline cursor-pointer"
                           >
                             <span>{t('openPortal', 'Open Portal')}</span>
                             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                          </button>
+                          </a>
                         ) : (
                           <span className="text-gray-400 italic">Not Available</span>
                         )}

@@ -500,14 +500,16 @@ Official Apply Portal: ${officialUrl || 'https://www.india.gov.in'}
                     >
                       {t('alreadyAppliedPrompt', 'Already Applied? Enter Ack Number')}
                     </button>
-                    <button
-                      type="button"
+                    <a
+                      href={officialUrl || 'https://www.india.gov.in'}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={handleOpenPortal}
-                      className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+                      className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 no-underline cursor-pointer"
                     >
                       <span>{t('applyOnOfficialPortal', 'Apply on Official Portal')}</span>
                       <ExternalLink className="w-4 h-4" />
-                    </button>
+                    </a>
                   </div>
                 </div>
               </div>

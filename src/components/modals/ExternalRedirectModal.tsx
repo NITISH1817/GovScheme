@@ -40,14 +40,23 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
 
   const isVerifiedOfficial = isGovDomain || isNicDomain;
 
-  const handleProceed = () => {
+  const handleProceed = (e?: React.MouseEvent) => {
     if (dontShowAgain && typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem('govscheme_skip_redirect_notice', 'true');
       } catch {}
     }
-    window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    onClose();
+    try {
+      const opened = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+        if (!e) {
+          window.location.href = targetUrl;
+        }
+      }
+    } catch {
+      window.location.href = targetUrl;
+    }
+    setTimeout(() => onClose(), 250);
   };
 
   return (
@@ -101,12 +110,20 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              <a
+                href={targetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleProceed}
+                className="flex items-center gap-2 pt-1 group cursor-pointer text-blue-600 hover:text-blue-700"
+                title={t('clickToOpenPortal', 'Click to open official portal')}
+              >
                 <Lock className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="font-mono font-bold text-sm text-gray-900 dark:text-white truncate">
+                <span className="font-mono font-bold text-sm text-gray-900 dark:text-white group-hover:underline truncate">
                   {hostname}
                 </span>
-              </div>
+                <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              </a>
 
               <p className="text-[11px] font-mono text-gray-500 truncate" title={targetUrl}>
                 {targetUrl}
@@ -175,13 +192,16 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
             >
               {t('stayOnGovScheme', 'Stay on GovScheme')}
             </button>
-            <button
+            <a
+              href={targetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={handleProceed}
-              className="px-6 py-2.5 rounded-xl bg-[#1769FF] hover:bg-blue-700 text-white font-bold text-xs shadow flex items-center gap-1.5 transition"
+              className="px-6 py-2.5 rounded-xl bg-[#1769FF] hover:bg-blue-700 text-white font-bold text-xs shadow flex items-center gap-1.5 transition no-underline cursor-pointer"
             >
               <span>{t('proceedToOfficialPortal', 'Proceed to Official Portal')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </a>
           </div>
         </motion.div>
       </div>

@@ -821,7 +821,10 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     >
                       {compareQueue.find(s => s.id === scheme.id) ? t('added', 'Added') : t('compare', 'Compare')}
                     </button>
-                    <button
+                    <a
+                      href={scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in')}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={() => {
                         const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in');
                         window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
@@ -835,10 +838,10 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                           }
                         }));
                       }}
-                      className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center"
+                      className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center no-underline cursor-pointer"
                     >
                       <span>{t('apply', 'Apply')}</span> <ExternalLink className="w-4 h-4" />
-                    </button>
+                    </a>
                   </div>
                 </div>
               )})}

@@ -499,9 +499,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                                       <div className="font-bold text-gray-800 dark:text-gray-200 truncate text-[11px]">{refScheme.name}</div>
                                       <div className="text-[10px] text-gray-500 truncate">{refScheme.department} • {refScheme.state || 'Central'}</div>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
+                                    <a
+                                      href={refScheme.officialApplyUrl || refScheme.officialWebsite || '#'}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => {
                                         const url = refScheme.officialApplyUrl || refScheme.officialWebsite;
                                         if (url) {
                                           window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
@@ -509,18 +511,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                                               type: 'redirect',
                                               url,
                                               schemeName: refScheme.name,
-                                              department: refScheme.department
+                                              department: refScheme.department,
+                                              schemeId: refScheme.id,
+                                              scheme: refScheme
                                             }
                                           }));
                                         } else {
+                                          e.preventDefault();
                                           onNavigateTab('schemes');
                                         }
                                       }}
-                                      className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-[10px] hover:underline shrink-0 flex items-center gap-1"
+                                      className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-[10px] hover:underline shrink-0 flex items-center gap-1 no-underline cursor-pointer"
                                     >
                                       <ExternalLink className="w-2.5 h-2.5" />
                                       <span>{t('viewOfficialPortal', 'Official Portal')}</span>
-                                    </button>
+                                    </a>
                                   </div>
                                 ))}
                               </div>
