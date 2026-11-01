@@ -179,7 +179,9 @@ const SYNONYM_MAP: Record<string, string[]> = {
   vivasayi: ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan'],
   vivasayam: ['agriculture', 'farmer', 'kisan', 'farming', 'crop', 'pm-kisan'],
   velanmai: ['agriculture', 'farmer', 'farming', 'crop'],
-  rythu: ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan'],
+  rythu: ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan', 'bharosa', 'bandhu', 'telangana-rythu-bharosa'],
+  bandhu: ['rythu bandhu', 'rythu bharosa', 'telangana-rythu-bharosa', 'telangana-rythu-bandhu', 'telangana', 'farmer'],
+  bharosa: ['rythu bharosa', 'rythu bandhu', 'telangana-rythu-bharosa', 'telangana-rythu-bandhu', 'telangana', 'farmer'],
   karshakan: ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan'],
   shethkari: ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan'],
   shetkari: ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan'],
@@ -196,7 +198,9 @@ const SYNONYM_MAP: Record<string, string[]> = {
   'விவசாயம்': ['agriculture', 'farmer', 'kisan', 'farming', 'crop', 'pm-kisan'],
   'வேளாண்மை': ['agriculture', 'farmer', 'farming', 'crop'],
   'பயிர்': ['crop', 'farmer', 'agriculture'],
-  'రైతు': ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan'],
+  'రైతు': ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan', 'రైతు భరోసా', 'రైతు బంధు', 'telangana-rythu-bharosa'],
+  'భరోసా': ['రైతు భరోసా', 'rythu bharosa', 'rythu bandhu', 'telangana-rythu-bharosa'],
+  'బంధు': ['రైతు బంధు', 'rythu bharosa', 'telangana-rythu-bharosa'],
   'వ్యవసాయం': ['agriculture', 'farmer', 'kisan', 'farming', 'crop', 'pm-kisan'],
   'పంట': ['crop', 'farmer', 'agriculture'],
   'കർഷകൻ': ['farmer', 'agriculture', 'kisan', 'farming', 'crop', 'pm-kisan'],
@@ -745,7 +749,7 @@ export const performSemanticSearch = async (
     const localizedNormList = localizedNames.map(n => normalizeText(n));
 
     // Eligibility criteria fields
-    const rules = scheme.eligibilityRules || {};
+    const rules: any = scheme.eligibilityRules || {};
     const eligNorm = normalizeText([
       ...(rules.allowedOccupations || []),
       ...(rules.allowedCategories || []),

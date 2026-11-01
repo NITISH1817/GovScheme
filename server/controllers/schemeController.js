@@ -1,4 +1,7 @@
 import Scheme from '../models/Scheme.js';
+import { evaluateEligibility } from '../services/eligibilityEngine.js';
+import { recommendSchemesForProfile, normalizeProfile } from '../services/schemeRecommendationEngine.js';
+import { schemesData } from '../../src/data/schemes.ts';
 
 // Safe In-Memory LRU/TTL Cache for Public Scheme Catalog
 const schemeCache = new Map();
@@ -351,9 +354,6 @@ export const bulkImportSchemes = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-import { evaluateEligibility } from '../services/eligibilityEngine.js';
-import { recommendSchemesForProfile, normalizeProfile } from '../services/schemeRecommendationEngine.js';
-import { schemesData } from '../../src/data/schemes.ts';
 
 // @desc    Get single scheme by ID or schemeId
 // @route   GET /api/schemes/:id
