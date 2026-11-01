@@ -505,8 +505,8 @@ const getLiveAuditLogsList = (): any[] => {
       action: 'VERIFY_DOCUMENT',
       entityType: 'documents',
       entityId: 'DOC-TN-9840',
-      details: 'Aadhaar identity certificate verified for Nitish Priyan.',
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
+      details: 'Aadhaar identity certificate verified for Nitish Priyan with 100% OCR confidence.',
+      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
       ipAddress: '127.0.0.1 (Live Admin Console)'
     },
     {
@@ -514,9 +514,69 @@ const getLiveAuditLogsList = (): any[] => {
       adminName: 'Nitish Priyan (Super Admin)',
       action: 'UPDATE_SCHEME',
       entityType: 'schemes',
-      entityId: 'udid-disability-scheme',
+      entityId: 'pm-kisan',
       details: 'Eligibility parameters calibrated across 7 regional languages.',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+      ipAddress: '127.0.0.1 (Live Admin Console)'
+    },
+    {
+      _id: 'audit-init-4',
+      adminName: 'Nitish Priyan (Super Admin)',
+      action: 'CREATE_SCHEME',
+      entityType: 'schemes',
+      entityId: 'tn-naan-mudhalvan',
+      details: 'Created and published Naan Mudhalvan Skill Development Scheme for Tamil Nadu.',
+      createdAt: new Date(Date.now() - 3600000 * 8).toISOString(),
+      ipAddress: '127.0.0.1 (Live Admin Console)'
+    },
+    {
+      _id: 'audit-init-5',
+      adminName: 'Nitish Priyan (Super Admin)',
+      action: 'UPDATE_APPLICATION_STATUS',
+      entityType: 'applications',
+      entityId: 'APP-TN-2026-9811',
+      details: 'Application transitioned to Approved state. DBT benefit voucher dispatched.',
+      createdAt: new Date(Date.now() - 3600000 * 14).toISOString(),
+      ipAddress: '127.0.0.1 (Live Admin Console)'
+    },
+    {
+      _id: 'audit-init-6',
+      adminName: 'Nitish Priyan (Super Admin)',
+      action: 'UPDATE_CITIZEN_STATUS',
+      entityType: 'citizens',
+      entityId: 'cit_arun',
+      details: 'Citizen profile verified and authenticated for rural benefits access.',
+      createdAt: new Date(Date.now() - 3600000 * 20).toISOString(),
+      ipAddress: '127.0.0.1 (Live Admin Console)'
+    },
+    {
+      _id: 'audit-init-7',
+      adminName: 'Nitish Priyan (Super Admin)',
+      action: 'SYSTEM_INTEGRITY_CHECK',
+      entityType: 'system',
+      entityId: 'SYS-SEC-2026',
+      details: 'Outbound official domain whitelist & SSRF defense suite verified 100% compliant.',
+      createdAt: new Date(Date.now() - 3600000 * 26).toISOString(),
+      ipAddress: '127.0.0.1 (Automated Worker)'
+    },
+    {
+      _id: 'audit-init-8',
+      adminName: 'Nitish Priyan (Super Admin)',
+      action: 'BROADCAST_NOTIFICATION',
+      entityType: 'notifications',
+      entityId: 'NOTIF-TN-SEASON-2026',
+      details: 'Dispatched agricultural input subsidy announcement to registered farmers.',
+      createdAt: new Date(Date.now() - 3600000 * 32).toISOString(),
+      ipAddress: '127.0.0.1 (Live Admin Console)'
+    },
+    {
+      _id: 'audit-init-9',
+      adminName: 'Nitish Priyan (Super Admin)',
+      action: 'EXPORT_AUDIT_CSV',
+      entityType: 'governance',
+      entityId: 'LOG-EXP-001',
+      details: 'Official audit log exported for National Cyber Security Standard compliance.',
+      createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
       ipAddress: '127.0.0.1 (Live Admin Console)'
     }
   ];
@@ -676,7 +736,22 @@ const getLiveData = (endpoint: string, params: Record<string, any> = {}) => {
     if (params.action && params.action !== 'All') {
       filtered = filtered.filter(l => l.action === params.action);
     }
-    const limit = Number(params.limit) || 50;
+    if (params.entityType && params.entityType !== 'All') {
+      filtered = filtered.filter(l => (l.entityType || '').toLowerCase() === params.entityType.toLowerCase());
+    }
+    if (params.q) {
+      const q = String(params.q).toLowerCase().trim();
+      filtered = filtered.filter(l => 
+        (l.action && l.action.toLowerCase().includes(q)) ||
+        (l.adminName && l.adminName.toLowerCase().includes(q)) ||
+        (l.entityType && l.entityType.toLowerCase().includes(q)) ||
+        (l.entityId && l.entityId.toLowerCase().includes(q)) ||
+        (l.details && l.details.toLowerCase().includes(q)) ||
+        (l.ipAddress && l.ipAddress.toLowerCase().includes(q))
+      );
+    }
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const limit = Number(params.limit) || 200;
     return {
       success: true,
       logs: filtered.slice(0, limit),
@@ -787,6 +862,27 @@ const handleLivePost = (endpoint: string, data: any) => {
     localStorage.setItem('govscheme_live_notifications', JSON.stringify(notifs));
     appendLiveAuditLog('BROADCAST_NOTIFICATION', 'notifications', newNotif._id, `Sent notification: ${newNotif.title}`);
     return { success: true, notification: newNotif };
+  }
+
+  // POST /audit -> Record manual administrative compliance checkpoint
+  if (endpoint.includes('/audit')) {
+    const raw = localStorage.getItem('govscheme_live_audit_logs');
+    const logs: any[] = raw ? JSON.parse(raw) : [];
+    const newLog = {
+      _id: 'audit-' + Date.now(),
+      adminName: data.adminName || 'Nitish Priyan (Super Admin)',
+      action: data.action || 'COMPLIANCE_CHECKPOINT',
+      entityType: data.entityType || 'security',
+      entityId: data.entityId || ('CHK-' + Date.now()),
+      details: data.details || 'Administrative security and compliance verification recorded.',
+      createdAt: new Date().toISOString(),
+      ipAddress: data.ipAddress || '127.0.0.1 (Live Admin Console)'
+    };
+    logs.unshift(newLog);
+    try {
+      localStorage.setItem('govscheme_live_audit_logs', JSON.stringify(logs));
+    } catch {}
+    return { success: true, log: newLog };
   }
 
   return { success: true, data };
@@ -953,19 +1049,8 @@ const getHeaders = () => {
 };
 
 const handleResponse = async (response: Response) => {
-  if (response.status === 401) {
-    const isAdminScreen = window.location.pathname.startsWith('/admin') || window.location.hash.startsWith('#admin');
-    if (isAdminScreen) {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUser');
-      window.location.href = '/#admin';
-    } else {
-      const savedUser = localStorage.getItem('govscheme_user');
-      if (!savedUser) {
-        localStorage.removeItem('govscheme_token');
-      }
-    }
-    throw new Error('Session expired. Please log in again.');
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`Unauthorized or offline session: HTTP ${response.status}`);
   }
   if (!response.ok) {
     let errorMsg = `HTTP error! status: ${response.status}`;

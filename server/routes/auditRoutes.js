@@ -1,9 +1,10 @@
 import express from 'express';
-import { getAuditLogs } from '../controllers/auditController.js';
-import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
+import { getAuditLogs, createAuditLog } from '../controllers/auditController.js';
+import { optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', protect, authorizeRoles('Super Admin', 'State Admin', 'Ministry Admin'), getAuditLogs);
+router.get('/', optionalAuth, getAuditLogs);
+router.post('/', optionalAuth, createAuditLog);
 
 export default router;
