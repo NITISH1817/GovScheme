@@ -28,6 +28,6 @@ router.route('/:id')
 router.post('/:id/duplicate', protect, adminOnly, auditLog('DUPLICATE_SCHEME'), duplicateScheme);
 
 // Evaluate eligibility
-router.post('/:id/evaluate', protect, authorizeRoles('Citizen'), evaluateUserEligibility);
+router.post('/:id/evaluate', protect, evaluateUserEligibility);
 
 export default router;

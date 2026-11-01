@@ -96,7 +96,15 @@ export function generateAssessment(user: UserProfile, schemes: Scheme[]): Citize
     };
   });
 
-  const recommended = evaluatedItems.filter((item) => item.status === 'Eligible' || item.status === 'Conditionally Eligible');
+  const recommended = evaluatedItems.filter((item) => item.status === 'Eligible' || item.status === 'Conditionally Eligible')
+    .sort((a, b) => {
+      if (a.status === 'Eligible' && b.status !== 'Eligible') return -1;
+      if (a.status !== 'Eligible' && b.status === 'Eligible') return 1;
+      const benefitA = a.financialBenefitAmount || 0;
+      const benefitB = b.financialBenefitAmount || 0;
+      if (benefitA !== benefitB) return benefitB - benefitA;
+      return b.matchedCriteria.length - a.matchedCriteria.length;
+    });
   const notApplicable = evaluatedItems.filter((item) => item.status === 'Not Eligible');
   const eligibleOnly = evaluatedItems.filter((item) => item.status === 'Eligible');
   const condEligibleOnly = evaluatedItems.filter((item) => item.status === 'Conditionally Eligible');
@@ -418,7 +426,7 @@ export function generateAssessmentPDF(assessment: CitizenAssessmentResult): jsPD
   doc.text('Recommended Government Welfare Schemes', 14, y);
   y += 4;
 
-  const schemesToPrint = assessment.recommendedSchemes.slice(0, 7);
+  const schemesToPrint = assessment.recommendedSchemes;
 
   schemesToPrint.forEach((item, index) => {
     if (y > 250) {

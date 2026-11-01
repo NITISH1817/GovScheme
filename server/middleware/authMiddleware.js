@@ -65,13 +65,13 @@ export const authorizeRoles = (...roles) => {
       return res.status(401).json({ success: false, message: 'Not authorized, authentication required' });
     }
     const currentRole = String(req.user.role || '').toLowerCase().trim();
-    if (!normalizedAllowed.includes(currentRole)) {
-      return res.status(403).json({
-        success: false,
-        message: `Access denied. Role (${req.user.role}) is not authorized to access this resource`
-      });
+    if (currentRole === 'super admin' || normalizedAllowed.includes(currentRole)) {
+      return next();
     }
-    next();
+    return res.status(403).json({
+      success: false,
+      message: `Access denied. Role (${req.user.role}) is not authorized to access this resource`
+    });
   };
 };
 

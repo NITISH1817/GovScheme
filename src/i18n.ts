@@ -25,7 +25,7 @@ i18n
     keySeparator: false,
     supportedLngs: ['en', 'hi', 'ml', 'ta', 'te', 'mr', 'gu', 'kn', 'bn', 'pa'],
     backend: {
-      loadPath: '/locales/{{lng}}/translation.json?v=48',
+      loadPath: '/locales/{{lng}}/translation.json?v=52',
     },
     interpolation: {
       escapeValue: false,

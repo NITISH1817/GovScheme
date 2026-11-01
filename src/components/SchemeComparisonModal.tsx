@@ -115,7 +115,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                  {schemes.length} / 4 Schemes
+                  {schemes.length} / 4 {t('schemesCount', 'Schemes')}
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black text-[#123C69] dark:text-white font-sans">
                   {t('compareSchemes', 'Side-by-Side Scheme Comparison')}

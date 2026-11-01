@@ -262,10 +262,12 @@ export const App: React.FC = () => {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState<{
     url: string;
+    schemeId?: string;
     schemeName?: string;
     department?: string;
     applicationNumber?: string;
   } | null>(null);
+  const [activeKioskRecommendedSchemes, setActiveKioskRecommendedSchemes] = useState<Scheme[] | undefined>(undefined);
 
   // Core Application Tracking Handler: records in React, localStorage, Audit Log, and Backend
   const handleTrackApplication = useCallback(async (schemeId: string, customAppNumber?: string) => {
@@ -409,6 +411,7 @@ export const App: React.FC = () => {
     } else {
       setRedirectTarget({
         url,
+        schemeId: matched.id,
         schemeName: matched.name,
         department: matched.department || department,
         applicationNumber: appNum
@@ -1367,8 +1370,9 @@ export const App: React.FC = () => {
             i18n.changeLanguage(lang);
             setCurrentLang(lang);
           }}
-          onGenerateReport={(profile) => {
+          onGenerateReport={(profile, recList) => {
             setKioskProfile(profile);
+            setActiveKioskRecommendedSchemes(recList);
             setActiveTab('kiosk-report');
           }}
           onExit={() => {
@@ -1452,6 +1456,7 @@ export const App: React.FC = () => {
         }}
         profile={activeKioskProfile}
         schemes={schemes}
+        recommendedSchemes={activeKioskRecommendedSchemes}
         onBack={() => {
           setKioskProfile(null);
           setActiveTab('kiosk');
@@ -1932,8 +1937,9 @@ export const App: React.FC = () => {
               i18n.changeLanguage(lang);
               setCurrentLang(lang);
             }}
-            profile={user || kioskProfile || initialUserProfile}
+            profile={user || kioskProfile || guestProfile || initialUserProfile}
             schemes={schemes}
+            recommendedSchemes={activeKioskRecommendedSchemes}
             onBack={() => setActiveTab(user ? 'profile' : 'home')}
           />
         )}
@@ -2224,6 +2230,7 @@ export const App: React.FC = () => {
       <ExternalRedirectModal
         isOpen={Boolean(redirectTarget)}
         targetUrl={redirectTarget?.url || ''}
+        schemeId={redirectTarget?.schemeId}
         schemeName={redirectTarget?.schemeName}
         department={redirectTarget?.department}
         applicationNumber={redirectTarget?.applicationNumber}

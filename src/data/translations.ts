@@ -108,6 +108,10 @@ export const languages: { code: LanguageCode; name: string; nativeName: string }
 export const translations: Record<LanguageCode, TranslationDict> = {
 
   en: {
+    "eligibleAge": "Eligible Age",
+    "eligibleAgeGroup": "Eligible Age",
+    "eligibleGender": "Eligible Gender",
+    "dontHaveAccount": "Don't have an account?",
     "completeMissingInfo": "Complete Missing Info",
     "schemeLabel": "Scheme",
     "noticeLabel": "Notice",
@@ -2817,6 +2821,10 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   hi: {
+    "eligibleAge": "पात्र आयु",
+    "eligibleAgeGroup": "पात्र आयु वर्ग",
+    "eligibleGender": "पात्र लिंग",
+    "dontHaveAccount": "खाता नहीं है?",
     "completeMissingInfo": "अधूरी जानकारी पूरी करें",
     "schemeLabel": "योजना",
     "noticeLabel": "सूचना",
@@ -5533,6 +5541,10 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   ta: {
+    "eligibleAge": "தகுதியான வயது",
+    "eligibleAgeGroup": "தகுதியான வயது வரம்பு",
+    "eligibleGender": "பொருந்தும் பாலினம்",
+    "dontHaveAccount": "கணக்கு இல்லையா?",
     "completeMissingInfo": "விடுபட்ட தகவலைப் பூர்த்தி செய்க",
     "schemeLabel": "திட்டம்",
     "noticeLabel": "அறிவிப்பு",
@@ -8253,6 +8265,10 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   te: {
+    "eligibleAge": "అర్హత కలిగిన వయస్సు",
+    "eligibleAgeGroup": "అర్హత కలిగిన వయస్సు వర్గం",
+    "eligibleGender": "అర్హత కలిగిన లింగం",
+    "dontHaveAccount": "ఖాతా లేదా?",
     "completeMissingInfo": "మిగిలిన సమాచారాన్ని పూర్తి చేయండి",
     "schemeLabel": "పథకం",
     "noticeLabel": "గమనిక",
@@ -11137,6 +11153,10 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   ml: {
+    "eligibleAge": "അർഹമായ പ്രായം",
+    "eligibleAgeGroup": "അർഹമായ പ്രായപരിധി",
+    "eligibleGender": "അർഹമായ ലിംഗഭേദം",
+    "dontHaveAccount": "അക്കൗണ്ട് ഇല്ലേ?",
     "completeMissingInfo": "ബാക്കിയുള്ള വിവരങ്ങൾ പൂർത്തിയാക്കുക",
     "schemeLabel": "പദ്ധതി",
     "noticeLabel": "അറിയിപ്പ്",
@@ -13830,6 +13850,10 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   mr: {
+    "eligibleAge": "पात्र वय",
+    "eligibleAgeGroup": "पात्र वयोगट",
+    "eligibleGender": "पात्र लिंग",
+    "dontHaveAccount": "खाते नाही का?",
     "completeMissingInfo": "अपूर्ण माहिती पूर्ण करा",
     "schemeLabel": "योजना",
     "noticeLabel": "सूचना",
@@ -16543,6 +16567,10 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   gu: {
+    "eligibleAge": "પાત્ર વય",
+    "eligibleAgeGroup": "પાત્ર વય જૂથ",
+    "eligibleGender": "પાત્ર જાતિ",
+    "dontHaveAccount": "ખાતું નથી?",
     "completeMissingInfo": "અધૂરી માહિતી પૂર્ણ કરો",
     "schemeLabel": "યોજના",
     "noticeLabel": "સૂચના",

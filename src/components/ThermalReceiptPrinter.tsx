@@ -316,7 +316,11 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
         doc.text('No matching schemes identified at this time.', 16, y);
         y += 6;
       } else {
-        reportData.recommendedSchemes.slice(0, 5).forEach((sch, i) => {
+        reportData.recommendedSchemes.forEach((sch, i) => {
+          if (y > 265) {
+            doc.addPage();
+            y = 20;
+          }
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(9.5);
           const title = `${i + 1}. ${sch.schemeName} [${sch.category}]`;
@@ -1190,7 +1194,7 @@ export const ThermalReceiptPrinter: React.FC<ThermalReceiptPrinterProps> = ({
               </tr>
             </thead>
             <tbody>
-              {reportData.recommendedSchemes.slice(0, 6).map((sch, i) => (
+              {reportData.recommendedSchemes.map((sch, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                   <td style={{ padding: '8px 10px', fontWeight: 700, color: '#64748b' }}>{i + 1}</td>
                   <td style={{ padding: '8px 10px', fontWeight: 800, color: '#0f172a' }}>{sch.schemeName}</td>

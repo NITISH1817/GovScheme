@@ -13,6 +13,7 @@ interface KioskReportProps {
   onBack: () => void;
   currentLang?: LanguageCode;
   onLanguageChange?: (lang: LanguageCode) => void;
+  recommendedSchemes?: Scheme[];
 }
 
 export const KioskReport: React.FC<KioskReportProps> = ({ 
@@ -20,7 +21,8 @@ export const KioskReport: React.FC<KioskReportProps> = ({
   schemes, 
   onBack,
   currentLang,
-  onLanguageChange 
+  onLanguageChange,
+  recommendedSchemes
 }) => {
   const { t, i18n } = useTranslation();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -32,6 +34,10 @@ export const KioskReport: React.FC<KioskReportProps> = ({
 
   // Rule-based and demographic eligibility evaluation
   const eligibleSchemes = useMemo(() => {
+    if (recommendedSchemes && recommendedSchemes.length > 0) {
+      return recommendedSchemes;
+    }
+
     const mockUser: UserProfile = {
       ...initialUserProfile,
       ...profile,
@@ -45,27 +51,40 @@ export const KioskReport: React.FC<KioskReportProps> = ({
       annualIncome: profile.annualIncome !== undefined ? profile.annualIncome : 120000,
       category: profile.category || 'General',
       occupation: profile.occupation || 'Farmer',
+      hasDisability: profile.hasDisability || false,
+      disabilityPercentage: profile.disabilityPercentage || 0,
+      landHoldingAcres: profile.landHoldingAcres || 0,
+      educationLevel: profile.educationLevel || '',
+      religion: profile.religion || '',
       documents: profile.documents || [],
       savedSchemeIds: profile.savedSchemeIds || [],
       profileCompletionScore: profile.profileCompletionScore || 85
     };
 
-    return schemes.filter(s => {
-      const res = evaluateSchemeEligibility(mockUser, s);
-      return res.status !== 'Not Eligible';
+    const evaluated = schemes.map(s => ({
+      scheme: s,
+      ruleResult: evaluateSchemeEligibility(mockUser, s)
+    })).filter(item => item.ruleResult.status !== 'Not Eligible');
+
+    evaluated.sort((a, b) => {
+      if (a.ruleResult.status === 'Eligible' && b.ruleResult.status !== 'Eligible') return -1;
+      if (a.ruleResult.status !== 'Eligible' && b.ruleResult.status === 'Eligible') return 1;
+      return (b.scheme.financialBenefitAmount || 0) - (a.scheme.financialBenefitAmount || 0);
     });
-  }, [profile, schemes]);
+
+    return evaluated.map(item => item.scheme);
+  }, [profile, schemes, recommendedSchemes]);
 
   // Transform kiosk profile to CitizenReportData for the Thermal Receipt Printer
   const reportData: CitizenReportData = useMemo(() => {
     const displaySchemes = (eligibleSchemes.length > 0 ? eligibleSchemes : schemes.slice(0, 5)).map(s => ({
       schemeId: s.id,
-      schemeName: s.name,
-      category: s.category,
-      benefitSummary: s.shortDescription || 'Welfare grant assistance',
+      schemeName: t(`${s.id}_name`, s.name),
+      category: t(s.category, s.category),
+      benefitSummary: t(`${s.id}_benefits`, t(`${s.id}_desc`, s.benefitsSummary || s.shortDescription || 'Welfare grant assistance')),
       matchStatus: 'Eligible',
       officialWebsite: (s as any).officialWebsite || s.officialApplyUrl,
-      requiredDocuments: s.requiredDocuments || ['Aadhaar', 'Income Certificate']
+      requiredDocuments: (s.requiredDocuments || ['Aadhaar', 'Income Certificate']).map(d => t(d, d))
     }));
 
     const missingDocs = Array.from(new Set(displaySchemes.flatMap(s => s.requiredDocuments))).slice(0, 4);
@@ -81,15 +100,15 @@ export const KioskReport: React.FC<KioskReportProps> = ({
       }),
       citizenName: profile.fullName || 'CSC Citizen Beneficiary',
       age: profile.age || 25,
-      gender: profile.gender || 'Male',
+      gender: t(profile.gender || 'Male', profile.gender || 'Male'),
       state: profile.state || 'Tamil Nadu',
       district: profile.district || '',
-      occupation: profile.occupation || 'Farmer',
+      occupation: t(profile.occupation || 'Farmer', profile.occupation || 'Farmer'),
       annualIncome: profile.annualIncome !== undefined ? profile.annualIncome : 120000,
       socialCategory: profile.category || 'General',
-      studentStatus: profile.occupation === 'Student' ? 'Active Student' : 'No',
-      farmerStatus: profile.occupation === 'Farmer' ? 'Registered Cultivator' : 'No',
-      disabilityStatus: profile.hasDisability ? 'Differently Abled' : 'Not Applicable',
+      studentStatus: profile.occupation === 'Student' ? t('activeStudent', 'Active Student') : t('no', 'No'),
+      farmerStatus: profile.occupation === 'Farmer' || (profile.landHoldingAcres && profile.landHoldingAcres > 0) ? t('registeredCultivator', 'Registered Cultivator') : t('no', 'No'),
+      disabilityStatus: profile.hasDisability ? (profile.disabilityPercentage ? `${profile.disabilityPercentage}% (${t('differentlyAbled', 'Differently Abled')})` : t('differentlyAbled', 'Differently Abled')) : t('notApplicable', 'Not Applicable'),
       uploadedDocumentsCount: 1,
       ocrCompletedCount: 1,
       needsReviewCount: 0,
@@ -109,7 +128,7 @@ export const KioskReport: React.FC<KioskReportProps> = ({
       isPreview: false,
       missingSteps: ['Verify original records at local CSC Taluk center', 'Submit Aadhaar biometric eKYC']
     };
-  }, [profile, eligibleSchemes, schemes]);
+  }, [profile, eligibleSchemes, schemes, t]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#07111F] text-slate-900 dark:text-slate-100 font-sans print:bg-white print:text-black">

@@ -7,6 +7,7 @@ interface ExternalRedirectModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetUrl: string;
+  schemeId?: string;
   schemeName?: string;
   department?: string;
   applicationNumber?: string;
@@ -16,6 +17,7 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
   isOpen,
   onClose,
   targetUrl,
+  schemeId,
   schemeName,
   department,
   applicationNumber
@@ -131,7 +133,7 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
 
               {schemeName && (
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-400">
-                  <span className="font-semibold text-gray-900 dark:text-white">{t('schemeLabel', 'Scheme')}:</span> {t(schemeName, schemeName)}
+                  <span className="font-semibold text-gray-900 dark:text-white">{t('schemeLabel', 'Scheme')}:</span> {schemeId ? t(`${schemeId}_name`, schemeName) : t(schemeName, schemeName)}
                   {department && <span className="block text-[11px] text-gray-500">{t(department, department)}</span>}
                 </div>
               )}

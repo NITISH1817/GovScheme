@@ -480,7 +480,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                         if (norm === 'minage' || norm === 'agemin' || norm === 'minimumage') return t('minAge', 'Minimum Age');
                         if (norm === 'maxage' || norm === 'agemax' || norm === 'maximumage') return t('maxAge', 'Maximum Age');
                         if (norm === 'incomelimit' || norm === 'maxannualincome' || norm === 'annualincome' || norm === 'income') return t('incomeLimit', 'Annual Income Limit');
-                        if (norm === 'gender' || norm === 'eligiblegender') return t('gender', 'Eligible Gender');
+                        if (norm === 'gender' || norm === 'eligiblegender') return t('eligibleGender', t('gender', 'Eligible Gender'));
                         if (norm === 'category' || norm === 'allowedcategories' || norm === 'socialcategory') return t('allowedCategories', 'Allowed Categories');
                         if (norm === 'state' || norm === 'states' || norm === 'eligiblestates') return t('state', 'Eligible States');
                         if (norm === 'requireddocuments' || norm === 'documents') return t('requiredDocuments', 'Required Documents');
