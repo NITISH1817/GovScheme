@@ -44,11 +44,18 @@ import { ExternalRedirectModal } from './components/modals/ExternalRedirectModal
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
+export const normalizeAppLanguage = (langStr?: string): LanguageCode => {
+  if (!langStr) return 'en';
+  const prefix = langStr.toLowerCase().split('-')[0].split('_')[0] as LanguageCode;
+  const valid: LanguageCode[] = ['en', 'hi', 'ta', 'te', 'ml', 'mr', 'gu', 'kn', 'bn', 'pa'];
+  return valid.includes(prefix) ? prefix : 'en';
+};
+
 export const App: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const [currentLang, setCurrentLang] = useState<LanguageCode>(
-    (i18n.language as LanguageCode) || 'en'
-  );
+  const [currentLang, setCurrentLang] = useState<LanguageCode>(() => {
+    return normalizeAppLanguage(i18n.language || (typeof window !== 'undefined' ? localStorage.getItem('i18nextLng') : null) || 'en');
+  });
   const [theme, setTheme] = useState<'light' | 'dark' | 'high-contrast'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark' | 'high-contrast') || 'light';
   });
@@ -549,8 +556,11 @@ export const App: React.FC = () => {
 
   // Sync language with i18n and HTML element
   useEffect(() => {
-    i18n.changeLanguage(currentLang);
-    document.documentElement.lang = currentLang;
+    const norm = normalizeAppLanguage(currentLang);
+    if (i18n.language !== norm) {
+      i18n.changeLanguage(norm);
+    }
+    document.documentElement.lang = norm;
   }, [currentLang, i18n]);
 
   // Save user to localStorage and accounts registry whenever it changes
