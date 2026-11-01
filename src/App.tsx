@@ -35,7 +35,7 @@ import { AdminPlatform } from './components/admin/AdminPlatform';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { KioskReport } from './components/KioskReport';
 import { GovSchemeLogoAnimated } from './components/brand';
-import { ShieldAlert, ArrowLeft, Sparkles } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, Sparkles, CheckCircle } from 'lucide-react';
 import { AboutModal } from './components/modals/AboutModal';
 import { PrivacyModal } from './components/modals/PrivacyModal';
 import { TermsModal } from './components/modals/TermsModal';
@@ -293,6 +293,12 @@ export const App: React.FC = () => {
     department?: string;
     applicationNumber?: string;
   } | null>(null);
+  const [liveTrackerToast, setLiveTrackerToast] = useState<{
+    show: boolean;
+    schemeName: string;
+    appNumber: string;
+    schemeId: string;
+  } | null>(null);
   const [activeKioskRecommendedSchemes, setActiveKioskRecommendedSchemes] = useState<Scheme[] | undefined>(undefined);
 
   // Core Application Tracking Handler: records in React, localStorage, Audit Log, and Backend
@@ -409,6 +415,17 @@ export const App: React.FC = () => {
     };
     setNotifications(prev => [newNotif, ...prev]);
 
+    // Show instant floating live toast
+    setLiveTrackerToast({
+      show: true,
+      schemeName,
+      appNumber,
+      schemeId
+    });
+    setTimeout(() => {
+      setLiveTrackerToast(prev => prev?.appNumber === appNumber ? null : prev);
+    }, 6000);
+
     appendLiveAuditLog(
       'APPLY_SCHEME',
       'schemes',
@@ -418,6 +435,45 @@ export const App: React.FC = () => {
 
     return appNumber;
   }, [handleTrackApplication]);
+
+  const handleDeleteApplication = useCallback(async (appId: string, appNumber?: string) => {
+    const token = localStorage.getItem('govscheme_token');
+    
+    // 1. Immediately remove from React state
+    setApplications(prev => prev.filter(a => a.id !== appId && a.applicationNumber !== appNumber && a.applicationNumber !== appId));
+    
+    // 2. Remove from localStorage
+    try {
+      const stored = localStorage.getItem('govscheme_applications');
+      if (stored) {
+        const parsed: ApplicationTrackerRecord[] = JSON.parse(stored);
+        const filtered = parsed.filter(a => a.id !== appId && a.applicationNumber !== appNumber && a.applicationNumber !== appId);
+        localStorage.setItem('govscheme_applications', JSON.stringify(filtered));
+      }
+    } catch {}
+
+    // 3. Remove from backend API if authenticated
+    if (token) {
+      try {
+        const targetId = appId || appNumber;
+        await fetch(`${API_URL}/api/applications/${targetId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        console.warn('Backend delete sync note:', err);
+      }
+    }
+
+    appendLiveAuditLog(
+      'DELETE_APPLICATION',
+      'applications',
+      appNumber || appId,
+      `Application ${appNumber || appId} removed from tracker by citizen`
+    );
+  }, [API_URL]);
 
   const handleExternalRedirect = useCallback(async (url: string, schemeName?: string, department?: string, schemeId?: string, schemeObj?: Scheme) => {
     if (!url) return;
@@ -457,8 +513,27 @@ export const App: React.FC = () => {
         handleExternalRedirect(url, schemeName, department, schemeId, scheme);
       }
     };
+    const handleAppSavedEvent = (e: any) => {
+      const newApp = e.detail;
+      if (newApp && (newApp.id || newApp.applicationNumber)) {
+        setApplications(prev => [newApp, ...prev.filter(a => a.id !== newApp.id && a.applicationNumber !== newApp.applicationNumber)]);
+        setLiveTrackerToast({
+          show: true,
+          schemeName: newApp.schemeName || 'Government Scheme',
+          appNumber: newApp.applicationNumber,
+          schemeId: newApp.schemeId
+        });
+        setTimeout(() => {
+          setLiveTrackerToast(prev => prev?.appNumber === newApp.applicationNumber ? null : prev);
+        }, 6000);
+      }
+    };
     window.addEventListener('govscheme_open_modal', handleModalEvent);
-    return () => window.removeEventListener('govscheme_open_modal', handleModalEvent);
+    window.addEventListener('govscheme_application_saved', handleAppSavedEvent);
+    return () => {
+      window.removeEventListener('govscheme_open_modal', handleModalEvent);
+      window.removeEventListener('govscheme_application_saved', handleAppSavedEvent);
+    };
   }, [handleExternalRedirect]);
 
   const [isBooting, setIsBooting] = useState(true);
@@ -916,19 +991,11 @@ export const App: React.FC = () => {
                   verifiedDocuments: dynamicDocs
                 };
               });
-              // Seamlessly merge backend applications with any offline/local tracker records
-              setApplications(prev => {
-                const combined = [...mappedApps];
-                for (const localApp of prev) {
-                  if (!combined.some(c => c.applicationNumber === localApp.applicationNumber || c.schemeId === localApp.schemeId)) {
-                    combined.push(localApp);
-                  }
-                }
-                try {
-                  localStorage.setItem('govscheme_applications', JSON.stringify(combined));
-                } catch {}
-                return combined;
-              });
+              // Authenticated user's real live applications directly from cloud database
+              setApplications(mappedApps);
+              try {
+                localStorage.setItem('govscheme_applications', JSON.stringify(mappedApps));
+              } catch {}
             }
           }
 
@@ -1095,6 +1162,8 @@ export const App: React.FC = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('admin_token');
     localStorage.removeItem('adminUser');
+    localStorage.removeItem('govscheme_applications');
+    setApplications([]);
     setUser(null);
     setGuestProfile(null);
     localStorage.removeItem('govscheme_guest_profile');
@@ -1960,6 +2029,7 @@ export const App: React.FC = () => {
             schemes={schemes}
             onTrackApplication={async (sId, cNum) => { await handleTrackApplication(sId, cNum); }}
             onOpenAuth={() => setIsAuthOpen(true)}
+            onDeleteApplication={handleDeleteApplication}
           />
         )}
 
@@ -2002,6 +2072,7 @@ export const App: React.FC = () => {
             totalSchemesCount={schemes.length}
             schemes={schemes}
             applications={applications}
+            onDeleteApplication={handleDeleteApplication}
           />
         )}
 
@@ -2310,6 +2381,65 @@ export const App: React.FC = () => {
         applicationNumber={redirectTarget?.applicationNumber}
         onClose={() => setRedirectTarget(null)}
       />
+
+      {/* Live Application Tracking Toast Notification */}
+      {liveTrackerToast && liveTrackerToast.show && (
+        <div 
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-[9999] max-w-md w-full bg-slate-900/95 dark:bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300"
+        >
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <CheckCircle className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Application Added to Tracker
+              </span>
+              <button
+                type="button"
+                onClick={() => setLiveTrackerToast(null)}
+                className="text-slate-400 hover:text-white text-xs p-1"
+                aria-label="Close notification"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="font-semibold text-sm text-slate-100 truncate mt-0.5">
+              {liveTrackerToast.schemeName}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-slate-400 font-mono bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                {liveTrackerToast.appNumber}
+              </span>
+              <span className="text-[11px] text-emerald-300 font-medium">
+                Live Status: Submitted
+              </span>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLiveTrackerToast(null);
+                  setActiveTab('tracker');
+                }}
+                className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                Open Tracker →
+              </button>
+              <button
+                type="button"
+                onClick={() => setLiveTrackerToast(null)}
+                className="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <GlobalUI />
     </div>

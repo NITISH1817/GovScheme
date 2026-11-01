@@ -821,10 +821,8 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     >
                       {compareQueue.find(s => s.id === scheme.id) ? t('added', 'Added') : t('compare', 'Compare')}
                     </button>
-                    <a
-                      href={scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in')}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
                       onClick={() => {
                         const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in');
                         window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
@@ -838,10 +836,10 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                           }
                         }));
                       }}
-                      className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center no-underline cursor-pointer"
+                      className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center cursor-pointer shadow-sm"
                     >
                       <span>{t('apply', 'Apply')}</span> <ExternalLink className="w-4 h-4" />
-                    </a>
+                    </button>
                   </div>
                 </div>
               )})}

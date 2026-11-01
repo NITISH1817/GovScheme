@@ -1605,15 +1605,20 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                             </div>
 
                             {(scheme.officialWebsite || scheme.officialApplyUrl) && (
-                              <a
-                                href={scheme.officialApplyUrl || scheme.officialWebsite}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white hover:bg-[#F1F5F9] text-[#12365B] font-bold text-xs flex items-center gap-1.5 border border-[#DCE5EF] transition-colors"
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite;
+                                  if (onTrackApplication && scheme.id) {
+                                    onTrackApplication(scheme.id);
+                                  }
+                                  window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                                }}
+                                className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white hover:bg-[#F1F5F9] text-[#12365B] font-bold text-xs flex items-center gap-1.5 border border-[#DCE5EF] transition-colors cursor-pointer"
                               >
                                 <span>{t('kioskOfficialApply', 'Official Application Portal')}</span>
                                 <ExternalLink className="w-3.5 h-3.5 text-[#2563EB]" />
-                              </a>
+                              </button>
                             )}
                           </div>
 

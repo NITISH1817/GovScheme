@@ -203,3 +203,38 @@ export const updateApplicationStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const deleteUserApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    let query = { userId };
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      query._id = id;
+    } else {
+      query.applicationNumber = id;
+    }
+
+    const application = await Application.findOneAndDelete(query);
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found or unauthorized' });
+    }
+
+    try {
+      await AuditLog.create({
+        userId,
+        adminName: `${req.user.fullName || req.user.name || 'Citizen'} (${req.user.role || 'Citizen'})`,
+        action: 'DELETE_APPLICATION',
+        entityType: 'applications',
+        entityId: application.applicationNumber || String(application._id),
+        details: `Application removed from tracker by citizen: ${application.applicationNumber || application._id}`,
+        ipAddress: req.ip || '127.0.0.1 (Web Portal)'
+      });
+    } catch {}
+
+    res.json({ success: true, message: 'Application removed from tracker', deletedId: id });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Building2,
   Calendar,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { ApplicationTrackerRecord, UserProfile, Scheme } from '../types';
 
@@ -29,6 +30,7 @@ interface ApplicationTrackerProps {
   schemes?: Scheme[];
   onTrackApplication?: (schemeId: string, customAppNumber?: string) => Promise<any>;
   onOpenAuth?: () => void;
+  onDeleteApplication?: (id: string, appNumber?: string) => Promise<any> | void;
 }
 
 export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
@@ -37,7 +39,8 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
   user,
   schemes = [],
   onTrackApplication,
-  onOpenAuth
+  onOpenAuth,
+  onDeleteApplication
 }) => {
   const { t } = useTranslation();
   const customBezier = [0.32, 0.72, 0, 1];
@@ -166,6 +169,22 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
               <RefreshCw className={`w-3.5 h-3.5 text-[#1769FF] ${isRefreshing ? 'animate-spin' : ''}`} />
               <span>{t('refreshData', 'Sync Live')}</span>
             </button>
+
+            {onDeleteApplication && applications.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(t('confirmClearAllApps', 'Clear all applications from your tracker?'))) {
+                    applications.forEach(a => onDeleteApplication(a.id, a.applicationNumber));
+                  }
+                }}
+                title={t('clearAllApps', 'Clear All Applications')}
+                className="px-3.5 py-2.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-[#0F1B2D] hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{t('clearAll', 'Clear All')}</span>
+              </button>
+            )}
 
             <button
               onClick={() => onNavigateTab('schemes')}
@@ -442,6 +461,21 @@ export const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
                       <span>{t('trackOnOfficialPortal', 'Track on Official Portal')}</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </button>
+
+                    {onDeleteApplication && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(t('confirmRemoveApp', 'Remove this application from your tracker?'))) {
+                            onDeleteApplication(app.id, app.applicationNumber);
+                          }
+                        }}
+                        className="p-2.5 rounded-xl border border-red-200 dark:border-red-900/40 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition shadow-sm"
+                        title={t('removeApp', 'Remove from Tracker')}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

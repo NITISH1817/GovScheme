@@ -5,7 +5,7 @@ import {
   User as UserIcon, Settings, Edit3, MapPin, Briefcase, IndianRupee,
   Activity, GraduationCap, LayoutDashboard, Printer, Sparkles, ShieldCheck,
   X, Loader2, Save, XCircle, Users, Award, Home, Accessibility, Heart,
-  ExternalLink, Lock, CheckSquare, ArrowRight, FolderLock, Shield
+  ExternalLink, Lock, CheckSquare, ArrowRight, FolderLock, Shield, Trash2
 } from 'lucide-react';
 import { UserProfile, Scheme, ApplicationTrackerRecord } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +25,7 @@ interface ProfileViewProps {
   schemes?: Scheme[];
   initialSubTab?: 'overview' | 'report';
   applications?: ApplicationTrackerRecord[];
+  onDeleteApplication?: (id: string, appNumber?: string) => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -36,7 +37,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   totalSchemesCount,
   schemes = [],
   initialSubTab,
-  applications = []
+  applications = [],
+  onDeleteApplication
 }) => {
   const { t } = useTranslation();
 
@@ -585,14 +587,29 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     {t('myApplications', 'My Applications')}
                   </h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onNavigateTab('tracker')}
-                  className="text-xs font-bold text-[#1769FF] hover:underline flex items-center gap-1"
-                >
-                  <span>{t('openTracker', 'Open Tracker')}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {applications && applications.length > 0 && onDeleteApplication && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(t('confirmClearAllApps', 'Clear all applications from your tracker?'))) {
+                          applications.forEach(a => onDeleteApplication(a.id, a.applicationNumber));
+                        }
+                      }}
+                      className="text-xs font-semibold text-slate-400 hover:text-red-500 hover:underline mr-1"
+                    >
+                      {t('clearAll', 'Clear All')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab('tracker')}
+                    className="text-xs font-bold text-[#1769FF] hover:underline flex items-center gap-1"
+                  >
+                    <span>{t('openTracker', 'Open Tracker')}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {applications && applications.length > 0 ? (
@@ -608,9 +625,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                           <span className="text-[10px] font-bold text-slate-400 font-mono">
                             {app.applicationNumber}
                           </span>
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
-                            {app.status}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+                              {app.status}
+                            </span>
+                            {onDeleteApplication && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(t('confirmRemoveApp', 'Remove this application from your tracker?'))) {
+                                    onDeleteApplication(app.id, app.applicationNumber);
+                                  }
+                                }}
+                                className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                                title={t('removeApp', 'Remove from Tracker')}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">
                           {app.schemeName}
