@@ -488,14 +488,15 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                         if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') return t('minDisabilityPercentage', 'Minimum Disability %');
                         if (norm === 'targetoccupations' || norm === 'allowedoccupations' || norm === 'occupation') return t('targetOccupations', 'Target Occupations');
                         if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') return t('maxLandHoldingAcres', 'Maximum Landholding');
-                        if (norm === 'eligibleagegroup' || norm === 'eligibleage' || norm === 'age') return t('eligibleAgeGroup', t('eligibleAge', 'Eligible Age'));
+                        if (norm === 'eligibleagegroup') return t('eligibleAgeGroup', 'Eligible Age Group');
+                        if (norm === 'eligibleage' || norm === 'age') return t('eligibleAge', 'Eligible Age');
                         if (norm === 'familysizemax' || norm === 'maxfamilysize' || norm === 'familysize') return t('familySizeMax', 'Maximum Family Size');
                         return t(k, k.replace(/([A-Z])/g, ' $1'));
                       };
 
                       const renderValue = () => {
-                        if (key === 'eligibleAgeGroup') {
-                          return val;
+                        if (key === 'eligibleAgeGroup' || key === 'eligibleAge') {
+                          return t(String(val), String(val));
                         }
                         if (typeof val === 'boolean') {
                           return val ? t('yes', 'Yes') : t('no', 'No');

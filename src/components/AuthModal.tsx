@@ -474,7 +474,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const data = await response.json();
 
         if (response.ok && data.success) {
-          const isNew = Boolean(data.isNewUser || !data.user?.profile?.state || !data.user?.profile?.age);
+          const isNew = Boolean(data.isNewUser);
           const profile = createProfileFromAuthData(data, data.fullName || data.user?.fullName, data.email || data.user?.email);
           if (data.token) {
             localStorage.setItem('govscheme_token', data.token);

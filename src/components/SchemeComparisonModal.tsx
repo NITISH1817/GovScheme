@@ -115,7 +115,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                  {schemes.length} / 4 {t('schemesCount', 'Schemes')}
+                  {schemes.length} / 4 <span className="capitalize">{t('schemesCount', 'Schemes')}</span>
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black text-[#123C69] dark:text-white font-sans">
                   {t('compareSchemes', 'Side-by-Side Scheme Comparison')}
@@ -414,7 +414,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                           </a>
                         ) : (
-                          <span className="text-gray-400 italic">Not Available</span>
+                          <span className="text-gray-400 italic">{t('notAvailable', 'Not Available')}</span>
                         )}
                       </td>
                     );
@@ -440,7 +440,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                           <span>{s.helplineNumber}</span>
                         </a>
                       ) : (
-                        <span className="text-gray-500 font-mono text-[11px]">1800-11-0001 (National Helpdesk)</span>
+                        <span className="text-gray-500 font-mono text-[11px]">1800-11-0001 ({t('nationalHelpdesk', 'National Helpdesk')})</span>
                       )}
                     </td>
                   ))}

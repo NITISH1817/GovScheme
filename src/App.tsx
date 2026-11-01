@@ -199,7 +199,26 @@ export const App: React.FC = () => {
       setActiveTab('schemes');
       return;
     }
-    if (tab === 'kiosk' && !user) {
+
+    const getActiveOrStoredUser = (): UserProfile | null => {
+      if (user) return user;
+      try {
+        const stored = localStorage.getItem('govscheme_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') {
+            const norm = normalizeUserProfile(parsed);
+            setUser(norm);
+            return norm;
+          }
+        }
+      } catch {}
+      return null;
+    };
+
+    const currentUser = getActiveOrStoredUser();
+
+    if (tab === 'kiosk' && !currentUser) {
       setPendingKioskRedirect(true);
       setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
       setAuthMode('login');
@@ -207,7 +226,7 @@ export const App: React.FC = () => {
       return;
     }
     const protectedTabs = ['assistant', 'vault', 'profile', 'report', 'tracker', 'settings'];
-    if (protectedTabs.includes(tab) && !user) {
+    if (protectedTabs.includes(tab) && !currentUser) {
       setPendingKioskRedirect(false);
       setAuthNotice(undefined);
       setIsAuthOpen(true);
@@ -566,7 +585,18 @@ export const App: React.FC = () => {
   // Protected Routes Logic
   useEffect(() => {
     const protectedTabs = ['assistant', 'vault', 'profile', 'report', 'tracker', 'settings'];
-    if (!isBooting && protectedTabs.includes(activeTab) && !user) {
+    if (!isBooting && protectedTabs.includes(activeTab)) {
+      if (user) return;
+      const stored = localStorage.getItem('govscheme_user') || localStorage.getItem('govscheme_token');
+      if (stored) {
+        try {
+          const parsed = stored ? JSON.parse(stored) : null;
+          if (parsed && typeof parsed === 'object') {
+            setUser(normalizeUserProfile(parsed));
+            return;
+          }
+        } catch {}
+      }
       setActiveTab('home');
       setIsAuthOpen(true);
     }
@@ -1338,7 +1368,22 @@ export const App: React.FC = () => {
 
   // If in Kiosk Mode, render full-screen CSC Kiosk view
   if (activeTab === 'kiosk') {
-    if (!user) {
+    const activeUser = user || (() => {
+      try {
+        const stored = localStorage.getItem('govscheme_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') {
+            const norm = normalizeUserProfile(parsed);
+            setUser(norm);
+            return norm;
+          }
+        }
+      } catch {}
+      return null;
+    })();
+
+    if (!activeUser) {
       setPendingKioskRedirect(true);
       setAuthNotice(t('kioskAuthNotice', 'Please sign in or sign up to access CSC Kiosk Mode.'));
       setIsAuthOpen(true);
@@ -1411,6 +1456,13 @@ export const App: React.FC = () => {
             setActiveTab('admin');
           }}
           onLoginSuccess={async (loggedInUser) => {
+            // Commit user and close modal synchronously to prevent race conditions or duplicate prompts
+            setUser(loggedInUser);
+            localStorage.setItem('govscheme_user', JSON.stringify(loggedInUser));
+            setIsAuthOpen(false);
+            setAuthNotice(undefined);
+            setPendingKioskRedirect(false);
+
             let authoritativeUser = loggedInUser;
             const token = localStorage.getItem('govscheme_token');
             if (token) {
@@ -1422,13 +1474,12 @@ export const App: React.FC = () => {
                   const fresh = await res.json();
                   if (fresh.success && (fresh.user || fresh.profile)) {
                     authoritativeUser = normalizeUserProfile(fresh.user || fresh.profile);
+                    setUser(authoritativeUser);
+                    localStorage.setItem('govscheme_user', JSON.stringify(authoritativeUser));
                   }
                 }
               } catch (e) { }
             }
-            setUser(authoritativeUser);
-            setIsAuthOpen(false);
-            setAuthNotice(undefined);
           }}
         />
       </>
@@ -2053,6 +2104,25 @@ export const App: React.FC = () => {
           setActiveTab('admin');
         }}
         onLoginSuccess={async (loggedInUser, isNewRegistration = false) => {
+          // Immediately commit user and close modal synchronously to eliminate any race condition or duplicate popup
+          setUser(loggedInUser);
+          localStorage.setItem('govscheme_user', JSON.stringify(loggedInUser));
+          setIsAuthOpen(false);
+          setAuthNotice(undefined);
+
+          if (isAdminUser(loggedInUser)) {
+            setActiveTab('admin');
+          } else if (isNewRegistration) {
+            setWizardMode('wizard');
+            setActiveTab('wizard');
+          } else if (pendingKioskRedirect) {
+            setPendingKioskRedirect(false);
+            setAuthNotice(undefined);
+            setActiveTab('kiosk');
+          } else {
+            setActiveTab('profile');
+          }
+
           let authoritativeUser = loggedInUser;
           if (isNewRegistration) {
             setGuestProfile(null);
@@ -2132,21 +2202,6 @@ export const App: React.FC = () => {
               };
               localStorage.setItem('govscheme_accounts_db', JSON.stringify(accounts));
             } catch (e) { }
-          }
-
-          if (isAdminUser(authoritativeUser)) {
-            setActiveTab('admin');
-          } else if (isNewRegistration) {
-            // ONLY ask details when the citizen signs up for the first time
-            setWizardMode('wizard');
-            setActiveTab('wizard');
-          } else if (pendingKioskRedirect) {
-            setPendingKioskRedirect(false);
-            setAuthNotice(undefined);
-            setActiveTab('kiosk');
-          } else {
-            // Existing user sign-in: NEVER ask details twice, directly open their Citizen Profile!
-            setActiveTab('profile');
           }
         }}
         onContinueGuest={() => setUser(null)}

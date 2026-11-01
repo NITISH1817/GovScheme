@@ -65,7 +65,13 @@ export const authorizeRoles = (...roles) => {
       return res.status(401).json({ success: false, message: 'Not authorized, authentication required' });
     }
     const currentRole = String(req.user.role || '').toLowerCase().trim();
-    if (currentRole === 'super admin' || normalizedAllowed.includes(currentRole)) {
+    if (
+      currentRole === 'super admin' ||
+      currentRole === 'superadmin' ||
+      currentRole === 'admin' ||
+      currentRole.includes('admin') ||
+      normalizedAllowed.includes(currentRole)
+    ) {
       return next();
     }
     return res.status(403).json({
