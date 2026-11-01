@@ -26,7 +26,8 @@ import { SettingsView } from './components/SettingsView';
 import { KioskMode } from './components/KioskMode';
 import { AuthModal } from './components/AuthModal';
 import { NotificationsModal } from './components/NotificationsModal';
-import { startVoiceListening } from './services/voiceService';
+import { startVoiceListening, speakText, checkVoiceNavigationCommand } from './services/voiceService';
+import { languages } from './data/translations';
 import { EligibilityWizard } from './components/EligibilityWizard';
 import { AIAnalysis } from './components/AIAnalysis';
 import { GlobalUI, ConfirmationModal } from './components/GlobalUI';
@@ -1240,20 +1241,32 @@ export const App: React.FC = () => {
       currentLang,
       (transcript) => {
         setIsListeningGlobalVoice(false);
-        const lower = transcript.toLowerCase();
-        if (lower.includes('profile')) {
-          setActiveTab('profile');
-        } else if (lower.includes('scheme') || lower.includes('search') || lower.includes('farmer')) {
-          setActiveTab('schemes');
-        } else if (lower.includes('ai') || lower.includes('talk')) {
-          setActiveTab('assistant');
-        } else if (lower.includes('vault') || lower.includes('aadhaar')) {
-          setActiveTab('vault');
-        } else if (lower.includes('kiosk')) {
-          handleNavigateTab('kiosk');
-        } else {
-          setActiveTab('schemes');
+        if (!transcript || !transcript.trim()) return;
+
+        const navTarget = checkVoiceNavigationCommand(transcript);
+        if (navTarget) {
+          const tabMap: Record<string, string> = {
+            dashboard: 'home',
+            explore: 'schemes',
+            applications: 'tracker',
+            documents: 'vault',
+            profile: 'profile',
+            assistant: 'assistant',
+            kiosk: 'kiosk'
+          };
+          const targetTab = tabMap[navTarget] || navTarget;
+          if (targetTab === 'kiosk') {
+            handleNavigateTab('kiosk');
+          } else {
+            setActiveTab(targetTab);
+          }
+          speakText(t('navigatingTo', 'Navigating to {{destination}}', { destination: t(targetTab, targetTab) }), currentLang);
+          return;
         }
+
+        // General voice query: route directly to AI assistant
+        setActiveTab('assistant');
+        speakText(t('askingAssistant', 'Connecting to AI Assistant'), currentLang);
       },
       () => setIsListeningGlobalVoice(false)
     );
@@ -1616,7 +1629,12 @@ export const App: React.FC = () => {
       {/* Global Voice Listening Banner */}
       {isListeningGlobalVoice && (
         <div className="bg-red-600 text-white py-2 px-4 text-center text-xs font-bold animate-pulse flex items-center justify-center gap-2 z-50">
-          <span>{t('listeningSpeechBanner', 'Listening to voice command... Speak (e.g. "Find Farmer Schemes", "Open Profile")')}</span>
+          <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+          <span>
+            {t('listeningSpeechBanner', 'Listening to voice command in {{lang}}... Speak now (e.g. "Find Farmer Schemes", "Open Profile")', {
+              lang: languages.find(l => l.code === currentLang)?.nativeName || currentLang
+            })}
+          </span>
         </div>
       )}
 
@@ -1834,11 +1852,14 @@ export const App: React.FC = () => {
 
         {activeTab === 'assistant' && user && (
           <AIAssistant
-            key={currentLang}
             user={user}
             schemes={schemes}
             currentLang={currentLang}
             onNavigateTab={setActiveTab}
+            onLanguageChange={(lang) => {
+              i18n.changeLanguage(lang);
+              setCurrentLang(lang);
+            }}
           />
         )}
 

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Bot,
   Send,
   Mic,
   MicOff,
@@ -10,73 +9,139 @@ import {
   User,
   ExternalLink,
   Info,
-  ShieldCheck
+  ShieldCheck,
+  Languages,
+  ChevronDown
 } from 'lucide-react';
 import { ChatMessage, Scheme, UserProfile, LanguageCode } from '../types';
-import { startVoiceListening, speakText, stopSpeaking, isSpeechRecognitionSupported, checkVoiceNavigationCommand } from '../services/voiceService';
+import {
+  startVoiceListening,
+  speakText,
+  stopSpeaking,
+  isSpeechRecognitionSupported,
+  checkVoiceNavigationCommand,
+  LANG_BCP47_MAP
+} from '../services/voiceService';
 import { GovSchemeLogoMark, GovSchemeLogoLoader } from './brand';
+import { languages, translations } from '../data/translations';
 
 interface AIAssistantProps {
   user: UserProfile;
   schemes: Scheme[];
   currentLang: LanguageCode;
   onNavigateTab: (tab: string) => void;
+  onLanguageChange?: (lang: LanguageCode) => void;
 }
+
+const LANGUAGE_SWITCH_CONFIRMATION: Record<string, string> = {
+  ta: 'வணக்கம்! AI குரல் உதவியாளர் தமிழுக்கு மாற்றப்பட்டது. உங்கள் கேள்விகளை தமிழில் பேசலாம் அல்லது தட்டச்சு செய்யலாம்.',
+  hi: 'नमस्ते! AI वॉयस सहायक हिन्दी में स्विच हो गया है। आप हिन्दी में बोल या लिख सकते हैं।',
+  te: 'నమస్కారం! AI వాయిస్ అసిస్టెంట్ తెలుగులోకి మారింది. మీరు ఇప్పుడు తెలుగులో మాట్లాడవచ్చు లేదా టైప్ చేయవచ్చు.',
+  ml: 'നമസ്കാരം! AI വോയ്സ് അസിസ്റ്റന്റ് മലയാളത്തിലേക്ക് മാറി. നിങ്ങൾക്ക് മലയാളത്തിൽ സംസാരിക്കാം അല്ലെങ്കിൽ ടൈപ്പ് ചെയ്യാം.',
+  mr: 'नमस्कार! AI व्हॉइस असिस्टंट मराठीत बदलला आहे. आपण आता मराठीत बोलू किंवा लिहू शकता.',
+  gu: 'નમસ્તે! AI વૉઇસ સહાયક ગુજરાતીમાં બદલાઈ ગયું છે. હવે તમે ગુજરાતીમાં બોલી અથવા ટાઈપ કરી શકો છો.',
+  en: 'Hello! AI Voice Assistant is now in English. You can speak or type your questions in English.',
+  kn: 'ನಮಸ್ಕಾರ! AI ಧ್ವನಿ ಸಹಾಯಕ ಕನ್ನಡಕ್ಕೆ ಬದಲಾಗಿದೆ. ನೀವು ಕನ್ನಡದಲ್ಲಿ ಮಾತನಾಡಬಹುದು ಅಥವಾ ಟೈಪ್ ಮಾಡಬಹುದು.',
+  bn: 'নমস্কার! AI ভয়েস সহকারী বাংলায় রূপান্তরিত হয়েছে। আপনি বাংলায় বলতে বা টাইপ করতে পারেন।',
+  pa: 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! AI ਵੌਇਸ ਅਸਿਸਟੈਂਟ ਪੰਜਾਬੀ ਵਿੱਚ ਬਦਲ ਗਿਆ ਹੈ।'
+};
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   user,
   schemes,
   currentLang,
-  onNavigateTab
+  onNavigateTab,
+  onLanguageChange
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
-  const getLocalizedGreeting = () => {
-    const firstName = user.fullName.split(' ')[0] || '';
-    let greeting = t('aiGreeting', 'Hello Citizen. I am your Official AI Scheme Assistant. Based on your profile, I can help you discover welfare schemes, analyze eligibility, compare programs, and guide your official application. How can I help you today?');
+  const getLanguageNativeName = (code: string) => {
+    const found = languages.find(l => l.code === code);
+    return found ? found.nativeName : code.toUpperCase();
+  };
+
+  const getLocalizedGreeting = (lang: LanguageCode = currentLang) => {
+    const firstName = user?.fullName ? user.fullName.split(' ')[0] : '';
+    const dict = (translations as any)[lang] || translations.en;
+    let greeting = dict.aiGreeting || t('aiGreeting', 'Hello Citizen. I am your Official AI Scheme Assistant. Based on your profile, I can help you discover welfare schemes, analyze eligibility, compare programs, and guide your official application. How can I help you today?');
     if (firstName) {
-      greeting = greeting.replace(/Citizen|નાગરિક|नागरिक|குடிமகனே|పౌరుడా|പൗരൻ/, firstName);
+      greeting = greeting.replace(/Citizen|નાગરિક|नागरिक|குடிமகனே|పౌరుడా|പൗரൻ|ਪਾਤਰ/, firstName);
     }
     return greeting;
   };
 
-  const getSuggestedPrompts = () => [
-    t('qRelevantToStudents', 'Which schemes are relevant to students?'),
-    t('qSchemesForFarmers', 'What schemes can farmers apply for?'),
-    t('qWhyRecommended', 'Why was a scheme recommended?'),
-    t('qWhatDocs', 'What documents do I need?')
-  ];
+  const getSuggestedPrompts = (lang: LanguageCode = currentLang) => {
+    const dict = (translations as any)[lang] || translations.en;
+    return [
+      dict.qRelevantToStudents || t('qRelevantToStudents', 'Which schemes are relevant to students?'),
+      dict.qSchemesForFarmers || t('qSchemesForFarmers', 'What schemes can farmers apply for?'),
+      dict.qWhyRecommended || t('qWhyRecommended', 'Why was a scheme recommended?'),
+      dict.qWhatDocs || t('qWhatDocs', 'What documents do I need?')
+    ];
+  };
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: 'msg-init',
       sender: 'assistant',
-      text: getLocalizedGreeting(),
+      text: getLocalizedGreeting(currentLang),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      suggestedPrompts: getSuggestedPrompts()
+      suggestedPrompts: getSuggestedPrompts(currentLang)
     }
   ]);
-
-  useEffect(() => {
-    setMessages(prev => {
-      const newMsgs = [...prev];
-      if (newMsgs.length > 0 && newMsgs[0].id === 'msg-init') {
-        newMsgs[0] = {
-          ...newMsgs[0],
-          text: getLocalizedGreeting(),
-          suggestedPrompts: getSuggestedPrompts()
-        };
-      }
-      return newMsgs;
-    });
-  }, [currentLang, t, user.fullName]);
 
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [voicePlaybackEnabled, setVoicePlaybackEnabled] = useState(true);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionStopRef = useRef<(() => void) | null>(null);
+  const isInitialMount = useRef(true);
+
+  // Synchronize when current language changes
+  useEffect(() => {
+    // 1. Immediately halt any previous language voice playback
+    stopSpeaking();
+
+    // 2. Halt active microphone recognition if running so it restarts in the new language
+    if (recognitionStopRef.current) {
+      recognitionStopRef.current();
+      recognitionStopRef.current = null;
+      setIsListening(false);
+    }
+
+    // 3. Update the messages and prompt chips into the new language
+    setMessages(prev => {
+      if (prev.length === 0 || (prev.length === 1 && prev[0].id === 'msg-init')) {
+        return [{
+          id: 'msg-init',
+          sender: 'assistant',
+          text: getLocalizedGreeting(currentLang),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          suggestedPrompts: getSuggestedPrompts(currentLang)
+        }];
+      }
+      
+      const switchNotice: ChatMessage = {
+        id: `lang-switch-${Date.now()}`,
+        sender: 'assistant',
+        text: LANGUAGE_SWITCH_CONFIRMATION[currentLang] || `🗣️ Language switched to ${getLanguageNativeName(currentLang)}. You can speak or type in this language.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        suggestedPrompts: getSuggestedPrompts(currentLang)
+      };
+      return [...prev, switchNotice];
+    });
+
+    // 4. Voice announcement in the newly selected language if user switched language and voice is enabled
+    if (!isInitialMount.current && voicePlaybackEnabled) {
+      const confirmSpeech = LANGUAGE_SWITCH_CONFIRMATION[currentLang] || `Voice language switched to ${getLanguageNativeName(currentLang)}`;
+      speakText(confirmSpeech, currentLang);
+    }
+
+    isInitialMount.current = false;
+  }, [currentLang, user.fullName]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,7 +186,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
         },
         body: JSON.stringify({ message: text, language: currentLang })
-      }).catch(() => null); // Catch network errors and fallback
+      }).catch(() => null);
 
       let fullText = '';
       if (response && response.body && response.ok) {
@@ -140,7 +205,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               try {
                 const data = JSON.parse(line.slice(6));
                 if (data.error) {
-                  fullText = `AI Provider Notice: ${data.error} (Using local verified scheme dataset).`;
+                  fullText = `AI Provider Notice: ${data.error}`;
                   break;
                 }
                 if (data.done) {
@@ -159,32 +224,36 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           }
         }
       } else {
-        // Fallback Grounded Scheme Knowledge Engine
+        // Fallback Grounded Scheme Knowledge Engine with explicit language localization
+        const dict = (translations as any)[currentLang] || translations.en;
         const lowerText = text.toLowerCase();
-        let matchedSchemes = schemes.filter(s => lowerText.includes(s.category.toLowerCase().split(' ')[0]) || lowerText.includes(s.name.toLowerCase()));
+        let matchedSchemes = schemes.filter(s => 
+          lowerText.includes(s.category.toLowerCase().split(' ')[0]) || 
+          lowerText.includes(s.name.toLowerCase())
+        );
         
         if (matchedSchemes.length === 0) {
-          if (lowerText.includes('farmer') || lowerText.includes('agriculture')) {
+          if (lowerText.includes('farmer') || lowerText.includes('agriculture') || lowerText.includes('விவசாய') || lowerText.includes('किसान') || lowerText.includes('రైతు')) {
             matchedSchemes = schemes.filter(s => s.category.includes('Agriculture'));
-          } else if (lowerText.includes('student') || lowerText.includes('education')) {
+          } else if (lowerText.includes('student') || lowerText.includes('education') || lowerText.includes('மாணவ') || lowerText.includes('छात्र') || lowerText.includes('విద్యార్థి')) {
             matchedSchemes = schemes.filter(s => s.category.includes('Education'));
           } else {
             matchedSchemes = schemes.slice(0, 2);
           }
         }
 
-        const notice = t('groundedEngineNotice', '[Grounded Knowledge Engine • AI Provider Notice: Live AI service unavailable, grounded in verified local scheme database]');
-        const foundHeader = t('basedOnQueryFound', 'Based on your query, here is what I found in the verified scheme records:');
-        const legalNote = t('officialEligibilityRuleNote', '*Note: Official scheme eligibility is always determined by deterministic rules.*');
+        const notice = dict.groundedEngineNotice || t('groundedEngineNotice', '[Grounded Knowledge Engine • AI Provider Notice: Live AI service unavailable, grounded in verified local scheme database]');
+        const foundHeader = dict.basedOnQueryFound || t('basedOnQueryFound', 'Based on your query, here is what I found in the verified scheme records:');
+        const legalNote = dict.officialEligibilityRuleNote || t('officialEligibilityRuleNote', '*Note: Official scheme eligibility is always determined by deterministic rules.*');
 
         let schemeDetails = '';
         if (matchedSchemes.length > 0) {
           const topS = matchedSchemes[0];
-          const localizedName = t(`${topS.id}_name`, topS.name);
-          const localizedDesc = t(`${topS.id}_desc`, topS.shortDescription);
+          const localizedName = dict[`${topS.id}_name`] || t(`${topS.id}_name`, topS.name);
+          const localizedDesc = dict[`${topS.id}_desc`] || t(`${topS.id}_desc`, topS.shortDescription);
           schemeDetails = `• ${localizedName}: ${localizedDesc}`;
         } else {
-          schemeDetails = t('noSchemeFoundExplore', 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.');
+          schemeDetails = dict.noSchemeFoundExplore || t('noSchemeFoundExplore', 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.');
         }
 
         const generatedResponse = `${notice}\n\n${foundHeader}\n\n${schemeDetails}\n\n${legalNote}`;
@@ -202,19 +271,20 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
       setIsTyping(false);
       
-      // Auto-suggest chips at the end
+      // Auto-suggest chips at the end in current language
+      const dict = (translations as any)[currentLang] || translations.en;
       setMessages(prev => prev.map(m => 
         m.id === aiMsgId ? {
           ...m,
           suggestedPrompts: [
-            t('qMoreEligibility', 'Tell me more about the eligibility criteria'),
-            t('qWhatDocsPrepare', 'What documents do I need to prepare?'),
-            t('qHowTrackApp', 'How do I track my application?')
+            dict.qMoreEligibility || t('qMoreEligibility', 'Tell me more about the eligibility criteria'),
+            dict.qWhatDocsPrepare || t('qWhatDocsPrepare', 'What documents do I need to prepare?'),
+            dict.qHowTrackApp || t('qHowTrackApp', 'How do I track my application?')
           ]
         } : m
       ));
 
-      if (voicePlaybackEnabled) {
+      if (voicePlaybackEnabled && fullText) {
         speakText(fullText, currentLang);
       }
 
@@ -228,27 +298,45 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   const handleMicClick = () => {
     if (isListening) {
+      if (recognitionStopRef.current) {
+        recognitionStopRef.current();
+        recognitionStopRef.current = null;
+      }
       setIsListening(false);
       return;
     }
 
     if (!isSpeechRecognitionSupported()) {
-      alert("Voice speech recognition is not supported in your browser.");
+      alert(t('speechNotSupported', 'Voice speech recognition is not supported in your browser.'));
       return;
     }
 
+    stopSpeaking(); // Stop any audio currently playing
     setIsListening(true);
-    startVoiceListening(
+
+    const stopFn = startVoiceListening(
       currentLang,
       (transcript) => {
         setIsListening(false);
+        recognitionStopRef.current = null;
+        if (!transcript || !transcript.trim()) return;
+
         setInputText(transcript);
         
         const navCommand = checkVoiceNavigationCommand(transcript);
         if (navCommand) {
-          onNavigateTab(navCommand);
+          const tabMap: Record<string, string> = {
+            dashboard: 'home',
+            explore: 'schemes',
+            applications: 'tracker',
+            documents: 'vault',
+            profile: 'profile',
+            assistant: 'assistant'
+          };
+          const targetTab = tabMap[navCommand] || navCommand;
+          onNavigateTab(targetTab);
           if (voicePlaybackEnabled) {
-            const destName = t(navCommand, navCommand);
+            const destName = t(targetTab, targetTab);
             speakText(t('navigatingTo', 'Navigating to {{destination}}', { destination: destName }), currentLang);
           }
           return;
@@ -258,9 +346,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       },
       (err) => {
         setIsListening(false);
+        recognitionStopRef.current = null;
         console.error("Voice error:", err);
       }
     );
+
+    recognitionStopRef.current = stopFn;
   };
 
   return (
@@ -269,7 +360,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-800 rounded shadow-sm overflow-hidden">
           
           {/* Chat Header */}
-          <div className="border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between bg-gray-50 dark:bg-[#16243A]/50">
+          <div className="border-b border-gray-200 dark:border-gray-800 p-4 flex flex-wrap items-center justify-between gap-3 bg-gray-50 dark:bg-[#16243A]/50">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded bg-white dark:bg-black/20 text-[#123C69] dark:text-white flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-800 shrink-0">
                 <GovSchemeLogoMark size={24} />
@@ -281,21 +372,79 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> {t('online', 'Online')}
                   </span>
                 </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t('nlSemanticEnabled', 'Natural language semantic analysis enabled')}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('nlSemanticEnabled', 'Natural language semantic analysis enabled')}</p>
+                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                    🗣️ {getLanguageNativeName(currentLang)} ({LANG_BCP47_MAP[currentLang] || currentLang})
+                  </span>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setVoicePlaybackEnabled(!voicePlaybackEnabled);
-                if (voicePlaybackEnabled) stopSpeaking();
-              }}
-              className="p-2 rounded text-xs font-semibold flex items-center gap-2 transition-colors text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-              title="Toggle Voice Output"
-            >
-              {voicePlaybackEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              <span className="hidden sm:inline">{voicePlaybackEnabled ? t('voiceOn', 'Voice On') : t('voiceOff', 'Voice Off')}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Language Switcher inside Assistant */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setLangMenuOpen(!langMenuOpen)}
+                  className="px-2.5 py-1.5 rounded text-xs font-bold border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111827] text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1.5 transition-colors shadow-sm"
+                  title="Switch Voice Assistant Language"
+                >
+                  <Languages className="w-3.5 h-3.5 text-[#1769FF]" />
+                  <span>{getLanguageNativeName(currentLang)}</span>
+                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                </button>
+
+                {langMenuOpen && (
+                  <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-[#0F1B2D] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-1.5 z-30">
+                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      Select Voice Language
+                    </div>
+                    {languages.map(l => (
+                      <button
+                        key={l.code}
+                        type="button"
+                        onClick={() => {
+                          setLangMenuOpen(false);
+                          if (onLanguageChange) {
+                            onLanguageChange(l.code);
+                          } else {
+                            i18n.changeLanguage(l.code);
+                          }
+                        }}
+                        className={`w-full text-left px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center justify-between ${
+                          currentLang === l.code
+                            ? 'bg-[#1769FF] text-white'
+                            : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <span>{l.nativeName}</span>
+                        <span className="text-[10px] opacity-75 font-mono">{LANG_BCP47_MAP[l.code] || l.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Voice Output Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  setVoicePlaybackEnabled(!voicePlaybackEnabled);
+                  if (voicePlaybackEnabled) stopSpeaking();
+                }}
+                className={`p-2 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                  voicePlaybackEnabled
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+                title="Toggle Voice Output"
+              >
+                {voicePlaybackEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                <span className="hidden sm:inline">{voicePlaybackEnabled ? t('voiceOn', 'Voice On') : t('voiceOff', 'Voice Off')}</span>
+              </button>
+            </div>
           </div>
 
           {/* Message Stream */}
@@ -310,6 +459,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   <div className={`p-4 text-sm leading-relaxed ${msg.sender === 'user' ? 'bg-[#1769FF] text-white rounded-l rounded-br' : 'bg-gray-50 dark:bg-[#16243A] text-gray-900 dark:text-gray-100 rounded-r rounded-bl border border-gray-200 dark:border-gray-800'}`}>
                     <p className="whitespace-pre-wrap">{msg.text}</p>
                     
+                    {/* Speaker Listen Button for Assistant Messages */}
+                    {msg.sender === 'assistant' && msg.text && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => speakText(msg.text, currentLang)}
+                          className="px-2 py-0.5 rounded text-[11px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/60 inline-flex items-center gap-1 transition-colors"
+                          title="Listen in active voice"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          <span>{t('listen', 'Listen')} ({getLanguageNativeName(currentLang)})</span>
+                        </button>
+                      </div>
+                    )}
+
                     {msg.sender === 'assistant' && msg.text.length > 25 && (() => {
                       const lower = msg.text.toLowerCase();
                       const referenced = (msg.referencedSchemes && msg.referencedSchemes.length > 0)
@@ -415,8 +579,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               <button
                 type="button"
                 onClick={handleMicClick}
-                className={`p-3 rounded transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}
-                title="Voice Search"
+                className={`p-3 rounded transition-colors ${
+                  isListening
+                    ? 'bg-red-600 text-white animate-pulse'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+                title={`Voice Search in ${getLanguageNativeName(currentLang)}`}
               >
                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
@@ -425,7 +593,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={isListening ? t('listeningSpeakNow', 'Listening... Speak your question now') : t('askAboutSchemes', "Ask about schemes, eligibility, or required documents...")}
+                placeholder={
+                  isListening
+                    ? `${t('listening', 'Listening in')} ${getLanguageNativeName(currentLang)} (${LANG_BCP47_MAP[currentLang] || currentLang})... ${t('speakNow', 'Speak now')}`
+                    : `${t('askAboutSchemes', 'Ask about schemes in')} ${getLanguageNativeName(currentLang)}...`
+                }
                 className="flex-1 p-3 rounded bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:border-[#1769FF] focus:ring-1 focus:ring-[#1769FF] outline-none text-gray-900 dark:text-white text-sm"
               />
               

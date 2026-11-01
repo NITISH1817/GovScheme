@@ -29,6 +29,26 @@ export const LANG_BCP47_MAP: Record<string, string> = {
   bn: 'bn-IN'
 };
 
+// Cached voices management
+let cachedVoices: SpeechSynthesisVoice[] = [];
+
+export function getLoadedVoices(): SpeechSynthesisVoice[] {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return [];
+  const v = window.speechSynthesis.getVoices();
+  if (v && v.length > 0) {
+    cachedVoices = v;
+    return v;
+  }
+  return cachedVoices;
+}
+
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  getLoadedVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    getLoadedVoices();
+  };
+}
+
 export function startVoiceListening(
   langCode: string,
   onResult: (transcript: string) => void,
@@ -44,7 +64,7 @@ export function startVoiceListening(
 
   recognition.continuous = false;
   recognition.interimResults = false;
-  recognition.lang = LANG_BCP47_MAP[langCode] || 'en-IN';
+  recognition.lang = LANG_BCP47_MAP[langCode] || `${langCode}-IN`;
 
   recognition.onresult = (event: any) => {
     const transcript = event.results[0][0].transcript;
@@ -104,44 +124,60 @@ export function cleanTextForSpeech(text: string): string {
  */
 export function getBestMatchingVoice(langCode: string): SpeechSynthesisVoice | null {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
+  const voices = getLoadedVoices();
   if (!voices || voices.length === 0) return null;
 
-  const targetBcp = LANG_BCP47_MAP[langCode] || `${langCode}-IN`;
+  const targetBcp = (LANG_BCP47_MAP[langCode] || `${langCode}-IN`).toLowerCase();
   const langPrefix = langCode.toLowerCase().split('-')[0];
 
   // 1. Exact match e.g. ta-IN or hi-IN
-  let matched = voices.find(v => v.lang.toLowerCase() === targetBcp.toLowerCase());
+  let matched = voices.find(v => v.lang.toLowerCase() === targetBcp);
   if (matched) return matched;
 
-  // 2. Prefix match e.g. ta or hi
-  matched = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix));
+  // 2. Exact match with underscore e.g. ta_IN
+  matched = voices.find(v => v.lang.toLowerCase().replace('_', '-') === targetBcp);
   if (matched) return matched;
 
-  // 3. Match voice name containing language (e.g., 'Tamil', 'Hindi', 'Telugu')
-  const langNames: Record<string, string> = {
-    ta: 'tamil',
-    hi: 'hindi',
-    te: 'telugu',
-    ml: 'malayalam',
-    mr: 'marathi',
-    gu: 'gujarati',
-    kn: 'kannada',
-    bn: 'bengali',
-    pa: 'punjabi',
-    en: 'english'
+  // 3. Prefix match e.g. ta or hi
+  matched = voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith(`${langPrefix}-`) || v.lang.toLowerCase() === langPrefix);
+  if (matched) return matched;
+
+  // 4. Match voice name containing language (in English or native script) or well-known voice personalities
+  const langVoiceKeywords: Record<string, string[]> = {
+    ta: ['tamil', 'தமிழ்', 'valluvar', 'pallavi'],
+    hi: ['hindi', 'हिन्दी', 'madhur', 'swara', 'kalpana', 'hemant'],
+    te: ['telugu', 'తెలుగు', 'mohan', 'shruti'],
+    ml: ['malayalam', 'മലയാളം', 'midhun', 'sobhana'],
+    mr: ['marathi', 'मराठी', 'aarohi', 'manohar'],
+    gu: ['gujarati', 'ગુજરાતી', 'niranjan', 'dhwani'],
+    kn: ['kannada', 'ಕನ್ನಡ', 'gagan', 'sapna'],
+    bn: ['bengali', 'বাংলা', 'bashkar', 'tanishaa'],
+    pa: ['punjabi', 'ਪੰਜਾਬੀ', 'raavi', 'ojas'],
+    en: ['indian english', 'india', 'neerja', 'prabhat', 'english']
   };
-  const targetName = langNames[langPrefix];
-  if (targetName) {
-    matched = voices.find(v => v.name.toLowerCase().includes(targetName));
+
+  const keywords = langVoiceKeywords[langPrefix];
+  if (keywords) {
+    matched = voices.find(v => {
+      const vName = v.name.toLowerCase();
+      return keywords.some(k => vName.includes(k));
+    });
     if (matched) return matched;
   }
 
-  // 4. Default Indian English voice or first available
-  return voices.find(v => v.lang.toLowerCase().includes('en-in')) || voices[0] || null;
+  // 5. If English requested, return Indian English or first English voice
+  if (langPrefix === 'en') {
+    return voices.find(v => v.lang.toLowerCase().includes('en-in')) ||
+           voices.find(v => v.lang.toLowerCase().startsWith('en')) ||
+           voices[0] || null;
+  }
+
+  // 6. For non-English languages: DO NOT fallback to English voice!
+  // Return null so the browser/OS synthesizes using native cloud/OS engine for target utterance.lang.
+  return null;
 }
 
-export function speakText(text: string, langCode: string = 'en') {
+export function speakText(text: string, langCode: string = 'en', onEnd?: () => void) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     console.warn("Speech Synthesis not supported");
     return;
@@ -150,11 +186,16 @@ export function speakText(text: string, langCode: string = 'en') {
   const cleanText = cleanTextForSpeech(text);
   if (!cleanText) return;
 
-  window.speechSynthesis.cancel(); // Stop any active speech
+  try {
+    window.speechSynthesis.cancel(); // Stop any active speech
+    window.speechSynthesis.resume(); // Chromium pause-bug workaround
+  } catch (e) {
+    // ignore
+  }
 
   const utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.lang = LANG_BCP47_MAP[langCode] || 'en-IN';
-  utterance.rate = 0.95; // Deliberate & clear pacing for all Indian languages
+  utterance.lang = LANG_BCP47_MAP[langCode] || `${langCode}-IN`;
+  utterance.rate = 0.95; // Deliberate & clear pacing for Indian languages
   utterance.pitch = 1.0;
 
   const matchedVoice = getBestMatchingVoice(langCode);
@@ -162,12 +203,25 @@ export function speakText(text: string, langCode: string = 'en') {
     utterance.voice = matchedVoice;
   }
 
-  window.speechSynthesis.speak(utterance);
+  if (onEnd) {
+    utterance.onend = () => onEnd();
+    utterance.onerror = () => onEnd();
+  }
+
+  try {
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    console.error("Speech synthesis speak error:", e);
+  }
 }
 
 export function stopSpeaking() {
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      // ignore
+    }
   }
 }
 
@@ -177,32 +231,32 @@ export function stopSpeaking() {
 export function checkVoiceNavigationCommand(transcript: string): string | null {
   const t = transcript.toLowerCase().trim();
 
-  // DASHBOARD
+  // DASHBOARD / HOME
   if (
     /dashboard|home|முகப்பு|டாஷ்போர்டு|डैशबोर्ड|होम|ముఖ్య|డాష్‌బోర్డ్|ഡാഷ്‌ബോർഡ്|मुख्य पान|ડેશબોર્ડ/i.test(t) &&
     /go|open|show|செல்ல|திற|காட்டு|खोलो|दिखाओ|తెరువు|തുറക്കുക|उघडा|ખોલો/i.test(t)
   ) {
     return 'dashboard';
   }
-  if (/^(dashboard|முகப்பு|डैशबोर्ड|முகப்புக்குச் செல்|होम पेज)$/i.test(t)) return 'dashboard';
+  if (/^(dashboard|home|முகப்பு|डैशबोर्ड|முகப்புக்குச் செல்|होम पेज|హోమ్|ഹോം|હોમ)$/i.test(t)) return 'dashboard';
 
   // SCHEMES / EXPLORE
   if (
-    /scheme|explore|திட்டம்|திட்டங்கள்|योजना|योजनाएं|పథకం|పథకాలు|പദ്ധതി|പദ്ധതികൾ|योजनांची यादी|યોજનાઓ/i.test(t)
+    /scheme|schemes|explore|திட்டம்|திட்டங்கள்|திட்டம் காட்டு|யोजना|योजनाएं|योजना सूची|పథకం|పథకాలు|പദ്ധതി|പദ്ധതികൾ|योजनांची यादी|યોજનાઓ/i.test(t)
   ) {
     return 'explore';
   }
 
-  // APPLICATIONS
+  // APPLICATIONS / TRACKER
   if (
-    /application|விண்ணப்பம்|விண்ணப்பங்கள்|விண்ணப்பி|आवेदन|अर्ज|దరఖాస్తు|దరఖాస్తులు|അപേക്ഷ|അപേക്ഷകൾ|અરજી|અરજીઓ/i.test(t)
+    /application|applications|track|tracker|விண்ணப்பம்|விண்ணப்பங்கள்|விண்ணப்பி|கண்காணி|आवेदन|ट्रैकर|अर्ज|దరఖాస్తు|దరఖాస్తులు|అప్లికేషన్|അപേക്ഷ|അപേക്ഷകൾ|અરજી|અરજીઓ/i.test(t)
   ) {
     return 'applications';
   }
 
   // DOCUMENTS / VAULT
   if (
-    /document|vault|doc|ஆவணம்|ஆவணங்கள்|பெட்டகம்|दस्तावेज़|दस्तावेज|कागदपत्रे|పత్రం|పత్రాలు|രേഖ|രേഖകൾ|દસ્તાવેજ|દસ્તાવેજો/i.test(t)
+    /document|documents|vault|doc|ஆவணம்|ஆவணங்கள்|பெட்டகம்|दस्तावेज़|दस्तावेज|तिजोरी|कागदपत्रे|పత్రం|పత్రాలు|డాక్యుమెంట్|രേഖ|രേഖകൾ|દસ્તાવેજ|દસ્તાવેજો/i.test(t)
   ) {
     return 'documents';
   }
@@ -216,9 +270,16 @@ export function checkVoiceNavigationCommand(transcript: string): string | null {
 
   // ASSISTANT / AI
   if (
-    /assistant|ai|bot|help|உதவியாளர்|செயற்கை நுண்ணறிவு|सहायक|मदद|సహాయకుడు|సహాయి|मदत|મદદ/i.test(t)
+    /assistant|ai|bot|help|உதவியாளர்|செயற்கை நுண்ணறிவு|உதவி|सहायक|मदद|సహాయకుడు|సహాయి|സഹായി|मदत|મદદ/i.test(t)
   ) {
     return 'assistant';
+  }
+
+  // KIOSK
+  if (
+    /kiosk|கியோஸ்க்|कियोस्क|కియోస్క్|കിയോസ്ക്|કિયોસ્ક/i.test(t)
+  ) {
+    return 'kiosk';
   }
 
   return null;

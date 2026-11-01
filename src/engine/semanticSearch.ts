@@ -637,7 +637,11 @@ function expandWithSynonyms(tokens: string[]): { primary: string[]; synonyms: st
   const synonymSet = new Set<string>();
 
   for (const token of tokens) {
-    const list = SYNONYM_MAP[token];
+    let list = SYNONYM_MAP[token];
+    if (!list) {
+      const rootKey = Object.keys(SYNONYM_MAP).find(k => k.length >= 3 && (token.startsWith(k) || (token.length >= 4 && k.startsWith(token))));
+      if (rootKey) list = SYNONYM_MAP[rootKey];
+    }
     if (list) {
       for (const syn of list) {
         if (!primarySet.has(syn)) {
