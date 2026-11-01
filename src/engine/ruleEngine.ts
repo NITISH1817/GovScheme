@@ -291,7 +291,13 @@ export function evaluateSchemeEligibility(user: UserProfile | null | undefined, 
       }));
     } else {
       const userCategory = i18n.t(u.category, u.category);
-      if (allowedCategories.some((c: string) => c.toLowerCase() === u.category?.toLowerCase())) {
+      const userCatLower = String(u.category || '').trim().toLowerCase();
+      const isObcVariant = (userCatLower.startsWith('bc') || userCatLower.startsWith('mbc') || userCatLower.includes('backward') || userCatLower.includes('sebc')) &&
+                           allowedCategories.some((c: string) => {
+                             const cl = c.toLowerCase();
+                             return cl.includes('obc') || cl.includes('backward');
+                           });
+      if (allowedCategories.some((c: string) => c.toLowerCase() === userCatLower) || isObcVariant) {
         matchedCriteria.push(i18n.t('ruleCategoryMet', {
           category: userCategory,
           defaultValue: `Social Category requirement met (${userCategory})`
