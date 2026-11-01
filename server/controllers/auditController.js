@@ -88,7 +88,7 @@ export const getAuditLogs = async (req, res) => {
       filter.action = action;
     }
     if (entityType && entityType !== 'All') {
-      filter.entityType = entityType;
+      filter.entityType = { $regex: new RegExp(`^${entityType}$`, 'i') };
     }
     if (q) {
       filter.$or = [
@@ -104,18 +104,17 @@ export const getAuditLogs = async (req, res) => {
     const limitNum = Math.max(1, parseInt(limit, 10) || 50);
     const skip = (pageNum - 1) * limitNum;
 
-    let total = await AuditLog.countDocuments(filter);
-
     // Auto-seed if collection is completely fresh
-    if (total === 0 && !action && !entityType && !q) {
+    const totalCountAll = await AuditLog.countDocuments({});
+    if (totalCountAll === 0 && !action && !entityType && !q) {
       try {
         await AuditLog.insertMany(BASELINE_AUDIT_LOGS);
-        total = BASELINE_AUDIT_LOGS.length;
       } catch (seedErr) {
         console.warn('Failed to seed baseline audit logs:', seedErr.message);
       }
     }
 
+    const total = await AuditLog.countDocuments(filter);
     const logs = await AuditLog.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -127,16 +126,31 @@ export const getAuditLogs = async (req, res) => {
       total,
       page: pageNum,
       pages: Math.max(1, Math.ceil(total / limitNum)),
-      logs: logs.length > 0 ? logs : BASELINE_AUDIT_LOGS.slice(skip, skip + limitNum)
+      logs
     });
   } catch (error) {
-    // If DB is offline, return baseline logs
+    // If DB is offline, filter baseline logs according to criteria
+    let fallback = [...BASELINE_AUDIT_LOGS];
+    if (req.query.action && req.query.action !== 'All') {
+      fallback = fallback.filter(l => l.action === req.query.action);
+    }
+    if (req.query.entityType && req.query.entityType !== 'All') {
+      fallback = fallback.filter(l => (l.entityType || '').toLowerCase() === req.query.entityType.toLowerCase());
+    }
+    if (req.query.q) {
+      const qLower = String(req.query.q).toLowerCase();
+      fallback = fallback.filter(l =>
+        (l.action && l.action.toLowerCase().includes(qLower)) ||
+        (l.adminName && l.adminName.toLowerCase().includes(qLower)) ||
+        (l.details && l.details.toLowerCase().includes(qLower))
+      );
+    }
     res.json({
       success: true,
-      total: BASELINE_AUDIT_LOGS.length,
+      total: fallback.length,
       page: 1,
       pages: 1,
-      logs: BASELINE_AUDIT_LOGS
+      logs: fallback
     });
   }
 };
@@ -146,10 +160,10 @@ export const getAuditLogs = async (req, res) => {
 // @access  Private (Admin)
 export const createAuditLog = async (req, res) => {
   try {
-    const { action, entityType, entityId, details, ipAddress } = req.body;
-    const adminName = req.user 
+    const { action, entityType, entityId, details, ipAddress, adminName: bodyAdminName, createdAt } = req.body;
+    const adminName = bodyAdminName || (req.user 
       ? `${req.user.fullName || req.user.name || 'Admin'} (${req.user.role || 'Super Admin'})`
-      : 'Nitish Priyan (Super Admin)';
+      : 'Nitish Priyan (Super Admin)');
 
     const log = new AuditLog({
       adminId: req.user?._id,
@@ -158,11 +172,31 @@ export const createAuditLog = async (req, res) => {
       entityType: entityType || 'General',
       entityId: entityId || 'SYS-EVENT',
       details: details || 'Administrative event logged successfully.',
-      ipAddress: ipAddress || req.ip || '127.0.0.1 (Live Admin Console)'
+      ipAddress: ipAddress || req.ip || '127.0.0.1 (Live Admin Console)',
+      createdAt: createdAt ? new Date(createdAt) : new Date()
     });
 
     await log.save();
+
+    if (req.app && req.app.get('io')) {
+      try {
+        req.app.get('io').emit('NEW_AUDIT_LOG', { log });
+      } catch {}
+    }
+
     res.status(201).json({ success: true, log });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Clear / purge test audit logs
+// @route   DELETE /api/audit
+// @access  Private (Super Admin)
+export const clearAuditLogs = async (req, res) => {
+  try {
+    await AuditLog.deleteMany({});
+    res.json({ success: true, message: 'Audit logs cleared successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

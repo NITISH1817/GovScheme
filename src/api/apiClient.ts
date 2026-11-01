@@ -45,10 +45,33 @@ export const appendLiveAuditLog = (
       ipAddress: '127.0.0.1 (Live Admin Console)'
     };
     logs.unshift(newLog);
-    // Keep last 100 logs
-    localStorage.setItem('govscheme_live_audit_logs', JSON.stringify(logs.slice(0, 100)));
+    // Keep last 150 logs in resilient cache
+    localStorage.setItem('govscheme_live_audit_logs', JSON.stringify(logs.slice(0, 150)));
     try {
       window.dispatchEvent(new CustomEvent('govscheme_audit_log_added', { detail: newLog }));
+    } catch {}
+
+    // Persist to MongoDB backend API in background so records are permanent
+    try {
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('admin_token') || localStorage.getItem('govscheme_token');
+      fetch(`${API_BASE_URL}/audit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          action,
+          entityType,
+          entityId,
+          details,
+          adminName: `${admin.name} (${admin.role})`,
+          ipAddress: '127.0.0.1 (Live Admin Console)',
+          createdAt: newLog.createdAt
+        })
+      }).catch(err => {
+        console.warn('Backend audit log sync note:', err);
+      });
     } catch {}
   } catch (e) {
     console.warn('Failed to append audit log', e);
@@ -483,11 +506,12 @@ const getLiveNotificationsList = (): any[] => {
 };
 
 const getLiveAuditLogsList = (): any[] => {
+  let customLogs: any[] = [];
   try {
     const raw = localStorage.getItem('govscheme_live_audit_logs');
     if (raw) {
       const logs = JSON.parse(raw);
-      if (Array.isArray(logs) && logs.length > 0) return logs;
+      if (Array.isArray(logs)) customLogs = logs;
     }
   } catch {}
 
@@ -584,11 +608,14 @@ const getLiveAuditLogsList = (): any[] => {
     }
   ];
 
-  try {
-    localStorage.setItem('govscheme_live_audit_logs', JSON.stringify(initialLogs));
-  } catch {}
+  const combined = [...customLogs];
+  for (const init of initialLogs) {
+    if (!combined.some(c => c._id === init._id || (c.action === init.action && c.entityId === init.entityId))) {
+      combined.push(init);
+    }
+  }
 
-  return initialLogs;
+  return combined;
 };
 
 // ============================================================================
@@ -1034,6 +1061,12 @@ const handleLiveDelete = (endpoint: string) => {
     const updated = notifs.filter(n => n._id !== notifId);
     localStorage.setItem('govscheme_live_notifications', JSON.stringify(updated));
     return { success: true, message: 'Notification deleted' };
+  }
+
+  // DELETE /audit
+  if (endpoint.includes('/audit')) {
+    localStorage.removeItem('govscheme_live_audit_logs');
+    return { success: true, message: 'Audit logs reset to baseline' };
   }
 
   return { success: true };

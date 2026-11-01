@@ -4,9 +4,10 @@ import {
   ShieldAlert, Search, Filter, Calendar, Terminal, RefreshCw, 
   Download, ArrowDownUp, CheckCircle, AlertOctagon, UserCheck,
   ShieldCheck, FileText, ExternalLink, Clock, Database, Key,
-  ChevronLeft, ChevronRight, Plus, X, Copy, Check, Eye, AlertCircle
+  ChevronLeft, ChevronRight, Plus, X, Copy, Check, Eye, AlertCircle, Trash2
 } from 'lucide-react';
 import { apiClient } from '../../api/apiClient';
+import { socketService } from '../../api/socketClient';
 
 export interface AuditLogItem {
   _id: string;
@@ -51,16 +52,36 @@ export const AuditLogsView: React.FC = () => {
         action: actionFilter !== 'All' ? actionFilter : undefined,
         entityType: entityFilter !== 'All' ? entityFilter : undefined,
         q: searchQuery.trim() || undefined,
-        limit: 200
+        limit: 300
       });
 
+      let fetchedLogs: AuditLogItem[] = [];
       if (res && res.logs) {
-        setLogs(res.logs);
-        setTotalCount(res.total || res.logs.length);
+        fetchedLogs = res.logs;
       } else if (Array.isArray(res)) {
-        setLogs(res);
-        setTotalCount(res.length);
+        fetchedLogs = res;
       }
+
+      // Merge with any resilient live logs in localStorage so newly added live records are never lost
+      try {
+        const localRaw = localStorage.getItem('govscheme_live_audit_logs');
+        if (localRaw) {
+          const localLogs: AuditLogItem[] = JSON.parse(localRaw);
+          const combined = [...localLogs];
+          for (const f of fetchedLogs) {
+            if (!combined.some(c => c._id === f._id || (c.action === f.action && c.entityId === f.entityId && Math.abs(new Date(c.createdAt).getTime() - new Date(f.createdAt).getTime()) < 5000))) {
+              combined.push(f);
+            }
+          }
+          fetchedLogs = combined;
+        }
+      } catch {}
+
+      // Sort by newest first
+      fetchedLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setLogs(fetchedLogs);
+      setTotalCount(fetchedLogs.length);
     } catch (e) {
       console.error('Failed to load audit logs', e);
     } finally {
@@ -81,15 +102,28 @@ export const AuditLogsView: React.FC = () => {
         setTotalCount(c => c + 1);
       }
     };
+    const handleSocketAuditLog = (data: any) => {
+      if (data && data.log) {
+        const newEntry = data.log;
+        setLogs(prev => [newEntry, ...prev.filter(l => l._id !== newEntry._id)]);
+        setTotalCount(c => c + 1);
+      }
+    };
+
     window.addEventListener('govscheme_audit_log_added', handleLogAdded);
-    return () => window.removeEventListener('govscheme_audit_log_added', handleLogAdded);
+    socketService.on('NEW_AUDIT_LOG', handleSocketAuditLog);
+
+    return () => {
+      window.removeEventListener('govscheme_audit_log_added', handleLogAdded);
+      socketService.off('NEW_AUDIT_LOG', handleSocketAuditLog);
+    };
   }, []);
 
-  // Background live streaming poll every 4 seconds
+  // Background live streaming poll every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       fetchLogs(true);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [actionFilter, entityFilter, searchQuery]);
 
@@ -97,11 +131,22 @@ export const AuditLogsView: React.FC = () => {
   const filteredLogs = useMemo(() => {
     let result = [...logs];
 
+    // Filter by action
+    if (actionFilter !== 'All') {
+      result = result.filter(log => log.action === actionFilter);
+    }
+
+    // Filter by entity
+    if (entityFilter !== 'All') {
+      result = result.filter(log => (log.entityType || '').toLowerCase() === entityFilter.toLowerCase());
+    }
+
     // Filter by timeframe
     if (timeframeFilter !== 'All') {
       const now = Date.now();
       result = result.filter(log => {
         const time = new Date(log.createdAt).getTime();
+        if (isNaN(time)) return true;
         if (timeframeFilter === 'Today') {
           return now - time <= 86400000;
         }
@@ -129,7 +174,33 @@ export const AuditLogsView: React.FC = () => {
     }
 
     return result;
-  }, [logs, timeframeFilter, searchQuery]);
+  }, [logs, actionFilter, entityFilter, timeframeFilter, searchQuery]);
+
+  // Dynamically compute all distinct actions present in system logs
+  const availableActions = useMemo(() => {
+    const base = [
+      'ADMIN_SESSION_START',
+      'APPLY_SCHEME',
+      'CREATE_APPLICATION',
+      'UPDATE_APPLICATION_STATUS',
+      'DELETE_APPLICATION',
+      'CREATE_SCHEME',
+      'UPDATE_SCHEME',
+      'DELETE_SCHEME',
+      'VERIFY_DOCUMENT',
+      'REJECT_DOCUMENT',
+      'UPDATE_CITIZEN_STATUS',
+      'BROADCAST_NOTIFICATION',
+      'COMPLIANCE_CHECKPOINT',
+      'SYSTEM_INTEGRITY_CHECK',
+      'EXPORT_AUDIT_CSV'
+    ];
+    const set = new Set(base);
+    logs.forEach(l => {
+      if (l.action) set.add(l.action);
+    });
+    return Array.from(set);
+  }, [logs]);
 
   // Reset to page 1 on filter or search changes
   useEffect(() => {
@@ -148,7 +219,7 @@ export const AuditLogsView: React.FC = () => {
   const metrics = useMemo(() => {
     const total = logs.length;
     const docVerifications = logs.filter(l => l.action.includes('DOCUMENT') || l.action.includes('VERIFY')).length;
-    const mutations = logs.filter(l => l.action.includes('CREATE') || l.action.includes('UPDATE') || l.action.includes('DELETE')).length;
+    const mutations = logs.filter(l => l.action.includes('CREATE') || l.action.includes('UPDATE') || l.action.includes('DELETE') || l.action.includes('APPLY')).length;
     const securityChecks = logs.filter(l => l.action.includes('INTEGRITY') || l.action.includes('CHECKPOINT') || l.action.includes('SESSION')).length;
     return { total, docVerifications, mutations, securityChecks };
   }, [logs]);
@@ -163,6 +234,20 @@ export const AuditLogsView: React.FC = () => {
     setActionFilter('All');
     setEntityFilter('All');
     setTimeframeFilter('All');
+  };
+
+  const handleClearLogs = async () => {
+    if (!window.confirm('Reset the audit trail? This will clear test audit events and re-seed the authoritative compliance baseline.')) return;
+    try {
+      localStorage.removeItem('govscheme_live_audit_logs');
+      await apiClient.delete('/audit');
+      await fetchLogs();
+      setBannerNotice({ text: 'Audit trail reset successfully.', type: 'success' });
+      setTimeout(() => setBannerNotice(null), 3500);
+    } catch {
+      setBannerNotice({ text: 'Failed to reset audit logs.', type: 'error' });
+      setTimeout(() => setBannerNotice(null), 3500);
+    }
   };
 
   const exportAuditCSV = () => {
@@ -243,8 +328,11 @@ export const AuditLogsView: React.FC = () => {
     return 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/20';
   };
 
-  const formatRelativeTime = (isoString: string) => {
-    const diff = Date.now() - new Date(isoString).getTime();
+  const formatRelativeTime = (isoString?: string) => {
+    if (!isoString) return 'Just now';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return 'Just now';
+    const diff = Math.max(0, Date.now() - date.getTime());
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m ago`;
@@ -330,6 +418,14 @@ export const AuditLogsView: React.FC = () => {
             className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs md:text-sm font-bold transition-colors shadow-sm shadow-blue-500/20"
           >
             <Download className="w-4 h-4" /> Export CSV Log
+          </button>
+          <button 
+            type="button"
+            onClick={handleClearLogs}
+            title="Reset test events and re-seed baseline audit trail"
+            className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 rounded-lg text-xs md:text-sm font-semibold transition-colors shadow-sm"
+          >
+            <Trash2 className="w-4 h-4" /> Reset Trail
           </button>
         </div>
       </div>
@@ -420,19 +516,10 @@ export const AuditLogsView: React.FC = () => {
               onChange={(e) => setActionFilter(e.target.value)}
               className="px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/80 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none cursor-pointer hover:border-gray-300"
             >
-              <option value="All">All Actions</option>
-              <option value="ADMIN_SESSION_START">ADMIN_SESSION_START</option>
-              <option value="VERIFY_DOCUMENT">VERIFY_DOCUMENT</option>
-              <option value="REJECT_DOCUMENT">REJECT_DOCUMENT</option>
-              <option value="CREATE_SCHEME">CREATE_SCHEME</option>
-              <option value="UPDATE_SCHEME">UPDATE_SCHEME</option>
-              <option value="DELETE_SCHEME">DELETE_SCHEME</option>
-              <option value="UPDATE_APPLICATION_STATUS">UPDATE_APPLICATION_STATUS</option>
-              <option value="UPDATE_CITIZEN_STATUS">UPDATE_CITIZEN_STATUS</option>
-              <option value="BROADCAST_NOTIFICATION">BROADCAST_NOTIFICATION</option>
-              <option value="SYSTEM_INTEGRITY_CHECK">SYSTEM_INTEGRITY_CHECK</option>
-              <option value="COMPLIANCE_CHECKPOINT">COMPLIANCE_CHECKPOINT</option>
-              <option value="EXPORT_AUDIT_CSV">EXPORT_AUDIT_CSV</option>
+              <option value="All">All Actions ({availableActions.length})</option>
+              {availableActions.map(act => (
+                <option key={act} value={act}>{act}</option>
+              ))}
             </select>
           </div>
 
@@ -452,6 +539,8 @@ export const AuditLogsView: React.FC = () => {
               <option value="security">Security & Checkpoints</option>
               <option value="system">System & Integrity</option>
               <option value="notifications">Notifications</option>
+              <option value="governance">Governance</option>
+              <option value="general">General</option>
             </select>
           </div>
 
@@ -534,15 +623,23 @@ export const AuditLogsView: React.FC = () => {
                   >
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                        {new Date(log.createdAt).toLocaleDateString('en-IN', {
-                          day: '2-digit', month: 'short', year: 'numeric'
-                        })}
+                        {log.createdAt && !isNaN(new Date(log.createdAt).getTime())
+                          ? new Date(log.createdAt).toLocaleDateString('en-IN', {
+                              day: '2-digit', month: 'short', year: 'numeric'
+                            })
+                          : new Date().toLocaleDateString('en-IN', {
+                              day: '2-digit', month: 'short', year: 'numeric'
+                            })}
                       </div>
                       <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
                         <Clock className="w-3 h-3 text-gray-400" />
-                        {new Date(log.createdAt).toLocaleTimeString('en-IN', {
-                          hour: '2-digit', minute: '2-digit', second: '2-digit'
-                        })}
+                        {log.createdAt && !isNaN(new Date(log.createdAt).getTime())
+                          ? new Date(log.createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit', minute: '2-digit', second: '2-digit'
+                            })
+                          : new Date().toLocaleTimeString('en-IN', {
+                              hour: '2-digit', minute: '2-digit', second: '2-digit'
+                            })}
                         <span className="text-gray-400">•</span>
                         <span>{formatRelativeTime(log.createdAt)}</span>
                       </div>
@@ -690,10 +787,15 @@ export const AuditLogsView: React.FC = () => {
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Timestamp (IST)</span>
                     <span className="font-semibold text-gray-800 dark:text-gray-200 text-xs">
-                      {new Date(selectedLog.createdAt).toLocaleString('en-IN', {
-                        dateStyle: 'full',
-                        timeStyle: 'medium'
-                      })}
+                      {selectedLog.createdAt && !isNaN(new Date(selectedLog.createdAt).getTime())
+                        ? new Date(selectedLog.createdAt).toLocaleString('en-IN', {
+                            dateStyle: 'full',
+                            timeStyle: 'medium'
+                          })
+                        : new Date().toLocaleString('en-IN', {
+                            dateStyle: 'full',
+                            timeStyle: 'medium'
+                          })}
                     </span>
                   </div>
 
