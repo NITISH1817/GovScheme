@@ -3,6 +3,73 @@ import Scheme from '../models/Scheme.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { schemesData } from '../../src/data/schemes.ts';
 import { performSemanticSearch } from '../../src/engine/semanticSearch.ts';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const localeCache = new Map();
+
+export function getLocaleDict(lang) {
+  const norm = (lang || 'en').toLowerCase().split('-')[0];
+  if (norm === 'en') return {};
+  if (localeCache.has(norm)) return localeCache.get(norm);
+  try {
+    const candidates = [
+      path.resolve(__dirname, '../../public/locales', norm, 'translation.json'),
+      path.resolve(process.cwd(), 'public/locales', norm, 'translation.json'),
+      path.resolve(process.cwd(), 'GovScheme/public/locales', norm, 'translation.json')
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        const dict = JSON.parse(fs.readFileSync(p, 'utf8'));
+        localeCache.set(norm, dict);
+        return dict;
+      }
+    }
+  } catch (e) {
+    console.warn(`[AI Controller] Could not load locale for ${norm}:`, e.message);
+  }
+  return {};
+}
+
+export function getLocalizedSchemeInfo(scheme, lang) {
+  if (!scheme) return { name: '', category: '', benefits: '', department: '', state: '' };
+  const norm = (lang || 'en').toLowerCase().split('-')[0];
+  const rawBenefits = scheme.benefitsSummary || scheme.shortDescription || '';
+  const rawDept = scheme.department || scheme.ministry || '';
+  const rawState = scheme.state || 'Central';
+
+  if (norm === 'en') {
+    return {
+      name: scheme.name,
+      category: scheme.category,
+      benefits: rawBenefits,
+      department: rawDept,
+      state: rawState
+    };
+  }
+
+  const dict = getLocaleDict(norm);
+  const schemeId = scheme.id || scheme.schemeId || '';
+
+  const localizedName = dict[`${schemeId}_name`] || scheme.name;
+  const localizedBenefits = dict[`${schemeId}_benefits`] || dict[`${schemeId}_desc`] || rawBenefits;
+  const localizedCat = dict[scheme.category] || scheme.category;
+  const localizedDept = dict[scheme.department] || dict[scheme.ministry] || rawDept;
+  const localizedState = (scheme.state === 'All' || scheme.state === 'Central')
+    ? (dict['Central'] || 'Central')
+    : (dict[scheme.state] || scheme.state);
+
+  return {
+    name: localizedName,
+    category: localizedCat,
+    benefits: localizedBenefits,
+    department: localizedDept,
+    state: localizedState
+  };
+}
 
 const RELEVANCE_THRESHOLD = 0.15;
 const MAX_CONTEXT_SCHEMES = 5;
@@ -38,10 +105,12 @@ const CLARIFICATIONS = {
  */
 // Exported for transparent inspection & testing
 export const buildGroundedPrompt = (message, topSchemes, language = 'en') => {
-  const schemeContext = topSchemes.map((s, idx) => `
-[Scheme ${idx + 1}: ${s.name}]
-- Category: ${s.category} | State: ${s.state} | Ministry/Dept: ${s.ministry || s.department}
-- Benefits: ${s.benefitsSummary || s.shortDescription}
+  const schemeContext = topSchemes.map((s, idx) => {
+    const loc = getLocalizedSchemeInfo(s, language);
+    return `
+[Scheme ${idx + 1}: ${loc.name} (${s.name})]
+- Category: ${loc.category} | State: ${loc.state} | Ministry/Dept: ${loc.department}
+- Benefits: ${loc.benefits}
 - Financial Support: ${s.financialBenefitAmount ? '₹' + s.financialBenefitAmount : 'As per scheme rules'}
 - Key Eligibility Rules:
   * Age Range: ${s.eligibilityRules?.minAge ?? 0} to ${s.eligibilityRules?.maxAge ?? 120} years
@@ -50,7 +119,8 @@ export const buildGroundedPrompt = (message, topSchemes, language = 'en') => {
   * Target Categories: ${(s.eligibilityRules?.allowedCategories || ['All']).join(', ')}
   * Required Documents: ${(s.eligibilityRules?.requiredDocuments || []).join(', ')}
 - Official Application Portal: ${s.officialApplyUrl || s.officialWebsite || 'Official portal link currently unavailable'}
-`).join('\n');
+`;
+  }).join('\n');
 
   const langName = LANGUAGE_NAMES[language] || 'English';
 
@@ -79,6 +149,7 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
   const primary = topSchemes[0];
   const portalUrl = primary.officialApplyUrl || primary.officialWebsite || 'Official portal link currently unavailable';
+  const info = getLocalizedSchemeInfo(primary, language);
 
   if (language === 'ta') {
     const ageStr = (primary.eligibilityRules?.minAge !== undefined || primary.eligibilityRules?.maxAge !== undefined)
@@ -90,9 +161,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[உறுதிப்படுத்தப்பட்ட அறிவு இயந்திரம் • ${statusTag}]
 
-**அரசுத் திட்டம்:** ${primary.name}
-**பிரிவு:** ${primary.category} (${primary.state})
-**நன்மைகள்:** ${primary.benefitsSummary || primary.shortDescription}
+**அரசுத் திட்டம்:** ${info.name}
+**பிரிவு:** ${info.category} (${info.state})
+**நன்மைகள்:** ${info.benefits}
 **முக்கிய தகுதி:** ${ageStr}; ${incStr}
 **அதிகாரப்பூர்வ விண்ணப்ப போர்ட்டல்:** ${portalUrl}
 
@@ -109,9 +180,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[सत्यापित ज्ञान इंजन • ${statusTag}]
 
-**योजना:** ${primary.name}
-**श्रेणी:** ${primary.category} (${primary.state})
-**लाभ:** ${primary.benefitsSummary || primary.shortDescription}
+**योजना:** ${info.name}
+**श्रेणी:** ${info.category} (${info.state})
+**लाभ:** ${info.benefits}
 **प्रमुख पात्रता:** ${ageStr}; ${incStr}
 **आधिकारिक आवेदन पोर्टल:** ${portalUrl}
 
@@ -128,9 +199,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[ధృవీకరించబడిన నాలెడ్జ్ ఇంజిన్ • ${statusTag}]
 
-**పథకం:** ${primary.name}
-**వర్గం:** ${primary.category} (${primary.state})
-**ప్రయోజనాలు:** ${primary.benefitsSummary || primary.shortDescription}
+**పథకం:** ${info.name}
+**వర్గం:** ${info.category} (${info.state})
+**ప్రయోజనాలు:** ${info.benefits}
 **ముఖ్య అర్హత:** ${ageStr}; ${incStr}
 **అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}
 
@@ -147,9 +218,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[സ്ഥിരീകരിച്ച വിജ്ഞാന എഞ്ചിൻ • ${statusTag}]
 
-**പദ്ധതി:** ${primary.name}
-**വിഭാഗം:** ${primary.category} (${primary.state})
-**ആനുകൂല്യങ്ങൾ:** ${primary.benefitsSummary || primary.shortDescription}
+**പദ്ധതി:** ${info.name}
+**വിഭാഗം:** ${info.category} (${info.state})
+**ആനുകൂല്യങ്ങൾ:** ${info.benefits}
 **പ്രധാന യോഗ്യത:** ${ageStr}; ${incStr}
 **ഔദ്യോഗിക അപേക്ഷാ പോർട്ടൽ:** ${portalUrl}
 
@@ -166,9 +237,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[प्रमाणित ज्ञान इंजिन • ${statusTag}]
 
-**योजना:** ${primary.name}
-**श्रेणी:** ${primary.category} (${primary.state})
-**फायदे:** ${primary.benefitsSummary || primary.shortDescription}
+**योजना:** ${info.name}
+**श्रेणी:** ${info.category} (${info.state})
+**फायदे:** ${info.benefits}
 **मुख्य पात्रता:** ${ageStr}; ${incStr}
 **अधिकृत अर्ज पोर्टल:** ${portalUrl}
 
@@ -185,9 +256,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[પ્રમાણિત જ્ઞાન એન્જિન • ${statusTag}]
 
-**યોજના:** ${primary.name}
-**શ્રેણી:** ${primary.category} (${primary.state})
-**લાભો:** ${primary.benefitsSummary || primary.shortDescription}
+**યોજના:** ${info.name}
+**શ્રેણી:** ${info.category} (${info.state})
+**લાભો:** ${info.benefits}
 **મુખ્ય પાત્રતા:** ${ageStr}; ${incStr}
 **સત્તાવાર અરજી પોર્ટલ:** ${portalUrl}
 
@@ -204,9 +275,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[ಪರಿಶೀಲಿಸಿದ ಜ್ಞಾನ ಎಂಜಿನ್ • ${statusTag}]
 
-**ಯೋಜನೆ:** ${primary.name}
-**ವರ್ಗ:** ${primary.category} (${primary.state})
-**ಪ್ರಯೋಜನಗಳು:** ${primary.benefitsSummary || primary.shortDescription}
+**ಯೋಜನೆ:** ${info.name}
+**ವರ್ಗ:** ${info.category} (${info.state})
+**ಪ್ರಯೋಜನಗಳು:** ${info.benefits}
 **ಪ್ರಮುಖ ಅರ್ಹತೆ:** ${ageStr}; ${incStr}
 **ಅಧಿಕೃತ ಅರ್ಜಿ ಪೋರ್ಟಲ್:** ${portalUrl}
 
@@ -223,10 +294,10 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[যাচাইকৃত জ্ঞান ইঞ্জিন • ${statusTag}]
 
-**প্রকল্প:** ${primary.name}
-**বিভাগ:** ${primary.category} (${primary.state})
-**সুবিধা:** ${primary.benefitsSummary || primary.shortDescription}
-**মূল যোগ্যতা:** ${ageStr}; ${incStr}
+**প্রকল্প:** ${info.name}
+**বিভাগ:** ${info.category} (${info.state})
+**সুবিধা:** ${info.benefits}
+**মূল योग्यता:** ${ageStr}; ${incStr}
 **অফিসিয়াল আবেদন পোর্টাল:** ${portalUrl}
 
 *আইনি বিজ্ঞপ্তি: অফিসিয়াল যোগ্যতা সরকারি বিভাগ দ্বারা নির্ধারিত হয়।*`;
@@ -242,9 +313,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
     return `[ਤਸਦੀਕਸ਼ੁਦਾ ਗਿਆਨ ਇੰਜਣ • ${statusTag}]
 
-**ਯੋਜਨਾ:** ${primary.name}
-**ਸ਼੍ਰੇਣੀ:** ${primary.category} (${primary.state})
-**ਲਾਭ:** ${primary.benefitsSummary || primary.shortDescription}
+**ਯੋਜਨਾ:** ${info.name}
+**ਸ਼੍ਰੇਣੀ:** ${info.category} (${info.state})
+**ਲਾਭ:** ${info.benefits}
 **ਮੁੱਖ ਯੋਗਤਾ:** ${ageStr}; ${incStr}
 **ਅਧਿਕਾਰਤ ਅਰਜ਼ੀ ਪੋਰਟਲ:** ${portalUrl}
 
@@ -261,9 +332,9 @@ export function buildOfflineFallbackReply(topSchemes, statusTag = 'Verified Cata
 
   return `[Grounded Knowledge Engine • ${statusTag}]
 
-**Published Scheme:** ${primary.name}
-**Category:** ${primary.category} (${primary.state})
-**Benefits:** ${primary.benefitsSummary || primary.shortDescription}
+**Published Scheme:** ${info.name}
+**Category:** ${info.category} (${info.state})
+**Benefits:** ${info.benefits}
 **Key Eligibility:** ${ageStr}; ${incStr}
 **Official Application Portal:** ${portalUrl}
 

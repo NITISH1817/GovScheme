@@ -135,7 +135,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     });
 
     // 4. Voice announcement in the newly selected language if user switched language and voice is enabled
-    if (!isInitialMount.current && voicePlaybackEnabled) {
+    if (!isInitialMount.current && voicePlaybackEnabled && !onLanguageChange) {
       const confirmSpeech = LANGUAGE_SWITCH_CONFIRMATION[currentLang] || `Voice language switched to ${getLanguageNativeName(currentLang)}`;
       speakText(confirmSpeech, currentLang);
     }
@@ -258,8 +258,26 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         if (matchedSchemes.length > 0) {
           const topS = matchedSchemes[0];
           const localizedName = dict[`${topS.id}_name`] || t(`${topS.id}_name`, topS.name);
-          const localizedDesc = dict[`${topS.id}_desc`] || t(`${topS.id}_desc`, topS.shortDescription);
-          schemeDetails = `• ${localizedName}: ${localizedDesc}`;
+          const localizedBenefits = dict[`${topS.id}_benefits`] || dict[`${topS.id}_desc`] || t(`${topS.id}_benefits`, topS.shortDescription);
+          const localizedCat = dict[topS.category] || topS.category;
+          const localizedState = (topS.state === 'All' || topS.state === 'Central') ? (dict['Central'] || 'Central') : (dict[topS.state] || topS.state);
+          const portalUrl = topS.officialApplyUrl || topS.officialWebsite || 'https://www.india.gov.in';
+
+          if (currentLang === 'te') {
+            schemeDetails = `**పథకం:** ${localizedName}\n**వర్గం:** ${localizedCat} (${localizedState})\n**ప్రయోజనాలు:** ${localizedBenefits}\n**అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}`;
+          } else if (currentLang === 'ta') {
+            schemeDetails = `**அரசுத் திட்டம்:** ${localizedName}\n**பிரிவு:** ${localizedCat} (${localizedState})\n**நன்மைகள்:** ${localizedBenefits}\n**அதிகாரப்பூர்வ விண்ணப்ப போர்ட்டல்:** ${portalUrl}`;
+          } else if (currentLang === 'hi') {
+            schemeDetails = `**योजना:** ${localizedName}\n**श्रेणी:** ${localizedCat} (${localizedState})\n**लाभ:** ${localizedBenefits}\n**आधिकारिक आवेदन पोर्टल:** ${portalUrl}`;
+          } else if (currentLang === 'mr') {
+            schemeDetails = `**योजना:** ${localizedName}\n**श्रेणी:** ${localizedCat} (${localizedState})\n**फायदे:** ${localizedBenefits}\n**अधिकृत अर्ज पोर्टल:** ${portalUrl}`;
+          } else if (currentLang === 'ml') {
+            schemeDetails = `**പദ്ധതി:** ${localizedName}\n**വിഭാഗം:** ${localizedCat} (${localizedState})\n**ആനുകൂല്യങ്ങൾ:** ${localizedBenefits}\n**ഔദ്യോഗിക അപേക്ഷാ പോർട്ടൽ:** ${portalUrl}`;
+          } else if (currentLang === 'gu') {
+            schemeDetails = `**યોજના:** ${localizedName}\n**શ્રેણી:** ${localizedCat} (${localizedState})\n**લાભો:** ${localizedBenefits}\n**સત્તાવાર અરજી પોર્ટલ:** ${portalUrl}`;
+          } else {
+            schemeDetails = `**Published Scheme:** ${localizedName}\n**Category:** ${localizedCat} (${localizedState})\n**Benefits:** ${localizedBenefits}\n**Official Application Portal:** ${portalUrl}`;
+          }
         } else {
           schemeDetails = dict.noSchemeFoundExplore || t('noSchemeFoundExplore', 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.');
         }
@@ -505,41 +523,50 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                                 {t('groundedCitations', 'Authoritative Source Citations')}
                               </span>
                               <div className="grid grid-cols-1 gap-1.5">
-                                {referenced.map(refScheme => (
-                                  <div key={refScheme.id} className="p-2 rounded bg-white dark:bg-[#0c1626] border border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <div className="font-bold text-gray-800 dark:text-gray-200 truncate text-[11px]">{refScheme.name}</div>
-                                      <div className="text-[10px] text-gray-500 truncate">{refScheme.department} • {refScheme.state || 'Central'}</div>
+                                {referenced.map(refScheme => {
+                                  const rawState = refScheme.state || 'Central';
+                                  const locName = (translations as any)[currentLang]?.[`${refScheme.id}_name`] || t(`${refScheme.id}_name`, refScheme.name);
+                                  const locDept = (translations as any)[currentLang]?.[refScheme.department] || t(refScheme.department, refScheme.department);
+                                  const locState = (rawState === 'All' || rawState === 'Central')
+                                    ? ((translations as any)[currentLang]?.['Central'] || t('Central', 'Central'))
+                                    : ((translations as any)[currentLang]?.[rawState] || t(rawState, rawState));
+
+                                  return (
+                                    <div key={refScheme.id} className="p-2 rounded bg-white dark:bg-[#0c1626] border border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <div className="font-bold text-gray-800 dark:text-gray-200 truncate text-[11px]">{locName}</div>
+                                        <div className="text-[10px] text-gray-500 truncate">{locDept} • {locState}</div>
+                                      </div>
+                                      <a
+                                        href={refScheme.officialApplyUrl || refScheme.officialWebsite || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => {
+                                          const url = refScheme.officialApplyUrl || refScheme.officialWebsite;
+                                          if (url) {
+                                            window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+                                              detail: {
+                                                type: 'redirect',
+                                                url,
+                                                schemeName: locName,
+                                                department: locDept,
+                                                schemeId: refScheme.id,
+                                                scheme: refScheme
+                                              }
+                                            }));
+                                          } else {
+                                            e.preventDefault();
+                                            onNavigateTab('schemes');
+                                          }
+                                        }}
+                                        className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-[10px] hover:underline shrink-0 flex items-center gap-1 no-underline cursor-pointer"
+                                      >
+                                        <ExternalLink className="w-2.5 h-2.5" />
+                                        <span>{t('viewOfficialPortal', 'Official Portal')}</span>
+                                      </a>
                                     </div>
-                                    <a
-                                      href={refScheme.officialApplyUrl || refScheme.officialWebsite || '#'}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => {
-                                        const url = refScheme.officialApplyUrl || refScheme.officialWebsite;
-                                        if (url) {
-                                          window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
-                                            detail: {
-                                              type: 'redirect',
-                                              url,
-                                              schemeName: refScheme.name,
-                                              department: refScheme.department,
-                                              schemeId: refScheme.id,
-                                              scheme: refScheme
-                                            }
-                                          }));
-                                        } else {
-                                          e.preventDefault();
-                                          onNavigateTab('schemes');
-                                        }
-                                      }}
-                                      className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold text-[10px] hover:underline shrink-0 flex items-center gap-1 no-underline cursor-pointer"
-                                    >
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                      <span>{t('viewOfficialPortal', 'Official Portal')}</span>
-                                    </a>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           )}

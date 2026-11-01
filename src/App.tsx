@@ -563,6 +563,32 @@ export const App: React.FC = () => {
     document.documentElement.lang = norm;
   }, [currentLang, i18n]);
 
+  // Centralized spoken confirmation on language switch
+  const handleLanguageChange = useCallback((lang: LanguageCode | string, speak: boolean = true) => {
+    const norm = normalizeAppLanguage(lang);
+    i18n.changeLanguage(norm);
+    setCurrentLang(norm);
+    localStorage.setItem('govscheme_lang', norm);
+    document.documentElement.lang = norm;
+
+    if (speak) {
+      const announcements: Record<string, string> = {
+        te: 'నమస్కారం! భాష తెలుగులోకి మార్చబడింది.',
+        mr: 'नमस्कार! भाषा मराठीत बदलली आहे.',
+        ta: 'வணக்கம்! மொழி தமிழுக்கு மாற்றப்பட்டது.',
+        hi: 'नमस्ते! भाषा हिन्दी में बदल दी गई है।',
+        ml: 'നമസ്കാരം! ഭാഷ മലയാളത്തിലേക്ക് മാറ്റി.',
+        gu: 'નમસ્તે! ભાષા ગુજરાતીમાં બદલાઈ ગઈ છે.',
+        en: 'Hello! Language switched to English.',
+        kn: 'ನಮಸ್ಕಾರ! ಭಾಷೆ ಕನ್ನಡಕ್ಕೆ ಬದಲಾಗಿದೆ.',
+        bn: 'নমস্কার! ভাষা বাংলায় পরিবর্তন করা হয়েছে।',
+        pa: 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਭਾਸ਼ਾ ਪੰਜਾਬੀ ਵਿੱਚ ਬਦਲ ਗਈ ਹੈ।'
+      };
+      const announcement = announcements[norm] || `Language switched to ${norm}`;
+      speakText(announcement, norm);
+    }
+  }, [i18n]);
+
   // Save user to localStorage and accounts registry whenever it changes
   useEffect(() => {
     if (user) {
@@ -1422,10 +1448,7 @@ export const App: React.FC = () => {
           onUpdateProfile={handleUpdateProfile}
           onLogout={handleLogout}
           currentLang={currentLang}
-          onLanguageChange={(lang) => {
-            i18n.changeLanguage(lang);
-            setCurrentLang(lang);
-          }}
+          onLanguageChange={(lang) => handleLanguageChange(lang)}
           onGenerateReport={(profile, recList) => {
             setKioskProfile(profile);
             setActiveKioskRecommendedSchemes(recList);
@@ -1512,10 +1535,7 @@ export const App: React.FC = () => {
       <KioskReport
         key={currentLang}
         currentLang={currentLang}
-        onLanguageChange={(lang) => {
-          i18n.changeLanguage(lang);
-          setCurrentLang(lang);
-        }}
+        onLanguageChange={(lang) => handleLanguageChange(lang)}
         profile={activeKioskProfile}
         schemes={schemes}
         recommendedSchemes={activeKioskRecommendedSchemes}
@@ -1708,10 +1728,7 @@ export const App: React.FC = () => {
       {/* Main Header Navbar */}
       <Navbar
         currentLang={currentLang}
-        onLanguageChange={(lang) => {
-          i18n.changeLanguage(lang);
-          setCurrentLang(lang);
-        }}
+        onLanguageChange={(lang) => handleLanguageChange(lang)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         theme={theme}
@@ -1923,10 +1940,7 @@ export const App: React.FC = () => {
             schemes={schemes}
             currentLang={currentLang}
             onNavigateTab={setActiveTab}
-            onLanguageChange={(lang) => {
-              i18n.changeLanguage(lang);
-              setCurrentLang(lang);
-            }}
+            onLanguageChange={(lang) => handleLanguageChange(lang)}
           />
         )}
 
@@ -1995,10 +2009,7 @@ export const App: React.FC = () => {
           <KioskReport
             key={currentLang}
             currentLang={currentLang}
-            onLanguageChange={(lang) => {
-              i18n.changeLanguage(lang);
-              setCurrentLang(lang);
-            }}
+            onLanguageChange={(lang) => handleLanguageChange(lang)}
             profile={user || kioskProfile || guestProfile || initialUserProfile}
             schemes={schemes}
             recommendedSchemes={activeKioskRecommendedSchemes}
@@ -2232,10 +2243,7 @@ export const App: React.FC = () => {
         <SettingsView
           user={user}
           currentLang={currentLang}
-          onLanguageChange={(lang) => {
-            i18n.changeLanguage(lang);
-            setCurrentLang(lang);
-          }}
+          onLanguageChange={(lang) => handleLanguageChange(lang)}
           theme={theme}
           setTheme={setTheme}
           textSize={textSize}
