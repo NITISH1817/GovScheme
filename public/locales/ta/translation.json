@@ -2723,5 +2723,11 @@
   "allOccupations": "அனைத்து தொழில்களும்",
   "ongoingDeadline": "தொடர்ந்து செயல்பாட்டில் உள்ளது / குறிப்பிட்ட காலக்கெடு இல்லை",
   "perYear": "/ஆண்டு",
-  "upTo": "அதிகபட்சம் "
+  "upTo": "அதிகபட்சம் ",
+  "eligibleAgeGroup": "தகுதியான வயது",
+  "eligibleAge": "தகுதியான வயது",
+  "eligibleGender": "பொருந்தும் பாலினம்",
+  "allCategories": "அனைத்து பிரிவுகளும்",
+  "allAgeGroupsEligible": "அனைத்து வயதினரும் தகுதியுடையவர்கள்",
+  "officialCriteria": "அதிகாரப்பூர்வ தகுதி வரம்புகள்"
 }

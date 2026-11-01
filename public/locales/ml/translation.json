@@ -2720,5 +2720,11 @@
   "allOccupations": "എല്ലാ തൊഴിലുകളും",
   "ongoingDeadline": "തുടരുന്നു / നിശ്ചിത സമയപരിധിയില്ല",
   "perYear": "/വർഷം",
-  "upTo": "പരമാവധി "
+  "upTo": "പരമാവധി ",
+  "eligibleAgeGroup": "അർഹമായ പ്രായം",
+  "eligibleAge": "അർഹമായ പ്രായം",
+  "eligibleGender": "ബാധകമായ ലിംഗഭേദം",
+  "allCategories": "എല്ലാ വിഭാഗങ്ങളും",
+  "allAgeGroupsEligible": "എല്ലാ പ്രായക്കാർക്കും അർഹതയുണ്ട്",
+  "officialCriteria": "ഔദ്യോഗിക യോഗ്യതാ മാനദണ്ഡങ്ങൾ"
 }

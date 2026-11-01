@@ -2720,5 +2720,11 @@
   "allOccupations": "सभी व्यवसाय",
   "ongoingDeadline": "जारी है / कोई निश्चित अंतिम तिथि नहीं",
   "perYear": "/वर्ष",
-  "upTo": "अधिकतम "
+  "upTo": "अधिकतम ",
+  "eligibleAgeGroup": "पात्र आयु",
+  "eligibleAge": "पात्र आयु",
+  "eligibleGender": "पात्र लिंग",
+  "allCategories": "सभी श्रेणियां",
+  "allAgeGroupsEligible": "सभी आयु वर्ग के नागरिक पात्र हैं",
+  "officialCriteria": "आधिकारिक पात्रता मानदंड"
 }

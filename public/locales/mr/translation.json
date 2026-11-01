@@ -2741,5 +2741,11 @@
   "allOccupations": "सर्व व्यवसाय",
   "ongoingDeadline": "सुरू आहे / कोणतीही निश्चित अंतिम तारीख नाही",
   "perYear": "/वर्ष",
-  "upTo": "जास्तीत जास्त "
+  "upTo": "जास्तीत जास्त ",
+  "eligibleAgeGroup": "पात्र वय",
+  "eligibleAge": "पात्र वय",
+  "eligibleGender": "पात्र लिंग",
+  "allCategories": "सर्व प्रवर्ग",
+  "allAgeGroupsEligible": "सर्व वयोगटातील नागरिक पात्र",
+  "officialCriteria": "अधिकृत पात्रता निकष"
 }

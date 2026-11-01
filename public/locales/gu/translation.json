@@ -2741,5 +2741,11 @@
   "allOccupations": "તમામ વ્યવસાયો",
   "ongoingDeadline": "ચાલુ છે / કોઈ નિશ્ચિત સમયમર્યાદા નથી",
   "perYear": "/વર્ષ",
-  "upTo": "મહત્તમ "
+  "upTo": "મહત્તમ ",
+  "eligibleAgeGroup": "પાત્ર ઉંમર",
+  "eligibleAge": "પાત્ર ઉંમર",
+  "eligibleGender": "પાત્ર લિંગ",
+  "allCategories": "તમામ શ્રેણીઓ",
+  "allAgeGroupsEligible": "તમામ વય જૂથો પાત્ર છે",
+  "officialCriteria": "સત્તાવાર પાત્રતા માપદંડ"
 }

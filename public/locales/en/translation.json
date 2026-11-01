@@ -2713,5 +2713,11 @@
   "allOccupations": "All occupations",
   "ongoingDeadline": "Ongoing / No fixed deadline",
   "perYear": "/year",
-  "upTo": "Up to "
+  "upTo": "Up to ",
+  "eligibleAgeGroup": "Eligible Age",
+  "eligibleAge": "Eligible Age",
+  "eligibleGender": "Eligible Gender",
+  "allCategories": "All Categories",
+  "allAgeGroupsEligible": "All age groups eligible",
+  "officialCriteria": "Official Eligibility Criteria"
 }

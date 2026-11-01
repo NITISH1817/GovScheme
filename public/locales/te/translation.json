@@ -2720,5 +2720,11 @@
   "allOccupations": "అన్ని వృత్తులు",
   "ongoingDeadline": "కొనసాగుతోంది / స్థిర గడువు లేదు",
   "perYear": "/సంవత్సరం",
-  "upTo": "గరిష్టంగా "
+  "upTo": "గరిష్టంగా ",
+  "eligibleAgeGroup": "అర్హత వయస్సు",
+  "eligibleAge": "అర్హత వయస్సు",
+  "eligibleGender": "అర్హత గల లింగం",
+  "allCategories": "అన్ని వర్గాలు",
+  "allAgeGroupsEligible": "అన్ని వయసుల వారు అర్హులు",
+  "officialCriteria": "అధికారిక అర్హత ప్రమాణాలు"
 }

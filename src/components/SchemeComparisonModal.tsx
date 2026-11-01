@@ -42,11 +42,19 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
   if (!isOpen || schemes.length === 0) return null;
 
   const handleApply = (scheme: Scheme) => {
-    if (onApplyScheme) {
-      onClose();
-      onApplyScheme(scheme);
-    } else if (scheme.officialApplyUrl || scheme.officialWebsite) {
-      window.open(scheme.officialApplyUrl || scheme.officialWebsite, '_blank', 'noopener,noreferrer');
+    const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in');
+    const skipNotice = typeof localStorage !== 'undefined' && localStorage.getItem('govscheme_skip_redirect_notice');
+    if (skipNotice === 'true') {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+        detail: {
+          type: 'redirect',
+          url: targetUrl,
+          schemeName: scheme.name,
+          department: scheme.department
+        }
+      }));
     }
   };
 
@@ -201,7 +209,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   </td>
                   {schemes.map((s) => (
                     <td key={s.id} className="p-3 sm:p-4 font-bold text-gray-900 dark:text-white">
-                      {s.name}
+                      {t(`${s.id}_name`, s.name)}
                     </td>
                   ))}
                 </tr>
@@ -221,7 +229,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                       </p>
                       {s.ministry && s.department && s.ministry !== s.department && (
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                          {s.ministry}
+                          {t(s.ministry, s.ministry)}
                         </p>
                       )}
                     </td>

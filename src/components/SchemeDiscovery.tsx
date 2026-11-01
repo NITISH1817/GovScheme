@@ -823,11 +823,11 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                     </button>
                     <button
                       onClick={() => {
-                        const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite;
-                        const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
+                        const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in');
+                        const skipNotice = typeof localStorage !== 'undefined' && localStorage.getItem('govscheme_skip_redirect_notice');
                         if (skipNotice === 'true') {
-                          window.open(targetUrl || '#', '_blank', 'noopener,noreferrer');
-                        } else if (targetUrl) {
+                          window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                        } else {
                           window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
                             detail: {
                               type: 'redirect',
@@ -836,8 +836,6 @@ export const SchemeDiscovery: React.FC<SchemeDiscoveryProps> = ({
                               department: scheme.department
                             }
                           }));
-                        } else if (onApplyScheme) {
-                          onApplyScheme(scheme);
                         }
                       }}
                       className="flex-1 min-h-[44px] py-2 px-3 rounded bg-[#1769FF] text-white font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-center"
