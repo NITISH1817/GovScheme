@@ -52,10 +52,12 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 export function startVoiceListening(
   langCode: string,
   onResult: (transcript: string) => void,
-  onError?: (err: any) => void
+  onError?: (err: any) => void,
+  onEnd?: () => void
 ): () => void {
   if (!isSpeechRecognitionSupported()) {
     if (onError) onError("Speech Recognition is not supported in this browser.");
+    if (onEnd) onEnd();
     return () => {};
   }
 
@@ -66,19 +68,43 @@ export function startVoiceListening(
   recognition.interimResults = false;
   recognition.lang = LANG_BCP47_MAP[langCode] || `${langCode}-IN`;
 
+  let hasEnded = false;
+  const safeEnd = () => {
+    if (!hasEnded) {
+      hasEnded = true;
+      if (onEnd) onEnd();
+    }
+  };
+
   recognition.onresult = (event: any) => {
-    const transcript = event.results[0][0].transcript;
-    onResult(transcript);
+    try {
+      const results = event.results;
+      if (results && results.length > 0 && results[0][0]) {
+        const transcript = results[0][0].transcript;
+        onResult(transcript);
+      }
+    } catch (e) {
+      console.warn("Error reading transcript:", e);
+    }
+    safeEnd();
   };
 
   recognition.onerror = (err: any) => {
+    console.warn("Voice recognition error event:", err);
     if (onError) onError(err);
+    safeEnd();
+  };
+
+  recognition.onend = () => {
+    safeEnd();
   };
 
   try {
     recognition.start();
   } catch (e) {
     console.error("Voice recognition start error:", e);
+    if (onError) onError(e);
+    safeEnd();
   }
 
   return () => {
@@ -87,6 +113,7 @@ export function startVoiceListening(
     } catch (e) {
       // ignore
     }
+    safeEnd();
   };
 }
 
@@ -177,11 +204,6 @@ export function getBestMatchingVoice(langCode: string): SpeechSynthesisVoice | n
   return null;
 }
 
-// Active HTMLAudioElement for online streaming TTS
-let activeAudio: HTMLAudioElement | null = null;
-let audioQueue: string[] = [];
-let isQueueProcessing = false;
-
 /**
  * Splits text into natural sentence / phrase chunks suitable for TTS streaming (max ~160 chars per chunk)
  */
@@ -213,6 +235,13 @@ export function splitTextIntoChunks(text: string, maxChunkLength: number = 160):
   return chunks.filter(c => c.length > 0);
 }
 
+// Active audio & speech synthesis management
+let activeAudio: HTMLAudioElement | null = null;
+let audioQueue: string[] = [];
+let isQueueProcessing = false;
+let activeUtterance: SpeechSynthesisUtterance | null = null;
+let speechTimeout: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Checks if the browser has a genuine native speech synthesis voice installed for this language.
  */
@@ -227,7 +256,62 @@ export function hasNativeVoiceForLang(langCode: string): boolean {
   return voiceLang.startsWith(`${langPrefix}-`) || voiceLang === langPrefix || voiceName.includes(langPrefix);
 }
 
-function processAudioQueue(langCode: string, onEnd?: () => void) {
+/**
+ * Direct Web Speech Synthesis utterance playback with Chromium cancel/speak bug fix and GC protection.
+ */
+export function speakUtterance(cleanText: string, langCode: string = 'en', onEnd?: () => void) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (onEnd) onEnd();
+    return;
+  }
+
+  const targetLangPrefix = (langCode || 'en').toLowerCase().split('-')[0];
+  const bcp47 = LANG_BCP47_MAP[targetLangPrefix] || `${targetLangPrefix}-IN`;
+
+  try {
+    window.speechSynthesis.cancel();
+  } catch {}
+
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.lang = bcp47;
+  utterance.rate = 0.95;
+  utterance.pitch = 1.0;
+
+  const matchedVoice = getBestMatchingVoice(targetLangPrefix);
+  if (matchedVoice) {
+    utterance.voice = matchedVoice;
+  }
+
+  activeUtterance = utterance;
+
+  let ended = false;
+  const finish = () => {
+    if (!ended) {
+      ended = true;
+      activeUtterance = null;
+      if (onEnd) onEnd();
+    }
+  };
+
+  utterance.onend = finish;
+  utterance.onerror = finish;
+
+  // Chromium bug fix: wait 50ms after cancel() before calling speak()
+  if (speechTimeout) clearTimeout(speechTimeout);
+  speechTimeout = setTimeout(() => {
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn("SpeechSynthesis speak invocation error:", e);
+      finish();
+    }
+  }, 50);
+}
+
+function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalText?: string) {
   if (audioQueue.length === 0) {
     isQueueProcessing = false;
     activeAudio = null;
@@ -240,40 +324,53 @@ function processAudioQueue(langCode: string, onEnd?: () => void) {
   const targetLang = langCode.toLowerCase().split('-')[0];
   const encoded = encodeURIComponent(nextChunk);
 
+  const directGoogleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(targetLang)}&client=tw-ob&q=${encoded}`;
   const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL)
     ? String(import.meta.env.VITE_API_URL).replace(/\/+$/, '')
     : '';
   const backendUrl = `${apiBase}/api/ai/tts?lang=${encodeURIComponent(targetLang)}&text=${encoded}`;
-  const directGoogleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(targetLang)}&client=tw-ob&q=${encoded}`;
 
-  let hasTriedDirect = false;
-  const audio = new Audio(backendUrl);
+  let hasTriedBackend = false;
+  const audio = new Audio();
+  try {
+    (audio as any).referrerPolicy = 'no-referrer';
+  } catch {}
+  audio.src = directGoogleUrl; // Primary direct stream with no-referrer
   activeAudio = audio;
 
   audio.onended = () => {
-    processAudioQueue(langCode, onEnd);
+    processAudioQueue(langCode, onEnd, fullOriginalText);
   };
 
-  const tryDirectFallback = () => {
-    if (!hasTriedDirect) {
-      hasTriedDirect = true;
-      audio.src = directGoogleUrl;
-      audio.play().catch(err => {
-        console.warn(`[TTS Audio Autoplay] Browser prevented autoplay or direct audio error:`, err);
-        processAudioQueue(langCode, onEnd);
+  const handleStreamFailure = () => {
+    if (!hasTriedBackend && apiBase) {
+      hasTriedBackend = true;
+      audio.src = backendUrl;
+      audio.play().catch(() => {
+        // If all audio streams fail, smoothly fallback to SpeechSynthesis utterance so voice never dies
+        if (fullOriginalText) {
+          speakUtterance(fullOriginalText, langCode, onEnd);
+        } else {
+          processAudioQueue(langCode, onEnd, fullOriginalText);
+        }
       });
     } else {
-      console.warn(`[TTS Audio Playback] All audio streams failed for chunk in [${targetLang}], proceeding.`);
-      processAudioQueue(langCode, onEnd);
+      // Direct streaming failed or backend not running: fallback directly to browser SpeechSynthesis
+      if (fullOriginalText) {
+        audioQueue = [];
+        isQueueProcessing = false;
+        speakUtterance(fullOriginalText, langCode, onEnd);
+      } else {
+        processAudioQueue(langCode, onEnd, fullOriginalText);
+      }
     }
   };
 
-  audio.onerror = () => {
-    tryDirectFallback();
-  };
+  audio.onerror = handleStreamFailure;
 
   audio.play().catch(err => {
-    tryDirectFallback();
+    console.warn(`[TTS Audio Autoplay] Browser prevented autoplay or network error:`, err);
+    handleStreamFailure();
   });
 }
 
@@ -285,68 +382,40 @@ export function playOnlineTTSAudio(text: string, langCode: string, onEnd?: () =>
     return;
   }
   audioQueue = [...chunks];
-  processAudioQueue(langCode, onEnd);
+  processAudioQueue(langCode, onEnd, text);
 }
 
 export function speakText(text: string, langCode: string = 'en', onEnd?: () => void) {
   if (typeof window === 'undefined') return;
 
   const cleanText = cleanTextForSpeech(text);
-  if (!cleanText) return;
+  if (!cleanText) {
+    if (onEnd) onEnd();
+    return;
+  }
 
   stopSpeaking();
 
   const targetLangPrefix = (langCode || 'en').toLowerCase().split('-')[0];
 
-  // 1. For non-English languages (Tamil, Hindi, Telugu, Malayalam, Marathi, Gujarati, Kannada, Bengali, Punjabi):
-  // Check if browser has a true native voice installed for this language.
-  // Standard Chrome/Edge on Windows lacks Indic language voices by default.
-  // Without a native voice, SpeechSynthesis defaults to Microsoft David (English US), producing English speech.
-  // We automatically stream authentic native Indic voice speech audio instead!
-  const nativeVoice = getBestMatchingVoice(targetLangPrefix);
-  const hasGenuineVoice = nativeVoice && (
-    nativeVoice.lang.toLowerCase().replace('_', '-').startsWith(`${targetLangPrefix}-`) ||
-    nativeVoice.lang.toLowerCase() === targetLangPrefix ||
-    nativeVoice.name.toLowerCase().includes(targetLangPrefix)
-  );
-
-  if (targetLangPrefix !== 'en' && !hasGenuineVoice) {
-    playOnlineTTSAudio(cleanText, targetLangPrefix, onEnd);
+  // 1. If English or browser has a true native voice for this language (e.g. Edge with Tamil/Hindi/etc., Android Chrome, Mac):
+  // Use instant high-quality local speech synthesis
+  if (targetLangPrefix === 'en' || hasNativeVoiceForLang(targetLangPrefix)) {
+    speakUtterance(cleanText, targetLangPrefix, onEnd);
     return;
   }
 
-  // 2. Browser has native voice (or English requested): use Web Speech Synthesis
-  if ('speechSynthesis' in window) {
-    try {
-      window.speechSynthesis.resume();
-    } catch {}
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = LANG_BCP47_MAP[targetLangPrefix] || `${targetLangPrefix}-IN`;
-    utterance.rate = 0.95; // Deliberate & clear pacing for Indian languages
-    utterance.pitch = 1.0;
-
-    if (nativeVoice) {
-      utterance.voice = nativeVoice;
-    }
-
-    if (onEnd) {
-      utterance.onend = () => onEnd();
-      utterance.onerror = () => onEnd();
-    }
-
-    try {
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.error("Speech synthesis speak error:", e);
-      playOnlineTTSAudio(cleanText, targetLangPrefix, onEnd);
-    }
-  } else {
-    playOnlineTTSAudio(cleanText, targetLangPrefix, onEnd);
-  }
+  // 2. For non-English languages without pre-installed local OS voice packs (e.g. desktop Chrome on Windows):
+  // Stream natural regional Indic voice audio, with automatic fallback to SpeechSynthesis if offline
+  playOnlineTTSAudio(cleanText, targetLangPrefix, onEnd);
 }
 
 export function stopSpeaking() {
+  if (speechTimeout) {
+    clearTimeout(speechTimeout);
+    speechTimeout = null;
+  }
+
   if (activeAudio) {
     try {
       activeAudio.pause();
@@ -363,6 +432,7 @@ export function stopSpeaking() {
       window.speechSynthesis.cancel();
     } catch {}
   }
+  activeUtterance = null;
 }
 
 /**

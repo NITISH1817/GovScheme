@@ -342,6 +342,9 @@ export const KioskMode: React.FC<KioskModeProps> = ({
         () => {
           setIsVoiceListening(false);
           setVoiceError(t('micError', 'Microphone error or permission denied. Tap to retry or type below.'));
+        },
+        () => {
+          setIsVoiceListening(false);
         }
       );
     } catch {

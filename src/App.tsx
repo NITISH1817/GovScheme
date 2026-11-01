@@ -1301,6 +1301,7 @@ export const App: React.FC = () => {
         setActiveTab('assistant');
         speakText(t('askingAssistant', 'Connecting to AI Assistant'), currentLang);
       },
+      () => setIsListeningGlobalVoice(false),
       () => setIsListeningGlobalVoice(false)
     );
   };

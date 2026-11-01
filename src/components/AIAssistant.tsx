@@ -356,6 +356,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         setIsListening(false);
         recognitionStopRef.current = null;
         console.error("Voice error:", err);
+      },
+      () => {
+        setIsListening(false);
+        recognitionStopRef.current = null;
       }
     );
 
