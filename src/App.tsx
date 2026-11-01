@@ -660,7 +660,9 @@ export const App: React.FC = () => {
         pa: 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਭਾਸ਼ਾ ਪੰਜਾਬੀ ਵਿੱਚ ਬਦਲ ਗਈ ਹੈ।'
       };
       const announcement = announcements[norm] || `Language switched to ${norm}`;
-      speakText(announcement, norm);
+      setTimeout(() => {
+        speakText(announcement, norm);
+      }, 150);
     }
   }, [i18n]);
 

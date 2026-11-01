@@ -241,6 +241,7 @@ let audioQueue: string[] = [];
 let isQueueProcessing = false;
 let activeUtterance: SpeechSynthesisUtterance | null = null;
 let speechTimeout: ReturnType<typeof setTimeout> | null = null;
+let currentAudioSession = 0;
 
 /**
  * Checks if the browser has a genuine native speech synthesis voice installed for this language.
@@ -311,7 +312,13 @@ export function speakUtterance(cleanText: string, langCode: string = 'en', onEnd
   }, 50);
 }
 
-function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalText?: string) {
+function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalText?: string, sessionId?: number) {
+  const currentSession = sessionId !== undefined ? sessionId : ++currentAudioSession;
+
+  if (currentSession !== currentAudioSession) {
+    return; // Superseded by a newer speech invocation
+  }
+
   if (audioQueue.length === 0) {
     isQueueProcessing = false;
     activeAudio = null;
@@ -333,6 +340,8 @@ function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalTex
   const directGoogleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(targetLang)}&client=tw-ob&q=${encoded}`;
 
   let hasTriedFallback = false;
+  let isFailureHandled = false;
+
   const audio = new Audio();
   try {
     (audio as any).referrerPolicy = 'no-referrer';
@@ -340,36 +349,58 @@ function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalTex
   audio.src = backendUrl;
   activeAudio = audio;
 
+  const cleanupAudio = () => {
+    audio.onended = null;
+    audio.onerror = null;
+  };
+
   audio.onended = () => {
-    processAudioQueue(langCode, onEnd, fullOriginalText);
+    cleanupAudio();
+    if (currentSession !== currentAudioSession) return;
+    processAudioQueue(langCode, onEnd, fullOriginalText, currentSession);
   };
 
   const handleStreamFailure = () => {
+    if (isFailureHandled) return;
+    if (currentSession !== currentAudioSession) return;
+    if (activeAudio !== audio) return;
+
     if (!hasTriedFallback) {
       hasTriedFallback = true;
       audio.src = directGoogleUrl;
       audio.play().catch(() => {
-        // Fallback to local SpeechSynthesis utterance so voice never dies
+        if (isFailureHandled) return;
+        isFailureHandled = true;
+        cleanupAudio();
+        if (currentSession !== currentAudioSession) return;
+        // Clean single fallback to local SpeechSynthesis utterance so voice never dies
         if (fullOriginalText) {
           audioQueue = [];
           isQueueProcessing = false;
+          activeAudio = null;
           speakUtterance(fullOriginalText, langCode, onEnd);
         } else {
-          processAudioQueue(langCode, onEnd, fullOriginalText);
+          processAudioQueue(langCode, onEnd, fullOriginalText, currentSession);
         }
       });
     } else {
+      isFailureHandled = true;
+      cleanupAudio();
+      if (currentSession !== currentAudioSession) return;
       if (fullOriginalText) {
         audioQueue = [];
         isQueueProcessing = false;
+        activeAudio = null;
         speakUtterance(fullOriginalText, langCode, onEnd);
       } else {
-        processAudioQueue(langCode, onEnd, fullOriginalText);
+        processAudioQueue(langCode, onEnd, fullOriginalText, currentSession);
       }
     }
   };
 
-  audio.onerror = handleStreamFailure;
+  audio.onerror = () => {
+    handleStreamFailure();
+  };
 
   audio.play().catch(err => {
     console.warn(`[TTS Audio Autoplay] Primary stream playback note:`, err);
@@ -385,7 +416,7 @@ export function playOnlineTTSAudio(text: string, langCode: string, onEnd?: () =>
     return;
   }
   audioQueue = [...chunks];
-  processAudioQueue(langCode, onEnd, text);
+  processAudioQueue(langCode, onEnd, text, currentAudioSession);
 }
 
 export function speakText(text: string, langCode: string = 'en', onEnd?: () => void) {
@@ -414,6 +445,8 @@ export function speakText(text: string, langCode: string = 'en', onEnd?: () => v
 }
 
 export function stopSpeaking() {
+  currentAudioSession++; // Immediately invalidates any queued audio or async playback callbacks
+
   if (speechTimeout) {
     clearTimeout(speechTimeout);
     speechTimeout = null;
@@ -421,9 +454,13 @@ export function stopSpeaking() {
 
   if (activeAudio) {
     try {
+      activeAudio.onended = null;
+      activeAudio.onerror = null;
       activeAudio.pause();
       activeAudio.currentTime = 0;
+      activeAudio.removeAttribute('src');
       activeAudio.src = '';
+      activeAudio.load();
     } catch {}
     activeAudio = null;
   }

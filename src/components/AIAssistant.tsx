@@ -133,17 +133,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
   // Synchronize when current language changes
   useEffect(() => {
-    // 1. Immediately halt any previous language voice playback
-    stopSpeaking();
-
-    // 2. Halt active microphone recognition if running so it restarts in the new language
+    // 1. Halt active microphone recognition if running so it restarts in the new language
     if (recognitionStopRef.current) {
       recognitionStopRef.current();
       recognitionStopRef.current = null;
       setIsListening(false);
     }
 
-    // 3. Update the messages and prompt chips into the new language
+    // 2. Update the messages and prompt chips into the new language
     setMessages(prev => {
       if (prev.length === 0 || (prev.length === 1 && prev[0].id === 'msg-init')) {
         return [{
@@ -165,10 +162,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       return [...prev, switchNotice];
     });
 
-    // 4. Voice announcement in the newly selected language if user switched language and voice is enabled
+    // 3. Voice announcement in the newly selected language if standalone (no parent onLanguageChange)
     if (!isInitialMount.current && voicePlaybackEnabled && !onLanguageChange) {
       const confirmSpeech = LANGUAGE_SWITCH_CONFIRMATION[currentLang] || `Voice language switched to ${getLanguageNativeName(currentLang)}`;
-      speakText(confirmSpeech, currentLang);
+      setTimeout(() => {
+        speakText(confirmSpeech, currentLang);
+      }, 150);
     }
 
     isInitialMount.current = false;
@@ -183,6 +182,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   }, [messages, isTyping]);
 
   const handleSendMessage = async (textToSend?: string) => {
+    stopSpeaking(); // Silence previous audio playback so two voices never overlap
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
@@ -448,23 +448,29 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
         setInputText(transcript);
         
-        const navCommand = checkVoiceNavigationCommand(transcript);
-        if (navCommand) {
-          const tabMap: Record<string, string> = {
-            dashboard: 'home',
-            explore: 'schemes',
-            applications: 'tracker',
-            documents: 'vault',
-            profile: 'profile',
-            assistant: 'assistant'
-          };
-          const targetTab = tabMap[navCommand] || navCommand;
-          onNavigateTab(targetTab);
-          if (voicePlaybackEnabled) {
-            const destName = t(targetTab, targetTab);
-            speakText(t('navigatingTo', 'Navigating to {{destination}}', { destination: destName }), currentLang);
+        // Inside assistant, only navigate if explicit navigation intent is spoken (e.g. "go to dashboard", "open tracker")
+        const isExplicitNav = /^(go to|open|navigate to|show me the|switch to|செல்ல|திற|खोलो|दिखाओ|తెరువు|వెళ్లు|തുറക്കുക|उघडा|दाखवा|ખોલો)\s+/i.test(transcript.trim()) ||
+          /^(home|dashboard|tracker|profile|vault|kiosk|முகப்பு|डैशबोर्ड|హోమ్|പ്രൊഫൈൽ)$/i.test(transcript.trim());
+
+        if (isExplicitNav) {
+          const navCommand = checkVoiceNavigationCommand(transcript);
+          if (navCommand && navCommand !== 'assistant') {
+            const tabMap: Record<string, string> = {
+              dashboard: 'home',
+              explore: 'schemes',
+              applications: 'tracker',
+              documents: 'vault',
+              profile: 'profile',
+              kiosk: 'kiosk'
+            };
+            const targetTab = tabMap[navCommand] || navCommand;
+            onNavigateTab(targetTab);
+            if (voicePlaybackEnabled) {
+              const destName = t(targetTab, targetTab);
+              speakText(t('navigatingTo', 'Navigating to {{destination}}', { destination: destName }), currentLang);
+            }
+            return;
           }
-          return;
         }
         
         handleSendMessage(transcript);
