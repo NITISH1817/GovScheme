@@ -179,7 +179,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     try {
       const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
       const authToken = localStorage.getItem('govscheme_token') || localStorage.getItem('token') || '';
-      const response = await fetch(`${API_URL}/api/ai/stream`, {
+      let response = await fetch(`${API_URL}/api/ai/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -187,6 +187,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         },
         body: JSON.stringify({ message: text, language: currentLang })
       }).catch(() => null);
+
+      if (!response || !response.ok) {
+        response = await fetch('/api/ai/stream', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+          },
+          body: JSON.stringify({ message: text, language: currentLang })
+        }).catch(() => null);
+      }
 
       let fullText = '';
       if (response && response.body && response.ok) {
@@ -251,39 +262,96 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         }
 
         const notice = dict.groundedEngineNotice || t('groundedEngineNotice', '[Grounded Knowledge Engine • AI Provider Notice: Live AI service unavailable, grounded in verified local scheme database]');
-        const foundHeader = dict.basedOnQueryFound || t('basedOnQueryFound', 'Based on your query, here is what I found in the verified scheme records:');
         const legalNote = dict.officialEligibilityRuleNote || t('officialEligibilityRuleNote', '*Note: Official scheme eligibility is always determined by deterministic rules.*');
 
-        let schemeDetails = '';
-        if (matchedSchemes.length > 0) {
+        const isGreeting = /^(hi|hello|hey|namaste|vanakkam|namaskaram|greetings|good\s*(morning|afternoon|evening)|who are you|నమస్కారం|హలో|హాయ్|ఎవరు|வணக்கம்|ஹலோ|नमस्ते|नमस्कार)/i.test(lowerText.trim());
+        const isApply = /apply|how to|register|procedure|form|steps|portal|link|website|where to apply|విధానం|దరఖాస్తు|ఎలా|ఎక్కడ|పోర్టల్|లింక్|விண்ணப்ப|எப்படி|எங்கு|आवेदन|प्रक्रिया|कहाँ|अर्ज|कसा|अर्जाची|कुठे|അപേക്ഷ|എങ്ങനെ|અરજી|કેવી રીતે/i.test(lowerText);
+        const isDocs = /document|proof|certificate|aadhaar|id|papers|card|పత్రాలు|సర్టిఫికేట్|ఆధార్|కాగితాలు|ఆவணங்கள்|சான்றிதழ்|ஆதார்|दस्तावेज|प्रमाणपत्र|आधार|कागदपत्रे|दाखला|രേഖകൾ|സർട്ടിഫിക്കറ്റ്|દસ્તાવેજ|પુરાવા/i.test(lowerText);
+        const isEligible = /eligible|eligibility|age|income|salary|who can|qualification|caste|category|limit|అర్హత|వయస్సు|ఆదాయం|కులం|పరిమితి|తகுதி|வயது|வருமானம்|சாதி|வரம்பு|पात्रता|आयु|उम्र|आय|जात|मर्यादा|वय|उत्पन्न|जाती|യോജ്യത|പ്രായം|വരുമാനം|પાત્રતા|ઉંમર|આવક/i.test(lowerText);
+        const isBenefit = /benefit|amount|money|cash|fund|subsidy|pension|rupees|₹|rs|how much|payment|dbt|installment|scholarship amount|ఎంత|డబ్బు|సహాయం|నగదు|స్కాలర్‌షిప్|பணம்|தொகை|உதவி|மானியம்|பங்களிப்பு|पैसे|राशि|सहायता|सब्सिडी|रक्कम|अनुदान|पेन्शन|പണം|തുക|സഹായം|લાભ|રૂપિયા|સહાય/i.test(lowerText);
+
+        let generatedResponse = '';
+
+        if (isGreeting) {
+          if (currentLang === 'te') {
+            generatedResponse = `${notice}\n\nనమస్కారం! నేను మీ **GovScheme AI సహాయకుడిని**.\n\nనేను భారతదేశంలోని 75+ కేంద్ర మరియు రాష్ట్ర సంక్షేమ పథకాల గురించి (విద్యార్థుల స్కాలర్‌షిప్‌లు, రైతుల సబ్సిడీలు, మహిళా సంక్షేమం, ఆరోగ్య బీమా, పెన్షన్లు) మీకు పూర్తి సమాచారం మరియు దరఖాస్తు మార్గదర్శకత్వం అందించగలను.\n\nమీకు ఏ పథకం గురించి లేదా ఏ అంశంపై సమాచారం కావాలో దయచేసి అడగండి!\n\n${legalNote}`;
+          } else if (currentLang === 'ta') {
+            generatedResponse = `${notice}\n\nவணக்கம்! நான் உங்கள் **GovScheme AI வழிகாட்டி**.\n\nமத்திய மற்றும் மாநில அரசுகளின் 75+ மக்கள் நலத்திட்டங்கள் (மாணவர் கல்வி உதவித்தொகை, விவசாய மானியங்கள், மகளிர் உதவித்தொகை, மருத்துவக் காப்பீடு, ஓய்வூதியம்) பற்றிய துல்லியமான தகவல்களையும் விண்ணப்பிக்கும் வழிகாட்டுதலையும் நான் வழங்குகிறேன்.\n\nஉங்களுக்கு எந்த திட்டம் அல்லது உதவி தேவை என்பதை தயங்காமல் கேளுங்கள்!\n\n${legalNote}`;
+          } else if (currentLang === 'hi') {
+            generatedResponse = `${notice}\n\nनमस्ते! मैं आपका **GovScheme AI सहायक** हूँ।\n\nमैं भारत सरकार और राज्य सरकारों की 75+ प्रमुख कल्याणकारी योजनाओं (छात्रवृत्ति, किसान सम्मान निधि, महिला कल्याण, स्वास्थ्य बीमा, पेंशन) की प्रामाणिक जानकारी और आवेदन मार्गदर्शन प्रदान करता हूँ।\n\nआप किस योजना या सहायता के बारे में जानना चाहते हैं? कृपया अपना प्रश्न पूछें!\n\n${legalNote}`;
+          } else if (currentLang === 'mr') {
+            generatedResponse = `${notice}\n\nनमस्कार! मी आपला **GovScheme AI सहाय्यक** आहे.\n\nमी 75+ केंद्र व राज्य शासकीय योजनांविषयी (विद्यार्थी शिष्यवृत्ती, शेतकरी अनुदान, महिला कल्याण, आरोग्य विमा, पेन्शन) खात्रीशीर माहिती व अर्ज मार्गदर्शन करतो.\n\nआपल्याला कोणत्या योजनेबद्दल माहिती हवी आहे? कृपया विचारा!\n\n${legalNote}`;
+          } else {
+            generatedResponse = `${notice}\n\nHello! I am your **GovScheme AI Assistant**.\n\nI provide authoritative information and step-by-step application guidance across 75+ verified central and state welfare schemes in Education, Agriculture, Healthcare, Women Empowerment, Pensions, and Housing.\n\nHow can I help you today? Please feel free to ask about eligibility, required documents, or how to apply for any scheme!\n\n${legalNote}`;
+          }
+        } else if (matchedSchemes.length > 0) {
           const topS = matchedSchemes[0];
           const localizedName = dict[`${topS.id}_name`] || t(`${topS.id}_name`, topS.name);
           const localizedBenefits = dict[`${topS.id}_benefits`] || dict[`${topS.id}_desc`] || t(`${topS.id}_benefits`, topS.shortDescription);
           const localizedCat = dict[topS.category] || topS.category;
           const localizedState = (topS.state === 'All' || topS.state === 'Central') ? (dict['Central'] || 'Central') : (dict[topS.state] || topS.state);
           const portalUrl = topS.officialApplyUrl || topS.officialWebsite || 'https://www.india.gov.in';
+          const reqDocs = (topS.eligibilityRules?.requiredDocuments && topS.eligibilityRules.requiredDocuments.length > 0)
+            ? topS.eligibilityRules.requiredDocuments.join(', ')
+            : 'Aadhaar Card, Bank Passbook, Proof of Residence';
+          const stepsList = (topS.applicationSteps && topS.applicationSteps.length > 0)
+            ? topS.applicationSteps.map((s: any) => `${s.stepNumber || ''}. ${s.title}: ${s.description}`).join('\n')
+            : `1. Visit official portal (${portalUrl})\n2. Fill online application form with Aadhaar and bank details\n3. Upload required documents and submit for verification`;
 
           if (currentLang === 'te') {
-            schemeDetails = `**పథకం:** ${localizedName}\n**వర్గం:** ${localizedCat} (${localizedState})\n**ప్రయోజనాలు:** ${localizedBenefits}\n**అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}`;
+            if (isApply) {
+              generatedResponse = `${notice}\n\n**${localizedName} - దరఖాస్తు విధానం:**\n\nఈ పథకానికి దరఖాస్తు చేసుకోవడానికి క్రింది దశలను అనుసరించండి:\n${stepsList}\n\n🔗 **అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}\n📍 మీరు సమీపంలోని గ్రామ/వార్డు సచివాలయం లేదా CSC కేంద్రం ద్వారా కూడా దరఖాస్తు చేసుకోవచ్చు.\n\n${legalNote}`;
+            } else if (isDocs) {
+              generatedResponse = `${notice}\n\n**${localizedName} కొరకు అవసరమైన పత్రాలు:**\n\nదరఖాస్తు చేయడానికి క్రింది ధృవీకరణ పత్రాలు అవసరం:\n• ${reqDocs.split(', ').join('\n• ')}\n\n🔗 **అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isBenefit) {
+              generatedResponse = `${notice}\n\n**${localizedName} ప్రయోజనాలు & ఆర్థిక సహాయం:**\n\n• **ఆర్థిక సహాయం:** ${topS.financialBenefitAmount ? '₹' + topS.financialBenefitAmount : 'నిబంధనల ప్రకారం'}\n• **ప్రయోజనాల వివరాలు:** ${localizedBenefits}\n\n🔗 **అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isEligible) {
+              generatedResponse = `${notice}\n\n**${localizedName} అర్హత నిబంధనలు:**\n\n• **వయస్సు పరిమితి:** ${topS.eligibilityRules?.minAge ?? 0} నుండి ${topS.eligibilityRules?.maxAge ?? 120} సంవత్సరాలు\n• **ఆదాయ పరిమితి:** ${topS.eligibilityRules?.maxAnnualIncome ? '₹' + topS.eligibilityRules.maxAnnualIncome + '/సంవత్సరానికి' : 'ఆదాయ పరిమితి లేదు'}\n• **అర్హులైన వర్గాలు:** ${(topS.eligibilityRules?.allowedCategories || ['అన్ని వర్గాలు']).join(', ')}\n\n🔗 **అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}\n\n${legalNote}`;
+            } else {
+              generatedResponse = `${notice}\n\n**${localizedName} - సమగ్ర మార్గదర్శి:**\n\nఈ పథకం **${localizedCat}** విభాగం కింద **${localizedState}** ప్రభుత్వం / కేంద్ర ప్రభుత్వం ద్వారా అందించబడుతుంది.\n\n• **ముఖ్య ప్రయోజనాలు:** ${localizedBenefits}${topS.financialBenefitAmount ? ` (ఆర్థిక సహాయం: ₹${topS.financialBenefitAmount})` : ''}\n• **అర్హత నిబంధనలు:** వయస్సు ${topS.eligibilityRules?.minAge ?? 0}–${topS.eligibilityRules?.maxAge ?? 120} సం.${topS.eligibilityRules?.maxAnnualIncome ? `, వార్షిక ఆదాయ పరిమితి ₹${topS.eligibilityRules.maxAnnualIncome}` : ''}\n• **అవసరమైన పత్రాలు:** ${reqDocs}\n• **దరఖాస్తు విధానం:** అధికారిక పోర్టల్ ద్వారా ఆన్‌లైన్‌లో లేదా సమీప గ్రామ/వార్డు సచివాలయం / CSC కేంద్రం ద్వారా దరఖాస్తు చేసుకోవచ్చు.\n\n🔗 **అధికారిక దరఖాస్తు పోర్టల్:** ${portalUrl}\n\n${legalNote}`;
+            }
           } else if (currentLang === 'ta') {
-            schemeDetails = `**அரசுத் திட்டம்:** ${localizedName}\n**பிரிவு:** ${localizedCat} (${localizedState})\n**நன்மைகள்:** ${localizedBenefits}\n**அதிகாரப்பூர்வ விண்ணப்ப போர்ட்டல்:** ${portalUrl}`;
+            if (isApply) {
+              generatedResponse = `${notice}\n\n**${localizedName} - விண்ணப்பிக்கும் முறை:**\n\nஇத்திட்டத்திற்கு விண்ணப்பிக்க பின்வரும் வழிமுறைகளைப் பின்பற்றவும்:\n${stepsList}\n\n🔗 **அதிகாரப்பூர்வ போர்ட்டல்:** ${portalUrl}\n📍 உங்கள் அருகிலுள்ள இ-சேவை மையம் மூலமாகவும் விண்ணப்பிக்கலாம்.\n\n${legalNote}`;
+            } else if (isDocs) {
+              generatedResponse = `${notice}\n\n**${localizedName} திட்டத்திற்கு தேவையான ஆவணங்கள்:**\n\n• ${reqDocs.split(', ').join('\n• ')}\n\n🔗 **அதிகாரப்பூர்வ போர்ட்டல்:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isBenefit) {
+              generatedResponse = `${notice}\n\n**${localizedName} திட்டத்தின் நன்மைகள் மற்றும் நிதியுதவி:**\n\n• **நிதியுதவி தொகை:** ${topS.financialBenefitAmount ? '₹' + topS.financialBenefitAmount : 'திட்ட விதிகளின்படி'}\n• **நன்மைகள்:** ${localizedBenefits}\n\n🔗 **அதிகாரப்பூர்வ போர்ட்டல்:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isEligible) {
+              generatedResponse = `${notice}\n\n**${localizedName} திட்டத்திற்கான தகுதி வரம்புகள்:**\n\n• **வயது வரம்பு:** ${topS.eligibilityRules?.minAge ?? 0} முதல் ${topS.eligibilityRules?.maxAge ?? 120} ஆண்டுகள் வரை\n• **வருமான உச்சவரம்பு:** ${topS.eligibilityRules?.maxAnnualIncome ? 'ஆண்டுக்கு ₹' + topS.eligibilityRules.maxAnnualIncome : 'வருமான வரம்பு இல்லை'}\n• **தகுதியான பிரிவினர்:** ${(topS.eligibilityRules?.allowedCategories || ['அனைத்து பிரிவினர்']).join(', ')}\n\n🔗 **அதிகாரப்பூர்வ போர்ட்டல்:** ${portalUrl}\n\n${legalNote}`;
+            } else {
+              generatedResponse = `${notice}\n\n**${localizedName} - முழு விவரங்கள்:**\n\nஇத்திட்டம் **${localizedCat}** பிரிவின் கீழ் **${localizedState}** அரசு / மத்திய அரசால் வழங்கப்படுகிறது.\n\n• **முக்கிய நன்மைகள்:** ${localizedBenefits}${topS.financialBenefitAmount ? ` (நிதியுதவி: ₹${topS.financialBenefitAmount})` : ''}\n• **தகுதி:** வயது ${topS.eligibilityRules?.minAge ?? 0}–${topS.eligibilityRules?.maxAge ?? 120} ஆண்டுகள்${topS.eligibilityRules?.maxAnnualIncome ? `, வருமானம் ஆண்டுக்கு ₹${topS.eligibilityRules.maxAnnualIncome}` : ''}\n• **தேவையான ஆவணங்கள்:** ${reqDocs}\n• **விண்ணப்பிக்கும் முறை:** இணையதளம் மூலமாகவோ அல்லது அருகிலுள்ள இ-சேவை மையம் வாயிலாகவோ விண்ணப்பிக்கலாம்.\n\n🔗 **அதிகாரப்பூர்வ போர்ட்டல்:** ${portalUrl}\n\n${legalNote}`;
+            }
           } else if (currentLang === 'hi') {
-            schemeDetails = `**योजना:** ${localizedName}\n**श्रेणी:** ${localizedCat} (${localizedState})\n**लाभ:** ${localizedBenefits}\n**आधिकारिक आवेदन पोर्टल:** ${portalUrl}`;
-          } else if (currentLang === 'mr') {
-            schemeDetails = `**योजना:** ${localizedName}\n**श्रेणी:** ${localizedCat} (${localizedState})\n**फायदे:** ${localizedBenefits}\n**अधिकृत अर्ज पोर्टल:** ${portalUrl}`;
-          } else if (currentLang === 'ml') {
-            schemeDetails = `**പദ്ധതി:** ${localizedName}\n**വിഭാഗം:** ${localizedCat} (${localizedState})\n**ആനുകൂല്യങ്ങൾ:** ${localizedBenefits}\n**ഔദ്യോഗിക അപേക്ഷാ പോർട്ടൽ:** ${portalUrl}`;
-          } else if (currentLang === 'gu') {
-            schemeDetails = `**યોજના:** ${localizedName}\n**શ્રેણી:** ${localizedCat} (${localizedState})\n**લાભો:** ${localizedBenefits}\n**સત્તાવાર અરજી પોર્ટલ:** ${portalUrl}`;
+            if (isApply) {
+              generatedResponse = `${notice}\n\n**${localizedName} - आवेदन प्रक्रिया:**\n\nइस योजना के लिए आवेदन करने के चरण:\n${stepsList}\n\n🔗 **आधिकारिक आवेदन पोर्टल:** ${portalUrl}\n📍 आप अपने निकटतम सीएससी (CSC) या ई-मित्र केंद्र से भी आवेदन कर सकते हैं।\n\n${legalNote}`;
+            } else if (isDocs) {
+              generatedResponse = `${notice}\n\n**${localizedName} के लिए आवश्यक दस्तावेज:**\n\n• ${reqDocs.split(', ').join('\n• ')}\n\n🔗 **आधिकारिक आवेदन पोर्टल:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isBenefit) {
+              generatedResponse = `${notice}\n\n**${localizedName} के लाभ और वित्तीय सहायता:**\n\n• **आर्थिक सहायता:** ${topS.financialBenefitAmount ? '₹' + topS.financialBenefitAmount : 'योजना नियमानुसार'}\n• **लाभ विवरण:** ${localizedBenefits}\n\n🔗 **आधिकारिक आवेदन पोर्टल:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isEligible) {
+              generatedResponse = `${notice}\n\n**${localizedName} के लिए पात्रता मानदंड:**\n\n• **आयु सीमा:** ${topS.eligibilityRules?.minAge ?? 0} से ${topS.eligibilityRules?.maxAge ?? 120} वर्ष\n• **आय सीमा:** ${topS.eligibilityRules?.maxAnnualIncome ? '₹' + topS.eligibilityRules.maxAnnualIncome + '/वर्ष' : 'कोई आय सीमा नहीं'}\n• **पात्र श्रेणियां:** ${(topS.eligibilityRules?.allowedCategories || ['सभी श्रेणियां']).join(', ')}\n\n🔗 **आधिकारिक आवेदन पोर्टल:** ${portalUrl}\n\n${legalNote}`;
+            } else {
+              generatedResponse = `${notice}\n\n**${localizedName} - संपूर्ण विवरण:**\n\nयह योजना **${localizedCat}** श्रेणी के तहत **${localizedState}** सरकार / केंद्र सरकार द्वारा संचालित की जा रही है।\n\n• **प्रमुख लाभ:** ${localizedBenefits}${topS.financialBenefitAmount ? ` (वित्तीय सहायता: ₹${topS.financialBenefitAmount})` : ''}\n• **पात्रता:** आयु ${topS.eligibilityRules?.minAge ?? 0}–${topS.eligibilityRules?.maxAge ?? 120} वर्ष${topS.eligibilityRules?.maxAnnualIncome ? `, आय सीमा ₹${topS.eligibilityRules.maxAnnualIncome}/वर्ष` : ''}\n• **आवश्यक दस्तावेज:** ${reqDocs}\n• **आवेदन कैसे करें:** आधिकारिक पोर्टल पर ऑनलाइन अथवा नजदीकी सीएससी (CSC) केंद्र पर जाकर आवेदन करें।\n\n🔗 **आधिकारिक आवेदन पोर्टल:** ${portalUrl}\n\n${legalNote}`;
+            }
           } else {
-            schemeDetails = `**Published Scheme:** ${localizedName}\n**Category:** ${localizedCat} (${localizedState})\n**Benefits:** ${localizedBenefits}\n**Official Application Portal:** ${portalUrl}`;
+            // Default English
+            if (isApply) {
+              generatedResponse = `${notice}\n\n**How to Apply for ${localizedName}:**\n\nFollow these verified application steps:\n${stepsList}\n\n🔗 **Official Application Portal:** ${portalUrl}\n📍 You can also visit your nearest Common Service Centre (CSC) or local administrative office to submit offline.\n\n${legalNote}`;
+            } else if (isDocs) {
+              generatedResponse = `${notice}\n\n**Required Documents for ${localizedName}:**\n\nTo apply, please ensure you have the following verified documents ready:\n• ${reqDocs.split(', ').join('\n• ')}\n\n🔗 **Official Application Portal:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isBenefit) {
+              generatedResponse = `${notice}\n\n**Benefits & Financial Support for ${localizedName}:**\n\n• **Financial Assistance:** ${topS.financialBenefitAmount ? '₹' + topS.financialBenefitAmount : 'As per scheme guidelines'}\n• **Coverage & Benefits:** ${localizedBenefits}\n\n🔗 **Official Application Portal:** ${portalUrl}\n\n${legalNote}`;
+            } else if (isEligible) {
+              generatedResponse = `${notice}\n\n**Eligibility Criteria for ${localizedName}:**\n\n• **Age Range:** ${topS.eligibilityRules?.minAge ?? 0} to ${topS.eligibilityRules?.maxAge ?? 120} years\n• **Income Ceiling:** ${topS.eligibilityRules?.maxAnnualIncome ? '₹' + topS.eligibilityRules.maxAnnualIncome + '/year' : 'No income ceiling'}\n• **Target Categories:** ${(topS.eligibilityRules?.allowedCategories || ['All']).join(', ')}\n\n🔗 **Official Application Portal:** ${portalUrl}\n\n${legalNote}`;
+            } else {
+              generatedResponse = `${notice}\n\n**${localizedName} - Overview & Guidance:**\n\nThis welfare scheme is administered under **${localizedCat}** by the **${localizedState}** / Central Government.\n\n• **Key Benefits:** ${localizedBenefits}${topS.financialBenefitAmount ? ` (Financial Support: ₹${topS.financialBenefitAmount})` : ''}\n• **Eligibility:** Age ${topS.eligibilityRules?.minAge ?? 0}–${topS.eligibilityRules?.maxAge ?? 120} yrs${topS.eligibilityRules?.maxAnnualIncome ? `, Income ceiling ₹${topS.eligibilityRules.maxAnnualIncome}/yr` : ''}\n• **Required Documents:** ${reqDocs}\n• **How to Apply:** Apply directly via the official portal or visit your nearest Common Service Centre (CSC) / e-Sevai centre.\n\n🔗 **Official Application Portal:** ${portalUrl}\n\n${legalNote}`;
+            }
           }
         } else {
-          schemeDetails = dict.noSchemeFoundExplore || t('noSchemeFoundExplore', 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.');
+          generatedResponse = `${notice}\n\n${dict.noSchemeFoundExplore || t('noSchemeFoundExplore', 'I could not find a specific scheme for that, but you can explore all categories on the discovery portal.')}\n\n${legalNote}`;
         }
 
-        const generatedResponse = `${notice}\n\n${foundHeader}\n\n${schemeDetails}\n\n${legalNote}`;
-        
         // Stream effect simulation
         const words = generatedResponse.split(' ');
         for (let i = 0; i < words.length; i++) {

@@ -1,6 +1,24 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Robust multi-path .env resolution
+[
+  path.resolve(__dirname, '../.env'),
+  path.resolve(__dirname, '.env'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'GovScheme/.env'),
+  path.resolve(process.cwd(), 'GovScheme/server/.env')
+].forEach(envPath => {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+});
+
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
