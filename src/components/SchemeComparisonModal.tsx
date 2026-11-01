@@ -51,42 +51,44 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
   };
 
   const formatAgeEligibility = (s: Scheme) => {
-    const min = s.eligibilityRules.minAge ?? s.eligibilityRules.ageMin;
-    const max = s.eligibilityRules.maxAge ?? s.eligibilityRules.ageMax;
-    if (min !== undefined && max !== undefined) return `${min} – ${max} years`;
-    if (min !== undefined) return `Min ${min} years`;
-    if (max !== undefined) return `Max ${max} years`;
-    return 'No age restriction';
+    const min = s.eligibilityRules?.minAge ?? s.eligibilityRules?.ageMin;
+    const max = s.eligibilityRules?.maxAge ?? s.eligibilityRules?.ageMax;
+    if (min !== undefined && max !== undefined) return `${min} – ${max} ${t('yearsUnit', 'years')}`;
+    if (min !== undefined) return `${t('minAge', 'Min')} ${min} ${t('yearsUnit', 'years')}`;
+    if (max !== undefined) return `${t('maxAge', 'Max')} ${max} ${t('yearsUnit', 'years')}`;
+    return t('noAgeLimit', 'No age restriction');
   };
 
   const formatIncomeEligibility = (s: Scheme) => {
-    const limit = s.eligibilityRules.maxAnnualIncome ?? s.eligibilityRules.incomeLimit;
-    if (limit !== undefined && limit > 0) return `Up to ₹${limit.toLocaleString('en-IN')}/year`;
-    return 'No strict income ceiling';
+    const limit = s.eligibilityRules?.maxAnnualIncome ?? s.eligibilityRules?.incomeLimit;
+    if (limit !== undefined && limit > 0) return `${t('upTo', 'Up to ')}₹${limit.toLocaleString('en-IN')}${t('perYear', '/year')}`;
+    return t('noStrictIncomeCeiling', 'No strict income ceiling');
   };
 
   const formatOccupations = (s: Scheme) => {
-    const occs = s.eligibilityRules.allowedOccupations || s.eligibilityRules.occupation;
-    if (Array.isArray(occs) && occs.length > 0) return occs.join(', ');
-    if (typeof occs === 'string' && occs) return occs;
-    return 'All occupations';
+    const occs = s.eligibilityRules?.allowedOccupations || s.eligibilityRules?.occupation;
+    if (Array.isArray(occs) && occs.length > 0) return occs.map(o => t(String(o), String(o))).join(', ');
+    if (typeof occs === 'string' && occs) return t(occs, occs);
+    return t('allOccupations', 'All occupations');
   };
 
   const formatCategories = (s: Scheme) => {
-    const cats = s.eligibilityRules.allowedCategories || s.eligibilityRules.category;
-    if (Array.isArray(cats) && cats.length > 0) return cats.join(', ');
-    if (typeof cats === 'string' && cats) return cats;
-    return 'All categories (General, OBC, SC, ST)';
+    const cats = s.eligibilityRules?.allowedCategories || s.eligibilityRules?.category;
+    if (Array.isArray(cats) && cats.length > 0) return cats.map(c => t(String(c), String(c))).join(', ');
+    if (typeof cats === 'string' && cats) return t(cats, cats);
+    return t('allCategoriesEligible', 'All categories (General, OBC, SC, ST)');
   };
 
   const getRequiredDocs = (s: Scheme): string[] => {
     const docs = s.requiredDocuments || s.eligibilityRules?.requiredDocuments || [];
-    return docs.length > 0 ? docs : ['Aadhaar Card', 'Income Certificate', 'Bank Passbook'];
+    const list = docs.length > 0 ? docs : ['Aadhaar Card', 'Income Certificate', 'Bank Passbook'];
+    return list.map(d => t(d, d));
   };
 
   const getApplicationSteps = (s: Scheme): string[] => {
     const steps = s.applicationSteps || [];
-    return steps.length > 0 ? steps : ['Visit official portal', 'Fill application form', 'Upload documents', 'Submit and track'];
+    const list = steps.length > 0 ? steps : ['Visit official portal', 'Fill application form', 'Upload documents', 'Submit and track'];
+    return list.map((step, idx) => t(`${s.id}_step_${idx + 1}`, t(step, step)));
   };
 
   return (
@@ -164,7 +166,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                             onClick={() => onRemoveScheme(s.id)}
                             className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950 text-gray-400 hover:text-red-600 transition"
                             title="Remove from comparison"
-                            aria-label={`Remove ${s.name}`}
+                            aria-label={`Remove ${t(`${s.id}_name`, s.name)}`}
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -194,7 +196,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300">
                     <div className="flex items-center gap-2">
                       <Tag className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>1. Scheme Name</span>
+                      <span>{t('compareParamSchemeName', '1. Scheme Name')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
@@ -209,13 +211,13 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300">
                     <div className="flex items-center gap-2">
                       <Building className="w-4 h-4 text-indigo-600 shrink-0" />
-                      <span>2. Department / Ministry</span>
+                      <span>{t('compareParamDepartment', '2. Department / Ministry')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
                     <td key={s.id} className="p-3 sm:p-4 text-gray-700 dark:text-gray-300">
                       <p className="font-semibold text-gray-900 dark:text-white">
-                        {s.department || s.ministry || 'Not Available'}
+                        {t(s.department || s.ministry || '', s.department || s.ministry || 'Not Available')}
                       </p>
                       {s.ministry && s.department && s.ministry !== s.department && (
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
@@ -231,12 +233,12 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300">
                     <div className="flex items-center gap-2">
                       <Tag className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>3. Category</span>
+                      <span>{t('compareParamCategory', '3. Category')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
                     <td key={s.id} className="p-3 sm:p-4 font-semibold text-gray-800 dark:text-gray-200">
-                      {s.category || 'Not Available'}
+                      {t(s.category || '', s.category || 'Not Available')}
                     </td>
                   ))}
                 </tr>
@@ -246,22 +248,22 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300 align-top">
                     <div className="flex items-center gap-2">
                       <Gift className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>4. Benefits</span>
+                      <span>{t('compareParamBenefits', '4. Benefits')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
                     <td key={s.id} className="p-3 sm:p-4 align-top space-y-1.5">
                       {s.financialBenefitAmount ? (
                         <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                          ₹{s.financialBenefitAmount.toLocaleString('en-IN')}/year
+                          ₹{s.financialBenefitAmount.toLocaleString('en-IN')}{t('perYear', '/year')}
                         </div>
                       ) : (
                         <div className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                          Subsidized / In-Kind Welfare Benefit
+                          {t('subsidizedBenefit', 'Subsidized / In-Kind Welfare Benefit')}
                         </div>
                       )}
                       <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                        {s.benefitsSummary || 'Statutory welfare subsidy & direct entitlement.'}
+                        {t(`${s.id}_benefits`, s.benefitsSummary || 'Statutory welfare subsidy & direct entitlement.')}
                       </p>
                     </td>
                   ))}
@@ -272,25 +274,25 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300 align-top">
                     <div className="flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>5. Eligibility Criteria</span>
+                      <span>{t('compareParamEligibility', '5. Eligibility Criteria')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
                     <td key={s.id} className="p-3 sm:p-4 align-top space-y-1 text-[11px]">
                       <div>
-                        <span className="font-bold text-gray-500">Age: </span>
+                        <span className="font-bold text-gray-500">{t('age', 'Age')}: </span>
                         <span className="text-gray-800 dark:text-gray-200">{formatAgeEligibility(s)}</span>
                       </div>
                       <div>
-                        <span className="font-bold text-gray-500">Income: </span>
+                        <span className="font-bold text-gray-500">{t('incomeLimit', 'Income')}: </span>
                         <span className="text-gray-800 dark:text-gray-200">{formatIncomeEligibility(s)}</span>
                       </div>
                       <div>
-                        <span className="font-bold text-gray-500">Occupation: </span>
+                        <span className="font-bold text-gray-500">{t('occupation', 'Occupation')}: </span>
                         <span className="text-gray-800 dark:text-gray-200">{formatOccupations(s)}</span>
                       </div>
                       <div>
-                        <span className="font-bold text-gray-500">Category: </span>
+                        <span className="font-bold text-gray-500">{t('category', 'Category')}: </span>
                         <span className="text-gray-800 dark:text-gray-200">{formatCategories(s)}</span>
                       </div>
                     </td>
@@ -302,18 +304,18 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-red-600 shrink-0" />
-                      <span>6. Residence Scope</span>
+                      <span>{t('compareParamResidence', '6. Residence Scope')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
                     <td key={s.id} className="p-3 sm:p-4 text-gray-800 dark:text-gray-200 font-medium">
                       {s.state === 'Central' ? (
                         <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
-                          ✓ All India (Central Scheme)
+                          {t('allIndiaCentralScheme', '✓ All India (Central Scheme)')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-bold">
-                          State Specific ({s.state})
+                          {t('stateSpecific', 'State Specific ({{state}})', { state: t(s.state, s.state) })}
                         </span>
                       )}
                     </td>
@@ -325,7 +327,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300 align-top">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-purple-600 shrink-0" />
-                      <span>7. Required Documents</span>
+                      <span>{t('compareParamDocuments', '7. Required Documents')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
@@ -347,7 +349,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300 align-top">
                     <div className="flex items-center gap-2">
                       <ListOrdered className="w-4 h-4 text-teal-600 shrink-0" />
-                      <span>8. Application Process</span>
+                      <span>{t('compareParamProcess', '8. Application Process')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
@@ -368,14 +370,14 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>9. Application Deadline</span>
+                      <span>{t('compareParamDeadline', '9. Application Deadline')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (
                     <td key={s.id} className="p-3 sm:p-4 text-gray-800 dark:text-gray-200 font-semibold">
                       <div className="flex items-center gap-1.5">
                         <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                        <span>{s.deadline || 'Ongoing / No fixed deadline'}</span>
+                        <span>{s.deadline ? t(s.deadline, s.deadline) : t('ongoingDeadline', 'Ongoing / No fixed deadline')}</span>
                       </div>
                     </td>
                   ))}
@@ -386,7 +388,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300">
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>10. Official Portal</span>
+                      <span>{t('compareParamPortal', '10. Official Portal')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => {
@@ -399,7 +401,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                             onClick={() => handleApply(s)}
                             className="text-blue-600 dark:text-blue-400 hover:underline font-bold inline-flex items-center gap-1 text-xs break-all text-left"
                           >
-                            <span>Open Portal</span>
+                            <span>{t('openPortal', 'Open Portal')}</span>
                             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                           </button>
                         ) : (
@@ -415,7 +417,7 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
                   <td className="p-3 sm:p-4 font-bold text-gray-600 dark:text-gray-300">
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-green-600 shrink-0" />
-                      <span>11. Helpline / Support</span>
+                      <span>{t('compareParamHelpline', '11. Helpline / Support')}</span>
                     </div>
                   </td>
                   {schemes.map((s) => (

@@ -112,8 +112,8 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
 
               {schemeName && (
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-400">
-                  <span className="font-semibold text-gray-900 dark:text-white">Scheme:</span> {schemeName}
-                  {department && <span className="block text-[11px] text-gray-500">{department}</span>}
+                  <span className="font-semibold text-gray-900 dark:text-white">{t('schemeLabel', 'Scheme')}:</span> {t(schemeName, schemeName)}
+                  {department && <span className="block text-[11px] text-gray-500">{t(department, department)}</span>}
                 </div>
               )}
             </div>
@@ -121,10 +121,10 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
             {/* Platform Disclaimers */}
             <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
               <p>
-                <strong>Notice:</strong> GovScheme AI is an independent advisory directory and does not accept applications or collect processing fees.
+                <strong>{t('noticeLabel', 'Notice')}:</strong> {t('redirectNoticeText', 'GovScheme AI is an independent advisory directory and does not accept applications or collect processing fees.')}
               </p>
               <p>
-                You are being taken directly to the authorized government portal to fill and submit your application. Always verify application instructions, dates, and required documents directly on the official portal.
+                {t('redirectGuidanceText', 'You are being taken directly to the authorized government portal to fill and submit your application. Always verify application instructions, dates, and required documents directly on the official portal.')}
               </p>
             </div>
 
@@ -148,7 +148,7 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
               onClick={onClose}
               className="px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-semibold transition"
             >
-              Stay on GovScheme
+              {t('stayOnGovScheme', 'Stay on GovScheme')}
             </button>
             <button
               onClick={handleProceed}

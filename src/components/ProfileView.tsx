@@ -767,7 +767,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   onClick={() => setIsEditModalOpen(true)}
                   className="w-full py-2.5 bg-white text-[#123C69] text-xs font-bold rounded-xl shadow hover:bg-gray-100 transition-colors"
                 >
-                  Complete Missing Info
+                  {t('completeMissingInfo', 'Complete Missing Info')}
                 </button>
               </div>
             )}
