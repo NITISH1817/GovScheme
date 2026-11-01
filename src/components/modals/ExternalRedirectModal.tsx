@@ -9,6 +9,7 @@ interface ExternalRedirectModalProps {
   targetUrl: string;
   schemeName?: string;
   department?: string;
+  applicationNumber?: string;
 }
 
 export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
@@ -16,7 +17,8 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
   onClose,
   targetUrl,
   schemeName,
-  department
+  department,
+  applicationNumber
 }) => {
   const { t } = useTranslation();
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -117,6 +119,29 @@ export const ExternalRedirectModal: React.FC<ExternalRedirectModalProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Application Tracker Live Confirmation */}
+            {applicationNumber && (
+              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 flex items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold shrink-0">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 block">
+                      {t('autoAddedToTracker', 'Automatically Added to Application Tracker')}
+                    </span>
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-mono">
+                      {t('trackingRef', 'Tracking Reference')}: <strong>{applicationNumber}</strong>
+                    </span>
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-emerald-200/70 dark:bg-emerald-900/80 text-emerald-900 dark:text-emerald-200 px-2 py-0.5 rounded-full shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  {t('activeTracking', 'Live')}
+                </span>
+              </div>
+            )}
 
             {/* Platform Disclaimers */}
             <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">

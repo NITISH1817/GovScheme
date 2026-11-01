@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Application from '../models/Application.js';
 import Scheme from '../models/Scheme.js';
+import AuditLog from '../models/AuditLog.js';
 
 export const createApplication = async (req, res) => {
   try {
@@ -76,6 +77,20 @@ export const createApplication = async (req, res) => {
     const populated = await Application.findById(newApp._id)
       .populate('schemeId', 'name shortDescription department category officialApplyUrl officialWebsite id schemeId')
       .populate('uploadedDocuments.documentId', 'documentType type docNumber verificationStatus');
+
+    try {
+      await AuditLog.create({
+        userId,
+        adminName: `${req.user.fullName || req.user.name || 'Citizen'} (${req.user.role || 'Citizen'})`,
+        action: 'CREATE_APPLICATION',
+        entityType: 'applications',
+        entityId: cleanAppNumber || String(newApp._id),
+        details: `Application initiated for scheme "${scheme.name}" (${scheme.id || scheme.schemeId || scheme._id}). Status: Submitted`,
+        ipAddress: req.ip || '127.0.0.1 (Web Portal)'
+      });
+    } catch (auditErr) {
+      console.warn('Non-blocking audit log creation error:', auditErr.message);
+    }
 
     res.status(201).json({ success: true, application: populated });
   } catch (error) {
@@ -159,6 +174,20 @@ export const updateApplicationStatus = async (req, res) => {
     });
     
     await application.save();
+
+    try {
+      await AuditLog.create({
+        adminId: req.user._id,
+        adminName: `${req.user.fullName || req.user.name || 'Admin'} (${req.user.role || 'Admin'})`,
+        action: 'UPDATE_APPLICATION_STATUS',
+        entityType: 'applications',
+        entityId: application.applicationNumber || String(application._id),
+        details: `Application transitioned to ${application.status}. Remarks: ${remarks || 'Status update'}`,
+        ipAddress: req.ip || '127.0.0.1 (Admin Console)'
+      });
+    } catch (auditErr) {
+      console.warn('Non-blocking audit log creation error:', auditErr.message);
+    }
     
     if (req.app.get('io')) {
       req.app.get('io').emit('APPLICATION_STATUS_UPDATED', {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { socketService } from './api/socketClient';
+import { appendLiveAuditLog } from './api/apiClient';
 import { useTranslation } from 'react-i18next';
 import { LanguageCode, UserProfile, Scheme, CombinedSchemeAnalysis, DocumentRecord, ApplicationTrackerRecord, NotificationItem } from './types';
 import { schemesData } from './data/schemes';
@@ -172,7 +173,16 @@ export const App: React.FC = () => {
   const [isSchemesLoading, setIsSchemesLoading] = useState<boolean>(false);
   const [schemesError, setSchemesError] = useState<string | null>(null);
   const [isBackendWaking, setIsBackendWaking] = useState<boolean>(false);
-  const [applications, setApplications] = useState<ApplicationTrackerRecord[]>([]);
+  const [applications, setApplications] = useState<ApplicationTrackerRecord[]>(() => {
+    try {
+      const stored = localStorage.getItem('govscheme_applications');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
 
   const [wizardMode, setWizardMode] = useState<'wizard' | 'life-event' | 'what-can-i-get' | 'ai-interview'>('wizard');
@@ -253,17 +263,157 @@ export const App: React.FC = () => {
     url: string;
     schemeName?: string;
     department?: string;
+    applicationNumber?: string;
   } | null>(null);
 
-  const handleExternalRedirect = useCallback((url: string, schemeName?: string, department?: string) => {
+  // Core Application Tracking Handler: records in React, localStorage, Audit Log, and Backend
+  const handleTrackApplication = useCallback(async (schemeId: string, customAppNumber?: string) => {
+    const token = localStorage.getItem('govscheme_token');
+    const matchedScheme = schemes.find(s => s.id === schemeId || (s as any).schemeId === schemeId);
+    const targetSchemeName = matchedScheme?.name || 'Government Welfare Scheme';
+    const officialPortal = matchedScheme?.officialApplyUrl || matchedScheme?.officialWebsite || 'https://www.india.gov.in';
+    const statePrefix = matchedScheme?.state === 'Tamil Nadu' ? 'TN' : 'IND';
+    const genAckNumber = customAppNumber?.trim() || `APP-${statePrefix}-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    const currentStatus = 'Submitted';
+    const stages = [
+      'Application Started',
+      'Documents Uploaded',
+      'Submitted',
+      'Under Review',
+      'Approved',
+      'Benefit Released'
+    ];
+    const timeline = stages.map((stg, i) => ({
+      stage: stg,
+      date: i <= 2 ? new Date().toISOString().split('T')[0] : 'Pending',
+      completed: i <= 2,
+      remarks: i === 2 ? 'Application registered in Citizen Tracker' : undefined
+    }));
+
+    const dynamicDocs = user?.documents?.slice(0, 3).map(d => ({
+      name: d.type || d.documentType || 'Identity Document',
+      verified: d.status === 'Verified',
+      label: d.status === 'Verified' ? 'Verified in Citizen Vault' : 'Uploaded & Linked'
+    })) || [];
+
+    const newTrackRecord: ApplicationTrackerRecord = {
+      id: `app_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      schemeId,
+      schemeName: targetSchemeName,
+      applicationNumber: genAckNumber,
+      status: currentStatus as any,
+      appliedDate: new Date().toISOString().split('T')[0],
+      officialPortalLink: officialPortal,
+      statusTimeline: timeline,
+      verifiedDocuments: dynamicDocs
+    };
+
+    // 1. Immediately update React state for instant 0ms UI feedback
+    setApplications(prev => [newTrackRecord, ...prev.filter(a => a.applicationNumber !== genAckNumber && a.schemeId !== schemeId)]);
+
+    // 2. Persist in local storage
+    try {
+      const stored = localStorage.getItem('govscheme_applications');
+      const parsed: ApplicationTrackerRecord[] = stored ? JSON.parse(stored) : [];
+      const updated = [newTrackRecord, ...parsed.filter(a => a.applicationNumber !== genAckNumber && a.schemeId !== schemeId)];
+      localStorage.setItem('govscheme_applications', JSON.stringify(updated));
+    } catch {}
+
+    // 3. Emit Live Audit Log event
+    appendLiveAuditLog(
+      'CREATE_APPLICATION',
+      'applications',
+      genAckNumber,
+      `Application logged for ${targetSchemeName} (${genAckNumber}). Status: Submitted`
+    );
+
+    // 4. Sync with backend API
+    if (token) {
+      try {
+        const response = await fetch(`${API_URL}/api/applications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            schemeId,
+            applicationNumber: genAckNumber,
+            remarks: `Ack Number: ${genAckNumber}`
+          })
+        });
+        if (response.ok) {
+          const data = await response.json().catch(() => null);
+          if (data && data.success && data.application) {
+            const a = data.application;
+            setApplications(prev => prev.map(item => item.applicationNumber === genAckNumber ? {
+              ...item,
+              id: a._id || item.id
+            } : item));
+          }
+        }
+      } catch (e) {
+        console.warn('Backend tracking sync fallback (local record active):', e);
+      }
+    }
+
+    return genAckNumber;
+  }, [schemes, user, API_URL]);
+
+  // Automatic scheme application logger: auto-adds scheme to tracker, triggers notification & audit log
+  const handleApplyScheme = useCallback(async (scheme: Scheme | Partial<Scheme>) => {
+    const schemeId = scheme.id || (scheme as any).schemeId || 'general_scheme';
+    const schemeName = scheme.name || 'Government Welfare Scheme';
+    const statePrefix = scheme.state === 'Tamil Nadu' ? 'TN' : 'IND';
+    const appNumber = `APP-${statePrefix}-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    await handleTrackApplication(schemeId, appNumber);
+
+    const newNotif: NotificationItem = {
+      id: `notif_${Date.now()}`,
+      title: `Application Initiated: ${schemeName}`,
+      description: `Your application has been logged in the Tracker with Reference ID ${appNumber}.`,
+      category: 'Application',
+      timestamp: 'Just now',
+      read: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+
+    appendLiveAuditLog(
+      'APPLY_SCHEME',
+      'schemes',
+      schemeId,
+      `Citizen initiated application for "${schemeName}". Reference: ${appNumber}`
+    );
+
+    return appNumber;
+  }, [handleTrackApplication]);
+
+  const handleExternalRedirect = useCallback(async (url: string, schemeName?: string, department?: string, schemeId?: string, schemeObj?: Scheme) => {
     if (!url) return;
+    const matched = schemeObj || schemes.find(s => (schemeId && s.id === schemeId) || (schemeName && s.name === schemeName) || s.officialApplyUrl === url || s.officialWebsite === url) || {
+      id: schemeId || 'scheme',
+      name: schemeName || 'Government Scheme',
+      department,
+      officialApplyUrl: url,
+      officialWebsite: url
+    };
+
+    const appNum = await handleApplyScheme(matched);
+
     const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
     if (skipNotice === 'true') {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      setRedirectTarget({ url, schemeName, department });
+      setRedirectTarget({
+        url,
+        schemeName: matched.name,
+        department: matched.department || department,
+        applicationNumber: appNum
+      });
     }
-  }, []);
+  }, [schemes, handleApplyScheme]);
 
   useEffect(() => {
     const handleModalEvent = (e: any) => {
@@ -273,8 +423,8 @@ export const App: React.FC = () => {
       else if (modalType === 'terms') setIsTermsOpen(true);
       else if (modalType === 'feedback') setIsFeedbackOpen(true);
       else if (modalType === 'redirect') {
-        const { url, schemeName, department } = e.detail || {};
-        handleExternalRedirect(url, schemeName, department);
+        const { url, schemeName, department, schemeId, scheme } = e.detail || {};
+        handleExternalRedirect(url, schemeName, department, schemeId, scheme);
       }
     };
     window.addEventListener('govscheme_open_modal', handleModalEvent);
@@ -696,7 +846,19 @@ export const App: React.FC = () => {
                   verifiedDocuments: dynamicDocs
                 };
               });
-              setApplications(mappedApps);
+              // Seamlessly merge backend applications with any offline/local tracker records
+              setApplications(prev => {
+                const combined = [...mappedApps];
+                for (const localApp of prev) {
+                  if (!combined.some(c => c.applicationNumber === localApp.applicationNumber || c.schemeId === localApp.schemeId)) {
+                    combined.push(localApp);
+                  }
+                }
+                try {
+                  localStorage.setItem('govscheme_applications', JSON.stringify(combined));
+                } catch {}
+                return combined;
+              });
             }
           }
 
@@ -854,68 +1016,7 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  const handleTrackApplication = async (schemeId: string, customAppNumber?: string) => {
-    const token = localStorage.getItem('govscheme_token');
-    if (!token) {
-      setIsAuthOpen(true);
-      return;
-    }
-    try {
-      const response = await fetch(`${API_URL}/api/applications`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          schemeId,
-          applicationNumber: customAppNumber ? customAppNumber.trim() : undefined,
-          remarks: customAppNumber ? `Ack Number: ${customAppNumber}` : 'Submitted via GovScheme Tracker'
-        })
-      });
-
-      const data = await response.json();
-      if (data.success && data.application) {
-        const a = data.application;
-        const currentStatus = a.status || 'Submitted';
-        const stages = [
-          'Application Started',
-          'Documents Uploaded',
-          'Submitted',
-          'Under Review',
-          'Approved',
-          'Benefit Released'
-        ];
-        const statusIdx = stages.findIndex(s => s.toLowerCase() === currentStatus.toLowerCase());
-        const effectiveIdx = statusIdx >= 0 ? statusIdx : 2;
-
-        const timeline = stages.map((stg, i) => ({
-          stage: stg,
-          date: i <= effectiveIdx ? (a.updatedAt ? new Date(a.updatedAt).toISOString().split('T')[0] : 'Completed') : 'Pending',
-          completed: i <= effectiveIdx,
-          remarks: i === effectiveIdx ? (a.remarks || `Status: ${currentStatus}`) : undefined
-        }));
-
-        const newTrackRecord: ApplicationTrackerRecord = {
-          id: a._id,
-          schemeId: a.schemeId?.id || a.schemeId?.schemeId || a.schemeId?._id || schemeId,
-          schemeName: a.schemeId?.name || a.schemeId?.schemeName || 'Government Scheme',
-          applicationNumber: a.applicationNumber || customAppNumber || `APP-${String(a._id).slice(-8).toUpperCase()}`,
-          status: currentStatus as any,
-          appliedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          officialPortalLink: a.schemeId?.officialApplyUrl || a.schemeId?.officialWebsite || 'https://www.india.gov.in',
-          statusTimeline: timeline
-        };
-
-        setApplications(prev => [newTrackRecord, ...prev]);
-      } else {
-        throw new Error(data.message || 'Failed to record application');
-      }
-    } catch (err: any) {
-      console.error('Error tracking application:', err.message);
-      throw err;
-    }
-  };
+// handleTrackApplication moved to centralized declaration above
 
   // Logout handler
   const handleLogout = () => {
@@ -1238,7 +1339,7 @@ export const App: React.FC = () => {
           bookmarks={user?.savedSchemeIds || []}
           onToggleBookmark={handleToggleBookmark}
           isBookmarked={isBookmarked}
-          onTrackApplication={handleTrackApplication}
+          onTrackApplication={async (sId, cNum) => { await handleTrackApplication(sId, cNum); }}
           onOpenAuth={(mode, reason) => {
             if (mode) setAuthMode(mode === 'signup' ? 'register' : mode);
             if (reason) setAuthNotice(reason);
@@ -1755,7 +1856,7 @@ export const App: React.FC = () => {
             onNavigateTab={setActiveTab}
             user={user}
             schemes={schemes}
-            onTrackApplication={handleTrackApplication}
+            onTrackApplication={async (sId, cNum) => { await handleTrackApplication(sId, cNum); }}
             onOpenAuth={() => setIsAuthOpen(true)}
           />
         )}
@@ -2104,6 +2205,7 @@ export const App: React.FC = () => {
         targetUrl={redirectTarget?.url || ''}
         schemeName={redirectTarget?.schemeName}
         department={redirectTarget?.department}
+        applicationNumber={redirectTarget?.applicationNumber}
         onClose={() => setRedirectTarget(null)}
       />
 

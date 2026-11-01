@@ -819,19 +819,16 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 type="button"
                                 onClick={() => {
                   const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in');
-                  const skipNotice = typeof localStorage !== 'undefined' && localStorage.getItem('govscheme_skip_redirect_notice');
-                  if (skipNotice === 'true') {
-                    window.open(targetUrl, '_blank', 'noopener,noreferrer');
-                  } else {
-                    window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
-                      detail: {
-                        type: 'redirect',
-                        url: targetUrl,
-                        schemeName: scheme.name,
-                        department: scheme.department
-                      }
-                    }));
-                  }
+                  window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
+                    detail: {
+                      type: 'redirect',
+                      url: targetUrl,
+                      schemeName: scheme.name,
+                      department: scheme.department,
+                      schemeId: scheme.id,
+                      scheme
+                    }
+                  }));
                 }}
                 className="min-h-[44px] px-6 sm:px-8 py-3 rounded bg-[#1769FF] text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
@@ -847,6 +844,13 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
             onClose={() => setIsAppFormOpen(false)}
             scheme={scheme}
             user={user}
+            onApplicationSaved={(newApp) => {
+              try {
+                const stored = localStorage.getItem('govscheme_applications');
+                const parsed = stored ? JSON.parse(stored) : [];
+                localStorage.setItem('govscheme_applications', JSON.stringify([newApp, ...parsed.filter((p: any) => p.applicationNumber !== newApp.applicationNumber)]));
+              } catch {}
+            }}
             onNavigateTab={onNavigateTab}
             onOpenVaultScan={() => {
               setIsAppFormOpen(false);

@@ -47,6 +47,9 @@ export const appendLiveAuditLog = (
     logs.unshift(newLog);
     // Keep last 100 logs
     localStorage.setItem('govscheme_live_audit_logs', JSON.stringify(logs.slice(0, 100)));
+    try {
+      window.dispatchEvent(new CustomEvent('govscheme_audit_log_added', { detail: newLog }));
+    } catch {}
   } catch (e) {
     console.warn('Failed to append audit log', e);
   }

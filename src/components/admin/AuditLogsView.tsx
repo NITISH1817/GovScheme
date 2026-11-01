@@ -44,9 +44,9 @@ export const AuditLogsView: React.FC = () => {
   const [cpDetails, setCpDetails] = useState('Quarterly ISO/IEC 27001 data isolation and citizen privacy integrity review completed.');
   const [isSubmittingCheckpoint, setIsSubmittingCheckpoint] = useState(false);
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await apiClient.get('/audit', {
         action: actionFilter !== 'All' ? actionFilter : undefined,
         entityType: entityFilter !== 'All' ? entityFilter : undefined,
@@ -64,13 +64,34 @@ export const AuditLogsView: React.FC = () => {
     } catch (e) {
       console.error('Failed to load audit logs', e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchLogs();
   }, [actionFilter, entityFilter]);
+
+  // Live real-time listener: instantly reflect new audit events anywhere in the platform
+  useEffect(() => {
+    const handleLogAdded = (e: any) => {
+      const newEntry = e.detail;
+      if (newEntry) {
+        setLogs(prev => [newEntry, ...prev.filter(l => l._id !== newEntry._id)]);
+        setTotalCount(c => c + 1);
+      }
+    };
+    window.addEventListener('govscheme_audit_log_added', handleLogAdded);
+    return () => window.removeEventListener('govscheme_audit_log_added', handleLogAdded);
+  }, []);
+
+  // Background live streaming poll every 4 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLogs(true);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [actionFilter, entityFilter, searchQuery]);
 
   // Client-side filtering for search & timeframe
   const filteredLogs = useMemo(() => {
@@ -277,8 +298,12 @@ export const AuditLogsView: React.FC = () => {
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                 Audit & Security Event Trail
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Live Streaming (Real-Time)
+                </span>
               </h1>
               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                 Immutable chronological ledger of administrative actions, authentication checkpoints, and data mutations.
@@ -295,7 +320,7 @@ export const AuditLogsView: React.FC = () => {
             <Plus className="w-4 h-4" /> Record Checkpoint
           </button>
           <button 
-            onClick={fetchLogs} 
+            onClick={() => fetchLogs(false)} 
             className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-blue-500 dark:hover:border-blue-500 rounded-lg text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-200 transition-colors shadow-sm"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} /> Refresh
