@@ -400,34 +400,40 @@ export const KioskMode: React.FC<KioskModeProps> = ({
   // --------------------------------------------------------------------------
   // RECOMMENDATION COMPUTATION (RULE ENGINE + ML RANKING)
   // --------------------------------------------------------------------------
-  const recommendedSchemes = useMemo(() => {
-    const profileToEvaluate: UserProfile = {
+  const profileToEvaluate: UserProfile = useMemo(() => {
+    return {
       id: user?.id || 'kiosk-citizen',
-      fullName: recFormData.fullName || 'Citizen Beneficiary',
+      fullName: recFormData.fullName || user?.fullName || 'Citizen Beneficiary',
       email: user?.email || '',
       mobile: user?.mobile || '',
-      age: Number(recFormData.age) || 35,
-      gender: (recFormData.gender as any) || 'Male',
+      age: Number(recFormData.age) || Number(user?.age) || 35,
+      gender: (recFormData.gender as any) || (user?.gender as any) || 'Male',
       maritalStatus: user?.maritalStatus || '',
-      state: recFormData.state || 'Tamil Nadu',
-      district: recFormData.district || 'Madurai',
-      annualIncome: Number(recFormData.annualIncome) || 120000,
-      category: (recFormData.category as any) || 'OBC',
-      occupation: recFormData.occupation || 'Farmer',
+      state: recFormData.state || user?.state || 'Tamil Nadu',
+      district: recFormData.district || user?.district || 'Madurai',
+      annualIncome: recFormData.annualIncome !== undefined && recFormData.annualIncome !== null && !isNaN(Number(recFormData.annualIncome))
+        ? Number(recFormData.annualIncome)
+        : (user?.annualIncome !== undefined && user?.annualIncome !== null ? Number(user.annualIncome) : 120000),
+      category: (recFormData.category as any) || (user?.category as any) || 'OBC',
+      occupation: recFormData.occupation || user?.occupation || 'Farmer',
       educationLevel: user?.educationLevel || 'Secondary',
       familyMembersCount: user?.familyMembersCount || 4,
-      landHoldingAcres: Number(recFormData.landHoldingAcres) || 0,
-      hasDisability: Boolean(recFormData.hasDisability),
-      disabilityPercentage: Number(recFormData.disabilityPercentage) || 0,
+      landHoldingAcres: recFormData.landHoldingAcres !== undefined && recFormData.landHoldingAcres !== null && !isNaN(Number(recFormData.landHoldingAcres))
+        ? Number(recFormData.landHoldingAcres)
+        : (user?.landHoldingAcres !== undefined ? Number(user.landHoldingAcres) : 0),
+      hasDisability: recFormData.hasDisability !== undefined ? Boolean(recFormData.hasDisability) : Boolean(user?.hasDisability),
+      disabilityPercentage: Number(recFormData.disabilityPercentage) || Number(user?.disabilityPercentage) || 0,
       isRegisteredWorker: user?.isRegisteredWorker || false,
-      residenceType: (recFormData.residenceType as any) || 'Rural',
-      interests: recFormData.interests || [],
+      residenceType: (recFormData.residenceType as any) || (user?.residenceType as any) || 'Rural',
+      interests: (recFormData.interests && recFormData.interests.length > 0) ? recFormData.interests : (user?.interests || ['Agriculture', 'Financial Support']),
       verificationBadge: user?.verificationBadge || false,
       profileCompletionScore: user?.profileCompletionScore || 85,
       savedSchemeIds: user?.savedSchemeIds || [],
       documents: user?.documents || []
     };
+  }, [user, recFormData]);
 
+  const recommendedSchemes = useMemo(() => {
     return schemes.map(scheme => {
       const ruleResult = evaluateSchemeEligibility(profileToEvaluate, scheme);
       const mlResult = computeMLRecommendation(profileToEvaluate, scheme, ruleResult, schemes);
@@ -444,11 +450,27 @@ export const KioskMode: React.FC<KioskModeProps> = ({
       if (diff !== 0) return diff;
       return b.mlResult.confidenceScore - a.mlResult.confidenceScore;
     });
-  }, [schemes, user, recFormData]);
+  }, [schemes, profileToEvaluate]);
+
+  const [recTabFilter, setRecTabFilter] = useState<'recommended' | 'all' | 'notEligible'>('recommended');
+
+  const displayedRecs = useMemo(() => {
+    if (recTabFilter === 'recommended') {
+      return recommendedSchemes.filter(r => 
+        r.ruleResult.status === 'Eligible' || 
+        r.ruleResult.status === 'Conditionally Eligible' || 
+        r.ruleResult.status === 'Almost Eligible'
+      );
+    }
+    if (recTabFilter === 'notEligible') {
+      return recommendedSchemes.filter(r => r.ruleResult.status === 'Not Eligible');
+    }
+    return recommendedSchemes;
+  }, [recommendedSchemes, recTabFilter]);
 
   const eligibleCount = useMemo(() => {
     return recommendedSchemes.filter(
-      r => r.ruleResult.status === 'Eligible' || r.ruleResult.status === 'Conditionally Eligible'
+      r => r.ruleResult.status === 'Eligible' || r.ruleResult.status === 'Conditionally Eligible' || r.ruleResult.status === 'Almost Eligible'
     ).length;
   }, [recommendedSchemes]);
 
@@ -871,7 +893,10 @@ export const KioskMode: React.FC<KioskModeProps> = ({
               <motion.div
                 whileHover={reducedMotion ? {} : { scale: 1.02, y: -3 }}
                 whileTap={reducedMotion ? {} : { scale: 0.98 }}
-                onClick={() => setActiveView('recommendations')}
+                onClick={() => {
+                  setRecommendationStep('results');
+                  setActiveView('recommendations');
+                }}
                 className="bg-white border border-[#DCE5EF] hover:border-[#2563EB] hover:shadow-lg transition-all rounded-3xl p-6 sm:p-7 flex flex-col justify-between shadow-sm cursor-pointer group"
               >
                 <div className="space-y-4">
@@ -1037,7 +1062,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
           <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full bg-[#F8FAFC]">
             <SchemeDiscovery
               schemes={schemes}
-              user={user || null}
+              user={profileToEvaluate}
               currentLang={activeLangCode}
               onSelectScheme={(analysis) => setSelectedSchemeAnalysis(analysis)}
               onToggleBookmark={handleToggleLocalBookmark}
@@ -1340,7 +1365,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                     <button
                       type="button"
                       onClick={() => setRecommendationStep('questionnaire')}
-                      className="min-h-[46px] px-4 py-2.5 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#12365B] font-bold text-xs flex items-center gap-2 border border-[#DCE5EF] transition-all"
+                      className="min-h-[46px] px-4 py-2.5 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#12365B] font-bold text-xs flex items-center gap-2 border border-[#DCE5EF] transition-all cursor-pointer"
                     >
                       <Edit3 className="w-4 h-4 text-[#2563EB]" />
                       <span>{t('kioskEditQuestionnaire', 'Update Criteria')}</span>
@@ -1348,161 +1373,254 @@ export const KioskMode: React.FC<KioskModeProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => {
-                        if (onGenerateReport) {
-                          const exactRecs = recommendedSchemes
-                            .filter(r => r.ruleResult.status === 'Eligible' || r.ruleResult.status === 'Conditionally Eligible')
-                            .map(r => r.scheme);
-                          onGenerateReport(recFormData, exactRecs);
-                        } else {
-                          setIsThermalReceiptOpen(true);
-                        }
-                      }}
-                      className="min-h-[46px] px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
+                      onClick={() => setIsThermalReceiptOpen(true)}
+                      className="min-h-[46px] px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
                     >
                       <Printer className="w-4 h-4" />
                       <span>{t('printThermalReceipt', 'Print Thermal Receipt')}</span>
                     </button>
+
+                    {onGenerateReport && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const exactRecs = recommendedSchemes
+                            .filter(r => r.ruleResult.status === 'Eligible' || r.ruleResult.status === 'Conditionally Eligible')
+                            .map(r => r.scheme);
+                          onGenerateReport(profileToEvaluate, exactRecs);
+                        }}
+                        className="min-h-[46px] px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>{t('fullReport', 'Full Report')}</span>
+                      </button>
+                    )}
                   </div>
+                </div>
+
+                {/* Filter Tabs */}
+                <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white border border-[#DCE5EF] shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setRecTabFilter('recommended')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                      recTabFilter === 'recommended'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'text-[#64748B] hover:text-[#12365B] hover:bg-[#F1F5F9]'
+                    }`}
+                  >
+                    <span>{t('recommendedForYou', 'Recommended')}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                      recTabFilter === 'recommended' ? 'bg-white/20 text-white' : 'bg-[#EAF2FF] text-[#2563EB]'
+                    }`}>
+                      {eligibleCount}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRecTabFilter('all')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                      recTabFilter === 'all'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'text-[#64748B] hover:text-[#12365B] hover:bg-[#F1F5F9]'
+                    }`}
+                  >
+                    <span>{t('allSchemes', 'All Schemes')}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                      recTabFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-[#64748B]'
+                    }`}>
+                      {recommendedSchemes.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRecTabFilter('notEligible')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                      recTabFilter === 'notEligible'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'text-[#64748B] hover:text-[#12365B] hover:bg-[#F1F5F9]'
+                    }`}
+                  >
+                    <span>{t('notEligible', 'Not Applicable')}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                      recTabFilter === 'notEligible' ? 'bg-white/20 text-white' : 'bg-slate-100 text-[#64748B]'
+                    }`}>
+                      {recommendedSchemes.length - eligibleCount}
+                    </span>
+                  </button>
                 </div>
 
                 {/* Recommendation Cards List */}
                 <div className="grid grid-cols-1 gap-5">
-                  {recommendedSchemes.map(({ scheme, ruleResult, mlResult, explainable }) => {
-                    const isEligible = ruleResult.status === 'Eligible';
-                    const isCondEligible = ruleResult.status === 'Conditionally Eligible';
-                    const statusBadgeClass = isEligible
-                      ? 'bg-emerald-50 text-[#16A34A] border-emerald-200'
-                      : isCondEligible
-                      ? 'bg-amber-50 text-[#D97706] border-amber-200'
-                      : 'bg-slate-100 text-[#64748B] border-slate-200';
-
-                    const satisfiedReasons = explainable.satisfied && explainable.satisfied.length > 0
-                      ? explainable.satisfied.map((c: any) => c.reason)
-                      : (ruleResult.matchedCriteria && ruleResult.matchedCriteria.length > 0 ? ruleResult.matchedCriteria : ['Matches citizen demographic and occupational profile']);
-
-                    return (
-                      <div
-                        key={scheme.id}
-                        className="bg-white border border-[#DCE5EF] hover:border-[#2563EB] rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md transition-all space-y-4"
+                  {displayedRecs.length === 0 ? (
+                    <div className="bg-white border border-[#DCE5EF] rounded-3xl p-10 text-center space-y-4 shadow-sm">
+                      <div className="w-14 h-14 rounded-2xl bg-[#EAF2FF] text-[#2563EB] flex items-center justify-center mx-auto">
+                        <Sparkles className="w-7 h-7" />
+                      </div>
+                      <div className="max-w-md mx-auto space-y-2">
+                        <h3 className="text-xl font-bold text-[#12365B]">
+                          {t('noMatchingSchemes', 'No Schemes Matching Filter')}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-[#64748B]">
+                          {t('noMatchingSchemesDesc', 'Try switching tabs or adjusting your eligibility criteria (e.g. occupation, state, or income).')}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setRecommendationStep('questionnaire')}
+                        className="px-6 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-2 transition cursor-pointer"
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                          <div className="space-y-1.5 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#EAF2FF] text-[#2563EB] border border-[#BFDBFE]">
-                                {scheme.governmentLevel || (scheme.state === 'Central' ? 'Central Government' : `${scheme.state} State Government`)}
+                        <Edit3 className="w-4 h-4" />
+                        <span>{t('kioskEditQuestionnaire', 'Update Criteria')}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    displayedRecs.map(({ scheme, ruleResult, mlResult, explainable }) => {
+                      const isEligible = ruleResult.status === 'Eligible';
+                      const isCondEligible = ruleResult.status === 'Conditionally Eligible';
+                      const statusBadgeClass = isEligible
+                        ? 'bg-emerald-50 text-[#16A34A] border-emerald-200'
+                        : isCondEligible
+                        ? 'bg-amber-50 text-[#D97706] border-amber-200'
+                        : 'bg-slate-100 text-[#64748B] border-slate-200';
+
+                      const satisfiedReasons = explainable.satisfied && explainable.satisfied.length > 0
+                        ? explainable.satisfied.map((c: any) => c.reason)
+                        : (ruleResult.matchedCriteria && ruleResult.matchedCriteria.length > 0 ? ruleResult.matchedCriteria : ['Matches citizen demographic and occupational profile']);
+
+                      const localizedName = t(`${scheme.id}_name`, scheme.name || '');
+                      const localizedCategory = t(scheme.category || 'General', scheme.category || 'General');
+                      const localizedDesc = t(`${scheme.id}_desc`, scheme.shortDescription || scheme.description || '');
+                      const localizedBenefits = t(`${scheme.id}_benefits`, scheme.benefitsSummary || (scheme.financialBenefitAmount ? `₹${Number(scheme.financialBenefitAmount).toLocaleString('en-IN')} Financial Support` : 'Authorized Welfare Support'));
+                      const localizedState = scheme.state === 'Central' || scheme.state === 'All'
+                        ? t('Central', 'Central Government')
+                        : `${t(scheme.state || 'State', scheme.state || 'State')} State Government`;
+
+                      return (
+                        <div
+                          key={scheme.id}
+                          className="bg-white border border-[#DCE5EF] hover:border-[#2563EB] rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md transition-all space-y-4"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#EAF2FF] text-[#2563EB] border border-[#BFDBFE]">
+                                  {scheme.governmentLevel || localizedState}
+                                </span>
+                                <span className="text-[10px] font-semibold text-[#64748B]">
+                                  {t(scheme.department, scheme.department) || localizedCategory}
+                                </span>
+                              </div>
+                              <h3 className="text-xl font-bold text-[#12365B]">
+                                {localizedName}
+                              </h3>
+                              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                                {localizedDesc}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusBadgeClass}`}>
+                                {t(ruleResult.status, ruleResult.status)}
                               </span>
-                              <span className="text-[10px] font-semibold text-[#64748B]">
-                                {scheme.department || scheme.category}
+                              <span className="text-[11px] font-bold text-[#2563EB]">
+                                {mlResult.confidenceScore}% {t('eligibilityMatch', 'Eligibility Match')}
                               </span>
                             </div>
-                            <h3 className="text-xl font-bold text-[#12365B]">
-                              {scheme.name}
-                            </h3>
-                            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-                              {scheme.shortDescription || scheme.description}
-                            </p>
                           </div>
 
-                          <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusBadgeClass}`}>
-                              {ruleResult.status}
-                            </span>
-                            <span className="text-[11px] font-bold text-[#2563EB]">
-                              {mlResult.confidenceScore}% Eligibility Match
-                            </span>
+                          {/* Benefit Summary Highlight */}
+                          <div className="p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div>
+                              <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">{t('benefitEntitlement', 'Benefit Entitlement')}</span>
+                              <span className="font-extrabold text-[#12365B] text-sm">
+                                {localizedBenefits}
+                              </span>
+                            </div>
+                            {scheme.category && (
+                              <span className="px-2.5 py-1 rounded-lg bg-white border border-[#DCE5EF] text-[#12365B] font-semibold text-xs">
+                                {t('category', 'Category')}: {localizedCategory}
+                              </span>
+                            )}
                           </div>
-                        </div>
 
-                        {/* Benefit Summary Highlight */}
-                        <div className="p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
-                          <div>
-                            <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">{t('benefitEntitlement', 'Benefit Entitlement')}</span>
-                            <span className="font-extrabold text-[#12365B] text-sm">
-                              {scheme.benefitsSummary || (scheme.financialBenefitAmount ? `₹${Number(scheme.financialBenefitAmount).toLocaleString('en-IN')} Financial Support` : 'Authorized Welfare Support')}
-                            </span>
-                          </div>
-                          {scheme.category && (
-                            <span className="px-2.5 py-1 rounded-lg bg-white border border-[#DCE5EF] text-[#12365B] font-semibold text-xs">
-                              Category: {scheme.category}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Why You Match Section */}
-                        <div className="space-y-2">
-                          <h4 className="text-xs font-bold text-[#12365B] uppercase tracking-wider flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-                            <span>{t('kioskWhyYouMatch', 'Why You Match This Scheme')}</span>
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#475569]">
-                            {satisfiedReasons.slice(0, 4).map((reason: string, idx: number) => (
-                              <div key={idx} className="flex items-start gap-2 p-2 rounded-xl bg-[#F8FAFC] border border-[#F1F5F9]">
-                                <span className="text-[#16A34A] font-bold">✓</span>
-                                <span className="leading-snug">{reason}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Required Documents */}
-                        {scheme.requiredDocuments && scheme.requiredDocuments.length > 0 && (
-                          <div className="space-y-1.5">
-                            <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
-                              {t('kioskRequiredDocs', 'Required Documents')}:
-                            </span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {scheme.requiredDocuments.map((doc, i) => (
-                                <span key={i} className="px-2.5 py-0.5 rounded-lg bg-[#EAF2FF] text-[#2563EB] text-[11px] font-medium border border-[#BFDBFE]">
-                                  {doc}
-                                </span>
+                          {/* Why You Match Section */}
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-bold text-[#12365B] uppercase tracking-wider flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
+                              <span>{t('kioskWhyYouMatch', 'Why You Match This Scheme')}</span>
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#475569]">
+                              {satisfiedReasons.slice(0, 4).map((reason: string, idx: number) => (
+                                <div key={idx} className="flex items-start gap-2 p-2 rounded-xl bg-[#F8FAFC] border border-[#F1F5F9]">
+                                  <span className="text-[#16A34A] font-bold">✓</span>
+                                  <span className="leading-snug">{reason}</span>
+                                </div>
                               ))}
                             </div>
                           </div>
-                        )}
 
-                        {/* Action Row */}
-                        <div className="pt-3 border-t border-[#F1F5F9] flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedSchemeAnalysis({ scheme, ruleResult, mlResult })}
-                              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
-                            >
-                              <span>{t('kioskViewDetails', 'View Full Scheme Details')}</span>
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
+                          {/* Required Documents */}
+                          {scheme.requiredDocuments && scheme.requiredDocuments.length > 0 && (
+                            <div className="space-y-1.5">
+                              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
+                                {t('kioskRequiredDocs', 'Required Documents')}:
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {scheme.requiredDocuments.map((doc, i) => (
+                                  <span key={i} className="px-2.5 py-0.5 rounded-lg bg-[#EAF2FF] text-[#2563EB] text-[11px] font-medium border border-[#BFDBFE]">
+                                    {t(doc, doc)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                            <button
-                              type="button"
-                              onClick={() => handleToggleLocalBookmark(scheme.id)}
-                              className={`min-h-[44px] px-3.5 py-2.5 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-colors ${
-                                checkIsBookmarked(scheme.id)
-                                  ? 'bg-[#EAF2FF] border-blue-300 text-[#2563EB]'
-                                  : 'bg-white hover:bg-[#F8FAFC] border-[#DCE5EF] text-[#64748B]'
-                              }`}
-                              title="Bookmark Scheme"
-                            >
-                              <Bookmark className="w-4 h-4" />
-                            </button>
+                          {/* Action Row */}
+                          <div className="pt-3 border-t border-[#F1F5F9] flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSchemeAnalysis({ scheme, ruleResult, mlResult })}
+                                className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                              >
+                                <span>{t('kioskViewDetails', 'View Full Scheme Details')}</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleLocalBookmark(scheme.id)}
+                                className={`min-h-[44px] px-3.5 py-2.5 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                  checkIsBookmarked(scheme.id)
+                                    ? 'bg-[#EAF2FF] border-blue-300 text-[#2563EB]'
+                                    : 'bg-white hover:bg-[#F8FAFC] border-[#DCE5EF] text-[#64748B]'
+                                }`}
+                                title="Bookmark Scheme"
+                              >
+                                <Bookmark className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            {(scheme.officialWebsite || scheme.officialApplyUrl) && (
+                              <a
+                                href={scheme.officialApplyUrl || scheme.officialWebsite}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white hover:bg-[#F1F5F9] text-[#12365B] font-bold text-xs flex items-center gap-1.5 border border-[#DCE5EF] transition-colors"
+                              >
+                                <span>{t('kioskOfficialApply', 'Official Application Portal')}</span>
+                                <ExternalLink className="w-3.5 h-3.5 text-[#2563EB]" />
+                              </a>
+                            )}
                           </div>
 
-                          {(scheme.officialWebsite || scheme.officialApplyUrl) && (
-                            <a
-                              href={scheme.officialApplyUrl || scheme.officialWebsite}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white hover:bg-[#F1F5F9] text-[#12365B] font-bold text-xs flex items-center gap-1.5 border border-[#DCE5EF] transition-colors"
-                            >
-                              <span>{t('kioskOfficialApply', 'Official Application Portal')}</span>
-                              <ExternalLink className="w-3.5 h-3.5 text-[#2563EB]" />
-                            </a>
-                          )}
                         </div>
-
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
 
               </div>
@@ -1667,13 +1785,13 @@ export const KioskMode: React.FC<KioskModeProps> = ({
                           <div
                             key={sch.id}
                             onClick={() => {
-                              const rule = evaluateSchemeEligibility(user || null, sch);
-                              const ml = computeMLRecommendation(user || null, sch, rule, schemes);
+                              const rule = evaluateSchemeEligibility(profileToEvaluate, sch);
+                              const ml = computeMLRecommendation(profileToEvaluate, sch, rule, schemes);
                               setSelectedSchemeAnalysis({ scheme: sch, ruleResult: rule, mlResult: ml });
                             }}
                             className="p-3 bg-white hover:bg-[#F1F5F9] rounded-xl border border-[#DCE5EF] cursor-pointer flex items-center justify-between text-[#12365B] transition-colors"
                           >
-                            <span className="font-bold text-xs">{sch.name}</span>
+                            <span className="font-bold text-xs">{t(`${sch.id}_name`, sch.name)}</span>
                             <ChevronRight className="w-4 h-4 text-[#2563EB]" />
                           </div>
                         ))}
@@ -1791,7 +1909,7 @@ export const KioskMode: React.FC<KioskModeProps> = ({
       {/* -------------------------------------------------------------------- */}
       {selectedSchemeAnalysis && (
         <SchemeModal
-          user={user || null}
+          user={profileToEvaluate}
           analysis={selectedSchemeAnalysis}
           onClose={() => setSelectedSchemeAnalysis(null)}
           currentLang={activeLangCode}

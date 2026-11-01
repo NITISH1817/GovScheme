@@ -108,6 +108,7 @@ export const languages: { code: LanguageCode; name: string; nativeName: string }
 export const translations: Record<LanguageCode, TranslationDict> = {
 
   en: {
+    "listen": "Listen",
     "eligibleAge": "Eligible Age",
     "eligibleAgeGroup": "Eligible Age",
     "eligibleGender": "Eligible Gender",
@@ -2824,6 +2825,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   hi: {
+    "listen": "सुनें",
     "eligibleAge": "पात्र आयु",
     "eligibleAgeGroup": "पात्र आयु वर्ग",
     "eligibleGender": "पात्र लिंग",
@@ -5547,6 +5549,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   ta: {
+    "listen": "கேளுங்கள்",
     "eligibleAge": "தகுதியான வயது",
     "eligibleAgeGroup": "தகுதியான வயது வரம்பு",
     "eligibleGender": "பொருந்தும் பாலினம்",
@@ -8274,6 +8277,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   te: {
+    "listen": "వినండి",
     "eligibleAge": "అర్హత కలిగిన వయస్సు",
     "eligibleAgeGroup": "అర్హత కలిగిన వయస్సు వర్గం",
     "eligibleGender": "అర్హత కలిగిన లింగం",
@@ -11007,6 +11011,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
 
 
   kn: {
+    "listen": "ಕೇಳಿ",
     "clearAll": "ಎಲ್ಲವನ್ನೂ ತೆರವುಗೊಳಿಸಿ",
     "nationalHelpdesk": "ರಾಷ್ಟ್ರೀಯ ಸಹಾಯವಾಣಿ",
     "askingAssistant": "AI ಸಹಾಯಕರೊಂದಿಗೆ ಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ",
@@ -11212,6 +11217,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   ml: {
+    "listen": "കേൾക്കുക",
     "eligibleAge": "അർഹമായ പ്രായം",
     "eligibleAgeGroup": "അർഹമായ പ്രായപരിധി",
     "eligibleGender": "അർഹമായ ലിംഗഭേദം",
@@ -13912,6 +13918,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   mr: {
+    "listen": "ऐका",
     "eligibleAge": "पात्र वय",
     "eligibleAgeGroup": "पात्र वयोगट",
     "eligibleGender": "पात्र लिंग",
@@ -16632,6 +16639,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
   gu: {
+    "listen": "સાંભળો",
     "eligibleAge": "પાત્ર વય",
     "eligibleAgeGroup": "પાત્ર વય જૂથ",
     "eligibleGender": "પાત્ર જાતિ",
@@ -19352,7 +19360,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
 
-  pa: { "All": "All",
+  pa: { "listen": "ਸੁਣੋ", "All": "All",
     "clearAll": "ਸਭ ਸਾਫ਼ ਕਰੋ",
     "nationalHelpdesk": "ਰਾਸ਼ਟਰੀ ਹੈਲਪਡੈਸਕ",
     "askingAssistant": "AI ਸਹਾਇਕ ਨਾਲ ਕਨੈਕਟ ਹੋ ਰਿਹਾ ਹੈ",
@@ -19546,7 +19554,7 @@ export const translations: Record<LanguageCode, TranslationDict> = {
   },
 
 
-  bn: { "All": "All",
+  bn: { "listen": "শুনুন", "All": "All",
     "clearAll": "সব সাফ করুন",
     "nationalHelpdesk": "জাতীয় হেল্পডেস্ক",
     "askingAssistant": "AI সহকারীর সাথে সংযুক্ত হচ্ছে",

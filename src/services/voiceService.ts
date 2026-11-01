@@ -324,18 +324,20 @@ function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalTex
   const targetLang = langCode.toLowerCase().split('-')[0];
   const encoded = encodeURIComponent(nextChunk);
 
-  const directGoogleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(targetLang)}&client=tw-ob&q=${encoded}`;
   const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL)
     ? String(import.meta.env.VITE_API_URL).replace(/\/+$/, '')
     : '';
+  // Primary: backend TTS proxy (avoids CORS and browser restrictions, returns high-quality audio)
   const backendUrl = `${apiBase}/api/ai/tts?lang=${encodeURIComponent(targetLang)}&text=${encoded}`;
+  // Fallback direct Google TTS stream
+  const directGoogleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(targetLang)}&client=tw-ob&q=${encoded}`;
 
-  let hasTriedBackend = false;
+  let hasTriedFallback = false;
   const audio = new Audio();
   try {
     (audio as any).referrerPolicy = 'no-referrer';
   } catch {}
-  audio.src = directGoogleUrl; // Primary direct stream with no-referrer
+  audio.src = backendUrl;
   activeAudio = audio;
 
   audio.onended = () => {
@@ -343,19 +345,20 @@ function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalTex
   };
 
   const handleStreamFailure = () => {
-    if (!hasTriedBackend && apiBase) {
-      hasTriedBackend = true;
-      audio.src = backendUrl;
+    if (!hasTriedFallback) {
+      hasTriedFallback = true;
+      audio.src = directGoogleUrl;
       audio.play().catch(() => {
-        // If all audio streams fail, smoothly fallback to SpeechSynthesis utterance so voice never dies
+        // Fallback to local SpeechSynthesis utterance so voice never dies
         if (fullOriginalText) {
+          audioQueue = [];
+          isQueueProcessing = false;
           speakUtterance(fullOriginalText, langCode, onEnd);
         } else {
           processAudioQueue(langCode, onEnd, fullOriginalText);
         }
       });
     } else {
-      // Direct streaming failed or backend not running: fallback directly to browser SpeechSynthesis
       if (fullOriginalText) {
         audioQueue = [];
         isQueueProcessing = false;
@@ -369,7 +372,7 @@ function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalTex
   audio.onerror = handleStreamFailure;
 
   audio.play().catch(err => {
-    console.warn(`[TTS Audio Autoplay] Browser prevented autoplay or network error:`, err);
+    console.warn(`[TTS Audio Autoplay] Primary stream playback note:`, err);
     handleStreamFailure();
   });
 }
