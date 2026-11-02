@@ -141,7 +141,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex justify-end">
         {/* Backdrop */}
-        <motion.div          initial={{ opacity: 0 }}
+        <motion.div initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: shouldReduceMotion ? 0.05 : 0.3 }}
@@ -150,7 +150,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
         />
 
         {/* Drawer */}
-        <motion.div          role="dialog"
+        <motion.div role="dialog"
           aria-modal="true"
           aria-labelledby="scheme-modal-title"
           initial={shouldReduceMotion ? { opacity: 0 } : { x: '100%' }}
@@ -218,15 +218,15 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 aria-label={t('shareWhatsApp', 'Share scheme on WhatsApp')}
               >
                 {/* SVG for WhatsApp */}
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" /></svg>
               </button>
-              <button                onClick={() => onToggleBookmark(scheme.id)}
+              <button onClick={() => onToggleBookmark(scheme.id)}
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 transition-colors"
                 aria-label={isBookmarked ? t('removeBookmark', 'Remove bookmark') : t('saveBookmark', 'Bookmark scheme')}
               >
                 {isBookmarked ? <BookmarkCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#F59E0B]" fill="currentColor" /> : <Bookmark className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />}
               </button>
-              <button                onClick={onClose}                className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 transition-colors"
+              <button onClick={onClose} className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-gray-50 dark:bg-[#16243A] border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-100 transition-colors"
                 aria-label={t('close', 'Close')}
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-300" />
@@ -268,10 +268,12 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 <div className="bg-blue-50 dark:bg-[#16243A]/50 border border-blue-200 dark:border-blue-800 rounded p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{t('matchScore', 'Relevance & Priority Score')}</span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{t('matchDesc', 'Deterministic rule evaluation and profile affinity weighting.')}</span>
+                      <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{t('relevanceMatch', 'Relevance Match')}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed block" title={t('relevanceMatchTooltip', "This score indicates how closely the scheme matches your search and profile using GovScheme's predefined matching criteria. It is not a probability of government approval or a guarantee of eligibility.")}>
+                        {t('relevanceMatchTooltip', "This score indicates how closely the scheme matches your search and profile using GovScheme's predefined matching criteria. It is not a probability of government approval or a guarantee of eligibility.")}
+                      </span>
                     </div>
-                    <div className="text-3xl font-bold text-[#1769FF]">
+                    <div className="text-3xl font-bold text-[#1769FF] shrink-0 ml-3">
                       {Math.round(effectiveMlResult.confidenceScore)}%
                     </div>
                   </div>
@@ -307,392 +309,390 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
               </div>
             </section>
 
-              {/* Explainable Eligibility & Decision Support */}
-              <div className="overflow-hidden rounded border border-gray-200 dark:border-gray-800 mt-6 bg-white dark:bg-[#07111F]">
-                <div className="bg-gray-50 dark:bg-[#0F1B2D] border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-[#123C69] dark:text-[#1769FF]" />
-                    <span className="font-bold text-gray-900 dark:text-white text-base">
-                      {t('eligibilityExplainingTitle', 'Explainable Eligibility & Decision Support')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-[#15803D]/10 text-[#15803D] border border-[#15803D]/20">
-                      <Check className="w-3 h-3" /> {explainableResult.satisfied.length} {t('criteriaSatisfied', 'Criteria Met')}
-                    </span>
-                    {explainableResult.notSatisfied.length > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800">
-                        <X className="w-3 h-3" /> {explainableResult.notSatisfied.length} {t('criteriaUnmet', 'Unmet')}
-                      </span>
-                    )}
-                    {explainableResult.unknown.length > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                        <HelpCircle className="w-3 h-3" /> {explainableResult.unknown.length} {t('criteriaNeeded', 'Needed')}
-                      </span>
-                    )}
-                  </div>
+            {/* Explainable Eligibility & Decision Support */}
+            <div className="overflow-hidden rounded border border-gray-200 dark:border-gray-800 mt-6 bg-white dark:bg-[#07111F]">
+              <div className="bg-gray-50 dark:bg-[#0F1B2D] border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-[#123C69] dark:text-[#1769FF]" />
+                  <span className="font-bold text-gray-900 dark:text-white text-base">
+                    {t('eligibilityExplainingTitle', 'Explainable Eligibility & Decision Support')}
+                  </span>
                 </div>
-
-                <div className="p-6 space-y-6">
-                  {/* Satisfied Criteria */}
-                  {explainableResult.satisfied.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                        {t('satisfiedCriteriaHeader', 'Satisfied Criteria')} ({explainableResult.satisfied.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {explainableResult.satisfied.map(crit => (
-                          <div key={crit.id} className="p-3 rounded border border-green-200 dark:border-green-900/30 bg-green-50/50 dark:bg-green-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
-                                  ✓ {t('satisfied', 'Satisfied')}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{crit.reason}</p>
-                            </div>
-                            {crit.userValueDescription && (
-                              <div className="text-xs text-gray-500 shrink-0 text-right sm:text-right">
-                                <span className="font-medium text-gray-700 dark:text-gray-300">{crit.userValueDescription}</span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Unmet Criteria */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-[#15803D]/10 text-[#15803D] border border-[#15803D]/20">
+                    <Check className="w-3 h-3" /> {explainableResult.satisfied.length} {t('criteriaSatisfied', 'Criteria Met')}
+                  </span>
                   {explainableResult.notSatisfied.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <XCircle className="w-4 h-4 text-red-600" />
-                        {t('unmetCriteriaHeader', 'Unmet Criteria')} ({explainableResult.notSatisfied.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {explainableResult.notSatisfied.map(crit => (
-                          <div key={crit.id} className="p-3 rounded border border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
-                                  ✕ {t('unmet', 'Unmet')}
-                                </span>
-                              </div>
-                              <p className="text-xs text-red-700 dark:text-red-300 mt-1">{crit.reason}</p>
-                            </div>
-                            <div className="text-xs text-gray-500 shrink-0 sm:text-right">
-                              <span className="block text-[11px] text-gray-400">Required: {crit.requiredValueDescription}</span>
-                              {crit.userValueDescription && (
-                                <span className="font-medium text-red-600 dark:text-red-400">Profile: {crit.userValueDescription}</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800">
+                      <X className="w-3 h-3" /> {explainableResult.notSatisfied.length} {t('criteriaUnmet', 'Unmet')}
+                    </span>
                   )}
-
-                  {/* Information Needed */}
                   {explainableResult.unknown.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        {t('informationNeededHeader', 'Information Still Needed')} ({explainableResult.unknown.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {explainableResult.unknown.map(crit => (
-                          <div key={crit.id} className="p-3 rounded border border-blue-200 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                                  ? {t('criteriaNeeded', 'Needed')}
-                                </span>
-                              </div>
-                              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{crit.reason}</p>
-                            </div>
-                            <div className="text-xs text-gray-500 shrink-0 sm:text-right">
-                              <span className="block text-[11px] text-gray-400">Target: {crit.requiredValueDescription}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      <HelpCircle className="w-3 h-3" /> {explainableResult.unknown.length} {t('criteriaNeeded', 'Needed')}
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* Official Eligibility Parameters Reference */}
-              <section className="space-y-4">
-                <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('officialEligibility', 'Official Eligibility')}</h3>
-                <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-                  {(() => {
-                    const raw: any = scheme.eligibilityRules || {};
-                    const entries: [string, any][] = [];
-                    const normalizeRuleKey = (str: string) => str.toLowerCase().replace(/[^a-z]/g, '');
-                    const seenNormalized = new Set<string>();
-
-                    const sAny: any = scheme;
-                    const minAgeVal = raw.minAge ?? raw.ageMin ?? raw.age_min ?? raw.min_age ?? sAny.minimumAge;
-                    const maxAgeVal = raw.maxAge ?? raw.ageMax ?? raw.age_max ?? raw.max_age ?? sAny.maximumAge;
-                    const incomeVal = raw.maxAnnualIncome ?? raw.incomeLimit ?? raw.max_annual_income ?? raw.income_limit ?? sAny.incomeLimit;
-
-                    // If universal open age scheme (0 to 100/120)
-                    if ((minAgeVal === 0 || minAgeVal === '0') && (maxAgeVal >= 100 || maxAgeVal === undefined || maxAgeVal === null)) {
-                      entries.push(['eligibleAgeGroup', t('allAgesEligible', 'All Ages Eligible')]);
-                    } else {
-                      if (minAgeVal !== undefined && minAgeVal !== null && minAgeVal !== '') {
-                        entries.push(['minAge', minAgeVal]);
-                      }
-                      if (maxAgeVal !== undefined && maxAgeVal !== null && maxAgeVal !== '') {
-                        entries.push(['maxAge', maxAgeVal]);
-                      }
-                    }
-                    seenNormalized.add('minage');
-                    seenNormalized.add('agemin');
-                    seenNormalized.add('minimumage');
-                    seenNormalized.add('maxage');
-                    seenNormalized.add('agemax');
-                    seenNormalized.add('maximumage');
-
-                    if (incomeVal !== undefined && incomeVal !== null && incomeVal !== '') {
-                      entries.push(['incomeLimit', incomeVal]);
-                    }
-                    seenNormalized.add('maxannualincome');
-                    seenNormalized.add('incomelimit');
-                    seenNormalized.add('annualincome');
-                    seenNormalized.add('income');
-
-                    for (const [k, v] of Object.entries(raw)) {
-                      const norm = normalizeRuleKey(k);
-                      if (seenNormalized.has(norm)) continue;
-                      if (v === undefined || v === null || (Array.isArray(v) && v.length === 0)) continue;
-                      entries.push([k, v]);
-                      seenNormalized.add(norm);
-                    }
-
-                    return entries.map(([key, val], idx) => {
-                      const getLocalizedLabel = (k: string) => {
-                        const norm = normalizeRuleKey(k);
-                        if (norm === 'minage' || norm === 'agemin' || norm === 'minimumage') return t('minAge', 'Minimum Age');
-                        if (norm === 'maxage' || norm === 'agemax' || norm === 'maximumage') return t('maxAge', 'Maximum Age');
-                        if (norm === 'incomelimit' || norm === 'maxannualincome' || norm === 'annualincome' || norm === 'income') return t('incomeLimit', 'Annual Income Limit');
-                        if (norm === 'gender' || norm === 'eligiblegender') return t('eligibleGender', t('gender', 'Eligible Gender'));
-                        if (norm === 'category' || norm === 'allowedcategories' || norm === 'socialcategory') return t('allowedCategories', 'Allowed Categories');
-                        if (norm === 'state' || norm === 'states' || norm === 'eligiblestates') return t('state', 'Eligible States');
-                        if (norm === 'requireddocuments' || norm === 'documents') return t('requiredDocuments', 'Required Documents');
-                        if (norm === 'requiresdisability' || norm === 'hasdisability' || norm === 'disabilityrequired') return t('disabilityRequired', 'Disability Required');
-                        if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') return t('minDisabilityPercentage', 'Minimum Disability %');
-                        if (norm === 'targetoccupations' || norm === 'allowedoccupations' || norm === 'occupation') return t('targetOccupations', 'Target Occupations');
-                        if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') return t('maxLandHoldingAcres', 'Maximum Landholding');
-                        if (norm === 'eligibleagegroup') return t('eligibleAgeGroup', 'Eligible Age Group');
-                        if (norm === 'eligibleage' || norm === 'age') return t('eligibleAge', 'Eligible Age');
-                        if (norm === 'familysizemax' || norm === 'maxfamilysize' || norm === 'familysize') return t('familySizeMax', 'Maximum Family Size');
-                        return t(k, k.replace(/([A-Z])/g, ' $1'));
-                      };
-
-                      const renderValue = () => {
-                        if (key === 'eligibleAgeGroup' || key === 'eligibleAge') {
-                          return t(String(val), String(val));
-                        }
-                        if (typeof val === 'boolean') {
-                          return val ? t('yes', 'Yes') : t('no', 'No');
-                        }
-                        const norm = normalizeRuleKey(key);
-                        if (norm === 'minage' || norm === 'maxage' || norm === 'agemin' || norm === 'agemax' || norm === 'minimumage' || norm === 'maximumage') {
-                          return `${val} ${t('yearsUnit', 'years')}`;
-                        }
-                        if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') {
-                          return `${val}%`;
-                        }
-                        if (norm === 'maxannualincome' || norm === 'incomelimit' || norm === 'annualincome' || norm === 'income') {
-                          if (val === 0 || val === '0' || val === null) return t('noIncomeLimit', 'No income limit');
-                          return `₹${Number(val).toLocaleString('en-IN')}`;
-                        }
-                        if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') {
-                          return `${val} ${t('acresUnit', 'acres')}`;
-                        }
-                        if (Array.isArray(val)) {
-                          return val.map(v => t(String(v), String(v))).join(', ');
-                        }
-                        return t(String(val), String(val));
-                      };
-
-                      return (
-                        <li key={idx}>
-                          <span className="font-semibold">{getLocalizedLabel(key)}:</span> {renderValue()}
-                        </li>
-                      );
-                    });
-                  })()}
-                </ul>
-              </section>
-
-              {/* Smart Document Readiness Checklist */}
-              <section className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
-                  <h3 className="text-xl font-bold text-[#123C69] dark:text-white flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-[#1769FF]" />
-                    {t('documentReadinessChecklist', 'Smart Document Readiness Checklist')}
-                  </h3>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-100 dark:bg-[#16243A] text-gray-700 dark:text-gray-300">
-                    {explainableResult.availableDocuments.length} / {explainableResult.requiredDocuments.length} {t('documentsReady', 'documents ready')}
-                  </span>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
-                  <div
-                    className="bg-[#15803D] h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${explainableResult.requiredDocuments.length === 0 ? 100 : (explainableResult.availableDocuments.length / explainableResult.requiredDocuments.length) * 100}%`
-                    }}
-                  />
-                </div>
-
-                {/* Catalogue Discrepancy Banner */}
-                {explainableResult.documentConflictDetected && explainableResult.documentConflictDetails && (
-                  <div className="p-3.5 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
-                    <div>
-                      <span className="font-bold">{t('docConflictNotice', 'Catalogue Discrepancy')}:</span> {explainableResult.documentConflictDetails}
+              <div className="p-6 space-y-6">
+                {/* Satisfied Criteria */}
+                {explainableResult.satisfied.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                      {t('satisfiedCriteriaHeader', 'Satisfied Criteria')} ({explainableResult.satisfied.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {explainableResult.satisfied.map(crit => (
+                        <div key={crit.id} className="p-3 rounded border border-green-200 dark:border-green-900/30 bg-green-50/50 dark:bg-green-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                                ✓ {t('satisfied', 'Satisfied')}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{crit.reason}</p>
+                          </div>
+                          {crit.userValueDescription && (
+                            <div className="text-xs text-gray-500 shrink-0 text-right sm:text-right">
+                              <span className="font-medium text-gray-700 dark:text-gray-300">{crit.userValueDescription}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {/* No Document Metadata State */}
-                {explainableResult.requiredDocuments.length === 0 && (
-                  <div className="p-4 rounded border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0F1B2D] text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                    <Info className="w-4 h-4 text-gray-500 shrink-0" />
-                    <span>{t('noDocsRequiredInCatalogue', 'Document requirements are not specified in the catalogue for this scheme. Verify with the official portal or local CSC Kendra.')}</span>
-                  </div>
-                )}
-
-                {/* Document Items Grid */}
-                {explainableResult.documentItems.length > 0 && (
-                  <div className="grid grid-cols-1 gap-3">
-                    {explainableResult.documentItems.map(item => {
-                      const isAvailable = item.status === 'AVAILABLE';
-                      const isMissing = item.status === 'MISSING';
-                      const isUnconfirmed = item.status === 'UNCONFIRMED';
-
-                      return (
-                        <div
-                          key={item.id}
-                          className={`p-3.5 border rounded-lg transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                            isAvailable
-                              ? 'bg-[#15803D]/5 border-[#15803D]/25'
-                              : isMissing
-                              ? 'bg-red-50/50 dark:bg-red-950/15 border-red-200 dark:border-red-900/30'
-                              : 'bg-gray-50 dark:bg-[#0F1B2D] border-gray-200 dark:border-gray-800'
-                          }`}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {isAvailable ? (
-                                <Check className="w-4 h-4 text-[#15803D] shrink-0" />
-                              ) : isMissing ? (
-                                <X className="w-4 h-4 text-red-600 shrink-0" />
-                              ) : (
-                                <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                              )}
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {t(item.documentName, item.documentName)}
-                              </span>
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                                  isAvailable
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                                    : isMissing
-                                    ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                                }`}
-                              >
-                                {isAvailable
-                                  ? t('haveDocBadge', 'Available')
-                                  : isMissing
-                                  ? t('missingDocBadge', 'Missing')
-                                  : t('unconfirmedDocBadge', 'Unconfirmed')}
+                {/* Unmet Criteria */}
+                {explainableResult.notSatisfied.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <XCircle className="w-4 h-4 text-red-600" />
+                      {t('unmetCriteriaHeader', 'Unmet Criteria')} ({explainableResult.notSatisfied.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {explainableResult.notSatisfied.map(crit => (
+                        <div key={crit.id} className="p-3 rounded border border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                                ✕ {t('unmet', 'Unmet')}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 pl-6">{item.explanation}</p>
+                            <p className="text-xs text-red-700 dark:text-red-300 mt-1">{crit.reason}</p>
                           </div>
-
-                          {/* Citizen interactive buttons */}
-                          <div className="flex items-center gap-1.5 pl-6 sm:pl-0 shrink-0">
-                            {!isAvailable && (
-                              <button
-                                onClick={() => handleToggleDocPossession(item.id, 'AVAILABLE')}
-                                className="px-2.5 py-1 text-xs rounded border border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 font-medium transition-colors"
-                              >
-                                {t('markHaveDoc', 'I have this')}
-                              </button>
-                            )}
-                            {!isMissing && (
-                              <button
-                                onClick={() => handleToggleDocPossession(item.id, 'MISSING')}
-                                className="px-2.5 py-1 text-xs rounded border border-red-400 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-medium transition-colors"
-                              >
-                                {t('markMissingDoc', "I don't have this")}
-                              </button>
-                            )}
-                            {item.possessionReportedByCitizen && (
-                              <button
-                                onClick={() => handleResetDocPossession(item.id)}
-                                className="px-2 py-1 text-xs rounded text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                              >
-                                {t('resetDocStatus', 'Reset')}
-                              </button>
-                            )}
-                            {!isAvailable && user && (
-                              <button
-                                onClick={() => {
-                                  onClose();
-                                  onNavigateTab('vault');
-                                }}
-                                className="px-2.5 py-1 text-xs rounded bg-blue-50 dark:bg-blue-900/20 text-[#1769FF] font-bold hover:underline"
-                              >
-                                {t('upload', 'Upload')}
-                              </button>
+                          <div className="text-xs text-gray-500 shrink-0 sm:text-right">
+                            <span className="block text-[11px] text-gray-400">Required: {crit.requiredValueDescription}</span>
+                            {crit.userValueDescription && (
+                              <span className="font-medium text-red-600 dark:text-red-400">Profile: {crit.userValueDescription}</span>
                             )}
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
                 )}
-              </section>
 
-              {/* Practical Next Steps Section */}
-              <section className="space-y-4">
-                <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">
-                  {t('practicalNextSteps', 'Practical Next Steps & Actions')}
-                </h3>
-                <div className="space-y-2.5">
-                  {explainableResult.nextSteps.map((step, idx) => (
-                    <div key={idx} className="p-3 rounded border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0F1B2D] flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-[#123C69] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                        {idx + 1}
-                      </span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{t(step, step)}</span>
+                {/* Information Needed */}
+                {explainableResult.unknown.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      {t('informationNeededHeader', 'Information Still Needed')} ({explainableResult.unknown.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {explainableResult.unknown.map(crit => (
+                        <div key={crit.id} className="p-3 rounded border border-blue-200 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-sm text-gray-900 dark:text-white">{crit.title}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                ? {t('criteriaNeeded', 'Needed')}
+                              </span>
+                            </div>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{crit.reason}</p>
+                          </div>
+                          <div className="text-xs text-gray-500 shrink-0 sm:text-right">
+                            <span className="block text-[11px] text-gray-400">Target: {crit.requiredValueDescription}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Preliminary Advisory Disclaimer Notice */}
-              <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-300 space-y-1">
-                <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px] text-blue-800 dark:text-blue-200">
-                  <ShieldCheck className="w-4 h-4 text-[#1769FF]" />
-                  {t('preliminaryAdvisoryNotice', 'Preliminary Advisory')}
-                </div>
-                <p className="leading-relaxed text-gray-700 dark:text-gray-300">
-                  {t('preliminaryAdvisoryText', explainableResult.disclaimer)}
-                </p>
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* Official Eligibility Parameters Reference */}
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">{t('officialEligibility', 'Official Eligibility')}</h3>
+              <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
+                {(() => {
+                  const raw: any = scheme.eligibilityRules || {};
+                  const entries: [string, any][] = [];
+                  const normalizeRuleKey = (str: string) => str.toLowerCase().replace(/[^a-z]/g, '');
+                  const seenNormalized = new Set<string>();
+
+                  const sAny: any = scheme;
+                  const minAgeVal = raw.minAge ?? raw.ageMin ?? raw.age_min ?? raw.min_age ?? sAny.minimumAge;
+                  const maxAgeVal = raw.maxAge ?? raw.ageMax ?? raw.age_max ?? raw.max_age ?? sAny.maximumAge;
+                  const incomeVal = raw.maxAnnualIncome ?? raw.incomeLimit ?? raw.max_annual_income ?? raw.income_limit ?? sAny.incomeLimit;
+
+                  // If universal open age scheme (0 to 100/120)
+                  if ((minAgeVal === 0 || minAgeVal === '0') && (maxAgeVal >= 100 || maxAgeVal === undefined || maxAgeVal === null)) {
+                    entries.push(['eligibleAgeGroup', t('allAgesEligible', 'All Ages Eligible')]);
+                  } else {
+                    if (minAgeVal !== undefined && minAgeVal !== null && minAgeVal !== '') {
+                      entries.push(['minAge', minAgeVal]);
+                    }
+                    if (maxAgeVal !== undefined && maxAgeVal !== null && maxAgeVal !== '') {
+                      entries.push(['maxAge', maxAgeVal]);
+                    }
+                  }
+                  seenNormalized.add('minage');
+                  seenNormalized.add('agemin');
+                  seenNormalized.add('minimumage');
+                  seenNormalized.add('maxage');
+                  seenNormalized.add('agemax');
+                  seenNormalized.add('maximumage');
+
+                  if (incomeVal !== undefined && incomeVal !== null && incomeVal !== '') {
+                    entries.push(['incomeLimit', incomeVal]);
+                  }
+                  seenNormalized.add('maxannualincome');
+                  seenNormalized.add('incomelimit');
+                  seenNormalized.add('annualincome');
+                  seenNormalized.add('income');
+
+                  for (const [k, v] of Object.entries(raw)) {
+                    const norm = normalizeRuleKey(k);
+                    if (seenNormalized.has(norm)) continue;
+                    if (v === undefined || v === null || (Array.isArray(v) && v.length === 0)) continue;
+                    entries.push([k, v]);
+                    seenNormalized.add(norm);
+                  }
+
+                  return entries.map(([key, val], idx) => {
+                    const getLocalizedLabel = (k: string) => {
+                      const norm = normalizeRuleKey(k);
+                      if (norm === 'minage' || norm === 'agemin' || norm === 'minimumage') return t('minAge', 'Minimum Age');
+                      if (norm === 'maxage' || norm === 'agemax' || norm === 'maximumage') return t('maxAge', 'Maximum Age');
+                      if (norm === 'incomelimit' || norm === 'maxannualincome' || norm === 'annualincome' || norm === 'income') return t('incomeLimit', 'Annual Income Limit');
+                      if (norm === 'gender' || norm === 'eligiblegender') return t('eligibleGender', t('gender', 'Eligible Gender'));
+                      if (norm === 'category' || norm === 'allowedcategories' || norm === 'socialcategory') return t('allowedCategories', 'Allowed Categories');
+                      if (norm === 'state' || norm === 'states' || norm === 'eligiblestates') return t('state', 'Eligible States');
+                      if (norm === 'requireddocuments' || norm === 'documents') return t('requiredDocuments', 'Required Documents');
+                      if (norm === 'requiresdisability' || norm === 'hasdisability' || norm === 'disabilityrequired') return t('disabilityRequired', 'Disability Required');
+                      if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') return t('minDisabilityPercentage', 'Minimum Disability %');
+                      if (norm === 'targetoccupations' || norm === 'allowedoccupations' || norm === 'occupation') return t('targetOccupations', 'Target Occupations');
+                      if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') return t('maxLandHoldingAcres', 'Maximum Landholding');
+                      if (norm === 'eligibleagegroup') return t('eligibleAgeGroup', 'Eligible Age Group');
+                      if (norm === 'eligibleage' || norm === 'age') return t('eligibleAge', 'Eligible Age');
+                      if (norm === 'familysizemax' || norm === 'maxfamilysize' || norm === 'familysize') return t('familySizeMax', 'Maximum Family Size');
+                      return t(k, k.replace(/([A-Z])/g, ' $1'));
+                    };
+
+                    const renderValue = () => {
+                      if (key === 'eligibleAgeGroup' || key === 'eligibleAge') {
+                        return t(String(val), String(val));
+                      }
+                      if (typeof val === 'boolean') {
+                        return val ? t('yes', 'Yes') : t('no', 'No');
+                      }
+                      const norm = normalizeRuleKey(key);
+                      if (norm === 'minage' || norm === 'maxage' || norm === 'agemin' || norm === 'agemax' || norm === 'minimumage' || norm === 'maximumage') {
+                        return `${val} ${t('yearsUnit', 'years')}`;
+                      }
+                      if (norm === 'mindisabilitypercentage' || norm === 'disabilitypercentage') {
+                        return `${val}%`;
+                      }
+                      if (norm === 'maxannualincome' || norm === 'incomelimit' || norm === 'annualincome' || norm === 'income') {
+                        if (val === 0 || val === '0' || val === null) return t('noIncomeLimit', 'No income limit');
+                        return `₹${Number(val).toLocaleString('en-IN')}`;
+                      }
+                      if (norm === 'maxlandholdingacres' || norm === 'landholdingacres') {
+                        return `${val} ${t('acresUnit', 'acres')}`;
+                      }
+                      if (Array.isArray(val)) {
+                        return val.map(v => t(String(v), String(v))).join(', ');
+                      }
+                      return t(String(val), String(val));
+                    };
+
+                    return (
+                      <li key={idx}>
+                        <span className="font-semibold">{getLocalizedLabel(key)}:</span> {renderValue()}
+                      </li>
+                    );
+                  });
+                })()}
+              </ul>
+            </section>
+
+            {/* Smart Document Readiness Checklist */}
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+                <h3 className="text-xl font-bold text-[#123C69] dark:text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#1769FF]" />
+                  {t('documentReadinessChecklist', 'Smart Document Readiness Checklist')}
+                </h3>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-100 dark:bg-[#16243A] text-gray-700 dark:text-gray-300">
+                  {explainableResult.availableDocuments.length} / {explainableResult.requiredDocuments.length} {t('documentsReady', 'documents ready')}
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
+                <div
+                  className="bg-[#15803D] h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${explainableResult.requiredDocuments.length === 0 ? 100 : (explainableResult.availableDocuments.length / explainableResult.requiredDocuments.length) * 100}%`
+                  }}
+                />
+              </div>
+
+              {/* Catalogue Discrepancy Banner */}
+              {explainableResult.documentConflictDetected && explainableResult.documentConflictDetails && (
+                <div className="p-3.5 rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                  <div>
+                    <span className="font-bold">{t('docConflictNotice', 'Catalogue Discrepancy')}:</span> {explainableResult.documentConflictDetails}
+                  </div>
+                </div>
+              )}
+
+              {/* No Document Metadata State */}
+              {explainableResult.requiredDocuments.length === 0 && (
+                <div className="p-4 rounded border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0F1B2D] text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-gray-500 shrink-0" />
+                  <span>{t('noDocsRequiredInCatalogue', 'Document requirements are not specified in the catalogue for this scheme. Verify with the official portal or local CSC Kendra.')}</span>
+                </div>
+              )}
+
+              {/* Document Items Grid */}
+              {explainableResult.documentItems.length > 0 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {explainableResult.documentItems.map(item => {
+                    const isAvailable = item.status === 'AVAILABLE';
+                    const isMissing = item.status === 'MISSING';
+                    const isUnconfirmed = item.status === 'UNCONFIRMED';
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-3.5 border rounded-lg transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isAvailable
+                          ? 'bg-[#15803D]/5 border-[#15803D]/25'
+                          : isMissing
+                            ? 'bg-red-50/50 dark:bg-red-950/15 border-red-200 dark:border-red-900/30'
+                            : 'bg-gray-50 dark:bg-[#0F1B2D] border-gray-200 dark:border-gray-800'
+                          }`}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {isAvailable ? (
+                              <Check className="w-4 h-4 text-[#15803D] shrink-0" />
+                            ) : isMissing ? (
+                              <X className="w-4 h-4 text-red-600 shrink-0" />
+                            ) : (
+                              <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                            )}
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {t(item.documentName, item.documentName)}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded ${isAvailable
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                                : isMissing
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                                }`}
+                            >
+                              {isAvailable
+                                ? t('haveDocBadge', 'Available')
+                                : isMissing
+                                  ? t('missingDocBadge', 'Missing')
+                                  : t('unconfirmedDocBadge', 'Unconfirmed')}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 pl-6">{item.explanation}</p>
+                        </div>
+
+                        {/* Citizen interactive buttons */}
+                        <div className="flex items-center gap-1.5 pl-6 sm:pl-0 shrink-0">
+                          {!isAvailable && (
+                            <button
+                              onClick={() => handleToggleDocPossession(item.id, 'AVAILABLE')}
+                              className="px-2.5 py-1 text-xs rounded border border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 font-medium transition-colors"
+                            >
+                              {t('markHaveDoc', 'I have this')}
+                            </button>
+                          )}
+                          {!isMissing && (
+                            <button
+                              onClick={() => handleToggleDocPossession(item.id, 'MISSING')}
+                              className="px-2.5 py-1 text-xs rounded border border-red-400 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-medium transition-colors"
+                            >
+                              {t('markMissingDoc', "I don't have this")}
+                            </button>
+                          )}
+                          {item.possessionReportedByCitizen && (
+                            <button
+                              onClick={() => handleResetDocPossession(item.id)}
+                              className="px-2 py-1 text-xs rounded text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              {t('resetDocStatus', 'Reset')}
+                            </button>
+                          )}
+                          {!isAvailable && user && (
+                            <button
+                              onClick={() => {
+                                onClose();
+                                onNavigateTab('vault');
+                              }}
+                              className="px-2.5 py-1 text-xs rounded bg-blue-50 dark:bg-blue-900/20 text-[#1769FF] font-bold hover:underline"
+                            >
+                              {t('upload', 'Upload')}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Practical Next Steps Section */}
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold text-[#123C69] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">
+                {t('practicalNextSteps', 'Practical Next Steps & Actions')}
+              </h3>
+              <div className="space-y-2.5">
+                {explainableResult.nextSteps.map((step, idx) => (
+                  <div key={idx} className="p-3 rounded border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0F1B2D] flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-[#123C69] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{t(step, step)}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Preliminary Advisory Disclaimer Notice */}
+            <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-300 space-y-1">
+              <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px] text-blue-800 dark:text-blue-200">
+                <ShieldCheck className="w-4 h-4 text-[#1769FF]" />
+                {t('preliminaryAdvisoryNotice', 'Preliminary Advisory')}
+              </div>
+              <p className="leading-relaxed text-gray-700 dark:text-gray-300">
+                {t('preliminaryAdvisoryText', explainableResult.disclaimer)}
+              </p>
+            </div>
 
             {/* Application Process */}
             <section className="space-y-4">
@@ -701,12 +701,12 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 {(scheme.applicationSteps && scheme.applicationSteps.length > 0
                   ? scheme.applicationSteps
                   : [
-                      t('processStep1', 'Prepare Documents'),
-                      t('processStep2', 'Apply Online'),
-                      t('processStep3', 'Submit Verification'),
-                      t('processStep4', 'Department Review'),
-                      t('processStep5', 'Decision')
-                    ]
+                    t('processStep1', 'Prepare Documents'),
+                    t('processStep2', 'Apply Online'),
+                    t('processStep3', 'Submit Verification'),
+                    t('processStep4', 'Department Review'),
+                    t('processStep5', 'Decision')
+                  ]
                 ).map((step, idx) => (
                   <div key={idx} className="relative pl-8">
                     <div className="absolute left-[-9px] top-1 w-4 h-4 rounded-full bg-[#123C69] border-4 border-white dark:border-[#07111F]" />
@@ -820,6 +820,9 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 type="button"
                 onClick={() => {
                   const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in');
+                  try {
+                    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                  } catch {}
                   window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
                     detail: {
                       type: 'redirect',
@@ -827,7 +830,8 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                       schemeName: scheme.name,
                       department: scheme.department,
                       schemeId: scheme.id,
-                      scheme
+                      scheme,
+                      directOpened: true
                     }
                   }));
                 }}
@@ -849,7 +853,7 @@ export const SchemeModal: React.FC<SchemeModalProps> = ({
                 const stored = localStorage.getItem('govscheme_applications');
                 const parsed = stored ? JSON.parse(stored) : [];
                 localStorage.setItem('govscheme_applications', JSON.stringify([newApp, ...parsed.filter((p: any) => p.applicationNumber !== newApp.applicationNumber)]));
-              } catch {}
+              } catch { }
               window.dispatchEvent(new CustomEvent('govscheme_application_saved', { detail: newApp }));
             }}
             onNavigateTab={onNavigateTab}

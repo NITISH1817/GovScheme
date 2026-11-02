@@ -130,7 +130,7 @@ export const App: React.FC = () => {
               loaded = userAcc.profile;
             }
           }
-        } catch {}
+        } catch { }
       }
 
       if (loaded && isAuthorizedAdminEmail(loaded.email)) {
@@ -188,7 +188,7 @@ export const App: React.FC = () => {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {}
+    } catch { }
     return [];
   });
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
@@ -219,7 +219,7 @@ export const App: React.FC = () => {
             return norm;
           }
         }
-      } catch {}
+      } catch { }
       return null;
     };
 
@@ -312,18 +312,18 @@ export const App: React.FC = () => {
 
     const currentStatus = 'Submitted';
     const stages = [
-      'Application Started',
-      'Documents Uploaded',
-      'Submitted',
-      'Under Review',
-      'Approved',
-      'Benefit Released'
+      'Application details recorded',
+      'Documents uploaded to GovScheme',
+      'Submission reported by citizen',
+      'Status updated by GovScheme administrator',
+      'Government approval confirmed through authorized source',
+      'Benefit receipt reported by citizen'
     ];
     const timeline = stages.map((stg, i) => ({
       stage: stg,
       date: i <= 2 ? new Date().toISOString().split('T')[0] : 'Pending',
       completed: i <= 2,
-      remarks: i === 2 ? 'Application registered in Citizen Tracker' : undefined
+      remarks: i === 2 ? 'Application registered in Citizen Tracker (Citizen Reported)' : undefined
     }));
 
     const dynamicDocs = user?.documents?.slice(0, 3).map(d => ({
@@ -341,8 +341,9 @@ export const App: React.FC = () => {
       appliedDate: new Date().toISOString().split('T')[0],
       officialPortalLink: officialPortal,
       statusTimeline: timeline,
-      verifiedDocuments: dynamicDocs
-    };
+      verifiedDocuments: dynamicDocs,
+      statusProvenance: 'CITIZEN_REPORTED'
+    } as any;
 
     // 1. Immediately update React state for instant 0ms UI feedback
     setApplications(prev => [newTrackRecord, ...prev.filter(a => a.applicationNumber !== genAckNumber && a.schemeId !== schemeId)]);
@@ -353,7 +354,7 @@ export const App: React.FC = () => {
       const parsed: ApplicationTrackerRecord[] = stored ? JSON.parse(stored) : [];
       const updated = [newTrackRecord, ...parsed.filter(a => a.applicationNumber !== genAckNumber && a.schemeId !== schemeId)];
       localStorage.setItem('govscheme_applications', JSON.stringify(updated));
-    } catch {}
+    } catch { }
 
     // 3. Emit Live Audit Log event
     appendLiveAuditLog(
@@ -438,10 +439,10 @@ export const App: React.FC = () => {
 
   const handleDeleteApplication = useCallback(async (appId: string, appNumber?: string) => {
     const token = localStorage.getItem('govscheme_token');
-    
+
     // 1. Immediately remove from React state
     setApplications(prev => prev.filter(a => a.id !== appId && a.applicationNumber !== appNumber && a.applicationNumber !== appId));
-    
+
     // 2. Remove from localStorage
     try {
       const stored = localStorage.getItem('govscheme_applications');
@@ -450,7 +451,7 @@ export const App: React.FC = () => {
         const filtered = parsed.filter(a => a.id !== appId && a.applicationNumber !== appNumber && a.applicationNumber !== appId);
         localStorage.setItem('govscheme_applications', JSON.stringify(filtered));
       }
-    } catch {}
+    } catch { }
 
     // 3. Remove from backend API if authenticated
     if (token) {
@@ -475,7 +476,14 @@ export const App: React.FC = () => {
     );
   }, [API_URL]);
 
-  const handleExternalRedirect = useCallback(async (url: string, schemeName?: string, department?: string, schemeId?: string, schemeObj?: Scheme) => {
+  const handleExternalRedirect = useCallback(async (
+    url: string,
+    schemeName?: string,
+    department?: string,
+    schemeId?: string,
+    schemeObj?: Scheme,
+    directOpened?: boolean
+  ) => {
     if (!url) return;
     const matched = schemeObj || schemes.find(s => (schemeId && s.id === schemeId) || (schemeName && s.name === schemeName) || s.officialApplyUrl === url || s.officialWebsite === url) || {
       id: schemeId || 'scheme',
@@ -485,20 +493,20 @@ export const App: React.FC = () => {
       officialWebsite: url
     };
 
-    const appNum = await handleApplyScheme(matched);
-
-    const skipNotice = localStorage.getItem('govscheme_skip_redirect_notice');
-    if (skipNotice === 'true') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      setRedirectTarget({
-        url,
-        schemeId: matched.id,
-        schemeName: matched.name,
-        department: matched.department || department,
-        applicationNumber: appNum
-      });
+    // 1. If not already opened synchronously by the user click event, redirect directly to the official portal
+    if (!directOpened) {
+      try {
+        const opened = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+          window.location.href = url;
+        }
+      } catch {
+        window.location.href = url;
+      }
     }
+
+    // 2. Automatically register application in live tracker and display toast
+    await handleApplyScheme(matched);
   }, [schemes, handleApplyScheme]);
 
   useEffect(() => {
@@ -509,8 +517,8 @@ export const App: React.FC = () => {
       else if (modalType === 'terms') setIsTermsOpen(true);
       else if (modalType === 'feedback') setIsFeedbackOpen(true);
       else if (modalType === 'redirect') {
-        const { url, schemeName, department, schemeId, scheme } = e.detail || {};
-        handleExternalRedirect(url, schemeName, department, schemeId, scheme);
+        const { url, schemeName, department, schemeId, scheme, directOpened } = e.detail || {};
+        handleExternalRedirect(url, schemeName, department, schemeId, scheme, directOpened);
       }
     };
     const handleAppSavedEvent = (e: any) => {
@@ -708,7 +716,7 @@ export const App: React.FC = () => {
             setUser(normalizeUserProfile(parsed));
             return;
           }
-        } catch {}
+        } catch { }
       }
       setActiveTab('home');
       setIsAuthOpen(true);
@@ -953,16 +961,26 @@ export const App: React.FC = () => {
             if (appsData.success && Array.isArray(appsData.applications)) {
               const mappedApps: ApplicationTrackerRecord[] = appsData.applications.map((a: any) => {
                 const currentStatus = a.status || 'Submitted';
+                const statusProvenance = a.statusProvenance || 'CITIZEN_REPORTED';
                 const stages = [
-                  'Application Started',
-                  'Documents Uploaded',
-                  'Submitted',
-                  'Under Review',
-                  'Approved',
-                  'Benefit Released'
+                  'Application details recorded',
+                  'Documents uploaded to GovScheme',
+                  'Submission reported by citizen',
+                  'Status updated by GovScheme administrator',
+                  statusProvenance === 'OFFICIAL_API_VERIFIED'
+                    ? 'Government approval confirmed through authorized source'
+                    : 'Approval recorded by administrator',
+                  'Benefit receipt reported by citizen'
                 ];
-                const statusIdx = stages.findIndex(s => s.toLowerCase() === currentStatus.toLowerCase());
-                const effectiveIdx = statusIdx >= 0 ? statusIdx : 2;
+                const statusMap: Record<string, number> = {
+                  'started': 0,
+                  'documents uploaded': 1,
+                  'submitted': 2,
+                  'under review': 3,
+                  'approved': 4,
+                  'benefit released': 5
+                };
+                const effectiveIdx = statusMap[currentStatus.toLowerCase()] ?? 2;
 
                 const timeline = stages.map((stg, i) => ({
                   stage: stg,
@@ -990,14 +1008,15 @@ export const App: React.FC = () => {
                   appliedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                   officialPortalLink: a.schemeId?.officialApplyUrl || a.schemeId?.officialWebsite || 'https://www.india.gov.in',
                   statusTimeline: timeline,
-                  verifiedDocuments: dynamicDocs
-                };
+                  verifiedDocuments: dynamicDocs,
+                  statusProvenance: statusProvenance
+                } as any;
               });
               // Authenticated user's real live applications directly from cloud database
               setApplications(mappedApps);
               try {
                 localStorage.setItem('govscheme_applications', JSON.stringify(mappedApps));
-              } catch {}
+              } catch { }
             }
           }
 
@@ -1018,7 +1037,7 @@ export const App: React.FC = () => {
                 if (!normalized.disabilityType && localParsed?.disabilityType) {
                   normalized.disabilityType = localParsed.disabilityType;
                 }
-              } catch {}
+              } catch { }
             }
             if (backendDocs.length > 0) {
               normalized.documents = backendDocs;
@@ -1040,7 +1059,7 @@ export const App: React.FC = () => {
                 hasLocalAccount = true;
                 setUser(parsed);
               }
-            } catch {}
+            } catch { }
           }
           if (!hasLocalAccount) {
             localStorage.removeItem('govscheme_token');
@@ -1095,29 +1114,40 @@ export const App: React.FC = () => {
     const handleApplicationStatusUpdated = (data: { applicationId: string; status: string; remarks?: string }) => {
       setApplications(prev => prev.map(app => {
         if (app.id === data.applicationId || (app as any)._id === data.applicationId) {
+          const statusProvenance = (data as any).statusProvenance || 'ADMIN_UPDATED';
           const stages = [
-            'Application Started',
-            'Documents Uploaded',
-            'Submitted',
-            'Under Review',
-            'Approved',
-            'Benefit Released'
+            'Application details recorded',
+            'Documents uploaded to GovScheme',
+            'Submission reported by citizen',
+            'Status updated by GovScheme administrator',
+            statusProvenance === 'OFFICIAL_API_VERIFIED'
+              ? 'Government approval confirmed through authorized source'
+              : 'Approval recorded by administrator',
+            'Benefit receipt reported by citizen'
           ];
-          const statusIdx = stages.findIndex(s => s.toLowerCase() === data.status.toLowerCase());
-          const effectiveIdx = statusIdx >= 0 ? statusIdx : 3;
+          const statusMap: Record<string, number> = {
+            'started': 0,
+            'documents uploaded': 1,
+            'submitted': 2,
+            'under review': 3,
+            'approved': 4,
+            'benefit released': 5
+          };
+          const effectiveIdx = statusMap[data.status.toLowerCase()] ?? 3;
 
           const updatedTimeline = stages.map((stg, i) => ({
             stage: stg,
             date: i <= effectiveIdx ? new Date().toISOString().split('T')[0] : 'Pending',
             completed: i <= effectiveIdx,
-            remarks: i === effectiveIdx ? (data.remarks || `Status updated to ${data.status} by Admin`) : undefined
+            remarks: i === effectiveIdx ? (data.remarks || `Status updated to ${data.status} [${statusProvenance}]`) : undefined
           }));
 
           return {
             ...app,
             status: data.status as any,
+            statusProvenance: statusProvenance,
             statusTimeline: updatedTimeline
-          };
+          } as any;
         }
         return app;
       }));
@@ -1155,7 +1185,7 @@ export const App: React.FC = () => {
     };
   }, []);
 
-// handleTrackApplication moved to centralized declaration above
+  // handleTrackApplication moved to centralized declaration above
 
   // Logout handler
   const handleLogout = () => {
@@ -1487,7 +1517,7 @@ export const App: React.FC = () => {
             return norm;
           }
         }
-      } catch {}
+      } catch { }
       return null;
     })();
 
@@ -2386,7 +2416,7 @@ export const App: React.FC = () => {
 
       {/* Live Application Tracking Toast Notification */}
       {liveTrackerToast && liveTrackerToast.show && (
-        <div 
+        <div
           role="status"
           aria-live="polite"
           className="fixed bottom-6 right-6 z-[9999] max-w-md w-full bg-slate-900/95 dark:bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300"

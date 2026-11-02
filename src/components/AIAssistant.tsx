@@ -659,7 +659,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                                                 schemeName: locName,
                                                 department: locDept,
                                                 schemeId: refScheme.id,
-                                                scheme: refScheme
+                                                scheme: refScheme,
+                                                directOpened: true
                                               }
                                             }));
                                           } else {

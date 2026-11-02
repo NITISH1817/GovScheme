@@ -43,6 +43,9 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
 
   const handleApply = (scheme: Scheme) => {
     const targetUrl = scheme.officialApplyUrl || scheme.officialWebsite || (scheme.state === 'Tamil Nadu' ? 'https://www.tn.gov.in' : 'https://www.myscheme.gov.in');
+    try {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    } catch {}
     window.dispatchEvent(new CustomEvent('govscheme_open_modal', {
       detail: {
         type: 'redirect',
@@ -50,7 +53,8 @@ export const SchemeComparisonModal: React.FC<SchemeComparisonModalProps> = ({
         schemeName: scheme.name,
         department: scheme.department,
         schemeId: scheme.id,
-        scheme
+        scheme,
+        directOpened: true
       }
     }));
   };
