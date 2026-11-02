@@ -118,10 +118,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative hidden sm:block">
               <button
                 onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-all shadow-sm active:scale-95"
                 aria-label="Select Language"
               >
-                <Languages className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
+                <Languages className="w-5 h-5 text-gov-navy dark:text-white" strokeWidth={2.2} />
               </button>
               <AnimatePresence>
                 {langDropdownOpen && (
@@ -150,11 +150,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative hidden sm:block">
               <button
                 onClick={() => setSettingsDropdownOpen(!settingsDropdownOpen)}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-all shadow-sm active:scale-95"
                 title={t('displaySettings', 'Display Settings')}
                 aria-label={t('displaySettings', 'Display Settings')}
               >
-                <Settings2 className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
+                <Settings2 className="w-5 h-5 text-gov-navy dark:text-white" strokeWidth={2.2} />
               </button>
               <AnimatePresence>
                 {settingsDropdownOpen && (
@@ -226,14 +226,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isCurrentAdmin && (
               <button
                 onClick={() => setActiveTab('admin')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                className={`h-10 px-4 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${
                   activeTab === 'admin'
                     ? 'bg-amber-500 text-white shadow-amber-500/25 ring-2 ring-amber-400'
                     : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
                 }`}
                 title={`Admin Command Center (Authorized: ${user?.email || 'admin@govscheme.in'})`}
               >
-                <Shield className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
+                <Shield className="w-4 h-4 text-amber-500 dark:text-amber-300" />
                 <span className="hidden sm:inline">Admin Portal</span>
                 <span className="text-[10px] font-mono opacity-80 hidden lg:inline">({user?.email})</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -243,12 +243,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Notifications */}
             <button
               onClick={() => { if (!user) onOpenAuth(); else onOpenNotifications(); }}
-              className="relative w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+              className="relative w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-all shadow-sm active:scale-95"
               aria-label={t('notifications', 'Notifications')}
             >
-              <Bell className="w-3.5 h-3.5 text-gov-navy dark:text-white" />
+              <Bell className="w-5 h-5 text-gov-navy dark:text-white" strokeWidth={2.2} />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border border-white dark:border-[#111827]" />
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-[#111827]" />
               )}
             </button>
 
@@ -257,9 +257,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-2 px-1.5 py-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 p-0.5 transition-transform">
+                  <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 p-0.5 transition-transform flex items-center justify-center shadow-sm">
                     <img src={getUserAvatarUrl(user)} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                   </div>
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 hidden sm:block">{(user.fullName || user.email?.split('@')[0] || t('citizen', 'Citizen')).split(' ')[0]}</span>
@@ -346,7 +346,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenAuth('login')}
-                className="md:hidden flex items-center gap-1 px-3 py-1 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-105 transition-transform shadow-sm"
+                className="md:hidden flex items-center gap-1 h-9 px-3.5 rounded-full bg-gov-navy dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-105 transition-transform shadow-sm"
               >
                 {t('signIn', 'Sign In')}
               </button>
@@ -355,15 +355,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Hamburger (Mobile) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden w-8 h-8 relative flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10"
+              className="md:hidden w-10 h-10 relative flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 shadow-sm active:scale-95"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-nav-menu"
             >
-              <div className="w-4 h-3 flex flex-col justify-between items-center relative">
-                <motion.span animate={mobileMenuOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute top-0" />
-                <motion.span animate={mobileMenuOpen ? { opacity: 0 } : { opacity: 1 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute top-1/2 -translate-y-1/2" />
-                <motion.span animate={mobileMenuOpen ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }} className="w-full h-[1.5px] bg-gov-navy dark:bg-white absolute bottom-0" />
+              <div className="w-5 h-4 flex flex-col justify-between items-center relative">
+                <motion.span animate={mobileMenuOpen ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }} className="w-full h-[2px] bg-gov-navy dark:bg-white absolute top-0" />
+                <motion.span animate={mobileMenuOpen ? { opacity: 0 } : { opacity: 1 }} className="w-full h-[2px] bg-gov-navy dark:bg-white absolute top-1/2 -translate-y-1/2" />
+                <motion.span animate={mobileMenuOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }} className="w-full h-[2px] bg-gov-navy dark:bg-white absolute bottom-0" />
               </div>
             </button>
           </div>

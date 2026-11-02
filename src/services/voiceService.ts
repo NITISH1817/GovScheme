@@ -209,17 +209,26 @@ export function getBestMatchingVoice(langCode: string): SpeechSynthesisVoice | n
  */
 export function splitTextIntoChunks(text: string, maxChunkLength: number = 160): string[] {
   if (!text) return [];
-  const sentences = text.match(/[^.!?\n|;]+[.!?\n|;]+|[^.!?\n|;]+$/g) || [text];
+  const trimmed = text.trim();
+  // If the text is short enough to stream in a single audio request (e.g. language announcements or brief prompts), do not split!
+  if (trimmed.length <= maxChunkLength) {
+    return [trimmed];
+  }
+
+  const sentences = trimmed.match(/[^.!?\n|;]+[.!?\n|;]+|[^.!?\n|;]+$/g) || [trimmed];
   const chunks: string[] = [];
+  let current = '';
 
   for (const sentence of sentences) {
-    const trimmed = sentence.trim();
-    if (!trimmed) continue;
-    if (trimmed.length <= maxChunkLength) {
-      chunks.push(trimmed);
-    } else {
-      const parts = trimmed.split(/([,:]\s+)/);
-      let current = '';
+    const s = sentence.trim();
+    if (!s) continue;
+
+    if (s.length > maxChunkLength) {
+      if (current.trim()) {
+        chunks.push(current.trim());
+        current = '';
+      }
+      const parts = s.split(/([,:]\s+)/);
       for (const part of parts) {
         if ((current + part).length <= maxChunkLength) {
           current += part;
@@ -228,8 +237,18 @@ export function splitTextIntoChunks(text: string, maxChunkLength: number = 160):
           current = part;
         }
       }
-      if (current.trim()) chunks.push(current.trim());
+    } else {
+      if ((current ? (current + ' ' + s) : s).length <= maxChunkLength) {
+        current = current ? (current + ' ' + s) : s;
+      } else {
+        if (current.trim()) chunks.push(current.trim());
+        current = s;
+      }
     }
+  }
+
+  if (current.trim()) {
+    chunks.push(current.trim());
   }
 
   return chunks.filter(c => c.length > 0);
@@ -342,7 +361,7 @@ function processAudioQueue(langCode: string, onEnd?: () => void, fullOriginalTex
   let hasTriedFallback = false;
   let isFailureHandled = false;
 
-  const audio = new Audio();
+  const audio = activeAudio || new Audio();
   try {
     (audio as any).referrerPolicy = 'no-referrer';
   } catch {}
