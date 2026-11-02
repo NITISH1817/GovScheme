@@ -8,5 +8,6 @@
   "files.associations": {
     "*.css": "tailwindcss"
   },
-  "js/ts.implicitProjectConfig.checkJs": false
+  "js/ts.implicitProjectConfig.checkJs": false,
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
